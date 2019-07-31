@@ -50,9 +50,9 @@
     tabs: true,
     motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     translation: {
-      copy_button: 'Copie',
-      copy_success: 'Copie réussie',
-      copy_failure: 'Copie ratée'
+      copy_button: 'Kopieren',
+      copy_success: 'Kopiert',
+      copy_failure: 'Kopieren fehlgeschlagen'
     }
   };
 </script>
@@ -129,7 +129,7 @@
   </div>
 
   <div class="site-nav-toggle">
-    <button aria-label="Basculer la barre de navigation">
+    <button aria-label="Navigationsleiste an/ausschalten">
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
@@ -149,7 +149,7 @@
       
     
 
-    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>Accueil</a>
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>Startseite</a>
 
   </li>
         
@@ -160,7 +160,7 @@
       
     
 
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>Archives</a>
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>Archiv</a>
 
   </li>
     </ul>
@@ -180,6 +180,991 @@
           <div id="content" class="content">
             
   <section id="posts" class="posts-expand">
+      
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.github.io/2019/07/31/译-ZGC-一个可伸缩的低延迟垃圾收集器/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/07/31/译-ZGC-一个可伸缩的低延迟垃圾收集器/" class="post-title-link" itemprop="url">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2019-07-31 20:49:32 / Geändert am: 20:50:46" itemprop="dateCreated datePublished" datetime="2019-07-31T20:49:32+08:00">2019-07-31</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">in</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/GC/" itemprop="url" rel="index"><span itemprop="name">GC</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          <br/>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+            <blockquote>
+<p>愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。<br><img src="/images/wechat/wechat.jpg" alt></p>
+</blockquote>
+<blockquote>
+<p>翻译自：JEP 333</p>
+</blockquote>
+<blockquote>
+<p>地址：<a href="https://openjdk.java.net/jeps/333" target="_blank" rel="noopener">https://openjdk.java.net/jeps/333</a></p>
+</blockquote>
+<h1 id="一、摘要"><a href="#一、摘要" class="headerlink" title="一、摘要"></a>一、摘要</h1><p>Z垃圾收集器，也称为ZGC，是一个可伸缩的低延迟垃圾收集器。</p>
+<h1 id="二、目标"><a href="#二、目标" class="headerlink" title="二、目标"></a>二、目标</h1><ul>
+<li>GC暂停时间不超过10ms</li>
+<li>能处理大小从相对较小(几百MB)到非常大(TB级)的堆</li>
+<li>与使用G1相比，应用程序吞吐量减少不超过15%</li>
+<li>方便日后在此基础上利用彩色指针和内存屏障进一步优化收集器及实现新特性。【原文：Lay a foundation for future GC features and optimizations leveraging colored pointers and load barriers】</li>
+<li>支持平台:Linux/x64</li>
+</ul>
+<blockquote>
+<p>注：此处及下文中的内存屏障即load barrier，在ZGC中用的是读屏障。</p>
+</blockquote>
+<h1 id="三、动机"><a href="#三、动机" class="headerlink" title="三、动机"></a>三、动机</h1><p>垃圾收集是Java的主要优势之一。但是，当垃圾收集暂停太长时，就会对应用程序的响应时间产生负面影响。通过大幅度缩短停顿时间，我们可以让Java适用于更多类型的应用程序。</p>
+<p>此外，现代系统中可用的内存数量还在继续增长。<strong>用户和应用程序开发人员希望JVM能够以一种有效的方式充分利用这种内存，并且不会出现很长的GC暂停时间。</strong></p>
+<h1 id="四、-描述"><a href="#四、-描述" class="headerlink" title="四、 描述"></a>四、 描述</h1><p>ZGC是一个并发的、单代（不再区分新生代和老年代）的、基于region的、支持numa的压缩收集器。Stop-the-world阶段仅限于根扫描，所以GC暂停时间不会随着堆或存活对象的多少而增加。</p>
+<p><font color="DeepPink">ZGC的一个核心设计原则是结合使用内存屏障和彩色对象指针。这使得ZGC能够在运行Java应用程序线程时执行并发操作，比如对象重定位。从Java线程的角度来看，在Java对象中加载引用字段的行为受到内存屏障的限制。除了对象地址之外，有色对象指针还包含内存屏障需要的信息，用于确定在允许Java线程使用该指针之前是否需要采取某些操作。</font>例如，对象可能已经被重新定位，在这种情况下，内存屏障将检测情况并采取适当的操作。</p>
+<p>与其他技术相比，我们认为颜色指针方案提供了一些非常吸引人的特性。特别是:</p>
+<ul>
+<li><p>这允许我们在移动对象/整理内存阶段，在指向可回收/重用区域的指针确定之前回收/重用这部分内存【原文：It allows us to reclaim and reuse memory during the relocation/compaction phase, before pointers pointing into the reclaimed/reused regions have been fixed. 】。这有助于降低堆开销。这还意味着不需要实现单独的标记压缩算法来处理完整的GC。</p>
+</li>
+<li><p>这允许我们使用相对较少且简单的GC屏障。这有助于降低运行时开销。这还意味着在解释器和JIT编译器中更容易实现、优化和维护GC barrier代码。</p>
+</li>
+<li><p>我们目前将标记和重新定位相关信息存储在彩色指针中。然而，此方案的通用性允许我们存储任何类型的信息(只要我们能将其放入指针中)，并允许内存屏障根据该信息采取它想要采取的任何操作。我们相信这将为将来的许多特性打下基础。举一个例子，在异构内存环境中，这可以用来跟踪堆访问模式，以指导GC重新定位决策，将很少使用的对象移动到冷存储(不常访问的内存区域)中【原文：To pick one example, in a heterogeneous memory environment, this could be used to track heap access patterns to guide GC relocation decisions to move rarely used objects to cold storage.】。</p>
+</li>
+</ul>
+<h1 id="五、性能"><a href="#五、性能" class="headerlink" title="五、性能"></a>五、性能</h1><p>我们已经使用SPECjbb 2015[1]做了常规性能测试。从吞吐量和延迟角度来看，性能都很好。下面是使用128G堆在复合模式下比较ZGC和G1的典型基准分数(以百分比为单位，根据ZGC的max-jOPS进行标准化)【原文：Below are typical benchmark scores (in percent, normalized against ZGC’s max-jOPS), comparing ZGC and G1, in composite mode using a 128G heap.】：</p>
+<blockquote>
+<p>越高越好</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ZGC</span><br><span class="line">       max-jOPS: 100%</span><br><span class="line">  critical-jOPS: 76.1%</span><br><span class="line"></span><br><span class="line">G1</span><br><span class="line">       max-jOPS: 91.2%</span><br><span class="line">  critical-jOPS: 54.7%</span><br></pre></td></tr></table></figure>
+
+<p>下面是来自相同基准测试的GC暂停时间。ZGC设法保持远低于10ms的目标。注意，确切的数字可能会根据使用的机器和设置而变化(上下都有，但不是很明显)。</p>
+<blockquote>
+<p>越低越好</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">ZGC</span><br><span class="line">                avg: 1.091ms (+/-0.215ms)</span><br><span class="line">    95th percentile: 1.380ms</span><br><span class="line">    99th percentile: 1.512ms</span><br><span class="line">  99.9th percentile: 1.663ms</span><br><span class="line"> 99.99th percentile: 1.681ms</span><br><span class="line">                max: 1.681ms</span><br><span class="line"></span><br><span class="line">G1</span><br><span class="line">                avg: 156.806ms (+/-71.126ms)</span><br><span class="line">    95th percentile: 316.672ms</span><br><span class="line">    99th percentile: 428.095ms</span><br><span class="line">  99.9th percentile: 543.846ms</span><br><span class="line"> 99.99th percentile: 543.846ms</span><br><span class="line">                max: 543.846ms</span><br></pre></td></tr></table></figure>
+
+<p>我们还对其他各种SPEC®基准测试和内部工作负载进行了特别的性能测量。一般情况下，ZGC能够维护个位数的毫秒暂停时间。</p>
+<h1 id="六、-局限性"><a href="#六、-局限性" class="headerlink" title="六、 局限性"></a>六、 局限性</h1><p>ZGC的初始实验版本将不支持类卸载。默认情况下，classunload和ClassUnloadingWithConcurrentMark选项将被禁用。即便你启用也是不生效的。</p>
+<p>此外，ZGC最初不支持JVMCI(即Graal)。如果启用EnableJVMCI选项，将打印一条错误消息。</p>
+<p>这些限制将在本项目的后期解决。</p>
+<h1 id="七、-构建和使用"><a href="#七、-构建和使用" class="headerlink" title="七、 构建和使用"></a>七、 构建和使用</h1><p>按照惯例，构建系统默认禁用JVM中的实验性特性。ZGC是一个实验性特性，因此不会出现在JDK构建中，除非在编译时使用configure选项:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--with-jvm-features=zgc</span><br></pre></td></tr></table></figure>
+
+<p>显式地启用它。</p>
+<p>(ZGC将出现在Oracle发布的所有Linux/x64 JDK版本中)</p>
+<p>JVM中的实验特性还需要在运行时显式地解锁。因此，要启用/使用ZGC，需要以下JVM选项:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+ unlockexperimental alvmoptions -XX:+UseZGC</span><br></pre></td></tr></table></figure>
+
+<p>有关如何设置和调优ZGC的更多信息，请参阅ZGC项目Wiki（wiki地址：<a href="https://wiki.openjdk.java.net/display/zgc/Main）。" target="_blank" rel="noopener">https://wiki.openjdk.java.net/display/zgc/Main）。</a></p>
+<p>ZGC paper可以参考Azul Pauseless GC Algorithm：</p>
+<p><a href="https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/Azul_Pauseless_GC_Algorithm.pdf" target="_blank" rel="noopener">https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/Azul_Pauseless_GC_Algorithm.pdf</a></p>
+<p>ZGC 简介PPT:</p>
+<p><a href="https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/ZGC-FOSDEM-2018.pdf" target="_blank" rel="noopener">https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/ZGC-FOSDEM-2018.pdf</a></p>
+<p>个人微信公众号：</p>
+<p><img src="/images/wechat/wechat.jpg" alt></p>
+<p>个人CSDN博客：</p>
+<p><a href="https://blog.csdn.net/jiankunking" target="_blank" rel="noopener">https://blog.csdn.net/jiankunking</a></p>
+<p>个人掘金博客：</p>
+<p><a href="https://juejin.im/user/5d3192c2e51d45775313828f/posts" target="_blank" rel="noopener">https://juejin.im/user/5d3192c2e51d45775313828f/posts</a></p>
+<p>个人github：</p>
+<p><a href="https://github.com/jiankunking" target="_blank" rel="noopener">https://github.com/jiankunking</a></p>
+
+          
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+    
+      
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.github.io/2019/07/31/ReentrantReadWriteLock原理解析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/07/31/ReentrantReadWriteLock原理解析/" class="post-title-link" itemprop="url">ReentrantReadWriteLock原理解析</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2019-07-31 20:39:01 / Geändert am: 20:43:37" itemprop="dateCreated datePublished" datetime="2019-07-31T20:39:01+08:00">2019-07-31</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">in</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          <br/>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+            <blockquote>
+<p>愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。<br><img src="/images/wechat/wechat.jpg" alt></p>
+</blockquote>
+<blockquote>
+<p>Java JDK 11 ReentrantReadWriteLock 原理分析</p>
+</blockquote>
+<h1 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h1><p>希望在阅读本文之前，建议先看一下以下三篇文章：</p>
+<p>1、<a href="https://juejin.im/post/5d37019a51882564c966add6" target="_blank" rel="noopener">面试必备：Java AQS 实现原理（图文）分析</a> </p>
+<p>2、<a href="https://juejin.im/post/5d3848e951882556d1684532" target="_blank" rel="noopener">面试必备：Java AQS Condition的实现分析</a> </p>
+<p>3、<a href="https://juejin.im/post/5d3952bff265da1b7c615dba" target="_blank" rel="noopener">面试必备：Java volatile的内存语义与AQS锁内存可见性</a> </p>
+<p>读完了以上三篇文章，先看一下ReentrantReadWriteLock的代码路径：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">package java.util.concurrent.locks;</span><br></pre></td></tr></table></figure>
+
+<p>来先猜一下ReentrantReadWriteLock会如何实现？</p>
+<p>都在java.util.concurrent包下，那么可以明确一点，那就是关于锁的实现，应该用的就是AQS，那么，读锁、写锁会不会对应的就是AQS中的共享模式与独占模式？</p>
+<h1 id="2、读写锁使用场景"><a href="#2、读写锁使用场景" class="headerlink" title="2、读写锁使用场景"></a>2、读写锁使用场景</h1><p>读是多于写（比如cache）</p>
+<blockquote>
+<p>一般情况下，读写锁的性能都会比排它锁好，因为大多数场景读是多于写的。在读多于写的情况下，读写锁能够提供比排它锁更好的并发性和吞吐量。</p>
+</blockquote>
+<h1 id="3、读写锁接口：ReadWriteLock"><a href="#3、读写锁接口：ReadWriteLock" class="headerlink" title="3、读写锁接口：ReadWriteLock"></a>3、读写锁接口：ReadWriteLock</h1><p>代码地址：<a href="https://github.com/jiankunking/openjdk11/blob/master/src/java.base/share/classes/java/util/concurrent/locks/ReadWriteLock.java" target="_blank" rel="noopener">ReadWriteLock</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public interface ReadWriteLock &#123;</span><br><span class="line">    /**</span><br><span class="line">     * Returns the lock used for reading.</span><br><span class="line">     *</span><br><span class="line">     * @return the lock used for reading</span><br><span class="line">     */</span><br><span class="line">    Lock readLock();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Returns the lock used for writing.</span><br><span class="line">     *</span><br><span class="line">     * @return the lock used for writing</span><br><span class="line">     */</span><br><span class="line">    Lock writeLock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>4、读写锁的接口与示例</p>
+<p>ReadWriteLock仅定义了获取读锁和写锁的两个方法，即readLock()方法和writeLock()方法，而其实现：ReentrantReadWriteLock，除了接口方法之外，还提供了一些便于外界监控其内部工作状态的方法，这些方法以及描述如表所示：</p>
+<p><img src="/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png" alt><br>接下来，通过一个缓存示例说明读写锁的使用方式，示例代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public class Cache &#123;</span><br><span class="line">    static Map&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();</span><br><span class="line">    static ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();</span><br><span class="line">    static Lock r = rwl.readLock();</span><br><span class="line">    static Lock w = rwl.writeLock();</span><br><span class="line"></span><br><span class="line">    // 获取一个key对应的value</span><br><span class="line">    public static final Object get(String key) &#123;</span><br><span class="line">        r.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            return map.get(key);</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            r.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // 设置key对应的value，并返回旧的value</span><br><span class="line">    public static final Object put(String key, Object value) &#123;</span><br><span class="line">        w.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            return map.put(key, value);</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            w.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // 清空所有的内容</span><br><span class="line">    public static final void clear() &#123;</span><br><span class="line">        w.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            map.clear();</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            w.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述示例中，Cache组合一个非线程安全的HashMap作为缓存的实现，同时使用读写锁的读锁和写锁来保证Cache是线程安全的。在读操作get(String key)方法中，需要获取读锁，这使得并发访问该方法时不会被阻塞。写操作put(String key,Object value)方法和clear()方法，在更新HashMap时必须提前获取写锁，当获取写锁后，其他线程对于读锁和写锁的获取均被阻塞，而只有写锁被释放之后，其他读写操作才能继续。Cache使用读写锁提升读操作的并发性，也保证每次写操作对所有的读写操作的可见性，同时简化了编程方式。</p>
+<h1 id="5、ReentrantReadWriteLock脉络梳理"><a href="#5、ReentrantReadWriteLock脉络梳理" class="headerlink" title="5、ReentrantReadWriteLock脉络梳理"></a>5、ReentrantReadWriteLock脉络梳理</h1><p>代码地址：<a href="https://github.com/jiankunking/openjdk11/blob/master/src/java.base/share/classes/java/util/concurrent/locks/ReentrantReadWriteLock.java" target="_blank" rel="noopener">ReentrantReadWriteLock</a></p>
+<p>先看一下继承结构：</p>
+<p><img src="/images/java-reentrantreadwritelock/%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png" alt><br>再看一下代码结构：</p>
+<p><img src="/images/java-reentrantreadwritelock/%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84.png" alt><br>图中可以看出ReentrantReadWriteLock的实现还是比较复杂的，所以接下来主要分析ReentrantReadWriteLock实现关键点，包括：</p>
+<ul>
+<li>读写状态的设计</li>
+<li>写锁的获取与释放</li>
+<li>读锁的获取与释放</li>
+<li>锁降级</li>
+</ul>
+<h2 id="5-1-读写状态的设计"><a href="#5-1-读写状态的设计" class="headerlink" title="5.1 读写状态的设计"></a>5.1 读写状态的设计</h2><p>读写锁同样依赖自定义同步器来实现同步功能，而读写状态就是其同步器的同步状态。回想ReentrantLock中自定义同步器的实现，同步状态表示锁被一个线程重复获取的次数，而读写锁的自定义同步器需要在同步状态（一个整型变量）上维护多个读线程和一个写线程的状态，使得该状态的设计成为读写锁实现的关键。</p>
+<p>如果在一个整型变量上维护多种状态，就一定需要“按位切割使用”这个变量，读写锁将变量切分成了两个部分，高16位表示读，低16位表示写，划分方式如下图所示:</p>
+<p><img src="/images/java-reentrantreadwritelock/32%E4%BD%8D%E8%AF%BB%E5%86%99%E6%A0%87%E8%AF%86.png" alt></p>
+<p>当前同步状态表示一个线程已经获取了写锁，且重进入了两次，同时也连续获取了两次读锁。读写锁是如何迅速确定读和写各自的状态呢？</p>
+<p>答案是通过位运算。假设当前同步状态值为S，写状态等于S&amp;0x0000FFFF（将高16位全部抹去），读状态等于S&gt;&gt;&gt;16（无符号补0右移16位）。当写状态增加1时，等于S+1，当读状态增加1时，等于S+(1&lt;&lt;16)，也就是S+0x00010000。</p>
+<blockquote>
+<p>1、0x0000FFFF=00000000000000001111111111111111（16个0 16个1）</p>
+</blockquote>
+<blockquote>
+<p>2、&gt;&gt;&gt;： 无符号右移，忽略符号位，空位都以0补齐</p>
+</blockquote>
+<blockquote>
+<p>3、0x00010000=10000000000000000（1个1 16个0）</p>
+</blockquote>
+<p>根据状态的划分能得出一个推论：S不等于0时，当写状态（S&amp;0x0000FFFF）等于0时，则读状态（S&gt;&gt;&gt;16）大于0，即读锁已被获取。</p>
+<h2 id="5-2-写锁的获取与释放"><a href="#5-2-写锁的获取与释放" class="headerlink" title="5.2 写锁的获取与释放"></a>5.2 写锁的获取与释放</h2><p>写锁是一个支持重进入的排它锁。如果当前线程已经获取了写锁，则增加写状态。如果当前线程在获取写锁时，读锁已经被获取（读状态不为0）或者该线程不是已经获取写锁的线程，则当前线程进入等待状态，获取写锁的代码如代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">protected final boolean tryAcquire(int acquires) &#123;</span><br><span class="line">            /*</span><br><span class="line">             * Walkthrough:</span><br><span class="line">             * 1. If read count nonzero or write count nonzero</span><br><span class="line">             *    and owner is a different thread, fail.</span><br><span class="line">             * 2. If count would saturate, fail. (This can only</span><br><span class="line">             *    happen if count is already nonzero.)</span><br><span class="line">             * 3. Otherwise, this thread is eligible for lock if</span><br><span class="line">             *    it is either a reentrant acquire or</span><br><span class="line">             *    queue policy allows it. If so, update state</span><br><span class="line">             *    and set owner.</span><br><span class="line">             */</span><br><span class="line">            Thread current = Thread.currentThread();</span><br><span class="line">            int c = getState();</span><br><span class="line">            int w = exclusiveCount(c);</span><br><span class="line">            if (c != 0) &#123;</span><br><span class="line">               // 存在读锁或者当前获取线程不是已经获取写锁的线程</span><br><span class="line">                if (w == 0 || current != getExclusiveOwnerThread())</span><br><span class="line">                    return false;</span><br><span class="line">                if (w + exclusiveCount(acquires) &gt; MAX_COUNT)</span><br><span class="line">                    throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">                // Reentrant acquire</span><br><span class="line">                setState(c + acquires);</span><br><span class="line">                return true;</span><br><span class="line">            &#125;</span><br><span class="line">            if (writerShouldBlock() ||</span><br><span class="line">                !compareAndSetState(c, c + acquires))</span><br><span class="line">                return false;</span><br><span class="line">            setExclusiveOwnerThread(current);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法除了重入条件（当前线程为获取了写锁的线程）之外，增加了一个读锁是否存在的判断。<font color="DeepPink">如果存在读锁，则写锁不能被获取，原因在于：读写锁要确保写锁的操作对读锁可见，如果允许读锁在已被获取的情况下对写锁的获取，那么正在运行的其他读线程就无法感知到当前写线程的操作。因此，只有等待其他读线程都释放了读锁，写锁才能被当前线程获取，而写锁一旦被获取，则其他读写线程的后续访问均被阻塞。</font></p>
+<p><font color="DeepPink">写锁的释放与ReentrantLock的释放过程基本类似，每次释放均减少写状态，当写状态为0时表示写锁已被释放，从而等待的读写线程能够继续访问读写锁，同时前次写线程的修改对后续读写线程可见。</font></p>
+<h2 id="5-3-读锁的获取与释放"><a href="#5-3-读锁的获取与释放" class="headerlink" title="5.3 读锁的获取与释放"></a>5.3 读锁的获取与释放</h2><p>读锁是一个支持重进入的共享锁，它能够被多个线程同时获取，在没有其他写线程访问（或者写状态为0）时，读锁总会被成功地获取，而所做的也只是（线程安全的）增加读状态。如果当前线程已经获取了读锁，则增加读状态。如果当前线程在获取读锁时，写锁已被其他线程获取，则进入等待状态。获取读锁的实现从Java 5到Java 6变得复杂许多，主要原因是新增了一些功能，例如getReadHoldCount()方法，作用是返回当前线程获取读锁的次数。读状态是所有线程获取读锁次数的总和，而每个线程各自获取读锁的次数只能选择保存在ThreadLocal中，由线程自身维护，这使获取读锁的实现变得复杂。因此，这里将获取读锁的代码做了删减，保留必要的部分，如代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">protected final int tryAcquireShared(int unused) &#123;</span><br><span class="line">          for (;;) &#123;</span><br><span class="line">                  int c = getState();</span><br><span class="line">                  int nextc = c + (1 &lt;&lt; 16);</span><br><span class="line">                  if (nextc &lt; c)</span><br><span class="line">                    throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">                  if (exclusiveCount(c) != 0 &amp;&amp; owner != Thread.currentThread())</span><br><span class="line">                    return -1;</span><br><span class="line">                  if (compareAndSetState(c, nextc))</span><br><span class="line">                    return 1;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在tryAcquireShared(int unused)方法中，如果其他线程已经获取了写锁，则当前线程获取读锁失败，进入等待状态。<font color="DeepPink"> 如果当前线程获取了写锁或者写锁未被获取，则当前线程（线程安全，依靠CAS保证）增加读状态，成功获取读锁。</font></p>
+<p>读锁的每次释放（线程安全的，可能有多个读线程同时释放读锁）均减少读状态，减少的值是（1&lt;&lt;16）。</p>
+<h2 id="5-4-锁降级"><a href="#5-4-锁降级" class="headerlink" title="5.4 锁降级"></a>5.4 锁降级</h2><p>锁降级指的是写锁降级成为读锁。如果当前线程拥有写锁，然后将其释放，最后再获取读锁，这种分段完成的过程不能称之为锁降级。锁降级是指把持住（当前拥有的）写锁，再获取到读锁，随后释放（先前拥有的）写锁的过程。</p>
+<p>接下来看一个锁降级的示例。因为数据不常变化，所以多个线程可以并发地进行数据处理，当数据变更后，如果当前线程感知到数据变化，则进行数据的准备工作，同时其他处理线程被阻塞，直到当前线程完成数据的准备工作，如代码如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public void processData() &#123;</span><br><span class="line">        readLock.lock();</span><br><span class="line">        if (!update) &#123;</span><br><span class="line">            // 必须先释放读锁</span><br><span class="line">            readLock.unlock();</span><br><span class="line">            // 锁降级从写锁获取到开始</span><br><span class="line">            writeLock.lock();</span><br><span class="line">            try &#123;</span><br><span class="line">                if (!update) &#123;</span><br><span class="line">                    // 准备数据的流程（略）</span><br><span class="line">                    update = true;</span><br><span class="line">                &#125;</span><br><span class="line">                readLock.lock();</span><br><span class="line">            &#125; finally &#123;</span><br><span class="line">                writeLock.unlock();</span><br><span class="line">            &#125;</span><br><span class="line">            // 锁降级完成，写锁降级为读锁</span><br><span class="line">        &#125;</span><br><span class="line">        try &#123;</span><br><span class="line">            // 使用数据的流程（略）</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            readLock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述示例中，当数据发生变更后，update变量（布尔类型且volatile修饰）被设置为false，此时所有访问processData()方法的线程都能够感知到变化，但只有一个线程能够获取到写锁，其他线程会被阻塞在读锁和写锁的lock()方法上。当前线程获取写锁完成数据准备之后，再获取读锁，随后释放写锁，完成锁降级。</p>
+<p><font color="DeepPink">锁降级中读锁的获取是否必要呢？答案是必要的。主要是为了保证数据的可见性，如果当前线程不获取读锁而是直接释放写锁，假设此刻另一个线程（记作线程T）获取了写锁并修改了数据，那么当前线程无法感知线程T的数据更新。如果当前线程获取读锁，即遵循锁降级的步骤，则线程T将会被阻塞，直到当前线程使用数据并释放读锁之后，线程T才能获取写锁进行数据更新。</font></p>
+<p><font color="DeepPink">RentrantReadWriteLock不支持锁升级（把持读锁、获取写锁，最后释放读锁的过程）。目的也是保证数据可见性，如果读锁已被多个线程获取，其中任意线程成功获取了写锁并更新了数据，则其更新对其他获取到读锁的线程是不可见的。</font></p>
+<h1 id="6、小结"><a href="#6、小结" class="headerlink" title="6、小结"></a>6、小结</h1><p>RentrantReadWriteLock的具体流程梳理完了，回过头来想一下前言的问题，好像并没有得到答案，那么来到ReentrantReadWriteLock代码中，此处主要看一下读锁的获取、释放是否对应AQS中的共享模式。</p>
+<h2 id="6-1-读锁的获取、释放"><a href="#6-1-读锁的获取、释放" class="headerlink" title="6.1 读锁的获取、释放"></a>6.1 读锁的获取、释放</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public void lock() &#123;</span><br><span class="line">         //看到这里是不是就明白了，我们的猜想是正确的</span><br><span class="line">         sync.acquireShared(1);</span><br><span class="line">     &#125;</span><br><span class="line">    public void unlock() &#123;</span><br><span class="line">         //看到这里是不是就明白了，我们的猜想是正确的</span><br><span class="line">         sync.releaseShared(1);</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+
+<p>先来看一下ReadLock的具体实现，在ReentrantReadWriteLock初始化的时候，会在构造函数中初始化ReadLock、WriteLock，具体代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public ReentrantReadWriteLock() &#123;</span><br><span class="line">       this(false);</span><br><span class="line">   &#125;</span><br><span class="line">   public ReentrantReadWriteLock(boolean fair) &#123;</span><br><span class="line">       sync = fair ? new FairSync() : new NonfairSync();</span><br><span class="line">       readerLock = new ReadLock(this);</span><br><span class="line">       writerLock = new WriteLock(this);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>从ReentrantReadWriteLock构造函数的代码中，可以看到ReadLock初始化的参数是ReentrantReadWriteLock，那么ReadLock需要ReentrantReadWriteLock来做什么呢？</p>
+<p>来看一下ReadLock：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">private final Sync sync;</span><br><span class="line">    protected ReadLock(ReentrantReadWriteLock lock) &#123;</span><br><span class="line">        sync = lock.sync;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>从ReadLock的构造函数中，可以看出，ReadLock需要获取到Sync，那么Sync是谁，又是用来做什么的？</p>
+<blockquote>
+<p>其实，如果看过JUC下面代码的话，看到Sync，就明白它应该就是AQS的实现类，通过它来实现相关锁的操作。</p>
+</blockquote>
+<p>来看一下代码验证一下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">     * Synchronization implementation for ReentrantReadWriteLock.</span><br><span class="line">     * Subclassed into fair and nonfair versions.</span><br><span class="line">     */</span><br><span class="line">    abstract static class Sync extends AbstractQueuedSynchronizer &#123;</span><br><span class="line">    //具体代码略</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>看到这里可以大体得出这么一个结果：ReadLock获取锁的时候，是通过ReentrantReadWriteLock 内部Sync类来获取的共享锁，也就是读锁的获取是对应AQS中的共享模式。</p>
+<p>点进 sync.acquireShared(1)方法，可以看到是调用Sync的父类AQS中方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public final void acquireShared(int arg) &#123;</span><br><span class="line">        if (tryAcquireShared(arg) &lt; 0)</span><br><span class="line">            doAcquireShared(arg);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>看到这里，也就明白为啥AQS子类需要重写：</p>
+<ul>
+<li>tryAcquire</li>
+<li>tryRelease</li>
+<li>tryReleaseShared</li>
+<li>isHeldExclusively</li>
+</ul>
+<p>等方法了。</p>
+<h1 id="7、参考资料"><a href="#7、参考资料" class="headerlink" title="7、参考资料"></a>7、参考资料</h1><p>本文第4、5小节整理自：《Java并发编程的艺术》</p>
+<p>个人微信公众号：</p>
+<p><img src="/images/wechat/wechat.jpg" alt></p>
+<p>个人CSDN博客：</p>
+<p><a href="https://blog.csdn.net/jiankunking" target="_blank" rel="noopener">https://blog.csdn.net/jiankunking</a></p>
+<p>个人掘金博客：</p>
+<p><a href="https://juejin.im/user/5d3192c2e51d45775313828f/posts" target="_blank" rel="noopener">https://juejin.im/user/5d3192c2e51d45775313828f/posts</a></p>
+<p>个人github：</p>
+<p><a href="https://github.com/jiankunking" target="_blank" rel="noopener">https://github.com/jiankunking</a></p>
+
+          
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+    
+      
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.github.io/2019/07/31/Java-volatile的内存语义与AQS锁内存可见性/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/07/31/Java-volatile的内存语义与AQS锁内存可见性/" class="post-title-link" itemprop="url">Java volatile的内存语义与AQS锁内存可见性</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2019-07-31 20:33:35 / Geändert am: 20:38:16" itemprop="dateCreated datePublished" datetime="2019-07-31T20:33:35+08:00">2019-07-31</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">in</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          <br/>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+            <blockquote>
+<p>愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。<br><img src="/images/wechat/wechat.jpg" alt></p>
+</blockquote>
+<p>提到volatile首先想到就是：</p>
+<ul>
+<li>保证此变量对所有线程的可见性，这里的 “可见性”是指当一条线程修改了这个变量的值，新值对于其他线程来说是可以立即得知的。</li>
+<li>禁止指令重排序优化。</li>
+</ul>
+<p>到这里大家感觉自己对volatile理解了吗？ </p>
+<p>如果理解了，大家考虑这么一个问题：ReentrantLock（或者其它基于AQS实现的锁）是如何保证代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">private static ReentrantLock reentrantLock = new ReentrantLock();</span><br><span class="line">private static intcount = 0;</span><br><span class="line">//...</span><br><span class="line">// 多线程 run 如下代码</span><br><span class="line">reentrantLock.lock();</span><br><span class="line">try</span><br><span class="line">&#123;</span><br><span class="line">    count++;</span><br><span class="line">&#125; </span><br><span class="line">finally</span><br><span class="line">&#123;</span><br><span class="line">    reentrantLock.unlock();</span><br><span class="line">&#125;</span><br><span class="line">//...</span><br></pre></td></tr></table></figure>
+
+<p>既然提到了可见性，那就先熟悉几个概念：</p>
+<h1 id="1、JMM"><a href="#1、JMM" class="headerlink" title="1、JMM"></a>1、JMM</h1><p>JMM：Java Memory Model 即 Java 内存模型</p>
+<blockquote>
+<p>The Java Memory Model describes what behaviors are legal in multithreaded code, and how threads may interact through memory.</p>
+</blockquote>
+<blockquote>
+<p>It describes the relationship between variables in a program and the low-level details of storing and retrieving them to and from memory or registers in a real computer system.</p>
+</blockquote>
+<blockquote>
+<p>It does this in a way that can be implemented correctly using a wide variety of hardware and a wide variety of compiler optimizations.</p>
+</blockquote>
+<p><font color="DeepPink">Java内存模型的主要目标是定义程序中各个变量的访问规则，即在虚拟机中将变量存储到内存和从内存中取出变量这样的底层细节。</font>此处的变量主要是指共享变量，存在竞争问题的变量。Java内存模型规定所有的变量都存储在主内存中，而每条线程还有自己的工作内存，线程的工作内存中保存了该线程使用到的变量的主内存副本拷贝，线程对变量的所有操作（读取、赋值等）都必须在工作内存中进行，而不能直接读写主内存中的变量（<font color="DeepPink">根据Java虚拟机规范的规定，volatile变量依然有共享内存的拷贝，但是由于它特殊的操作顺序性规定——从工作内存中读写数据前，必须先将主内存中的数据同步到工作内存中，所有看起来如同直接在主内存中读写访问一般，因此这里的描述对于volatile也不例外</font>）。不同线程之间也无法直接访问对方工作内存中的变量，线程间变量值得传递均需要通过主内存来完成。</p>
+<h1 id="2、重排序"><a href="#2、重排序" class="headerlink" title="2、重排序"></a>2、重排序</h1><p>在执行程序时，为了提高性能，编译器和处理器常常会对指令做重排序。重排序分3种类型：</p>
+<ul>
+<li>编译器优化的重排序。编译器在不改变单线程程序语义的前提下，可以重新安排语句的执行顺序。</li>
+<li>指令级并行的重排序。现代处理器采用了指令级并行技术（Instruction-Level Parallelism，ILP）来将多条指令重叠执行。如果不存在数据依赖性，处理器可以改变语句对应机器指令的执行顺序。</li>
+<li>内存系统的重排序。由于处理器使用缓存和读/写缓冲区，这使得加载和存储操作看上去可能是在乱序执行。</li>
+</ul>
+<p>从Java源代码到最终实际执行的指令序列，会分别经历下面3种重排序：</p>
+<p><img src="/images/java-aqs-voliate/%E9%87%8D%E6%8E%92%E5%BA%8F.png" alt></p>
+<p>对于编译器，JMM的编译器重排序规则会禁止特定类型的编译器重排序（不是所有的编译器重排序都要禁止）。对于处理器重排序，JMM的处理器重排序规则会要求Java编译器在生成指令序列时，插入特定类型的内存屏障（Memory Barriers，Intel称之为Memory Fence）指令，通过内存屏障指令来禁止特定类型的处理器重排序。 </p>
+<p>JMM属于语言级的内存模型，它确保在不同的编译器和不同的处理器平台之上，通过禁止特定类型的编译器重排序和处理器重排序，为程序员提供一致的内存可见性保证。</p>
+<h1 id="3、happens-before"><a href="#3、happens-before" class="headerlink" title="3、happens-before"></a>3、happens-before</h1><ul>
+<li>程序顺序规则：一个线程中的每个操作，happens-before于该线程中的任意后续操作。</li>
+<li>监视器锁规则：对一个锁的解锁，happens-before于随后对这个锁的加锁。</li>
+<li>volatile变量规则：对一个volatile域的写，happens-before于任意后续对这个volatile域的读。（对一个volatile变量的读，总是能看到【任意线程】对这个volatile变量最后的写入）</li>
+<li>传递性：如果A happens-before B，且B happens-before C，那么A happens-before C。</li>
+</ul>
+<blockquote>
+<p>两个操作之间具有happens-before关系，并不意味着前一个操作必须要在后一个操作之前执行！happens-before仅仅要求前一个操作（执行的结果）对后一个操作可见，且前一个操作按顺序排在第二个操作之前（the first is visible to and ordered before the second）。</p>
+</blockquote>
+<h1 id="4、内存屏障"><a href="#4、内存屏障" class="headerlink" title="4、内存屏障"></a>4、内存屏障</h1><ul>
+<li>硬件层的内存屏障分为两种：Load Barrier 和 Store Barrier即读屏障和写屏障。</li>
+<li><font color="DeepPink">对于Load Barrier来说，在指令前插入Load Barrier，可以让高速缓存中的数据失效，强制从新从主内存加载数据；</font></li>
+<li><font color="DeepPink">对于Store Barrier来说，在指令后插入Store Barrier，能让写入缓存中的最新数据更新写入主内存，让其他线程可见。</font></li>
+<li>内存屏障有两个作用：<ul>
+<li>阻止屏障两侧的指令重排序；</li>
+<li>强制把写缓冲区/高速缓存中的数据等写回主内存，让缓存中相应的数据失效。<h1 id="5、volatile的内存语义"><a href="#5、volatile的内存语义" class="headerlink" title="5、volatile的内存语义"></a>5、volatile的内存语义</h1></li>
+</ul>
+</li>
+</ul>
+<p>从JSR-133开始（即从JDK5开始），volatile变量的写-读可以实现线程之间的通信。</p>
+<p><font color="DeepPink">从内存语义的角度来说，volatile的写-读与锁的释放-获取有相同的内存效果</font>：</p>
+<ul>
+<li>volatile写和锁的释放有相同的内存语义；</li>
+<li>volatile读与锁的获取有相同的内存语义。<blockquote>
+<p>volatile仅仅保证对单个volatile变量的读/写具有原子性，而锁的互斥执行的特性可以确保对整个临界区代码的执行具有原子性。在功能上，锁比volatile更强大；在可伸缩性和执行性能上，volatile更有优势。</p>
+</blockquote>
+</li>
+</ul>
+<p>volatile变量自身具有下列特性：</p>
+<ul>
+<li>可见性。对一个volatile变量的读，总是能看到（任意线程）对这个volatile变量最后的写入。</li>
+<li>原子性：对任意单个volatile变量的读/写具有原子性，即使是64位的long型和double型变量，只要它是volatile变量，对该变量的读/写就具有原子性。如果是多个volatile操作或类似于volatile++这种复合操作，这些操作整体上不具有原子性。</li>
+</ul>
+<p>volatile写和volatile读的内存语义：</p>
+<ul>
+<li><font color="DeepPink">线程A写一个volatile变量，实质上是线程A向接下来将要读这个volatile变量的某个线程发出了（其对共享变量所做修改的）消息。</font></li>
+<li><font color="DeepPink">线程B读一个volatile变量，实质上是线程B接收了之前某个线程发出的（在写这个volatile变量之前对共享变量所做修改的）消息。</font></li>
+<li><font color="DeepPink">线程A写一个volatile变量，随后线程B读这个volatile变量，这个过程实质上是线程A通过主内存向线程B发送消息。</font></li>
+</ul>
+<p>JMM针对编译器制定的volatile重排序规则表</p>
+<p><img src="/images/java-aqs-voliate/JMM%E9%92%88%E5%AF%B9%E7%BC%96%E8%AF%91%E5%99%A8%E5%88%B6%E5%AE%9A%E7%9A%84volatile%E9%87%8D%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99%E8%A1%A8.png" alt></p>
+<ul>
+<li><font color="DeepPink">当第二个操作是volatile写时，不管第一个操作是什么，都不能重排序。这个规则确保volatile写之前的操作不会被编译器重排序到volatile写之后。</font></li>
+<li><font color="DeepPink">当第一个操作是volatile读时，不管第二个操作是什么，都不能重排序。这个规则确保volatile读之后的操作不会被编译器重排序到volatile读之前。</font></li>
+<li><font color="DeepPink">当第一个操作是volatile写，第二个操作是volatile读时，不能重排序。</font></li>
+</ul>
+<p>为了实现volatile的内存语义，编译器在生成字节码时，会在指令序列中插入内存屏障来禁止特定类型的处理器重排序。<strong>对于编译器来说，发现一个最优布置来最小化插入屏障几乎是不可能的。为此，JMM采取保守策略。下面是基于保守策略的JMM内存屏障插入策略。</strong></p>
+<ul>
+<li>在每个volatile写操作的前面插入一个StoreStore屏障。</li>
+<li>在每个volatile写操作的后面插入一个StoreLoad屏障。</li>
+<li>在每个volatile读操作的后面插入一个LoadLoad屏障。</li>
+<li>在每个volatile读操作的后面插入一个LoadStore屏障。<blockquote>
+<p>LoadLoad屏障：对于这样的语句Load1; LoadLoad; Load2，在Load2及后续读取操作要读取的数据被访问前，保证Load1要读取的数据被读取完毕。</p>
+</blockquote>
+</li>
+</ul>
+<blockquote>
+<p>StoreStore屏障：对于这样的语句Store1; StoreStore; Store2，在Store2及后续写入操作执行前，保证Store1的写入操作对其它处理器可见。  LoadStore屏障：对于这样的语句Load1; LoadStore; Store2，在Store2及后续写入操作被刷出前，保证Load1要读取的数据被读取完毕。</p>
+</blockquote>
+<blockquote>
+<p>StoreLoad屏障：对于这样的语句Store1; StoreLoad; Load2，在Load2及后续所有读取操作执行前，保证Store1的写入对所有处理器可见。它的开销是四种屏障中最大的。在大多数处理器的实现中，这个屏障是个万能屏障，兼具其它三种内存屏障的功能。<br>上述内存屏障插入策略非常保守，但它可以保证在任意处理器平台，任意的程序中都能得到正确的volatile内存语义。</p>
+</blockquote>
+<p>下面是保守策略下，volatile写插入内存屏障后生成的指令序列示意图. </p>
+<p><img src="/images/java-aqs-voliate/volatile%E5%86%99%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E6%8C%87%E4%BB%A4%E5%BA%8F%E5%88%97%E7%A4%BA%E6%84%8F%E5%9B%BE.png" alt></p>
+<p>图中的StoreStore屏障可以保证在volatile写之前，其前面的所有普通写操作已经对任意处理器可见了。这是因为<strong>StoreStore屏障将保障上面所有的普通写在volatile写之前刷新到主内存。</strong></p>
+<p>这里比较有意思的是，volatile写后面的StoreLoad屏障。此屏障的作用是避免volatile写与后面可能有的volatile读/写操作重排序。因为编译器常常无法准确判断在一个volatile写的后面是否需要插入一个StoreLoad屏障（比如，一个volatile写之后方法立即return）。为了保证能正确实现volatile的内存语义，JMM在采取了保守策略：在每个volatile写的后面，或者在每个volatile读的前面插入一个StoreLoad屏障。从整体执行效率的角度考虑，JMM最终选择了在每个volatile写的后面插入一个StoreLoad屏障。因为volatile写-读内存语义的常见使用模式是：一个写线程写volatile变量，多个读线程读同一个volatile变量。当读线程的数量大大超过写线程时，选择在volatile写之后插入StoreLoad屏障将带来可观的执行效率的提升。从这里可以看到JMM在实现上的一个特点：首先确保正确性，然后再去追求执行效率。</p>
+<p>下面是在保守策略下，volatile读插入内存屏障后生成的指令序列示意图:<br><img src="/images/java-aqs-voliate/volatile%E8%AF%BB%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E6%8C%87%E4%BB%A4%E5%BA%8F%E5%88%97%E7%A4%BA%E6%84%8F%E5%9B%BE.png" alt><br>图中的LoadLoad屏障用来禁止处理器把上面的volatile读与下面的普通读重排序。LoadStore屏障用来禁止处理器把上面的volatile读与下面的普通写重排序。 </p>
+<p>上述volatile写和volatile读的内存屏障插入策略非常保守。在实际执行时，只要不改变volatile写-读的内存语义，编译器可以根据具体情况省略不必要的屏障。</p>
+<h1 id="6、AQS"><a href="#6、AQS" class="headerlink" title="6、AQS"></a>6、AQS</h1><p>对于AQS需要了解这么几点： </p>
+<ul>
+<li>锁的状态通过volatile int state来表示。 </li>
+<li>获取不到锁的线程会进入AQS的队列等待。 </li>
+<li>子类需要重写tryAcquire、tryRelease等方法。</li>
+</ul>
+<p>AQS 详解参见：<a href="https://juejin.im/post/5d37019a51882564c966add6" target="_blank" rel="noopener">面试必备：Java AQS 实现原理（图文）分析</a> </p>
+<h1 id="7、ReentrantLock"><a href="#7、ReentrantLock" class="headerlink" title="7、ReentrantLock"></a>7、ReentrantLock</h1><p>以公平锁为例，看看 ReentrantLock 获取锁 &amp; 释放锁的关键代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * The synchronization state.</span><br><span class="line"> */</span><br><span class="line">private volatile int state;</span><br><span class="line">/**</span><br><span class="line"> * Returns the current value of synchronization state.</span><br><span class="line"> * This operation has memory semantics of a &#123;@code volatile&#125; read.</span><br><span class="line"> * @return current state value</span><br><span class="line"> */</span><br><span class="line">protected final int getState() &#123;</span><br><span class="line">    return state;</span><br><span class="line">&#125;</span><br><span class="line">protected final boolean tryRelease(int releases) &#123;</span><br><span class="line">    int c = getState() - releases;</span><br><span class="line">    if (Thread.currentThread() != getExclusiveOwnerThread())</span><br><span class="line">        throw new IllegalMonitorStateException();</span><br><span class="line">    boolean free = false;</span><br><span class="line">    if (c == 0) &#123;</span><br><span class="line">        free = true;</span><br><span class="line">        setExclusiveOwnerThread(null);</span><br><span class="line">    &#125;</span><br><span class="line">    setState(c);// 释放锁的最后，写volatile变量state</span><br><span class="line">    return free;</span><br><span class="line">&#125;</span><br><span class="line"> protected final boolean tryAcquire(int acquires) &#123;</span><br><span class="line">        final Thread current = Thread.currentThread();</span><br><span class="line">        int c = getState();// 获取锁的开始，首先读volatile变量state</span><br><span class="line">        if (c == 0) &#123;</span><br><span class="line">            if (!hasQueuedPredecessors() &amp;&amp;</span><br><span class="line">                compareAndSetState(0, acquires)) &#123;</span><br><span class="line">                setExclusiveOwnerThread(current);</span><br><span class="line">                return true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        else if (current == getExclusiveOwnerThread()) &#123;</span><br><span class="line">            int nextc = c + acquires;</span><br><span class="line">            if (nextc &lt; 0)</span><br><span class="line">                throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">            setState(nextc);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><font color="DeepPink">公平锁在释放锁的最后写volatile变量state，在获取锁时首先读这个volatile变量。根据volatile的happens-before规则，释放锁的线程在写volatile变量之前可见的共享变量，在获取锁的线程读取同一个volatile变量后将立即变得对获取锁的线程可见。从而保证了代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性。</font></p>
+<p>8、小结</p>
+<p>如果我们仔细分析concurrent包的源代码实现，会发现一个通用化的实现模式。 </p>
+<ul>
+<li>首先，<font color="DeepPink">声明共享变量为volatile。 </font></li>
+<li>然后，<font color="DeepPink">使用CAS的原子条件更新来实现线程之间的同步。</font></li>
+<li>同时，<font color="DeepPink">配合以volatile的读/写和CAS所具有的volatile读和写的内存语义来实现线程之间的通信。</font><blockquote>
+<p>前文我们提到过，编译器不会对volatile读与volatile读后面的任意内存操作重排序；编译器不会对volatile写与volatile写前面的任意内存操作重排序。组合这两个条件，意味着为了同时实现volatile读和volatile写的内存语义，编译器不能对CAS与CAS前面和后面的任意内存操作重排序。</p>
+</blockquote>
+</li>
+</ul>
+<p>本文参考： </p>
+<p>1、《Java并发编程的艺术》 方腾飞　魏鹏　程晓明　著</p>
+<p>2、<a href="https://mp.weixin.qq.com/s?__biz=MzI3ODcxMzQzMw==&mid=2247485795&idx=2&sn=73d5bcd83378f6176f9593d33dc402dc&chksm=eb538c55dc240543df3cd113cb3e586e98d3ccd0a93c6a87829a04e296b990a554596338046e#rd" target="_blank" rel="noopener">Java 可重入锁内存可见性分析</a> </p>
+<p>个人微信公众号：</p>
+<p><img src="https://user-gold-cdn.xitu.io/2019/7/19/16c0a8dd1753545d?w=258&h=258&f=jpeg&s=27832" alt></p>
+<p>个人CSDN博客：</p>
+<p><a href="https://blog.csdn.net/jiankunking" target="_blank" rel="noopener">https://blog.csdn.net/jiankunking</a></p>
+<p>个人掘金博客：</p>
+<p><a href="https://juejin.im/user/5d3192c2e51d45775313828f/posts" target="_blank" rel="noopener">https://juejin.im/user/5d3192c2e51d45775313828f/posts</a></p>
+<p>个人github：</p>
+<p><a href="https://github.com/jiankunking" target="_blank" rel="noopener">https://github.com/jiankunking</a></p>
+
+          
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+    
+      
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.github.io/2019/07/31/Java-AQS-Condition的实现分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/07/31/Java-AQS-Condition的实现分析/" class="post-title-link" itemprop="url">Java AQS Condition的实现分析</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2019-07-31 20:28:55 / Geändert am: 20:32:46" itemprop="dateCreated datePublished" datetime="2019-07-31T20:28:55+08:00">2019-07-31</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">in</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          <br/>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+            <blockquote>
+<p>愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。<br><img src="/images/wechat/wechat.jpg" alt></p>
+</blockquote>
+<blockquote>
+<p>本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明</p>
+</blockquote>
+<p>AQS:AbstractQueuedSynchronizer</p>
+<p>ConditionObject是同步器AQS的内部类，因为Condition的操作需要获取相关联的锁，所以作为同步器的内部类也较为合理。每个Condition对象都包含着一个队列（以下称为等待队列），该队列是Condition对象实现等待/通知功能的关键。</p>
+<p>下面将分析Condition的实现，主要包括：等待队列、等待和通知，下面提到的Condition如果不加说明均指的是ConditionObject。</p>
+<h1 id="1、等待队列"><a href="#1、等待队列" class="headerlink" title="1、等待队列"></a>1、等待队列</h1><p>等待队列是一个FIFO的队列，在队列中的每个节点都包含了一个线程引用，该线程就是在Condition对象上等待的线程，如果一个线程调用了Condition.await()方法，那么该线程将会释放锁、构造成节点加入等待队列并进入等待状态。事实上，节点的定义复用了同步器中节点的定义，也就是说，同步队列和等待队列中节点类型都是同步器的静态内部类AbstractQueuedSynchronizer.Node。</p>
+<p>一个Condition包含一个等待队列，Condition拥有首节点（firstWaiter）和尾节点（lastWaiter）。当前线程调用Condition.await()方法，将会以当前线程构造节点，并将节点从尾部加入等待队列，等待队列的基本结构如图5-9所示。<br><img src="/images/java-juc-aqs-condition/59.png" alt></p>
+<p>如图所示，Condition拥有首尾节点的引用，而新增节点只需要将原有的尾节点nextWaiter指向它，并且更新尾节点即可。上述节点引用更新的过程并没有使用CAS保证，原因在于<font color="DeepPink">调用await()方法的线程必定是获取了锁的线程，也就是说该过程是由锁来保证线程安全的。 </font></p>
+<p>在Object的监视器模型上，一个对象拥有一个同步队列和等待队列，而<font color="DeepPink">并发包中的Lock（更确切地说是同步器）拥有一个同步队列和多个等待队列 </font>，其对应关系如图5-10所示。</p>
+<p><img src="/images/java-juc-aqs-condition/510.png" alt></p>
+<h1 id="2、等待"><a href="#2、等待" class="headerlink" title="2、等待"></a>2、等待</h1><p><font color="DeepPink">调用Condition的await()方法（或者以await开头的方法），会使当前线程进入等待队列并释放锁，同时线程状态变为等待状态。当从await()方法返回时，当前线程一定获取了Condition相关联的锁。</font></p>
+<p>如果从队列（同步队列和等待队列）的角度看await()方法，当调用await()方法时，相当于同步队列的首节点（获取了锁的节点）移动到Condition的等待队列中。</p>
+<p>Condition的await()方法，如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public final void await() throws InterruptedException &#123;</span><br><span class="line">        if (Thread.interrupted())</span><br><span class="line">            throw new InterruptedException();</span><br><span class="line">        // 当前线程加入等待队列</span><br><span class="line">        Node node = addConditionWaiter();</span><br><span class="line">        // 释放同步状态，也就是释放锁</span><br><span class="line">        int savedState = fullyRelease(node);</span><br><span class="line">        int interruptMode = 0;</span><br><span class="line">        while (!isOnSyncQueue(node)) &#123;</span><br><span class="line">            LockSupport.park(this);</span><br><span class="line">            if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        if (acquireQueued(node, savedState) &amp;&amp; interruptMode != THROW_IE)</span><br><span class="line">            interruptMode = REINTERRUPT;</span><br><span class="line">        if (node.nextWaiter != null)</span><br><span class="line">            unlinkCancelledWaiters();</span><br><span class="line">        if (interruptMode != 0)</span><br><span class="line">            reportInterruptAfterWait(interruptMode);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用该方法的线程成功获取了锁的线程，也就是同步队列中的首节点，该方法会将当前线程构造成节点并加入等待队列中，然后释放同步状态，唤醒同步队列中的后继节点，然后当前线程会进入等待状态。</p>
+<p>当等待队列中的节点被唤醒，则唤醒节点的线程开始尝试获取同步状态。如果不是通过其他线程调用Condition.signal()方法唤醒，而是对等待线程进行中断，则会抛出InterruptedException。</p>
+<p>如果从队列的角度去看，当前线程加入Condition的等待队列，该过程如图5-11示。</p>
+<p>如图所示，同步队列的首节点并不会直接加入等待队列，而是通过addConditionWaiter()方法把当前线程构造成一个新的节点并将其加入等待队列中。</p>
+<h1 id="3、通知"><a href="#3、通知" class="headerlink" title="3、通知"></a>3、通知</h1><p>调用Condition的signal()方法，将会唤醒在等待队列中等待时间最长的节点（首节点），在唤醒节点之前，会将节点移到同步队列中。</p>
+<p>Condition的signal()方法，如代码清单5-23所示。<br><img src="/images/java-juc-aqs-condition/511.png" alt><br>代码清单5-23　ConditionObject的signal方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public final void signal() &#123;</span><br><span class="line">       //isHeldExclusively() AQS 子类实现</span><br><span class="line">       if (!isHeldExclusively())</span><br><span class="line">           throw new IllegalMonitorStateException();</span><br><span class="line">       Node first = firstWaiter;</span><br><span class="line">       if (first != null)</span><br><span class="line">           doSignal(first);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p><font color="DeepPink">调用该方法的前置条件是当前线程必须获取了锁，可以看到signal()方法进行了isHeldExclusively()检查，也就是当前线程必须是获取了锁的线程。</font>接着获取等待队列的首节点，将其移动到同步队列并使用LockSupport唤醒节点中的线程。</p>
+<p>节点从等待队列移动到同步队列的过程如图5-12所示。</p>
+<p><img src="/images/java-juc-aqs-condition/512.png" alt><br>通过调用同步器的enq(Node node)方法，等待队列中的头节点线程安全地移动到同步队列。当节点移动到同步队列后，当前线程再使用LockSupport唤醒该节点的线程。</p>
+<p>被唤醒后的线程，将从await()方法中的while循环中退出（isOnSyncQueue(Node node)方法返回true，节点已经在同步队列中），进而调用同步器的acquireQueued()方法加入到获取同步状态的竞争中。</p>
+<p>成功获取同步状态（或者说锁）之后，被唤醒的线程将从先前调用的await()方法返回，此时该线程已经成功地获取了锁。</p>
+<p>Condition的signalAll()方法，相当于对等待队列中的每个节点均执行一次signal()方法，效果就是将等待队列中所有节点全部移动到同步队列中，并唤醒每个节点的线程。</p>
+<p>个人微信公众号：</p>
+<p><img src="/images/wechat/wechat.jpg" alt></p>
+<p>个人CSDN博客：</p>
+<p><a href="https://blog.csdn.net/jiankunking" target="_blank" rel="noopener">https://blog.csdn.net/jiankunking</a></p>
+<p>个人掘金博客：</p>
+<p><a href="https://juejin.im/user/5d3192c2e51d45775313828f/posts" target="_blank" rel="noopener">https://juejin.im/user/5d3192c2e51d45775313828f/posts</a></p>
+<p>个人github：</p>
+<p><a href="https://github.com/jiankunking" target="_blank" rel="noopener">https://github.com/jiankunking</a></p>
+
+          
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+    
+      
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.github.io/2019/07/31/Java-AQS-实现原理（图文）分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/07/31/Java-AQS-实现原理（图文）分析/" class="post-title-link" itemprop="url">Java AQS 实现原理（图文）分析</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2019-07-31 20:23:02 / Geändert am: 20:28:11" itemprop="dateCreated datePublished" datetime="2019-07-31T20:23:02+08:00">2019-07-31</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">in</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          <br/>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+            <blockquote>
+<p>愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。<br><img src="/images/wechat/wechat.jpg" alt></p>
+</blockquote>
+<p>AQS：AbstractQueuedSynchronizer</p>
+<h1 id="1、AQS设计简介"><a href="#1、AQS设计简介" class="headerlink" title="1、AQS设计简介"></a>1、AQS设计简介</h1><ul>
+<li>AQS的实现是基于一个FIFO的等待队列。</li>
+<li><font color="DeepPink">使用单个原子变量来表示获取、释放锁状态（final int）改变该int值使用的是CAS。</font>（思考：为什么一个int值可以保证内存可见性？）</li>
+<li><font color="DeepPink">子类应该定义一个非公开的内部类继承AQS，并实现其中方法。</font></li>
+<li>AQS支持exclusive与shared两种模式。</li>
+<li>内部类ConditionObject用于支持子类实现exclusive模式</li>
+<li>子类需要重写：<ul>
+<li>tryAcquire</li>
+<li>tryRelease</li>
+<li>tryReleaseShared</li>
+<li>isHeldExclusively等方法，并确保是线程安全的。</li>
+</ul>
+</li>
+</ul>
+<p>贯穿全文的图（核心）：</p>
+<p><img src="/images/java-juc-aqs/AQS%E5%9B%BE%E8%A7%A3.png" alt></p>
+<blockquote>
+<p>模板方法设计模式：定义一个操作中算法的骨架，而将一些步骤的实现延迟到子类中。</p>
+</blockquote>
+<h1 id="2、类结构"><a href="#2、类结构" class="headerlink" title="2、类结构"></a>2、类结构</h1><ul>
+<li>ConditionObject类</li>
+<li>Node类</li>
+<li>N多方法</li>
+</ul>
+<p><img src="/images/java-juc-aqs/AQS%E7%B1%BB%E7%BB%93%E6%9E%84.png" alt></p>
+<h1 id="3、FIFO队列"><a href="#3、FIFO队列" class="headerlink" title="3、FIFO队列"></a>3、FIFO队列</h1><p>等待队列是CLH（Craig, Landin, and Hagersten）锁队列。</p>
+<p><strong>通过节点中的“状态”字段来判断一个线程是否应该阻塞。当该节点的前一个节点释放锁的时候，该节点会被唤醒。</strong> </p>
+<p><img src="/images/java-juc-aqs/AQS%E9%98%9F%E5%88%97.png" alt></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">private transient volatile Node head;</span><br><span class="line">private transient volatile Node tail;</span><br><span class="line">//The synchronization state.</span><br><span class="line">//在互斥锁中它表示着线程是否已经获取了锁，0未获取，1已经获取了，大于1表示重入数。</span><br><span class="line">private volatile int state;</span><br></pre></td></tr></table></figure>
+
+<p>AQS维护了一个volatile int state（代表共享资源）和一个FIFO线程等待队列（多线程争用资源被阻塞时会进入此队列）。</p>
+<p>state的访问方式有三种:</p>
+<ul>
+<li>getState()</li>
+<li>setState()</li>
+<li>compareAndSetState()</li>
+</ul>
+<p>AQS定义两种资源共享方式：Exclusive（独占，只有一个线程能执行，如ReentrantLock）和Share（共享，多个线程可同时执行，如Semaphore/CountDownLatch）。</p>
+<p>不同的自定义同步器争用共享资源的方式也不同。<font color="DeepPink">自定义同步器在实现时只需要实现共享资源state的获取与释放方式即可</font>，至于具体线程等待队列的维护（如获取资源失败入队/唤醒出队等），AQS已经在顶层实现好了。</p>
+<p>自定义同步器实现时主要实现以下几种方法：</p>
+<ul>
+<li>isHeldExclusively()：该线程是否正在独占资源。只有用到condition才需要去实现它。</li>
+<li>tryAcquire(int)：独占方式。尝试获取资源，成功则返回true，失败则返回false。</li>
+<li>tryRelease(int)：独占方式。尝试释放资源，成功则返回true，失败则返回false。</li>
+<li>tryAcquireShared(int)：共享方式。尝试获取资源。负数表示失败；0表示成功，但没有剩余可用资源；正数表示成功，且有剩余资源。</li>
+<li>tryReleaseShared(int)：共享方式。尝试释放资源，如果释放后允许唤醒后续等待结点返回true，否则返回false。</li>
+</ul>
+<p>以ReentrantLock为例，state初始化为0，表示未锁定状态。A线程lock()时，会调用tryAcquire()独占该锁并将state+1。此后，其他线程再tryAcquire()时就会失败，直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。但要注意，<font color="DeepPink">获取多少次就要释放多么次，这样才能保证state是能回到零态的。</font></p>
+<p>再以CountDownLatch以例，任务分为N个子线程去执行，state也初始化为N（注意N要与线程个数一致）。这N个子线程是并行执行的，每个子线程执行完后countDown()一次，state会CAS减1。等到所有子线程都执行完后(即state=0)，会unpark()主调用线程，然后主调用线程就会从await()函数返回，继续后续动作。</p>
+<p>一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现：<br>tryAcquire-tryRelease<br>tryAcquireShared-tryReleaseShared<br>中的一种即可。</p>
+<p>当然AQS也支持自定义同步器同时实现独占和共享两种方式，如ReentrantReadWriteLock。</p>
+<p>以下部分来自源码注释：</p>
+<p>每次进入CLH队列时，需要对尾节点进入队列过程，是一个原子性操作。在出队列时，我们只需要更新head节点即可。在节点确定它的后继节点时， 需要花一些功夫，用于处理那些，由于等待超时时间结束或中断等原因， 而取消等待锁的线程。</p>
+<p>节点的前驱指针，主要用于处理，取消等待锁的线程。如果一个节点取消等待锁，则此节点的前驱节点的后继指针，要指向，此节点后继节点中，非取消等待锁的线程（有效等待锁的线程节点）。</p>
+<p>我们用next指针连接实现阻塞机制。每个节点均持有自己线程，节点通过节点的后继连接唤醒其后继节点。</p>
+<p>CLH队列需要一个傀儡结点作为开始节点。我们不会再构造函数中创建它，因为如果没有线程竞争锁，那么，努力就白费了。取而代之的方案是，当有第一个竞争者时，我们才构造头指针和尾指针。</p>
+<p>线程通过同一节点等待条件，但是用另外一个连接。条件只需要放在一个非并发的连接队列与节点关联，因为只有当线程独占持有锁的时候，才会去访问条件。当一个线程等待条件的时候，节点将会插入到条件队列中。当条件触发时，节点将会转移到主队列中。用一个状态值，描述节点在哪一个队列上。</p>
+<h1 id="4、Node"><a href="#4、Node" class="headerlink" title="4、Node"></a>4、Node</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">static final class Node &#123;</span><br><span class="line">    //该等待节点处于共享模式</span><br><span class="line">    static final Node SHARED = new Node();</span><br><span class="line">    //该等待节点处于独占模式</span><br><span class="line">    static final Node EXCLUSIVE = null;</span><br><span class="line">    </span><br><span class="line">    //表示节点的线程是已被取消的</span><br><span class="line">    static final int CANCELLED =  1;</span><br><span class="line">    //表示当前节点的后继节点的线程需要被唤醒</span><br><span class="line">    static final int SIGNAL    = -1;</span><br><span class="line">    //表示线程正在等待某个条件</span><br><span class="line">    static final int CONDITION = -2;</span><br><span class="line">    //表示下一个共享模式的节点应该无条件的传播下去</span><br><span class="line">    static final int PROPAGATE = -3;</span><br><span class="line"></span><br><span class="line">    //状态位 ，分别可以使CANCELLED、SINGNAL、CONDITION、PROPAGATE、0 </span><br><span class="line">    volatile int waitStatus;</span><br><span class="line"></span><br><span class="line">    volatile Node prev;//前驱节点</span><br><span class="line">    volatile Node next;//后继节点</span><br><span class="line">    volatile Thread thread;//等待锁的线程</span><br><span class="line"></span><br><span class="line">    //ConditionObject链表的后继节点或者代表共享模式的节点。</span><br><span class="line">    //因为Condition队列只能在独占模式下被能被访问,我们只需要简单的使用链表队列来链接正在等待条件的节点。</span><br><span class="line">    //然后它们会被转移到同步队列（AQS队列）再次重新获取。</span><br><span class="line">    //由于条件队列只能在独占模式下使用，所以我们要表示共享模式的节点的话只要使用特殊值SHARED来标明即可。</span><br><span class="line">    Node nextWaiter;</span><br><span class="line">    //Returns true if node is waiting in shared mode</span><br><span class="line">    final boolean isShared() &#123;</span><br><span class="line">            return nextWaiter == SHARED;</span><br><span class="line">    &#125;</span><br><span class="line">    .......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>waitStatus不同值含义：</p>
+<ul>
+<li>SIGNAL(-1)：当前节点的后继节点已经 (或即将)被阻塞（通过park） , 所以当当前节点释放或则被取消时候，一定要unpark它的后继节点。为了避免竞争，获取方法一定要首先设置node为signal，然后再次重新调用获取方法，如果失败，则阻塞。</li>
+<li>CANCELLED(1)：当前节点由于超时或者被中断而被取消。一旦节点被取消后，那么它的状态值不在会被改变，且当前节点的线程不会再次被阻塞。</li>
+<li>CONDITION(-2) ：该节点的线程处于等待条件状态,不会被当作是同步队列上的节点,直到被唤醒(signal),设置其值为0,重新进入阻塞状态.</li>
+<li>PROPAGATE(-3：)共享模式下的释放操作应该被传播到其他节点。该状态值在doReleaseShared方法中被设置的。</li>
+<li>0：以上都不是</li>
+</ul>
+<p>该状态值为了简便使用，所以使用了数值类型。非负数值意味着该节点不需要被唤醒。所以，大多数代码中不需要检查该状态值的确定值。</p>
+<p>一个正常的Node，它的waitStatus初始化值是0。如果想要修改这个值，可以使用AQS提供CAS进行修改。</p>
+<h1 id="5、独占模式与共享模式"><a href="#5、独占模式与共享模式" class="headerlink" title="5、独占模式与共享模式"></a>5、独占模式与共享模式</h1><p>在锁的获取时，并不一定只有一个线程才能持有这个锁（或者称为同步状态），所以此时有了独占模式和共享模式的区别，也就是在Node节点中由nextWaiter来标识。比如ReentrantLock就是一个独占锁，只能有一个线程获得锁，而WriteAndReadLock的读锁则能由多个线程同时获取，但它的写锁则只能由一个线程持有。</p>
+<h2 id="5-1、独占模式"><a href="#5-1、独占模式" class="headerlink" title="5.1、独占模式"></a>5.1、独占模式</h2><h3 id="5-1-1-独占模式同步状态的获取"><a href="#5-1-1-独占模式同步状态的获取" class="headerlink" title="5.1.1 独占模式同步状态的获取"></a>5.1.1 独占模式同步状态的获取</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">//忽略中断的（即不手动抛出InterruptedException异常）独占模式下的获取方法。</span><br><span class="line">//该方法在成功返回前至少会调用一次tryAcquire()方法(该方法是子类重写的方法，如果返回true则代表能成功获取).</span><br><span class="line">//否则当前线程会进入队列排队，重复的阻塞和唤醒等待再次成功获取后返回, </span><br><span class="line">//该方法可以用来实现Lock.lock</span><br><span class="line">public final void acquire(int arg) &#123;</span><br><span class="line">       if (!tryAcquire(arg) &amp;&amp;</span><br><span class="line">            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))</span><br><span class="line">            selfInterrupt();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>该方法首先尝试获取锁( tryAcquire(arg)的具体实现定义在了子类中),如果获取到,则执行完毕,否则通过addWaiter(Node.EXCLUSIVE), arg)方法把当前节点添加到等待队列末尾,并设置为独占模式。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">private Node addWaiter(Node mode) &#123;</span><br><span class="line">        //把当前线程包装为node,设为独占模式</span><br><span class="line">        Node node = new Node(Thread.currentThread(), mode);</span><br><span class="line">        // 尝试快速入队，即无竞争条件下肯定成功。如果失败，则进入enq自旋重试入队</span><br><span class="line">        Node pred = tail;</span><br><span class="line">        if (pred != null) &#123;</span><br><span class="line">            node.prev = pred;</span><br><span class="line">            //CAS替换当前尾部。成功则返回</span><br><span class="line">            if (compareAndSetTail(pred, node)) &#123;</span><br><span class="line">                pred.next = node;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        enq(node);</span><br><span class="line">        return node;</span><br><span class="line">    &#125;</span><br><span class="line">//插入节点到队列中，如果队列未初始化则初始化，然后再插入。</span><br><span class="line">private Node enq(final Node node) &#123;</span><br><span class="line">        for (;;) &#123;</span><br><span class="line">            Node t = tail;</span><br><span class="line">            if (t == null) &#123; // Must initialize</span><br><span class="line">                if (compareAndSetHead(new Node()))</span><br><span class="line">                    tail = head;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                node.prev = t;</span><br><span class="line">                if (compareAndSetTail(t, node)) &#123;</span><br><span class="line">                    t.next = node;</span><br><span class="line">                    return t;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果tail节点为空,执行enq(node);重新尝试,最终把node插入.在把node插入队列末尾后,它并不立即挂起该节点中线程,因为在插入它的过程中,前面的线程可能已经执行完成,所以它会先进行自旋操作acquireQueued(node, arg),尝试让该线程重新获取锁!当条件满足获取到了锁则可以从自旋过程中退出，否则继续。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">final boolean acquireQueued(final Node node, int arg) &#123;</span><br><span class="line">        boolean failed = true;</span><br><span class="line">        try &#123;</span><br><span class="line">            boolean interrupted = false;</span><br><span class="line">            for (;;) &#123;</span><br><span class="line">                final Node p = node.predecessor();</span><br><span class="line">                //如果它的前继节点为头结点,尝试获取锁,获取成功则返回           </span><br><span class="line">                if (p == head &amp;&amp; tryAcquire(arg)) &#123;</span><br><span class="line">                    setHead(node);</span><br><span class="line">                    p.next = null; // help GC</span><br><span class="line">                    failed = false;</span><br><span class="line">                    return interrupted;</span><br><span class="line">                &#125;</span><br><span class="line">                //判断当前节点的线程是否应该被挂起，如果应该被挂起则挂起。</span><br><span class="line">                //等待release唤醒释放</span><br><span class="line">                if (shouldParkAfterFailedAcquire(p, node) &amp;&amp;</span><br><span class="line">                    parkAndCheckInterrupt())</span><br><span class="line">                    interrupted = true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            if (failed)</span><br><span class="line">                //在队列中取消当前节点</span><br><span class="line">                cancelAcquire(node);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果没获取到锁,则判断是否应该挂起,而这个判断则得通过它的前驱节点的waitStatus来确定:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) &#123;</span><br><span class="line">        int ws = pred.waitStatus;</span><br><span class="line">        //该节点如果状态如果为SIGNAL。则返回true，然后park挂起线程</span><br><span class="line">        if (ws == Node.SIGNAL)</span><br><span class="line">            return true;</span><br><span class="line">       //表明该节点已经被取消，向前循环重新调整链表节点</span><br><span class="line">        if (ws &gt; 0) &#123;</span><br><span class="line">            /*</span><br><span class="line">             * Predecessor was cancelled. Skip over predecessors and</span><br><span class="line">             * indicate retry.</span><br><span class="line">             */</span><br><span class="line">            do &#123;</span><br><span class="line">                node.prev = pred = pred.prev;</span><br><span class="line">            &#125; while (pred.waitStatus &gt; 0);</span><br><span class="line">            pred.next = node;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            //执行到这里代表节点是0或者PROPAGATE，然后标记他们为SIGNAL，但是</span><br><span class="line">            //还不能park挂起线程。需要重试是否能获取，如果不能，则挂起。</span><br><span class="line">            compareAndSetWaitStatus(pred, ws, Node.SIGNAL);</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">//挂起当前线程，且返回线程的中断状态</span><br><span class="line">private final boolean parkAndCheckInterrupt() &#123;</span><br><span class="line">        LockSupport.park(this);</span><br><span class="line">        return Thread.interrupted();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后,我们对获取独占式锁过程对做个总结:</p>
+<p>AQS的模板方法acquire通过调用子类自定义实现的tryAcquire获取同步状态失败后-&gt;将线程构造成Node节点(addWaiter)-&gt;将Node节点添加到同步队列对尾(addWaiter)-&gt;节点以自旋的方法获取同步状态(acquirQueued)。在节点自旋获取同步状态时，只有其前驱节点是头节点的时候才会尝试获取同步状态，如果该节点的前驱不是头节点或者该节点的前驱节点是头节点单获取同步状态失败，则判断当前线程需要阻塞，如果需要阻塞则需要被唤醒过后才返回。</p>
+<p><font color="DeepPink">获取锁的过程：</font></p>
+<ul>
+<li><font color="DeepPink">当线程调用acquire()申请获取锁资源，如果成功，则进入临界区。</font></li>
+<li><font color="DeepPink">当获取锁失败时，则进入一个FIFO等待队列，然后被挂起等待唤醒。</font></li>
+<li><font color="DeepPink">当队列中的等待线程被唤醒以后就重新尝试获取锁资源，如果成功则进入临界区，否则继续挂起等待。</font></li>
+</ul>
+<h3 id="5-1-2-独占模式同步状态的释放"><a href="#5-1-2-独占模式同步状态的释放" class="headerlink" title="5.1.2 独占模式同步状态的释放"></a>5.1.2 独占模式同步状态的释放</h3><p>既然是释放,那肯定是持有锁的该线程执行释放操作,即head节点中的线程释放锁.</p>
+<p>AQS中的release释放同步状态和acquire获取同步状态一样，都是模板方法，tryRelease释放的具体操作都有子类去实现，父类AQS只提供一个算法骨架。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">public final boolean release(int arg) &#123;</span><br><span class="line">    if (tryRelease(arg)) &#123;</span><br><span class="line">        Node h = head;</span><br><span class="line">        if (h != null &amp;&amp; h.waitStatus != 0)</span><br><span class="line">            unparkSuccessor(h);</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br><span class="line">//如果node的后继节点不为空且不是作废状态,则唤醒这个后继节点,</span><br><span class="line">//否则从末尾开始寻找合适的节点,如果找到,则唤醒</span><br><span class="line">private void unparkSuccessor(Node node) &#123;</span><br><span class="line">        int ws = node.waitStatus;</span><br><span class="line">        if (ws &lt; 0)</span><br><span class="line">            compareAndSetWaitStatus(node, ws, 0);</span><br><span class="line">        Node s = node.next;</span><br><span class="line">        if (s == null || s.waitStatus &gt; 0) &#123;</span><br><span class="line">            s = null;</span><br><span class="line">            for (Node t = tail; t != null &amp;&amp; t != node; t = t.prev)</span><br><span class="line">                if (t.waitStatus &lt;= 0)</span><br><span class="line">                    s = t;</span><br><span class="line">        &#125;</span><br><span class="line">        if (s != null)</span><br><span class="line">            LockSupport.unpark(s.thread);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>过程：首先调用子类的tryRelease()方法释放锁，然后唤醒后继节点，在唤醒的过程中，需要判断后继节点是否满足情况，如果后继节点不为空且不是作废状态，则唤醒这个后继节点，否则从tail节点向前寻找合适的节点，如果找到，则唤醒。</p>
+<p><font color="DeepPink">释放锁过程：</font></p>
+<ul>
+<li><font color="DeepPink">当线程调用release()进行锁资源释放时，如果没有其他线程在等待锁资源，则释放完成。</font></li>
+<li><font color="DeepPink">如果队列中有其他等待锁资源的线程需要唤醒，则唤醒队列中的第一个等待节点（先入先出）。</font></li>
+</ul>
+<h2 id="5-2、共享模式"><a href="#5-2、共享模式" class="headerlink" title="5.2、共享模式"></a>5.2、共享模式</h2><h3 id="5-2-1-共享模式同步状态的获取"><a href="#5-2-1-共享模式同步状态的获取" class="headerlink" title="5.2.1 共享模式同步状态的获取"></a>5.2.1 共享模式同步状态的获取</h3><ul>
+<li><font color="DeepPink">当线程调用acquireShared()申请获取锁资源时，如果成功，则进入临界区。</font></li>
+<li><font color="DeepPink">当获取锁失败时，则创建一个共享类型的节点并进入一个FIFO等待队列，然后被挂起等待唤醒。</font></li>
+<li><font color="DeepPink">当队列中的等待线程被唤醒以后就重新尝试获取锁资源，如果成功则唤醒后面还在等待的共享节点并把该唤醒事件传递下去，即会依次唤醒在该节点后面的所有共享节点，然后进入临界区，否则继续挂起等待。</font></li>
+</ul>
+<h3 id="5-2-2-共享模式同步状态的释放"><a href="#5-2-2-共享模式同步状态的释放" class="headerlink" title="5.2.2 共享模式同步状态的释放"></a>5.2.2 共享模式同步状态的释放</h3><ul>
+<li><font color="DeepPink">当线程调用releaseShared()进行锁资源释放时，如果释放成功，则唤醒队列中等待的节点，如果有的话。</font></li>
+</ul>
+<h1 id="6-AQS小结"><a href="#6-AQS小结" class="headerlink" title="6. AQS小结"></a>6. AQS小结</h1><p>java.util.concurrent中的很多可阻塞类（比如ReentrantLock）都是基于AQS来实现的。<font color="DeepPink">AQS是一个同步框架，它提供通用机制来原子性管理同步状态、阻塞和唤醒线程，以及维护被阻塞线程的队列。</font></p>
+<p>JDK中AQS被广泛使用，基于AQS实现的同步器包括：</p>
+<ul>
+<li>ReentrantLock</li>
+<li>Semaphore</li>
+<li>ReentrantReadWriteLock（后续会出文章讲解）</li>
+<li>CountDownLatch</li>
+<li>FutureTask</li>
+</ul>
+<p>每一个基于AQS实现的同步器都会包含两种类型的操作，如下：</p>
+<ul>
+<li>至少一个acquire操作。这个操作阻塞调用线程，除非/直到AQS的状态允许这个线程继续执行。</li>
+<li>至少一个release操作。这个操作改变AQS的状态，改变后的状态可允许一个或多个阻塞线程被解除阻塞。</li>
+</ul>
+<p><font color="DeepPink">基于“复合优先于继承”的原则，基于AQS实现的同步器一般都是：声明一个内部私有的继承于AQS的子类Sync，对同步器所有公有方法的调用都会委托给这个内部子类。</font></p>
+<h1 id="7-后续"><a href="#7-后续" class="headerlink" title="7.后续"></a>7.后续</h1><p>后面会推出以下有关AQS的文章，已加深对于AQS的理解</p>
+<ul>
+<li>AQS ConditionObject对象解析</li>
+<li>AQS 应用案例 ReentrantReadWriteLock解析</li>
+<li>Java volatile的内存语义与AQS锁内存可见性</li>
+</ul>
+<h1 id="8-感谢"><a href="#8-感谢" class="headerlink" title="8.感谢"></a>8.感谢</h1><p>本文很多内容整理自网络，参考文献：<br><a href="https://segmentfault.com/a/1190000011376192" target="_blank" rel="noopener">https://segmentfault.com/a/1190000011376192</a><br><a href="https://segmentfault.com/a/1190000011391092" target="_blank" rel="noopener">https://segmentfault.com/a/1190000011391092</a><br><a href="https://zhuanlan.zhihu.com/p/27134110" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/27134110</a><br><a href="https://blog.csdn.net/wojiaolinaaa/article/details/50070031" target="_blank" rel="noopener">https://blog.csdn.net/wojiaolinaaa/article/details/50070031</a><br><a href="https://www.cnblogs.com/waterystone/p/4920797.html" target="_blank" rel="noopener">https://www.cnblogs.com/waterystone/p/4920797.html</a></p>
+<p>FIFO队列:<a href="https://www.cnblogs.com/waterystone/p/4920797.html" target="_blank" rel="noopener">https://www.cnblogs.com/waterystone/p/4920797.html</a></p>
+<p>个人微信公众号：</p>
+<p><img src="/images/wechat/wechat.jpg" alt></p>
+<p>个人CSDN博客：</p>
+<p><a href="https://blog.csdn.net/jiankunking" target="_blank" rel="noopener">https://blog.csdn.net/jiankunking</a></p>
+<p>个人掘金博客：</p>
+<p><a href="https://juejin.im/user/5d3192c2e51d45775313828f/posts" target="_blank" rel="noopener">https://juejin.im/user/5d3192c2e51d45775313828f/posts</a></p>
+<p>个人github：</p>
+<p><a href="https://github.com/jiankunking" target="_blank" rel="noopener">https://github.com/jiankunking</a></p>
+
+          
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+    
       
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
@@ -216,14 +1201,14 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Posté le</span>
+                <span class="post-meta-item-text">Veröffentlicht am</span>
               
 
               
                 
               
 
-              <time title="Article créé le: 2019-07-31 20:08:13 / Mise à jour le: 20:20:22" itemprop="dateCreated datePublished" datetime="2019-07-31T20:08:13+08:00">2019-07-31</time>
+              <time title="Erstellt: 2019-07-31 20:08:13 / Geändert am: 20:20:22" itemprop="dateCreated datePublished" datetime="2019-07-31T20:08:13+08:00">2019-07-31</time>
             </span>
           
             
@@ -235,7 +1220,7 @@
                 <i class="fa fa-folder-o"></i>
               </span>
               
-                <span class="post-meta-item-text">In</span>
+                <span class="post-meta-item-text">in</span>
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/GC/" itemprop="url" rel="index"><span itemprop="name">GC</span></a></span>
@@ -501,14 +1486,14 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Posté le</span>
+                <span class="post-meta-item-text">Veröffentlicht am</span>
               
 
               
                 
               
 
-              <time title="Article créé le: 2019-07-31 19:27:58 / Mise à jour le: 19:33:52" itemprop="dateCreated datePublished" datetime="2019-07-31T19:27:58+08:00">2019-07-31</time>
+              <time title="Erstellt: 2019-07-31 19:27:58 / Geändert am: 19:33:52" itemprop="dateCreated datePublished" datetime="2019-07-31T19:27:58+08:00">2019-07-31</time>
             </span>
           
             
@@ -520,7 +1505,7 @@
                 <i class="fa fa-folder-o"></i>
               </span>
               
-                <span class="post-meta-item-text">In</span>
+                <span class="post-meta-item-text">in</span>
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Spring/" itemprop="url" rel="index"><span itemprop="name">Spring</span></a></span>
@@ -640,14 +1625,14 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Posté le</span>
+                <span class="post-meta-item-text">Veröffentlicht am</span>
               
 
               
                 
               
 
-              <time title="Article créé le: 2019-07-31 16:48:28 / Mise à jour le: 19:34:04" itemprop="dateCreated datePublished" datetime="2019-07-31T16:48:28+08:00">2019-07-31</time>
+              <time title="Erstellt: 2019-07-31 16:48:28 / Geändert am: 19:34:04" itemprop="dateCreated datePublished" datetime="2019-07-31T16:48:28+08:00">2019-07-31</time>
             </span>
           
             
@@ -659,7 +1644,7 @@
                 <i class="fa fa-folder-o"></i>
               </span>
               
-                <span class="post-meta-item-text">In</span>
+                <span class="post-meta-item-text">in</span>
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Spring/" itemprop="url" rel="index"><span itemprop="name">Spring</span></a></span>
@@ -857,8 +1842,8 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
-          <span class="site-state-item-name">articles</span>
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">Artikel</span>
         </a>
       </div>
     
@@ -876,8 +1861,10 @@
         
           
         
-        <span class="site-state-item-count">2</span>
-        <span class="site-state-item-name">catégories</span>
+          
+        
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">Kategorien</span>
         </a>
       </div>
     
@@ -903,8 +1890,20 @@
         
           
         
-        <span class="site-state-item-count">6</span>
-        <span class="site-state-item-name">mots clé</span>
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">schlagwörter</span>
         </a>
       </div>
     
@@ -931,9 +1930,9 @@
   </span>
   <span class="author" itemprop="copyrightHolder">John Doe</span>
 </div>
-  <div class="powered-by">Alimenté par <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.9.0</div>
+  <div class="powered-by">Erstellt mit  <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.9.0</div>
   <span class="post-meta-divider">|</span>
-  <div class="theme-info">Thème – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.2.0</div>
+  <div class="theme-info">Design – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.2.0</div>
 
         
 
