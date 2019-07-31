@@ -57,25 +57,24 @@
   };
 </script>
 
-  <meta name="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。   Java JDK 11 ReentrantReadWriteLock 原理分析  1、前言希望在阅读本文之前，建议先看一下以下三篇文章： 1、面试必备：Java AQS 实现原理（图文）分析  2、面试必备：Java AQS Condition的实现分析  3、面试必备：Java volatile的内存语义与AQS锁内存可见性">
-<meta name="keywords" content="JUC,AQS,JDK,Java,ReentrantReadWriteLock">
+  <meta name="description" content="Java JDK 11 ReentrantReadWriteLock 原理分析  1、前言希望在阅读本文之前，建议先看一下以下三篇文章： 1、面试必备：Java AQS 实现原理（图文）分析  2、面试必备：Java AQS Condition的实现分析  3、面试必备：Java volatile的内存语义与AQS锁内存可见性  读完了以上三篇文章，先看一下ReentrantReadWriteL">
+<meta name="keywords" content="JDK,Java,JUC,AQS,ReentrantReadWriteLock">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ReentrantReadWriteLock原理解析">
 <meta property="og:url" content="https://jiankunking.github.io/2019/07/31/ReentrantReadWriteLock原理解析/index.html">
 <meta property="og:site_name" content="衣舞晨风的博客">
-<meta property="og:description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。   Java JDK 11 ReentrantReadWriteLock 原理分析  1、前言希望在阅读本文之前，建议先看一下以下三篇文章： 1、面试必备：Java AQS 实现原理（图文）分析  2、面试必备：Java AQS Condition的实现分析  3、面试必备：Java volatile的内存语义与AQS锁内存可见性">
+<meta property="og:description" content="Java JDK 11 ReentrantReadWriteLock 原理分析  1、前言希望在阅读本文之前，建议先看一下以下三篇文章： 1、面试必备：Java AQS 实现原理（图文）分析  2、面试必备：Java AQS Condition的实现分析  3、面试必备：Java volatile的内存语义与AQS锁内存可见性  读完了以上三篇文章，先看一下ReentrantReadWriteL">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.github.io/images/wechat/wechat.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png">
 <meta property="og:image" content="https://jiankunking.github.io/images/java-reentrantreadwritelock/%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png">
 <meta property="og:image" content="https://jiankunking.github.io/images/java-reentrantreadwritelock/%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84.png">
 <meta property="og:image" content="https://jiankunking.github.io/images/java-reentrantreadwritelock/32%E4%BD%8D%E8%AF%BB%E5%86%99%E6%A0%87%E8%AF%86.png">
 <meta property="og:image" content="https://jiankunking.github.io/images/wechat/wechat.jpg">
-<meta property="og:updated_time" content="2019-07-31T13:31:29.930Z">
+<meta property="og:updated_time" content="2019-07-31T22:51:32.649Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ReentrantReadWriteLock原理解析">
-<meta name="twitter:description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。   Java JDK 11 ReentrantReadWriteLock 原理分析  1、前言希望在阅读本文之前，建议先看一下以下三篇文章： 1、面试必备：Java AQS 实现原理（图文）分析  2、面试必备：Java AQS Condition的实现分析  3、面试必备：Java volatile的内存语义与AQS锁内存可见性">
-<meta name="twitter:image" content="https://jiankunking.github.io/images/wechat/wechat.jpg">
+<meta name="twitter:description" content="Java JDK 11 ReentrantReadWriteLock 原理分析  1、前言希望在阅读本文之前，建议先看一下以下三篇文章： 1、面试必备：Java AQS 实现原理（图文）分析  2、面试必备：Java AQS Condition的实现分析  3、面试必备：Java volatile的内存语义与AQS锁内存可见性  读完了以上三篇文章，先看一下ReentrantReadWriteL">
+<meta name="twitter:image" content="https://jiankunking.github.io/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png">
   <link rel="canonical" href="https://jiankunking.github.io/2019/07/31/ReentrantReadWriteLock原理解析/">
 
 
@@ -162,17 +161,6 @@
     
 
     <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br/>首页</a>
-
-  </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-about">
-      
-    
-
-    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br/>关于</a>
 
   </li>
         
@@ -269,11 +257,21 @@
                 
               
 
-              <time title="创建时间：2019-07-31 20:39:01 / 修改时间：21:31:29" itemprop="dateCreated datePublished" datetime="2019-07-31T20:39:01+08:00">2019-07-31</time>
+              <time title="创建时间：2019-07-31 20:39:01" itemprop="dateCreated datePublished" datetime="2019-07-31T20:39:01+08:00">2019-07-31</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-08-01 06:51:32" itemprop="dateModified" datetime="2019-08-01T06:51:32+08:00">2019-08-01</time>
+              </span>
             
           
             <span class="post-meta-item">
@@ -324,9 +322,6 @@
 
       
         <blockquote>
-<p>愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。<br><img src="/images/wechat/wechat.jpg" alt></p>
-</blockquote>
-<blockquote>
 <p>Java JDK 11 ReentrantReadWriteLock 原理分析</p>
 </blockquote>
 <h1 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h1><p>希望在阅读本文之前，建议先看一下以下三篇文章：</p>
@@ -442,13 +437,13 @@
           
         
         <div class="post-tags">
-            <a href="/tags/JUC/" rel="tag"># JUC</a>
-          
-            <a href="/tags/AQS/" rel="tag"># AQS</a>
-          
             <a href="/tags/JDK/" rel="tag"># JDK</a>
           
             <a href="/tags/Java/" rel="tag"># Java</a>
+          
+            <a href="/tags/JUC/" rel="tag"># JUC</a>
+          
+            <a href="/tags/AQS/" rel="tag"># AQS</a>
           
             <a href="/tags/ReentrantReadWriteLock/" rel="tag"># ReentrantReadWriteLock</a>
           
@@ -522,7 +517,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-count">8</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -714,6 +709,15 @@
 
 
   
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
 
 
 
