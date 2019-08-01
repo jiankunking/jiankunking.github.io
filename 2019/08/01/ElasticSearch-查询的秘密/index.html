@@ -65,21 +65,21 @@
 <meta property="og:site_name" content="衣舞晨风的博客">
 <meta property="og:description" content="最近在参与一个基于Elasticsearch作为底层数据框架提供大数据量(亿级)的实时统计查询的方案设计工作，花了些时间学习Elasticsearch的基础理论知识，整理了一下，希望能对Elasticsearch感兴趣/想了解的同学有所帮助。同时也希望有发现内容不正确或者有疑问的地方，望指明，一起探讨，学习，进步。 介绍 Elasticsearch 是一个分布式可扩展的实时搜索和分析引擎.  El">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/b-tree.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/inverted-index.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/term-index.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/index.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/fst.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/frameOfReference.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/Roaringbitmaps.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/block-memory.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/skiplist.png">
-<meta property="og:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/combineIndex.png">
-<meta property="og:updated_time" content="2019-08-01T01:36:12.719Z">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/b-tree.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/inverted-index.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/term-index.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/index.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/fst.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/frameOfReference.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/Roaringbitmaps.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/block-memory.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/skiplist.png">
+<meta property="og:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/combineIndex.png">
+<meta property="og:updated_time" content="2019-08-01T02:09:55.689Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ElasticSearch 查询的秘密">
 <meta name="twitter:description" content="最近在参与一个基于Elasticsearch作为底层数据框架提供大数据量(亿级)的实时统计查询的方案设计工作，花了些时间学习Elasticsearch的基础理论知识，整理了一下，希望能对Elasticsearch感兴趣/想了解的同学有所帮助。同时也希望有发现内容不正确或者有疑问的地方，望指明，一起探讨，学习，进步。 介绍 Elasticsearch 是一个分布式可扩展的实时搜索和分析引擎.  El">
-<meta name="twitter:image" content="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/images/elasticsearch-query-secret/b-tree.png">
+<meta name="twitter:image" content="https://jiankunking.github.io/images/elasticsearch-query-secret/b-tree.png">
   <link rel="canonical" href="https://jiankunking.github.io/2019/08/01/ElasticSearch-查询的秘密/">
 
 
@@ -271,7 +271,7 @@
                 
               
 
-              <time title="创建时间：2019-08-01 09:21:55 / 修改时间：09:36:12" itemprop="dateCreated datePublished" datetime="2019-08-01T09:21:55+08:00">2019-08-01</time>
+              <time title="创建时间：2019-08-01 09:21:55 / 修改时间：10:09:55" itemprop="dateCreated datePublished" datetime="2019-08-01T09:21:55+08:00">2019-08-01</time>
             </span>
           
             
@@ -357,9 +357,9 @@
 <h3 id="Elasticsearch是如何做到快速索引的"><a href="#Elasticsearch是如何做到快速索引的" class="headerlink" title="Elasticsearch是如何做到快速索引的"></a>Elasticsearch是如何做到快速索引的</h3><p>InfoQ那篇文章里说Elasticsearch使用的倒排索引比关系型数据库的B-Tree索引快，为什么呢？</p>
 <h4 id="什么是B-Tree索引"><a href="#什么是B-Tree索引" class="headerlink" title="什么是B-Tree索引?"></a>什么是B-Tree索引?</h4><p>上大学读书时老师教过我们，二叉树查找效率是logN，同时插入新的节点不必移动全部节点，所以用树型结构存储索引，能同时兼顾插入和查询的性能。</p>
 <p>因此在这个基础上，再结合磁盘的读取特性(顺序读/随机读)，传统关系型数据库采用了B-Tree/B+Tree这样的数据结构：</p>
-<p><img src="images/elasticsearch-query-secret/b-tree.png" alt="Alt text"></p>
+<p><img src="/images/elasticsearch-query-secret/b-tree.png" alt="Alt text"></p>
 <p>为了提高查询的效率，减少磁盘寻道次数，将多个值作为一个数组通过连续区间存放，一次寻道读取多个数据，同时也降低树的高度。</p>
-<h4 id="什么是倒排索引"><a href="#什么是倒排索引" class="headerlink" title="什么是倒排索引?"></a>什么是倒排索引?</h4><p><img src="images/elasticsearch-query-secret/inverted-index.png" alt="Alt text"></p>
+<h4 id="什么是倒排索引"><a href="#什么是倒排索引" class="headerlink" title="什么是倒排索引?"></a>什么是倒排索引?</h4><p><img src="/images/elasticsearch-query-secret/inverted-index.png" alt="Alt text"></p>
 <p>继续上面的例子，假设有这么几条数据(为了简单，去掉about, interests这两个field):</p>
 <table>
 <thead>
@@ -449,8 +449,8 @@
 <p>看到这里，不要认为就结束了，精彩的部分才刚开始…</p>
 <p>通过posting list这种索引方式似乎可以很快进行查找，比如要找age=24的同学，爱回答问题的小明马上就举手回答：我知道，id是1，2的同学。但是，如果这里有上千万的记录呢？如果是想通过name来查找呢？</p>
 <h5 id="Term-Dictionary"><a href="#Term-Dictionary" class="headerlink" title="Term Dictionary"></a>Term Dictionary</h5><p>Elasticsearch为了能快速找到某个term，将所有的term排个序，二分法查找term，logN的查找效率，就像通过字典查找一样，这就是<strong>Term Dictionary</strong>。现在再看起来，似乎和传统数据库通过B-Tree的方式类似啊，为什么说比B-Tree的查询快呢？</p>
-<h5 id="Term-Index"><a href="#Term-Index" class="headerlink" title="Term Index"></a>Term Index</h5><p>B-Tree通过减少磁盘寻道次数来提高查询性能，Elasticsearch也是采用同样的思路，直接通过内存查找term，不读磁盘，但是如果term太多，term dictionary也会很大，放内存不现实，于是有了<strong>Term Index</strong>，就像字典里的索引页一样，A开头的有哪些term，分别在哪页，可以理解term index是一颗树：<br><img src="images/elasticsearch-query-secret/term-index.png" alt="Alt text"></p>
-<p>这棵树不会包含所有的term，它包含的是term的一些前缀。通过term index可以快速地定位到term dictionary的某个offset，然后从这个位置再往后顺序查找。<br><img src="images/elasticsearch-query-secret/index.png" alt="Alt text"></p>
+<h5 id="Term-Index"><a href="#Term-Index" class="headerlink" title="Term Index"></a>Term Index</h5><p>B-Tree通过减少磁盘寻道次数来提高查询性能，Elasticsearch也是采用同样的思路，直接通过内存查找term，不读磁盘，但是如果term太多，term dictionary也会很大，放内存不现实，于是有了<strong>Term Index</strong>，就像字典里的索引页一样，A开头的有哪些term，分别在哪页，可以理解term index是一颗树：<br><img src="/images/elasticsearch-query-secret/term-index.png" alt="Alt text"></p>
+<p>这棵树不会包含所有的term，它包含的是term的一些前缀。通过term index可以快速地定位到term dictionary的某个offset，然后从这个位置再往后顺序查找。<br><img src="/images/elasticsearch-query-secret/index.png" alt="Alt text"></p>
 <p>所以term index不需要存下所有的term，而仅仅是他们的一些前缀与Term Dictionary的block之间的映射关系，再结合FST(Finite State Transducers)的压缩技术，可以使term index缓存到内存中。从term index查到对应的term dictionary的block位置之后，再去磁盘上找term，大大减少了磁盘随机读的次数。</p>
 <p>这时候爱提问的小明又举手了:”那个FST是神马东东啊?”</p>
 <p>一看就知道小明是一个上大学读书的时候跟我一样不认真听课的孩子，数据结构老师一定讲过什么是FST。但没办法，我也忘了，这里再补下课：</p>
@@ -458,7 +458,7 @@
 <p>FSTs are finite-state machines that <strong>map</strong> a <strong>term (byte sequence)</strong> to an arbitrary <strong>output</strong>.</p>
 </blockquote>
 <p>假设我们现在要将mop, moth, pop, star, stop and top(term index里的term前缀)映射到序号：0，1，2，3，4，5(term dictionary的block位置)。最简单的做法就是定义个Map&lt;String, Integer&gt;，大家找到自己的位置对应入座就好了，但从内存占用少的角度想想，有没有更优的办法呢？答案就是：<strong>FST</strong>(<a href="http://www.cs.nyu.edu/~mohri/pub/fla.pdf" target="_blank" rel="noopener">理论依据在此，但我相信99%的人不会认真看完的</a>)</p>
-<p><img src="images/elasticsearch-query-secret/fst.png" alt="Alt text"></p>
+<p><img src="/images/elasticsearch-query-secret/fst.png" alt="Alt text"></p>
 <p>⭕️表示一种状态</p>
 <p>–&gt;表示状态的变化过程，上面的字母/数字表示状态变化和权重</p>
 <p>将单词分成单个字母通过⭕️和–&gt;表示出来，0权重不显示。如果⭕️后面出现分支，就标记权重，最后整条路径上的权重加起来就是这个单词对应的序号。</p>
@@ -473,7 +473,7 @@
 <h5 id="Frame-Of-Reference"><a href="#Frame-Of-Reference" class="headerlink" title="Frame Of Reference"></a>Frame Of Reference</h5><blockquote>
 <p>增量编码压缩，将大数变小数，按字节存储</p>
 </blockquote>
-<p>首先，Elasticsearch要求posting list是有序的(为了提高搜索的性能，再任性的要求也得满足)，这样做的一个好处是方便压缩，看下面这个图例：<br><img src="images/elasticsearch-query-secret/frameOfReference.png" alt="Alt text"></p>
+<p>首先，Elasticsearch要求posting list是有序的(为了提高搜索的性能，再任性的要求也得满足)，这样做的一个好处是方便压缩，看下面这个图例：<br><img src="/images/elasticsearch-query-secret/frameOfReference.png" alt="Alt text"></p>
 <p>如果数学不是体育老师教的话，还是比较容易看出来这种压缩技巧的。</p>
 <p>原理就是通过增量，将原来的大数变成小数仅存储增量值，再精打细算按bit排好队，最后通过字节存储，而不是大大咧咧的尽管是2也是用int(4个字节)来存储。</p>
 <h5 id="Roaring-bitmaps"><a href="#Roaring-bitmaps" class="headerlink" title="Roaring bitmaps"></a>Roaring bitmaps</h5><p>说到Roaring bitmaps，就必须先从bitmap说起。Bitmap是一种数据结构，假设有某个posting list：</p>
@@ -483,12 +483,12 @@
 <p>非常直观，用0/1表示某个值是否存在，比如10这个值就对应第10位，对应的bit值是1，这样用一个字节就可以代表8个文档id，旧版本(5.0之前)的Lucene就是用这样的方式来压缩的，但这样的压缩方式仍然不够高效，如果有1亿个文档，那么需要12.5MB的存储空间，这仅仅是对应一个索引字段(我们往往会有很多个索引字段)。于是有人想出了Roaring bitmaps这样更高效的数据结构。</p>
 <p>Bitmap的缺点是存储空间随着文档个数线性增长，Roaring bitmaps需要打破这个魔咒就一定要用到某些指数特性：</p>
 <p>将posting list按照65535为界限分块，比如第一块所包含的文档id范围在0<del>65535之间，第二块的id范围是65536</del>131071，以此类推。再用&lt;商，余数&gt;的组合表示每一组id，这样每组里的id范围都在0~65535内了，剩下的就好办了，既然每组id不会变得无限大，那么我们就可以通过最有效的方式对这里的id存储。</p>
-<p><img src="images/elasticsearch-query-secret/Roaringbitmaps.png" alt="Alt text"></p>
+<p><img src="/images/elasticsearch-query-secret/Roaringbitmaps.png" alt="Alt text"></p>
 <p>细心的小明这时候又举手了:”为什么是以65535为界限?”</p>
 <p>程序员的世界里除了1024外，65535也是一个经典值，因为它=2^16-1，正好是用2个字节能表示的最大数，一个short的存储单位，注意到上图里的最后一行“If a block has more than 4096 values, encode as a bit set, and otherwise as a simple array using 2 bytes per value”，如果是大块，用节省点用bitset存，小块就豪爽点，2个字节我也不计较了，用一个short[]存着方便。</p>
 <p>那为什么用4096来区分采用数组还是bitmap的阀值呢？</p>
 <p>这个是从内存大小考虑的，当block块里元素超过4096后，用bitmap更剩空间：<br>采用bitmap需要的空间是恒定的: 65536/8 = 8192bytes<br>而如果采用short[]，所需的空间是: 2*N(N为数组元素个数)<br>小明手指一掐N=4096刚好是边界:</p>
-<p><img src="images/elasticsearch-query-secret/block-memory.png" alt="Alt text"></p>
+<p><img src="/images/elasticsearch-query-secret/block-memory.png" alt="Alt text"></p>
 <hr>
 <h4 id="联合索引"><a href="#联合索引" class="headerlink" title="联合索引"></a>联合索引</h4><p>上面说了半天都是单field索引，如果多个field索引的联合查询，倒排索引如何满足快速查询的要求呢？</p>
 <ul>
@@ -496,10 +496,10 @@
 <li>利用上面提到的bitset按位“与”</li>
 </ul>
 <p>先看看跳表的数据结构：</p>
-<p><img src="images/elasticsearch-query-secret/skiplist.png" alt="Alt text"></p>
+<p><img src="/images/elasticsearch-query-secret/skiplist.png" alt="Alt text"></p>
 <p>将一个有序链表level0，挑出其中几个元素到level1及level2，每个level越往上，选出来的指针元素越少，查找时依次从高level往低查找，比如55，先找到level2的31，再找到level1的47，最后找到55，一共3次查找，查找效率和2叉树的效率相当，但也是用了一定的空间冗余来换取的。</p>
 <p>假设有下面三个posting list需要联合索引：</p>
-<p><img src="images/elasticsearch-query-secret/combineIndex.png" alt="Alt text"></p>
+<p><img src="/images/elasticsearch-query-secret/combineIndex.png" alt="Alt text"></p>
 <p>如果使用跳表，对最短的posting list中的每个id，逐个在另外两个posting list中查找看是否存在，最后得到交集的结果。</p>
 <p>如果使用bitset，就很直观了，直接按位与，得到的结果就是最后的交集。</p>
 <hr>
