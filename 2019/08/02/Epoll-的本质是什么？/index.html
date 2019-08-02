@@ -69,9 +69,10 @@
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%93%E6%9E%84%E5%9B%BE.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E7%BD%91%E5%8D%A1%E6%8E%A5%E6%94%B6%E6%95%B0%E6%8D%AE%E7%9A%84%E8%BF%87%E7%A8%8B.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E4%B8%AD%E6%96%AD%E7%A8%8B%E5%BA%8F%E8%B0%83%E7%94%A8.jpg">
+<meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/CPU%E4%B8%AD%E6%96%AD.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E5%B7%A5%E4%BD%9C%E9%98%9F%E5%88%97%E4%B8%AD%E6%9C%89ABC%E4%B8%89%E4%B8%AA%E8%BF%9B%E7%A8%8B.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E5%88%9B%E5%BB%BAsocket.jpg">
-<meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E5%88%9B%E5%BB%BAsocket.jpg">
+<meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/socket%E7%9A%84%E7%AD%89%E5%BE%85%E9%98%9F%E5%88%97.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E5%86%85%E6%A0%B8%E6%8E%A5%E6%94%B6%E6%95%B0%E6%8D%AE%E5%85%A8%E8%BF%87%E7%A8%8B.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E5%94%A4%E9%86%92%E8%BF%9B%E7%A8%8B.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%8A%8A%E8%BF%9B%E7%A8%8BA%E5%88%86%E5%88%AB%E5%8A%A0%E5%85%A5%E8%BF%99%E4%B8%89%E4%B8%AAsocket%E7%9A%84%E7%AD%89%E5%BE%85%E9%98%9F%E5%88%97%E4%B8%AD.jpg">
@@ -86,7 +87,8 @@
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/epoll%E5%94%A4%E9%86%92%E8%BF%9B%E7%A8%8B.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/epoll%E5%8E%9F%E7%90%86%E7%A4%BA%E6%84%8F%E5%9B%BE.jpg">
 <meta property="og:image" content="https://jiankunking.github.io/images/linux-epoll/%E5%B0%8F%E7%BB%93.jpg">
-<meta property="og:updated_time" content="2019-08-02T12:31:12.220Z">
+<meta property="og:image" content="https://jiankunking.github.io/images/wechat/wechat.jpg">
+<meta property="og:updated_time" content="2019-08-02T13:07:03.507Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Epoll 的本质是什么？">
 <meta name="twitter:description" content="从事服务端开发，少不了要接触网络编程。epoll 作为 Linux 下高性能网络服务器的必备技术至关重要，nginx、Redis、Skynet 和大部分游戏服务器都使用到这一多路复用技术。 epoll 很重要，但是 epoll 与 select 的区别是什么呢？epoll 高效的原因是什么？  网上虽然也有不少讲解 epoll的文章，但要么是过于浅显，或者陷入源码解析，很少能有通俗易懂的。笔者于是">
@@ -293,7 +295,7 @@
                 
               
 
-              <time title="创建时间：2019-08-02 17:26:40 / 修改时间：20:31:12" itemprop="dateCreated datePublished" datetime="2019-08-02T17:26:40+08:00">2019-08-02</time>
+              <time title="创建时间：2019-08-02 17:26:40 / 修改时间：21:07:03" itemprop="dateCreated datePublished" datetime="2019-08-02T17:26:40+08:00">2019-08-02</time>
             </span>
           
             
@@ -346,7 +348,7 @@
 <h1 id="二、如何知道接收了数据？"><a href="#二、如何知道接收了数据？" class="headerlink" title="二、如何知道接收了数据？"></a>二、如何知道接收了数据？</h1><p>了解 epoll 本质的第二步，要从 CPU 的角度来看数据接收。理解这个问题，要先了解一个概念——<font color="DeepPink">中断</font>。</p>
 <p>计算机执行程序时，会有优先级的需求。比如，当计算机收到断电信号时，它应立即去保存数据，保存数据的程序具有较高的优先级（电容可以保存少许电量，供 CPU 运行很短的一小段时间）。</p>
 <p><font color="DeepPink">一般而言，由硬件产生的信号需要 CPU 立马做出回应，不然数据可能就丢失了，所以它的优先级很高。CPU 理应中断掉正在执行的程序，去做出响应；当 CPU 完成对硬件的响应后，再重新执行用户程序。</font>中断的过程如下图，它和函数调用差不多，只不过函数调用是事先定好位置，而中断的位置由“信号”决定。<br><img src="/images/linux-epoll/%E4%B8%AD%E6%96%AD%E7%A8%8B%E5%BA%8F%E8%B0%83%E7%94%A8.jpg" alt><br><em>中断程序调用</em></p>
-<p>以键盘为例，当用户按下键盘某个按键时，键盘会给 CPU 的中断引脚发出一个高电平，CPU能够捕获这个信号，然后执行键盘中断程序。下图展示了各种硬件通过中断与 CPU 交互的过程。<br>![](/images/linux-epoll/CPU 中断.jpg)<br><em>CPU 中断（图片来源：net.pku.edu.cn）</em></p>
+<p>以键盘为例，当用户按下键盘某个按键时，键盘会给 CPU 的中断引脚发出一个高电平，CPU能够捕获这个信号，然后执行键盘中断程序。下图展示了各种硬件通过中断与 CPU 交互的过程。<br><img src="/images/linux-epoll/CPU%E4%B8%AD%E6%96%AD.jpg" alt><br><em>CPU 中断（图片来源：net.pku.edu.cn）</em></p>
 <p>现在可以回答“<strong>如何知道接收了数据？</strong>”这个问题了：<font color="DeepPink">当网卡把数据写入到内存后，网卡向 CPU 发出一个中断信号，操作系统便能得知有新数据到来，再通过网卡中断程序去处理数据。</font></p>
 <h1 id="三、进程阻塞为什么不占用-CPU-资源？"><a href="#三、进程阻塞为什么不占用-CPU-资源？" class="headerlink" title="三、进程阻塞为什么不占用 CPU 资源？"></a>三、进程阻塞为什么不占用 CPU 资源？</h1><p>了解 epoll 本质的第三步，要从操作系统进程调度的角度来看数据接收。<font color="DeepPink">阻塞是进程调度的关键一环，指的是进程在等待某事件（如接收到网络数据）发生之前的等待状态，recv、select 和 epoll 都是阻塞方法</font>。下边分析一下进程阻塞为什么不占用 CPU 资源？</p>
 <p>为简单起见，我们从普通的 recv 接收开始分析，先看看下面代码：</p>
@@ -357,7 +359,7 @@
 <h2 id="工作队列"><a href="#工作队列" class="headerlink" title="工作队列"></a>工作队列</h2><p><font color="DeepPink">操作系统为了支持多任务，实现了进程调度的功能，会把进程分为“运行”和“等待”等几种状态。运行状态是进程获得 CPU 使用权，正在执行代码的状态；等待状态是阻塞状态，比如上述程序运行到 recv 时，程序会从运行状态变为等待状态，接收到数据后又变回运行状态。</font>操作系统会分时执行各个运行状态的进程，由于速度很快，看上去就像是同时执行多个任务。</p>
 <p>下图的计算机中运行着 A、B 与 C 三个进程，其中进程 A 执行着上述基础网络程序，一开始，这 3 个进程都被操作系统的工作队列所引用，处于运行状态，会分时执行。<br><img src="/images/linux-epoll/%E5%B7%A5%E4%BD%9C%E9%98%9F%E5%88%97%E4%B8%AD%E6%9C%89ABC%E4%B8%89%E4%B8%AA%E8%BF%9B%E7%A8%8B.jpg" alt><br><em>工作队列中有 A、B 和 C 三个进程</em></p>
 <h2 id="等待队列"><a href="#等待队列" class="headerlink" title="等待队列"></a>等待队列</h2><p>当进程 A 执行到创建 socket 的语句时，操作系统会创建一个由文件系统管理的 socket 对象（如下图）。这个 socket 对象包含了发送缓冲区、接收缓冲区与等待队列等成员。等待队列是个非常重要的结构，它指向所有需要等待该 socket 事件的进程。<br><img src="/images/linux-epoll/%E5%88%9B%E5%BB%BAsocket.jpg" alt><br><em>创建 socket</em></p>
-<p><strong>当程序执行到 recv 时，操作系统会将进程 A 从工作队列移动到该 socket 的等待队列中</strong>（如下图）。由于工作队列只剩下了进程 B 和 C，依据进程调度，CPU 会轮流执行这两个进程的程序，不会执行进程 A 的程序。所以进程 A 被阻塞，不会往下执行代码，也不会占用 CPU 资源。<br><img src="/images/linux-epoll/%E5%88%9B%E5%BB%BAsocket.jpg" alt><br><em>socket 的等待队列</em></p>
+<p><strong>当程序执行到 recv 时，操作系统会将进程 A 从工作队列移动到该 socket 的等待队列中</strong>（如下图）。由于工作队列只剩下了进程 B 和 C，依据进程调度，CPU 会轮流执行这两个进程的程序，不会执行进程 A 的程序。所以进程 A 被阻塞，不会往下执行代码，也不会占用 CPU 资源。<br><img src="/images/linux-epoll/socket%E7%9A%84%E7%AD%89%E5%BE%85%E9%98%9F%E5%88%97.jpg" alt><br><em>socket 的等待队列</em></p>
 <blockquote>
 <p>注：操作系统添加等待队列只是添加了对这个“等待中”进程的引用，以便在接收到数据时获取进程对象、将其唤醒，而非直接将进程管理纳入自己之下。上图为了方便说明，直接将进程挂到等待队列之下。</p>
 </blockquote>
@@ -425,6 +427,16 @@
 <h1 id="九、小结"><a href="#九、小结" class="headerlink" title="九、小结"></a>九、小结</h1><p>epoll 在 select 和 poll 的基础上引入了 eventpoll 作为中间层，使用了先进的数据结构，是一种高效的多路复用技术。这里也以表格形式简单对比一下 select、poll 与 epoll，结束此文。希望读者能有所收获。</p>
 <p><img src="/images/linux-epoll/%E5%B0%8F%E7%BB%93.jpg" alt></p>
 <p>原文地址：<a href="https://my.oschina.net/editorial-story/blog/3052308" target="_blank" rel="noopener">https://my.oschina.net/editorial-story/blog/3052308</a></p>
+<p>个人微信公众号：</p>
+<p><img src="/images/wechat/wechat.jpg" alt></p>
+<p>个人CSDN博客：</p>
+<p><a href="https://blog.csdn.net/jiankunking" target="_blank" rel="noopener">https://blog.csdn.net/jiankunking</a></p>
+<p>个人掘金博客：</p>
+<p><a href="https://juejin.im/user/5d3192c2e51d45775313828f/posts" target="_blank" rel="noopener">https://juejin.im/user/5d3192c2e51d45775313828f/posts</a></p>
+<p>个人github：</p>
+<p><a href="https://github.com/jiankunking" target="_blank" rel="noopener">https://github.com/jiankunking</a></p>
+<p>个人博客：</p>
+<p><a href="https://www.jiankunking.com" target="_blank" rel="noopener">https://www.jiankunking.com</a></p>
 
     </div>
 
