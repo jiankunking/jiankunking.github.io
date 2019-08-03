@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="generator" content="Hexo 3.9.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    search: {
+      root: '/',
+      path: ''
+    },
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="一、概述1、索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就">
+<meta name="keywords" content="Database,MySQL,Oracle,Index,读书笔记,SQL Server,DB2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据库索引设计与优化 笔记">
+<meta property="og:url" content="https://jiankunking.com/数据库索引设计与优化-笔记.html">
+<meta property="og:site_name" content="衣舞晨风的博客">
+<meta property="og:description" content="一、概述1、索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
+<meta property="og:updated_time" content="2019-08-03T05:36:54.528Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="数据库索引设计与优化 笔记">
+<meta name="twitter:description" content="一、概述1、索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就">
+<meta name="twitter:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
+  <link rel="canonical" href="https://jiankunking.com/数据库索引设计与优化-笔记">
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>数据库索引设计与优化 笔记 | 衣舞晨风的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">衣舞晨风的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+    <ul id="menu" class="menu">
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br/>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br/>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br/>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br/>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br/>归档</a>
+
+  </li>
+    </ul>
+</nav>
+
+</div>
+    </header>
+
+    
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/数据库索引设计与优化-笔记.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风的博客">
+    </span>
+      <header class="post-header">
+
+        
+          <h1 class="post-title" itemprop="name headline">数据库索引设计与优化 笔记
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-08-03 10:28:35 / 修改时间：13:36:54" itemprop="dateCreated datePublished" datetime="2019-08-03T10:28:35+08:00">2019-08-03</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          <br/>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h1><h2 id="1、索引误区"><a href="#1、索引误区" class="headerlink" title="1、索引误区"></a>1、索引误区</h2><h4 id="误区1：索引层级不要超过5层"><a href="#误区1：索引层级不要超过5层" class="headerlink" title="误区1：索引层级不要超过5层"></a>误区1：索引层级不要超过5层</h4><p>由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。</p>
+<h4 id="误区2：单表的索引数不要超过6个"><a href="#误区2：单表的索引数不要超过6个" class="headerlink" title="误区2：单表的索引数不要超过6个"></a>误区2：单表的索引数不要超过6个</h4><p>我建议不要给表的索引数目设置上限。</p>
+<p>保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表上建立10个索引。</p>
+<h4 id="误区3：不应该索引不稳定的列"><a href="#误区3：不应该索引不稳定的列" class="headerlink" title="误区3：不应该索引不稳定的列"></a>误区3：不应该索引不稳定的列</h4><p><font color="DeepPink">索引行是按索引键的顺序存储的，所以当索引键中存一列被更新时，DBMS可能不得不把相应的行从旧的索引位置移到新的位置来保持这一顺序。这个新的位迓可能与旧的位晋位于相同的叶子贞上，在这种情况下，只有一个页会受到影响。然而，如果被修改的键是第一列或唯一的列，那么新的索引行可能必须被迁移到一个不同的叶子页上，即DBMS必须更新两个叶子页。三十年前，如果这个索引为一个4层索引，这也许需要6次磁盘随机读取：3次常规读取，即2次非叶子页读取和1次叶子页读取，加上新的位置所涉及的3次随机读取。当一次随机读取耗时30ms 时，迁移一个索引行可能会给该更新操作额外增加6 x 30ms =180ms 的响应时间。因此，不稳定的列很少被索引就不足为奇了。</font></p>
+<p><font color="DeepPink">现在，当四层索引中三个层级的非叶子页保留在内存中时，一次磁盘随机读取需要 l0 ms ，响应的时间变成了 2 x 10ms = 20ms 。此外，许多索引为多列索引，也称作复合或组合索引，它通常包含多列，以使得索引键值唯一。当不稳定的列为复合索引的尾列更新这个不稳定的列绝不会导致其迁移到新的叶子页。因此，在当前的磁盘条件下，更新一个不稳定的列只会对该更新操作增加10ms的响应时间。</font></p>
+<p>在当前磁盘条件下，只有在更新频率多于10次/秒的情况下，不稳定列才可能成为问题。（2015年）</p>
+<blockquote>
+<p>创建索引的目的应该是在硬件容量限制的前提下保证所有的数据库调用运行的足够快。</p>
+</blockquote>
+<h2 id="2、系统化的索引设计"><a href="#2、系统化的索引设计" class="headerlink" title="2、系统化的索引设计"></a>2、系统化的索引设计</h2><ul>
+<li>找到由于索引不合适而导致运行<strong>太慢</strong>的查询语句<br>  最差输入：导致执行时间最长的变量值</li>
+<li>设计索引，使所有查询语句都运行的足够快<br>  表的维护（插入、更新、删除）也必须足够快</li>
+</ul>
+<h1 id="二、表和索引结构"><a href="#二、表和索引结构" class="headerlink" title="二、表和索引结构"></a>二、表和索引结构</h1><p>DBMS 会意识到多个索引或表页需要被顺序地读取，且能识別出那些不在缓冲池中的页。随后，它将发出多页I/O请求，每次请求的页的数量由DBMS决定。<font color="DeepPink">只有那些不在缓冲池中的页会被从磁盘服务器上读取，因为那些已经在缓冲池中的页中可能包含了尚未被写人磁盘的更新数据。</font></p>
+<h1 id="三、SQL处理过程"><a href="#三、SQL处理过程" class="headerlink" title="三、SQL处理过程"></a>三、SQL处理过程</h1><h2 id="谓词"><a href="#谓词" class="headerlink" title="谓词"></a>谓词</h2><p>WHERE子句由一个或者多个<font color="DeepPink">谓词（搜索参数）</font>组成。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># SQL 3.1</span><br><span class="line">WHERE SEX = &apos;M&apos;</span><br><span class="line">      AND</span><br><span class="line">      (WEIGHT &gt; 90</span><br><span class="line">      OR</span><br><span class="line">      HEIGHT &gt; 190)</span><br></pre></td></tr></table></figure>
+
+<p>SQL 3.1中有三个简单谓词，它们是：</p>
+<ul>
+<li>SEX = ‘M’</li>
+<li>WEIGHT &gt; 90</li>
+<li>HEIGHT &gt; 190</li>
+</ul>
+<p>同样，它们也可以被认为是两个组合谓词：</p>
+<ul>
+<li>WEIGHT &gt; 90 OR HEIGHT &gt; 190</li>
+<li>SEX = ‘M’ AND  ( WEIGHT &gt; 90 OR HEIGHT &gt; 190 )</li>
+</ul>
+<p>谓词表达式是索引设计的主要入手点。如果一个索引能够满足SELECT查询语句的所有谓词表达式，那么优化器就很有可能建立起一个高效的访问路径。</p>
+<h2 id="核实确认访问路径（执行计划）"><a href="#核实确认访问路径（执行计划）" class="headerlink" title="核实确认访问路径（执行计划）"></a>核实确认访问路径（执行计划）</h2><p><img src="/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png" alt></p>
+<h1 id="四、为SELETE语句创建理想的索引"><a href="#四、为SELETE语句创建理想的索引" class="headerlink" title="四、为SELETE语句创建理想的索引"></a>四、为SELETE语句创建理想的索引</h1><blockquote>
+<p>很多调优人员（尽管没经验）认为，如果一个SQL语句使用了索引，那这个 SQL就是被很好地优化过的，我对此感到很惊讶。你应该总是问自己，”这是不是可用的最好的索引？” 或 “再添加另外一个索引能否提升<br>响应性能？”，又或者 “全表扫描会不会更快地返回结果？”</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+    
+      <div>
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信支付">
+        <p>微信支付</p>
+      </div>
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+      </div>
+
+    <footer class="post-footer">
+          
+        
+        <div class="post-tags">
+            <a href="/tags/Database/" rel="tag"># Database</a>
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/Oracle/" rel="tag"># Oracle</a>
+          
+            <a href="/tags/Index/" rel="tag"># Index</a>
+          
+            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
+          
+            <a href="/tags/SQL-Server/" rel="tag"># SQL Server</a>
+          
+            <a href="/tags/DB2/" rel="tag"># DB2</a>
+          
+        </div>
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+              <a href="/Epoll-的本质是什么？.html" rel="next" title="Epoll 的本质是什么？">
+                <i class="fa fa-chevron-left"></i> Epoll 的本质是什么？
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+          </div>
+        </div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/avatar/avatar.png"
+      alt="jiankunking">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/jiankunking" title="GitHub &rarr; https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:jiankunking@163.com" title="E-Mail &rarr; mailto:jiankunking@163.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+
+
+  <div class="links-of-blogroll motion-element links-of-blogroll-block">
+    <div class="links-of-blogroll-title">
+      <i class="fa  fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://github.com/jiankunking" title="https://github.com/jiankunking" rel="noopener" target="_blank">GitHub</a>
+        </li>
+      
+        <li class="links-of-blogroll-item">
+          <a href="https://juejin.im/user/5d3192c2e51d45775313828f/posts" title="https://juejin.im/user/5d3192c2e51d45775313828f/posts" rel="noopener" target="_blank">掘金</a>
+        </li>
+      
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN</a>
+        </li>
+      
+        <li class="links-of-blogroll-item">
+          <a href="https://jiankunking.com" title="https://jiankunking.com">个人Blog</a>
+        </li>
+      
+    </ul>
+  </div>
+
+        </div>
+      </div>
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、概述"><span class="nav-number">1.</span> <span class="nav-text">一、概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、索引误区"><span class="nav-number">1.1.</span> <span class="nav-text">1、索引误区</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#误区1：索引层级不要超过5层"><span class="nav-number">1.1.0.1.</span> <span class="nav-text">误区1：索引层级不要超过5层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#误区2：单表的索引数不要超过6个"><span class="nav-number">1.1.0.2.</span> <span class="nav-text">误区2：单表的索引数不要超过6个</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#误区3：不应该索引不稳定的列"><span class="nav-number">1.1.0.3.</span> <span class="nav-text">误区3：不应该索引不稳定的列</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、系统化的索引设计"><span class="nav-number">1.2.</span> <span class="nav-text">2、系统化的索引设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、表和索引结构"><span class="nav-number">2.</span> <span class="nav-text">二、表和索引结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、SQL处理过程"><span class="nav-number">3.</span> <span class="nav-text">三、SQL处理过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#谓词"><span class="nav-number">3.1.</span> <span class="nav-text">谓词</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#核实确认访问路径（执行计划）"><span class="nav-number">3.2.</span> <span class="nav-text">核实确认访问路径（执行计划）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、为SELETE语句创建理想的索引"><span class="nav-number">4.</span> <span class="nav-text">四、为SELETE语句创建理想的索引</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.2.0</div>
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+      </div>
+
+    
+
+  </div>
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+  
+  <script src="/js/affix.js?v=7.2.0"></script>
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
