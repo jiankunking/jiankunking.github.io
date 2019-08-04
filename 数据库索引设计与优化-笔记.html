@@ -57,19 +57,20 @@
   };
 </script>
 
-  <meta name="description" content="一、概述1、索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就">
-<meta name="keywords" content="Database,MySQL,Oracle,Index,读书笔记,SQL Server,DB2">
+  <meta name="description" content="概述索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表">
+<meta name="keywords" content="Database,MySQL,Oracle,SQL Server,DB2,Index,读书笔记">
 <meta property="og:type" content="article">
 <meta property="og:title" content="数据库索引设计与优化 笔记">
 <meta property="og:url" content="https://jiankunking.com/数据库索引设计与优化-笔记.html">
 <meta property="og:site_name" content="衣舞晨风的博客">
-<meta property="og:description" content="一、概述1、索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就">
+<meta property="og:description" content="概述索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
-<meta property="og:updated_time" content="2019-08-03T05:36:54.528Z">
+<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E5%9B%BE4.2.png">
+<meta property="og:updated_time" content="2019-08-04T08:17:57.968Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="数据库索引设计与优化 笔记">
-<meta name="twitter:description" content="一、概述1、索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就">
+<meta name="twitter:description" content="概述索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表">
 <meta name="twitter:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
   <link rel="canonical" href="https://jiankunking.com/数据库索引设计与优化-笔记">
 
@@ -273,11 +274,21 @@
                 
               
 
-              <time title="创建时间：2019-08-03 10:28:35 / 修改时间：13:36:54" itemprop="dateCreated datePublished" datetime="2019-08-03T10:28:35+08:00">2019-08-03</time>
+              <time title="创建时间：2019-08-03 10:28:35" itemprop="dateCreated datePublished" datetime="2019-08-03T10:28:35+08:00">2019-08-03</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-08-04 16:17:57" itemprop="dateModified" datetime="2019-08-04T16:17:57+08:00">2019-08-04</time>
+              </span>
             
           
             <span class="post-meta-item">
@@ -307,7 +318,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h1><h2 id="1、索引误区"><a href="#1、索引误区" class="headerlink" title="1、索引误区"></a>1、索引误区</h2><h4 id="误区1：索引层级不要超过5层"><a href="#误区1：索引层级不要超过5层" class="headerlink" title="误区1：索引层级不要超过5层"></a>误区1：索引层级不要超过5层</h4><p>由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。</p>
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><h2 id="索引误区"><a href="#索引误区" class="headerlink" title="索引误区"></a>索引误区</h2><h4 id="误区1：索引层级不要超过5层"><a href="#误区1：索引层级不要超过5层" class="headerlink" title="误区1：索引层级不要超过5层"></a>误区1：索引层级不要超过5层</h4><p>由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。</p>
 <h4 id="误区2：单表的索引数不要超过6个"><a href="#误区2：单表的索引数不要超过6个" class="headerlink" title="误区2：单表的索引数不要超过6个"></a>误区2：单表的索引数不要超过6个</h4><p>我建议不要给表的索引数目设置上限。</p>
 <p>保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表上建立10个索引。</p>
 <h4 id="误区3：不应该索引不稳定的列"><a href="#误区3：不应该索引不稳定的列" class="headerlink" title="误区3：不应该索引不稳定的列"></a>误区3：不应该索引不稳定的列</h4><p><font color="DeepPink">索引行是按索引键的顺序存储的，所以当索引键中存一列被更新时，DBMS可能不得不把相应的行从旧的索引位置移到新的位置来保持这一顺序。这个新的位迓可能与旧的位晋位于相同的叶子贞上，在这种情况下，只有一个页会受到影响。然而，如果被修改的键是第一列或唯一的列，那么新的索引行可能必须被迁移到一个不同的叶子页上，即DBMS必须更新两个叶子页。三十年前，如果这个索引为一个4层索引，这也许需要6次磁盘随机读取：3次常规读取，即2次非叶子页读取和1次叶子页读取，加上新的位置所涉及的3次随机读取。当一次随机读取耗时30ms 时，迁移一个索引行可能会给该更新操作额外增加6 x 30ms =180ms 的响应时间。因此，不稳定的列很少被索引就不足为奇了。</font></p>
@@ -316,12 +327,12 @@
 <blockquote>
 <p>创建索引的目的应该是在硬件容量限制的前提下保证所有的数据库调用运行的足够快。</p>
 </blockquote>
-<h2 id="2、系统化的索引设计"><a href="#2、系统化的索引设计" class="headerlink" title="2、系统化的索引设计"></a>2、系统化的索引设计</h2><ul>
+<h2 id="系统化的索引设计"><a href="#系统化的索引设计" class="headerlink" title="系统化的索引设计"></a>系统化的索引设计</h2><ul>
 <li>找到由于索引不合适而导致运行<strong>太慢</strong>的查询语句<br>  最差输入：导致执行时间最长的变量值</li>
 <li>设计索引，使所有查询语句都运行的足够快<br>  表的维护（插入、更新、删除）也必须足够快</li>
 </ul>
-<h1 id="二、表和索引结构"><a href="#二、表和索引结构" class="headerlink" title="二、表和索引结构"></a>二、表和索引结构</h1><p>DBMS 会意识到多个索引或表页需要被顺序地读取，且能识別出那些不在缓冲池中的页。随后，它将发出多页I/O请求，每次请求的页的数量由DBMS决定。<font color="DeepPink">只有那些不在缓冲池中的页会被从磁盘服务器上读取，因为那些已经在缓冲池中的页中可能包含了尚未被写人磁盘的更新数据。</font></p>
-<h1 id="三、SQL处理过程"><a href="#三、SQL处理过程" class="headerlink" title="三、SQL处理过程"></a>三、SQL处理过程</h1><h2 id="谓词"><a href="#谓词" class="headerlink" title="谓词"></a>谓词</h2><p>WHERE子句由一个或者多个<font color="DeepPink">谓词（搜索参数）</font>组成。</p>
+<h1 id="表和索引结构"><a href="#表和索引结构" class="headerlink" title="表和索引结构"></a>表和索引结构</h1><p>DBMS 会意识到多个索引或表页需要被顺序地读取，且能识別出那些不在缓冲池中的页。随后，它将发出多页I/O请求，每次请求的页的数量由DBMS决定。<font color="DeepPink">只有那些不在缓冲池中的页会被从磁盘服务器上读取，因为那些已经在缓冲池中的页中可能包含了尚未被写人磁盘的更新数据。</font></p>
+<h1 id="SQL处理过程"><a href="#SQL处理过程" class="headerlink" title="SQL处理过程"></a>SQL处理过程</h1><h2 id="谓词"><a href="#谓词" class="headerlink" title="谓词"></a>谓词</h2><p>WHERE子句由一个或者多个<font color="DeepPink">谓词（搜索参数）</font>组成。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># SQL 3.1</span><br><span class="line">WHERE SEX = &apos;M&apos;</span><br><span class="line">      AND</span><br><span class="line">      (WEIGHT &gt; 90</span><br><span class="line">      OR</span><br><span class="line">      HEIGHT &gt; 190)</span><br></pre></td></tr></table></figure>
 
 <p>SQL 3.1中有三个简单谓词，它们是：</p>
@@ -336,10 +347,91 @@
 <li>SEX = ‘M’ AND  ( WEIGHT &gt; 90 OR HEIGHT &gt; 190 )</li>
 </ul>
 <p>谓词表达式是索引设计的主要入手点。如果一个索引能够满足SELECT查询语句的所有谓词表达式，那么优化器就很有可能建立起一个高效的访问路径。</p>
-<h2 id="核实确认访问路径（执行计划）"><a href="#核实确认访问路径（执行计划）" class="headerlink" title="核实确认访问路径（执行计划）"></a>核实确认访问路径（执行计划）</h2><p><img src="/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png" alt></p>
-<h1 id="四、为SELETE语句创建理想的索引"><a href="#四、为SELETE语句创建理想的索引" class="headerlink" title="四、为SELETE语句创建理想的索引"></a>四、为SELETE语句创建理想的索引</h1><blockquote>
+<p>核实确认访问路径（执行计划）<br><img src="/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png" alt></p>
+<h1 id="为SELETE语句创建理想的索引【重点】"><a href="#为SELETE语句创建理想的索引【重点】" class="headerlink" title="为SELETE语句创建理想的索引【重点】"></a>为SELETE语句创建理想的索引【重点】</h1><blockquote>
 <p>很多调优人员（尽管没经验）认为，如果一个SQL语句使用了索引，那这个 SQL就是被很好地优化过的，我对此感到很惊讶。你应该总是问自己，”这是不是可用的最好的索引？” 或 “再添加另外一个索引能否提升<br>响应性能？”，又或者 “全表扫描会不会更快地返回结果？”</p>
 </blockquote>
+<h2 id="三星索引"><a href="#三星索引" class="headerlink" title="三星索引"></a>三星索引</h2><blockquote>
+<p>三星索引：查询语句的理想索引。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">DECLARE CURSOR41 CURSOR FOR</span><br><span class="line">SELECT    CNO, FNAME</span><br><span class="line">FROM      CUST</span><br><span class="line">WHERE     LNAME = :LNAME</span><br><span class="line">          AND</span><br><span class="line">          CITY  = :CITY</span><br><span class="line">ORDER BY  FNAME</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/database-index-design-optimizers/%E5%9B%BE4.2.png" alt></p>
+<h2 id="星级是如何给定的"><a href="#星级是如何给定的" class="headerlink" title="星级是如何给定的"></a>星级是如何给定的</h2><p>如果与一个查询相关的索引行是相邻的，或者至少相距足够靠近的话，那这个索引就可以被标记上第一颗星。这<font color="DeepPink">最小化</font>了必须扫描的索引片的宽度。 </p>
+<p>如果索引行的顺序与查询语句的需求一致，则索引可以被标记上第二颗星。这<font color="DeepPink">排除了排序操作</font>。 </p>
+<p>如果索引行包含的查询语句中的所有列，那么索引就可以被标记上第三颗星。这避免了访问表的操作：<font color="DeepPink">仅访问索引就可以了</font>。 </p>
+<p><font color="DeepPink">对于这三颗星，第三颗通常是最重要的。将一个列排除在索引之外可能会导致许多速度较慢的磁盘随机读。</font>我们把一个至少包含第三颗星的索引称为对应查询语句的宽索引。</p>
+<blockquote>
+<p>宽索引：宽索引是指一个至少满足第三颗星的索引。该索引包含了SELECT语句所涉及的所有列，因而能够使得查询只需访问索引而无需访问表。</p>
+</blockquote>
+<p><strong>为了满足第一颗星</strong><br>首先取出所有等值谓词的列（WHERE COL=…）。把这些列作为索引最开头的列——以任意顺序都可以。对于CURSOR41来说，三星索引可以以LNAME、CITY或者以CITY、LNAME开头。在这两种情况下，必须扫描的索引片宽度将被缩减至最窄。</p>
+<p><strong>为了满足第二颗星</strong><br>将ORDER BY列加入到索引中。不要改变这些列的顺序，但是忽略那些在第一步中已经加入索引的列。例如，如果CURSOR41在ORDER BY 中有重复的列，如ORDER BY LNAME、FNAME或者是ORDER BY FNAME、CITY，只有FNAME需要在这步中被加入到索引中去。当FNAME是索引的第三列时，结果集中的记录无须排序就已经是以正确的顺序排列的了。第一次读取操作将返回FNAME值最小的那一行。</p>
+<p><strong>为了满足第三颗星</strong><br>将查询语句中剩余的列加到索引中去，列在索引中添加的顺序对查询语句的性能没有影响，但是将易变的列放在最后能降低更新的成本。现在，索引已包含了满足无须回表的访问路径所需的所有列。</p>
+<p>最终三星索引将会是：(LNAME, CITY, FNAME, CNO) 或 (CITY, LNAME, FNAME, CNO)</p>
+<p>CURSOR41在以下方面是最为挑剔的：</p>
+<ul>
+<li>WHERE 条件不包含范围谓词（BETWEEN、&gt;、&gt;=等）</li>
+<li>FROM 语句只涉及单表</li>
+<li>所有谓词对于优化器来说都足够简单</li>
+</ul>
+<h2 id="范围谓词与三星索引"><a href="#范围谓词与三星索引" class="headerlink" title="范围谓词与三星索引"></a>范围谓词与三星索引</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">DECLARE CURSOR43 CURSOR FOR</span><br><span class="line">SELECT    CNO, FNAME</span><br><span class="line">FROM      CUST</span><br><span class="line">WHERE     LNAME BETWEEN :LNAME1 AND :LNAME2</span><br><span class="line">          AND</span><br><span class="line">          CITY  = :CITY</span><br><span class="line">          ORDER BY  FNAME</span><br></pre></td></tr></table></figure>
+
+<p>让我们尝试为这个 CURSOR 设计一个三星索引。大部分的推论与 CURSOR41 相同，但是“BETWEEN 谓词”将“=谓词”替代后将会有很大的影响。我们将会以相反的顺序依次考虑三颗星，按理说，这代表了理解的难度。</p>
+<p>首先是最简单的星（虽然非常重要），第三颗星。按照先前所述，<strong>确保查询语句中的所有列都在索引中就能满足第三颗星。这样不需要访问表，那么同步读也就不会造成问题。</strong></p>
+<p>添加 ORDER BY 列能使索引满足第二颗星，但是这个仅在将其放在 BETWEEN 谓词列 LNAME 之前的情况下才成立，如索引 (CITY, FNAME, LNAME)。由于 CITY 的值只有一个（=谓词），所以使用这个索引可以使结果集以 FNAME 的顺序排列，而不需要额外的排序。但是如果 ORDER BY 字段加在 BETWEEN 谓词列 LNAME 后面，如索引 (CITY, LNAME, FNAME)，那么索引行不是按 FNAME 顺序排列的，因而就需要进行排序操作。因此，为了满足第二颗星，FNAME 必须在 BETWEEN 谓词列 LNAME 前面，如索引 (FNAME, …) 或索引 (CITY, FNAME, …)。</p>
+<p>再考虑第一颗星，如果 CITY 是索引的第一个列，那我们将会有一个相对较窄的索引片需要扫描（MC=1），这取决于 CITY 的过滤因子。但是如果用索引 (CITY, LNAME, …) 的话，索引片会更窄，这样在有两个匹配列的情况下我们只需要访问真正需要的索引行。但是，为了做到这样，并从一个很窄的索引片中获益，其他列（如 FNAME）就不能放在这两列之间。</p>
+<blockquote>
+<p>MC:match column</p>
+</blockquote>
+<p>所以我们的理想索引会有几颗星呢？首先它一定能有第三颗星，但是，正如我们刚才所说，我们只能有第一颗星或者第二颗星，而不能同时拥有两者！换句话说，我们只能二选一：</p>
+<ul>
+<li>避免排序 — 拥有第二颗星</li>
+<li>拥有可能的最窄索引片，不仅将需要处理的索引行数降至最低，而且将后续处理量，特别是表中数据行的同步读，减少到最少 — 拥有第一颗星</li>
+</ul>
+<p>在这个例子中，BETWEEN 谓词或者任何其他范围谓词的出现，意味着我们不能同时拥有第一颗星和第二颗星。也就是说我们不能拥有一个三星索引。这就意味着我们需要在第一颗星和第二颗星中做出选择。通常这不是一个困难的选择，<strong>因为第一颗星一般比第二颗星更重要，虽然并不总是这样</strong>。</p>
+<h2 id="为查询语句设计最佳索引的算法"><a href="#为查询语句设计最佳索引的算法" class="headerlink" title="为查询语句设计最佳索引的算法"></a>为查询语句设计最佳索引的算法</h2><p><font color="DeepPink">根据以上的讨论，理想的索引是一个三星索引。然而，正如我们所见，当存在范围谓词时，这是不可能实现的。我们（也许）不得不牺牲第二颗星来满足一个更窄的索引片（第一颗星），这样，最佳索引就只拥有两颗星。这也就是为什么我们需要仔细区分理想和最佳。</font>在这个例子中理想索引是不可能实现的。将这层因素考虑在内，我们可以对所有情况下创建最佳索引（也许不是理想索引）的过程公式化。创建出的索引将拥有三颗星或者两颗星。</p>
+<p><strong>首先设计一个索引片尽可能窄（第一颗星）的宽索引（第三颗星）。如果查询使用这个索引时不需要排序（第二颗星），那这个索引就是三星索引。否则这个索引只能是二星索引，牺牲第二颗星。或者采用另一种选择，避免排序，牺牲第一颗星保留第二颗星。这种二星索引中的一个将会是相应查询语句的最佳索引。</strong></p>
+<h3 id="为查询语句创建最佳索引的算法"><a href="#为查询语句创建最佳索引的算法" class="headerlink" title="为查询语句创建最佳索引的算法"></a>为查询语句创建最佳索引的算法</h3><h4 id="候选-A"><a href="#候选-A" class="headerlink" title="候选 A"></a>候选 A</h4><ol>
+<li>取出对于优化器来说不过分复杂的等值谓词列。将这些列作为索引的前导列(以任意顺序皆可)。</li>
+<li>将选择性最好的范围谓词作为索引的下一个列，如果存在的话。最好的选择性是指对于最差的输入值有最低的过滤因子。只考虑对于优化器来说不过分复杂的范围谓词。</li>
+<li>以正确的顺序添加ORDER BY语列，忽略在第一步或者第二步已添加的列。</li>
+<li>以任意顺序将 SELECT 语句中其余的列添加至索引中（但是需要以不易变的列开始）。</li>
+</ol>
+<p>举例：CURSOR43</p>
+<p>候选 A 为 (CITY, LNAME, FNAME, NCNO)。</p>
+<p>由于 FNAME 在范围谓词列 LNAME 的后面，候选 A 引起了 CURSOR43 的一次排序操作。</p>
+<h4 id="候选-B"><a href="#候选-B" class="headerlink" title="候选 B"></a>候选 B</h4><p>如果候选 A 引起了所给查询语句的一次排序操作，那么还可以设计候选 B。根据定义，对于候选 B 来说第二颗星比第一颗星更重要。</p>
+<ol>
+<li>取出对于优化器来说不过分复杂的等值谓词列。将这些列作为索引的前导列(以任意顺序皆可)。</li>
+<li>以正确顺序添加 ORDER BY 列（如果 ORDER BY 列有 DESC 的话，加上 DESC）。忽略在第1步中已经添加的列。</li>
+<li>以任意顺序将 SELECT 语句中其余的列添加至索引中（但是需要以不易变的列开始）。</li>
+</ol>
+<p>举例：CURSOR43</p>
+<p>候选 B 为 (CITY, FNAME, LNAME, CNO)。</p>
+<blockquote>
+<p>需要注意的是，到目前为止，我们所做的只是设计理想索引或是最佳索引。但是这是否是实际可行的，我们在这个阶段还不好说。</p>
+</blockquote>
+<h1 id="前瞻性的索引设计"><a href="#前瞻性的索引设计" class="headerlink" title="前瞻性的索引设计"></a>前瞻性的索引设计</h1><h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><h3 id="访问"><a href="#访问" class="headerlink" title="访问"></a>访问</h3><p>根据定义，DBMS读取一个索引行或一个表行的成本称为一次访问 : 索引访问或表访问。如果DBMS扫描索引或表的一个片段(被读取的行在物理上是彼此相邻的)，那么第一行的读取即为一次随机访问。对于后续行的读取，每行都是一次顺序访问。在当前的硬件条件下，顺序访问的成本比随机访问的成本低得多。一次索引访问的成本与一次表访问的成本基本上是相同的。</p>
+<h3 id="读取一组连续的索引行"><a href="#读取一组连续的索引行" class="headerlink" title="读取一组连续的索引行"></a>读取一组连续的索引行</h3><p>物理上彼此相邻是什么意思?</p>
+<p>索引上的所有行都通过指针链接在一起，链接的先后顺序由索引的键值严格定义。当几个索引行的键值相同时，就根据索引行存储的指针值进行链接。在传统的索引设计(从某个角度看，是理想化的)中，链表从LP1(叶子页1)开始，随后链接LP2，以此类推。这样(假设每个磁道可以放12个叶子页，当前的硬件通常可以容纳更多)，叶子页就组成了一个连续的文件，LP1至LP12存储在磁盘柱面的第一个磁道，LP13至LP24存储在下一个磁道，如此继续，当第一个柱面存满后，下一组LP就会被存储在下一个柱面的首个磁道上。换句话说，就是叶子页之间没有其他页。</p>
+<p>现在，读取一个连续的索引行(即一个索引片，或者包含了单个键值或者一个范围的键值所对应的索引行)就非常快了。一次磁盘旋转会将多个叶子页读取进内存中，而且只有在磁盘指针移到下一个柱面时才需要进行一次短暂的寻址、</p>
+<p>不过，这个完美的顺序还是会被打破的，至少有以下三个影响因素 :</p>
+<ol>
+<li>如果一个叶子页没有足够的空间存储新插入的索引行，那么叶子页就必须被分裂。之后链表仍会按照正确的顺序链接索引行，但是这与底层的物理存储顺序就不再一致了，一些按道理应该是顺序的访问就变成随机访问了。不过索引的充足可以再次恢复最理想的顺序。</li>
+<li>意向不到的数据增长可能会填满原本连续的空间(区或类似的概念)。操作系统于是就会寻找另外有一个连续的空间，并将它连接到原来空间的后面。这时候从第一个区跨到第二个区访问就会产生一次随机访问，不过这种情况影响不大。</li>
+<li>RAID 5条带会将前几个叶子页存储在一个驱动器上，将后面的叶子页存放在另外的驱动器上。这就会产生额外的随机读，但实际上条带的积极作用要大过随机读带来的性能恶化，一个智能的磁盘服务器可以将后续的叶子页并行的从多个驱动器上读取至磁盘缓存中，从而大大降低了单个叶子页的I/O时间。此外，在RAID 5条带策略下，一个被频繁访问的索引的不太可能导致某一个磁盘负载过高，因为I/O请求会被均匀低分布到RAID 5阵列内的多个磁盘驱动器。</li>
+</ol>
+<p>忽略上述情况，我们仍然假设，如果两个索引行在链表上彼此相邻(或者在唯一索引中，相同键值的行指针意味着彼此相邻)，那么我们就认为这两行在物理上也相邻。这就意味着QUBE认为所有的索引都有最理想的顺序。</p>
+<h3 id="读取一组连续的表行"><a href="#读取一组连续的表行" class="headerlink" title="读取一组连续的表行"></a>读取一组连续的表行</h3><p>读取一组连续的表行有如下两种情况：</p>
+<ol>
+<li>全表扫描<br>从TP1(表页1)开始，读取该页上所有的记录，然后再访问TP2，一次类推。按照记录在表页中存储的顺序进行读取，没有其他特殊的顺序。</li>
+<li>聚簇索引扫描<br>读取索引片上第一个索引行，然后获取相应的表行，再访问第二个索引行，以此类推。如果索引行与对应的表行记录顺序完全一致(聚簇率为100%)，那么除了第一次之外的所有表访问就都是顺序访问。表记录的链接方式跟索引不一样。单个表页中记录的顺序无关紧要，只要访问的下一个表记录在同一个表页或者相邻的下一个表页内就可以了。</li>
+</ol>
+<p>同索引一样，存储表的传统方式也是将所有表页保留在一个连续的空间内。引起顺序杂乱或碎片化的因素也和索引中的相似，但又两个地方不同：</p>
+<ol>
+<li>如果往表中插入的记录在聚簇索引所定义的主页中装不下，则通常不会移动现有的行，而是会将新插入的记录存储到离主页尽可能近的表页中。对第二个页的随机I/O会使聚簇索引扫描变得更慢，但是如果这条记录离主页很近，这些额外的开销就可以被避免，因为顺预读功能会一次性将多个表页装载到数据库缓存中。即使顺序预读功能没有使用，也只有当该页在数据库缓存被覆盖的情况下才会发生额外的随机I/O。</li>
+<li>一条记录被更新后，可能因为表行过长导致其无法再存储于当前的表页中。这是DBMA就必须将该行记录迁移至另外一个表页中，同时在原有的表页中存储指向新表页的指针。当该行被访问时，会引入额外的随机访问。<br>表可以通过重组来还原行记录的顺序，从而减少不必要的随机访问。</li>
+</ol>
 
     </div>
 
@@ -382,13 +474,13 @@
           
             <a href="/tags/Oracle/" rel="tag"># Oracle</a>
           
-            <a href="/tags/Index/" rel="tag"># Index</a>
-          
-            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
-          
             <a href="/tags/SQL-Server/" rel="tag"># SQL Server</a>
           
             <a href="/tags/DB2/" rel="tag"># DB2</a>
+          
+            <a href="/tags/Index/" rel="tag"># Index</a>
+          
+            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
           
         </div>
         <div class="post-nav">
@@ -641,7 +733,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、概述"><span class="nav-number">1.</span> <span class="nav-text">一、概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、索引误区"><span class="nav-number">1.1.</span> <span class="nav-text">1、索引误区</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#误区1：索引层级不要超过5层"><span class="nav-number">1.1.0.1.</span> <span class="nav-text">误区1：索引层级不要超过5层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#误区2：单表的索引数不要超过6个"><span class="nav-number">1.1.0.2.</span> <span class="nav-text">误区2：单表的索引数不要超过6个</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#误区3：不应该索引不稳定的列"><span class="nav-number">1.1.0.3.</span> <span class="nav-text">误区3：不应该索引不稳定的列</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、系统化的索引设计"><span class="nav-number">1.2.</span> <span class="nav-text">2、系统化的索引设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、表和索引结构"><span class="nav-number">2.</span> <span class="nav-text">二、表和索引结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、SQL处理过程"><span class="nav-number">3.</span> <span class="nav-text">三、SQL处理过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#谓词"><span class="nav-number">3.1.</span> <span class="nav-text">谓词</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#核实确认访问路径（执行计划）"><span class="nav-number">3.2.</span> <span class="nav-text">核实确认访问路径（执行计划）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、为SELETE语句创建理想的索引"><span class="nav-number">4.</span> <span class="nav-text">四、为SELETE语句创建理想的索引</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引误区"><span class="nav-number">1.1.</span> <span class="nav-text">索引误区</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#误区1：索引层级不要超过5层"><span class="nav-number">1.1.0.1.</span> <span class="nav-text">误区1：索引层级不要超过5层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#误区2：单表的索引数不要超过6个"><span class="nav-number">1.1.0.2.</span> <span class="nav-text">误区2：单表的索引数不要超过6个</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#误区3：不应该索引不稳定的列"><span class="nav-number">1.1.0.3.</span> <span class="nav-text">误区3：不应该索引不稳定的列</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统化的索引设计"><span class="nav-number">1.2.</span> <span class="nav-text">系统化的索引设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表和索引结构"><span class="nav-number">2.</span> <span class="nav-text">表和索引结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL处理过程"><span class="nav-number">3.</span> <span class="nav-text">SQL处理过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#谓词"><span class="nav-number">3.1.</span> <span class="nav-text">谓词</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为SELETE语句创建理想的索引【重点】"><span class="nav-number">4.</span> <span class="nav-text">为SELETE语句创建理想的索引【重点】</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三星索引"><span class="nav-number">4.1.</span> <span class="nav-text">三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#星级是如何给定的"><span class="nav-number">4.2.</span> <span class="nav-text">星级是如何给定的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#范围谓词与三星索引"><span class="nav-number">4.3.</span> <span class="nav-text">范围谓词与三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为查询语句设计最佳索引的算法"><span class="nav-number">4.4.</span> <span class="nav-text">为查询语句设计最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为查询语句创建最佳索引的算法"><span class="nav-number">4.4.1.</span> <span class="nav-text">为查询语句创建最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-A"><span class="nav-number">4.4.1.1.</span> <span class="nav-text">候选 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-B"><span class="nav-number">4.4.1.2.</span> <span class="nav-text">候选 B</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#前瞻性的索引设计"><span class="nav-number">5.</span> <span class="nav-text">前瞻性的索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本概念"><span class="nav-number">5.1.</span> <span class="nav-text">基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#访问"><span class="nav-number">5.1.1.</span> <span class="nav-text">访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的索引行"><span class="nav-number">5.1.2.</span> <span class="nav-text">读取一组连续的索引行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的表行"><span class="nav-number">5.1.3.</span> <span class="nav-text">读取一组连续的表行</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
