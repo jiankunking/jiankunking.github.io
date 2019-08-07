@@ -57,20 +57,21 @@
   };
 </script>
 
-  <meta name="description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach">
+  <meta name="description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
 <meta name="keywords" content="Database,MySQL,Oracle,SQL Server,DB2,Index,读书笔记">
 <meta property="og:type" content="article">
 <meta property="og:title" content="数据库索引设计与优化 笔记">
 <meta property="og:url" content="https://jiankunking.com/数据库索引设计与优化-笔记.html">
 <meta property="og:site_name" content="衣舞晨风的博客">
-<meta property="og:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach">
+<meta property="og:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
 <meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E5%9B%BE4.2.png">
-<meta property="og:updated_time" content="2019-08-07T04:39:49.279Z">
+<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E6%98%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F.png">
+<meta property="og:updated_time" content="2019-08-07T07:53:04.906Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="数据库索引设计与优化 笔记">
-<meta name="twitter:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach">
+<meta name="twitter:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
 <meta name="twitter:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
   <link rel="canonical" href="https://jiankunking.com/数据库索引设计与优化-笔记">
 
@@ -287,7 +288,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-07 12:39:49" itemprop="dateModified" datetime="2019-08-07T12:39:49+08:00">2019-08-07</time>
+                <time title="修改时间：2019-08-07 15:53:04" itemprop="dateModified" datetime="2019-08-07T15:53:04+08:00">2019-08-07</time>
               </span>
             
           
@@ -319,6 +320,7 @@
 
       
         <p>本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach</p>
+<p>出版时间：2015-06-01</p>
 <a id="more"></a>
 
 <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><h2 id="索引误区"><a href="#索引误区" class="headerlink" title="索引误区"></a>索引误区</h2><h3 id="误区1：索引层级不要超过5层"><a href="#误区1：索引层级不要超过5层" class="headerlink" title="误区1：索引层级不要超过5层"></a>误区1：索引层级不要超过5层</h3><p>由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。</p>
@@ -472,7 +474,75 @@
 <li>优化器所做出的的本地响应时间估算可能与实际相差很大</li>
 <li>当谓词使用绑定变量时(显然这是很普遍的)，优化器对过滤因子的估算是基于平均输入值的，或更差情况下，基于默认值。为了获取更有价值的最差情况估值，EXPLAIN中的绑定变量必须用最差情况下的输入值来代替。这是一个需要应用知识的累人操作。</li>
 </ul>
-<h1 id="为表连接设计索引"><a href="#为表连接设计索引" class="headerlink" title="为表连接设计索引"></a>为表连接设计索引</h1>
+<h1 id="为表连接设计索引"><a href="#为表连接设计索引" class="headerlink" title="为表连接设计索引"></a>为表连接设计索引</h1><h2 id="预测表的访问顺序"><a href="#预测表的访问顺序" class="headerlink" title="预测表的访问顺序"></a>预测表的访问顺序</h2><p>在大部分情况下，可以使用以下经验法则来预测最佳的表访问顺序 : 将包含<strong>最低数量本地行</strong>的表作为外层表。</p>
+<blockquote>
+<p>本地行的数量是指最大过滤因子过滤本地谓词之后所剩余的行数。</p>
+</blockquote>
+<p>经验法则忽略了以下因素:</p>
+<ol>
+<li>排序。</li>
+<li>很小的表。<font color="DeepPink">非常小的表及其索引可能长期存在于数据库的缓冲池中</font>，至少在一个连接查询中，没有页会被读取多次。在这样的表和索引上进行随机读取所耗费的时间小于0.1ms，至少在页被第一次读取之后是这样的。所以，当这样的表不是外层表时，对其大量的随机读取也不会称为问题。</li>
+<li>聚簇比例。索引中行的顺序和表中行的顺序的关联性(对于聚簇索引而言，该关联性在表重组后为100%)，可能会影响对最佳访问顺序的选择，当然，除非索引是宽索引。</li>
+</ol>
+<p>最好的基于成本的优化器在进行路径选择时会把这些因素考虑进来。因此，他找出的访问顺序可能比我们基于本地行的数量的经验所得出的结果更优。</p>
+<h2 id="合并扫描连接和哈希连接"><a href="#合并扫描连接和哈希连接" class="headerlink" title="合并扫描连接和哈希连接"></a>合并扫描连接和哈希连接</h2><h3 id="合并扫描连接"><a href="#合并扫描连接" class="headerlink" title="合并扫描连接"></a>合并扫描连接</h3><p>执行过程如下</p>
+<ul>
+<li>执行表或索引扫描以找出满足本地谓词的所有行。</li>
+<li>随后可能会进行排序，如果这些扫描未按所要求的顺序提供结果集。</li>
+<li>对前两者生成的临时表进行合并。</li>
+</ul>
+<p>在以下情况下，合并扫描会比嵌套循环快。</p>
+<ol>
+<li>用于连接的字段上没有可用的索引。在这种情况下，若使用嵌套循环，那么内层表可能需要被扫描很多次。在实际情况中，用于连接的列上面没有索引的情况很少见，因为大部分连接谓词都是基于“主键等于外键”这一条件的。</li>
+<li>结果表很大。在这种情况下，若使用嵌套循环连接，可能会导致相同的页被不断的重复访问。</li>
+<li>连接查询中不止一张表的过滤因子很低。如我们所见，嵌套循环可能导致对内层表(或者内层表索引)的大量随机访问。</li>
+</ol>
+<p>例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">DECLARE CURSOR81 CURSOR FOR</span><br><span class="line">SELECT CNAME, CTYPE, INO, IEUR</span><br><span class="line">FROM CUST, INVOICE</span><br><span class="line">WHERE CUST.CTYPE = :CTYPE</span><br><span class="line">      AND</span><br><span class="line">      IDATE &gt; :IDATE</span><br><span class="line">      AND</span><br><span class="line">      CUST.CNO = INVOICE.CNO</span><br></pre></td></tr></table></figure>
+
+<h3 id="哈希连接"><a href="#哈希连接" class="headerlink" title="哈希连接"></a>哈希连接</h3><p>哈希连接本质上是用哈希算法代替排序算法的合并扫描连接。首先，对较小的结果集用哈希算法计算其连接字段，并将其保存在一个临时表中；然后，再扫描其他的表(或索引片)，并通过(计算得到的)哈希值将满足本地谓词条件的每一行记录与临时表中相应的行进行匹配。</p>
+<p>若结果行集已在索引中满足了所要求的顺序，那么合并扫描的速度将更快。若合并扫描需要进行排序，那么哈希连接的速度可能更快，尤其是当其中一个行集能够全部留在内存中时(对一个哈希表进行一次随机访问所花费的CPU时间，通常会比排序和合并一行所花费的时间少)。如果两个行集很大，那么哈希表会根据可用内存的大小对哈希表进行分区(同一时间内存中只有一个分区)，而另外一个行集会被扫描多次。</p>
+<h2 id="为什么连接的性能表现较差"><a href="#为什么连接的性能表现较差" class="headerlink" title="为什么连接的性能表现较差"></a>为什么连接的性能表现较差</h2><h3 id="模糊的索引设计"><a href="#模糊的索引设计" class="headerlink" title="模糊的索引设计"></a>模糊的索引设计</h3><p>“在连接字段上建索引”是最古老的索引建议之一。事实上，这是基于建议的一个扩展 : “<strong>为主键创建一个索引，并且为每一个外键创建一个由此外键作为前导列的索引</strong>”。在连接谓词上建索引使得嵌套循环称为一个可行的方案，但包含连接谓词列并不一定能够提供完全可接受的响应时间。连接谓词列上的索引和本地谓词上的索引通常都需要是宽索引。而且，不同的表访问顺序可能导致完全不同的索引需求。</p>
+<h2 id="为子查询设计索引"><a href="#为子查询设计索引" class="headerlink" title="为子查询设计索引"></a>为子查询设计索引</h2><p>从性能的角度看，子查询与连接十分相似。<strong>实际上，现今的优化器通常会在进行访问路径的选择之前，先将子查询重写为一个连接。</strong>若优化器没有进行重写，那么子查询的类型本身可能就决定了表访问顺序。内外层无关联的子查询通常会从最内层的SELECT开始执行。结果集被保存在一张临时表中，等待下一个SELECT的访问。内外层有关联的子查询通常会从最内层的SELECT开始执行。无论是何种情况，同连接一样，应当基于能够形成最快访问路径的表访问顺序进行索引设计。若最佳的表访问顺序未被选中，那么程序开发人员可能需要对语句进行重写，在某些情况下还可能要使用连接。</p>
+<h2 id="为UNION语句设计索引"><a href="#为UNION语句设计索引" class="headerlink" title="为UNION语句设计索引"></a>为UNION语句设计索引</h2><p>通过UNION或UNION ALL连接的SELECT语句是逐个分别进行优化和指向的。因此，应该为每个独立的SELECT设计合适的索引。需要注意一点，带ORDER BY的UNION可能会导致提前物化。</p>
+<h2 id="对于表设计的思考"><a href="#对于表设计的思考" class="headerlink" title="对于表设计的思考"></a>对于表设计的思考</h2><h3 id="冗余数据"><a href="#冗余数据" class="headerlink" title="冗余数据"></a>冗余数据</h3><p>有两种通过冗余数据优化连接速度的方法：</p>
+<ol>
+<li>将某列拷贝至依赖表(向下反范式法)。</li>
+<li>将汇总数据添加至父表(向上反范式法)。</li>
+</ol>
+<h3 id="向下反范式化"><a href="#向下反范式化" class="headerlink" title="向下反范式化"></a>向下反范式化</h3><p>不过，总体而言，当我们考虑引入向下反范式化时，需要预测一下冗余字段更新时可能会导致最差情况下的索引随机访问次数。</p>
+<h3 id="反范式化的成本"><a href="#反范式化的成本" class="headerlink" title="反范式化的成本"></a>反范式化的成本</h3><p>考虑性能时最令人关注的通常是，为了更新表及索引上的冗余字段锁带来的I/O时间。在向下反范式化中，这可能需要移动大量的索引行，从而导致一个简单的UPDATE运行的很慢。向上反范式化不太可能因为一次简单的更新操作而引发I/O剧增。不过INSERT，UPDATE和DELETE可能导致父表及其索引上的一些额外I/O。在极端情况下，如每秒10次以上的INSERT或UPDATE，由这些I/O带来的磁盘负载可能会成为问题。</p>
+<h2 id="嵌套循环连接和合并扫描连接-哈希连接-VS-反范式化"><a href="#嵌套循环连接和合并扫描连接-哈希连接-VS-反范式化" class="headerlink" title="嵌套循环连接和合并扫描连接/哈希连接 VS 反范式化"></a>嵌套循环连接和合并扫描连接/哈希连接 VS 反范式化</h2><p>许多数据库专家不愿意将冗余列添加至事务型表上，这是可以理解的。反范式化不仅仅是查询速度和更新速度之间的一个权衡，在某种程度上，他还是性能和数据完整性之间的一个权衡，即使在使用触发器来维护冗余数据的情况下。然而，当嵌套循环引入了过多的随机访问，且MS/HJ耗费了过多的CPU时间时，反范式化可能成为唯一的选择。尽管如此，在决定采用这一极端的方案之前，我们必须确保所有能够避免这一方案的方法都已经考虑过了。</p>
+<h2 id="无意识的表设计"><a href="#无意识的表设计" class="headerlink" title="无意识的表设计"></a>无意识的表设计</h2><p>从性能的角度看，我们非常难以理解为何有那么多的数据库中存在具有1 : 1或1: C(C = 有条件的;即0或1)关系的表。</p>
+<p>为何要建四张表而非只建一张CUST表？只要关系永远不会变成1 : M，那么灵活性就不会成为问题。在本例中，客户要么是公司，要么是个人，且不会有客户死亡两次!</p>
+<p>将这四张表合成一张部分字段为空的表(对于每一行，要么公司相关的字段为空，要么个人相关的字段为空；同样，所有活着的客户的死亡相关的字段为空)，这是存储空间和性能(随机访问的次数)之间的权衡。为空的数据并不违反范式。</p>
+<p>在不考虑硬件性能的情况下设计表可能会有如下问题 :</p>
+<ul>
+<li>即便是在最佳索引条件下，随机访问的次数仍可能会很高。</li>
+<li>复杂连接可能使得索引设计变得非常困难。</li>
+<li>优化器可能对复杂连接做出错误的访问路径选择。</li>
+</ul>
+<h1 id="星型连接"><a href="#星型连接" class="headerlink" title="星型连接"></a>星型连接</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>星型连接与普通连接的差别主要有两个方面：</p>
+<ol>
+<li>如下图所示，位于星型结构中心位置的表称为<strong>事实表</strong>，它的数据量远大于它周围的表—<strong>维度表</strong>。</li>
+<li>最佳的访问路径通常是包含维度表的<strong>笛卡尔积</strong>，这意味着他们<strong>没有相同的冗余列</strong>，满足本地谓词的维度表数据行都会参与连接。</li>
+</ol>
+<p><img src="/images/database-index-design-optimizers/%E6%98%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F.png" alt></p>
+<p>SALES 销售记录<br>STORE 出售的店铺<br>ITEM  出售的商品<br>DATE  出售的时间<br>CUST  出售的客户</p>
+<p>在星型连接中，事实表的数据量通过都比较大。在这种情况下，至少依据经验法则，事实表应该作为嵌套循环连接方式中最内层的表。一般情况下未读表都没有共同的列，所以这种链接顺序意味着是笛卡尔连接。</p>
+<h2 id="事实表的索引"><a href="#事实表的索引" class="headerlink" title="事实表的索引"></a>事实表的索引</h2><p>事实上，宽索引通常比事实表还大，原因有两个 :</p>
+<ol>
+<li>表通常都进行了压缩处理，而索引没有。</li>
+<li>新增一条记录通常都追加到表的尾部，因此事实表并不需要分散的空闲空间。但插入到索引(除了聚簇索引)上的位置是随机的。为了避免频繁的索引重组，在当前硬件条件下，通常10亿行的表将花费几个小时，大多数的索引在叶子节点上都需要留出足够的空闲空间，可能为30% ~ 40%。</li>
+</ol>
+<h2 id="汇总表"><a href="#汇总表" class="headerlink" title="汇总表"></a>汇总表</h2><p>即使是在理想索引的情况下，一些针对10亿条记录的事实表进行的查询也会导致大量的I/O访问。提高这类查询的性能的唯一方式就是使用汇总表(查询表)。这类表是反范式化的事实表。如果表不是特别大(比如只包含几百万行数据)，那么这是一个比较可行的方案，因为反模式化查询只需针对汇总表，而不需要多表关联。</p>
+<p>如果频繁查询每周的销售情况，那么可以针对每周的消费记录建立一张汇总表。比较好的汇总表设计是根据周，商品，商店汇总一条记录。汇总表根据周和商品进行汇总后，数据量可以大幅度减少。在这种情况下，查询的响应时间可能降低到不到1秒钟。</p>
+<p>汇总表上的索引通常会比较小，他唯一的显示因素就是刷新此表所需的时间。如同所有新鲜事物一样，汇总表的方案也会带来新的问题。</p>
+<ol>
+<li>如果用户的查询需求多样，汇总表的设计会比索引的设计更困难，不过，已经有一些工具基于查询日志来协助汇总表的设计。</li>
+<li>如果优化器不能选择正确的汇总表，那么汇总表的意义就不大；我们不能指望用户来指定查询使用某个合适的汇总表。最好的优化器已经在试着访问合适的表了，虽然SELECT语句实际上查询的是事实表。如果优化器不具备这个能力，或者它的正确率不够高，那么可能就不得不强制指定每个用户只能访问一个汇总表。用户不得不自己选择要使用的汇总表。优化器能自动识别的汇总表通常被称为自动汇总表或物化视图。</li>
+</ol>
+<h1 id="多索引访问"><a href="#多索引访问" class="headerlink" title="多索引访问"></a>多索引访问</h1>
     </div>
 
     
@@ -787,7 +857,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引误区"><span class="nav-number">1.1.</span> <span class="nav-text">索引误区</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#误区1：索引层级不要超过5层"><span class="nav-number">1.1.1.</span> <span class="nav-text">误区1：索引层级不要超过5层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#误区2：单表的索引数不要超过6个"><span class="nav-number">1.1.2.</span> <span class="nav-text">误区2：单表的索引数不要超过6个</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#误区3：不应该索引不稳定的列"><span class="nav-number">1.1.3.</span> <span class="nav-text">误区3：不应该索引不稳定的列</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统化的索引设计"><span class="nav-number">1.2.</span> <span class="nav-text">系统化的索引设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表和索引结构"><span class="nav-number">2.</span> <span class="nav-text">表和索引结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL处理过程"><span class="nav-number">3.</span> <span class="nav-text">SQL处理过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#谓词"><span class="nav-number">3.1.</span> <span class="nav-text">谓词</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为SELETE语句创建理想的索引【重点】"><span class="nav-number">4.</span> <span class="nav-text">为SELETE语句创建理想的索引【重点】</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三星索引"><span class="nav-number">4.1.</span> <span class="nav-text">三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#星级是如何给定的"><span class="nav-number">4.2.</span> <span class="nav-text">星级是如何给定的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#范围谓词与三星索引"><span class="nav-number">4.3.</span> <span class="nav-text">范围谓词与三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为查询语句设计最佳索引的算法"><span class="nav-number">4.4.</span> <span class="nav-text">为查询语句设计最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为查询语句创建最佳索引的算法"><span class="nav-number">4.4.1.</span> <span class="nav-text">为查询语句创建最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-A"><span class="nav-number">4.4.1.1.</span> <span class="nav-text">候选 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-B"><span class="nav-number">4.4.1.2.</span> <span class="nav-text">候选 B</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#前瞻性的索引设计"><span class="nav-number">5.</span> <span class="nav-text">前瞻性的索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本概念"><span class="nav-number">5.1.</span> <span class="nav-text">基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#访问"><span class="nav-number">5.1.1.</span> <span class="nav-text">访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的索引行"><span class="nav-number">5.1.2.</span> <span class="nav-text">读取一组连续的索引行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的表行"><span class="nav-number">5.1.3.</span> <span class="nav-text">读取一组连续的表行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算访问次数"><span class="nav-number">5.2.</span> <span class="nav-text">计算访问次数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#随机访问"><span class="nav-number">5.2.1.</span> <span class="nav-text">随机访问</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用满足需求的成本最低的索引还是所能达到的最有索引"><span class="nav-number">5.3.</span> <span class="nav-text">使用满足需求的成本最低的索引还是所能达到的最有索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#半宽索引-最大化索引过滤"><span class="nav-number">5.4.</span> <span class="nav-text">半宽索引(最大化索引过滤)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#影响索引设计过程的因素"><span class="nav-number">6.</span> <span class="nav-text">影响索引设计过程的因素</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#困难谓词"><span class="nav-number">6.1.</span> <span class="nav-text">困难谓词</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过滤因子隐患"><span class="nav-number">6.2.</span> <span class="nav-text">过滤因子隐患</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#被动式索引设计"><span class="nav-number">7.</span> <span class="nav-text">被动式索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#对结果集排序"><span class="nav-number">7.1.</span> <span class="nav-text">对结果集排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#成本估算"><span class="nav-number">7.2.</span> <span class="nav-text">成本估算</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为表连接设计索引"><span class="nav-number">8.</span> <span class="nav-text">为表连接设计索引</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引误区"><span class="nav-number">1.1.</span> <span class="nav-text">索引误区</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#误区1：索引层级不要超过5层"><span class="nav-number">1.1.1.</span> <span class="nav-text">误区1：索引层级不要超过5层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#误区2：单表的索引数不要超过6个"><span class="nav-number">1.1.2.</span> <span class="nav-text">误区2：单表的索引数不要超过6个</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#误区3：不应该索引不稳定的列"><span class="nav-number">1.1.3.</span> <span class="nav-text">误区3：不应该索引不稳定的列</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统化的索引设计"><span class="nav-number">1.2.</span> <span class="nav-text">系统化的索引设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表和索引结构"><span class="nav-number">2.</span> <span class="nav-text">表和索引结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL处理过程"><span class="nav-number">3.</span> <span class="nav-text">SQL处理过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#谓词"><span class="nav-number">3.1.</span> <span class="nav-text">谓词</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为SELETE语句创建理想的索引【重点】"><span class="nav-number">4.</span> <span class="nav-text">为SELETE语句创建理想的索引【重点】</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三星索引"><span class="nav-number">4.1.</span> <span class="nav-text">三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#星级是如何给定的"><span class="nav-number">4.2.</span> <span class="nav-text">星级是如何给定的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#范围谓词与三星索引"><span class="nav-number">4.3.</span> <span class="nav-text">范围谓词与三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为查询语句设计最佳索引的算法"><span class="nav-number">4.4.</span> <span class="nav-text">为查询语句设计最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为查询语句创建最佳索引的算法"><span class="nav-number">4.4.1.</span> <span class="nav-text">为查询语句创建最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-A"><span class="nav-number">4.4.1.1.</span> <span class="nav-text">候选 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-B"><span class="nav-number">4.4.1.2.</span> <span class="nav-text">候选 B</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#前瞻性的索引设计"><span class="nav-number">5.</span> <span class="nav-text">前瞻性的索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本概念"><span class="nav-number">5.1.</span> <span class="nav-text">基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#访问"><span class="nav-number">5.1.1.</span> <span class="nav-text">访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的索引行"><span class="nav-number">5.1.2.</span> <span class="nav-text">读取一组连续的索引行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的表行"><span class="nav-number">5.1.3.</span> <span class="nav-text">读取一组连续的表行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算访问次数"><span class="nav-number">5.2.</span> <span class="nav-text">计算访问次数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#随机访问"><span class="nav-number">5.2.1.</span> <span class="nav-text">随机访问</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用满足需求的成本最低的索引还是所能达到的最有索引"><span class="nav-number">5.3.</span> <span class="nav-text">使用满足需求的成本最低的索引还是所能达到的最有索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#半宽索引-最大化索引过滤"><span class="nav-number">5.4.</span> <span class="nav-text">半宽索引(最大化索引过滤)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#影响索引设计过程的因素"><span class="nav-number">6.</span> <span class="nav-text">影响索引设计过程的因素</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#困难谓词"><span class="nav-number">6.1.</span> <span class="nav-text">困难谓词</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过滤因子隐患"><span class="nav-number">6.2.</span> <span class="nav-text">过滤因子隐患</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#被动式索引设计"><span class="nav-number">7.</span> <span class="nav-text">被动式索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#对结果集排序"><span class="nav-number">7.1.</span> <span class="nav-text">对结果集排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#成本估算"><span class="nav-number">7.2.</span> <span class="nav-text">成本估算</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为表连接设计索引"><span class="nav-number">8.</span> <span class="nav-text">为表连接设计索引</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#预测表的访问顺序"><span class="nav-number">8.1.</span> <span class="nav-text">预测表的访问顺序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#合并扫描连接和哈希连接"><span class="nav-number">8.2.</span> <span class="nav-text">合并扫描连接和哈希连接</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#合并扫描连接"><span class="nav-number">8.2.1.</span> <span class="nav-text">合并扫描连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#哈希连接"><span class="nav-number">8.2.2.</span> <span class="nav-text">哈希连接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么连接的性能表现较差"><span class="nav-number">8.3.</span> <span class="nav-text">为什么连接的性能表现较差</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#模糊的索引设计"><span class="nav-number">8.3.1.</span> <span class="nav-text">模糊的索引设计</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为子查询设计索引"><span class="nav-number">8.4.</span> <span class="nav-text">为子查询设计索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为UNION语句设计索引"><span class="nav-number">8.5.</span> <span class="nav-text">为UNION语句设计索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对于表设计的思考"><span class="nav-number">8.6.</span> <span class="nav-text">对于表设计的思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#冗余数据"><span class="nav-number">8.6.1.</span> <span class="nav-text">冗余数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#向下反范式化"><span class="nav-number">8.6.2.</span> <span class="nav-text">向下反范式化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#反范式化的成本"><span class="nav-number">8.6.3.</span> <span class="nav-text">反范式化的成本</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#嵌套循环连接和合并扫描连接-哈希连接-VS-反范式化"><span class="nav-number">8.7.</span> <span class="nav-text">嵌套循环连接和合并扫描连接/哈希连接 VS 反范式化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#无意识的表设计"><span class="nav-number">8.8.</span> <span class="nav-text">无意识的表设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#星型连接"><span class="nav-number">9.</span> <span class="nav-text">星型连接</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">9.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#事实表的索引"><span class="nav-number">9.2.</span> <span class="nav-text">事实表的索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#汇总表"><span class="nav-number">9.3.</span> <span class="nav-text">汇总表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#多索引访问"><span class="nav-number">10.</span> <span class="nav-text">多索引访问</span></a></li></ol></div>
             
 
           </div>
