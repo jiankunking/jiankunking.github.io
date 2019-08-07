@@ -57,23 +57,23 @@
   };
 </script>
 
-  <meta name="description" content="本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明  AQS:AbstractQueuedSynchronizer ConditionObject是同步器AQS的内部类，因为Condition的操作需要获取相关联的锁，所以作为同步器的内部类也较为合理。每个Condition对象都包含着一个队列（以下称为等待队列），该队列是Condition对象实现等待/通知功能的关键。 下面">
+  <meta name="description" content="本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明">
 <meta name="keywords" content="JDK,JUC,AQS,Java,Condition">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java AQS Condition的实现分析">
 <meta property="og:url" content="https://jiankunking.com/Java-AQS-Condition的实现分析.html">
 <meta property="og:site_name" content="衣舞晨风的博客">
-<meta property="og:description" content="本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明  AQS:AbstractQueuedSynchronizer ConditionObject是同步器AQS的内部类，因为Condition的操作需要获取相关联的锁，所以作为同步器的内部类也较为合理。每个Condition对象都包含着一个队列（以下称为等待队列），该队列是Condition对象实现等待/通知功能的关键。 下面">
+<meta property="og:description" content="本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/java-juc-aqs-condition/59.png">
 <meta property="og:image" content="https://jiankunking.com/images/java-juc-aqs-condition/510.png">
 <meta property="og:image" content="https://jiankunking.com/images/java-juc-aqs-condition/511.png">
 <meta property="og:image" content="https://jiankunking.com/images/java-juc-aqs-condition/512.png">
 <meta property="og:image" content="https://jiankunking.com/images/wechat/wechat.jpg">
-<meta property="og:updated_time" content="2019-08-01T01:17:00.172Z">
+<meta property="og:updated_time" content="2019-08-07T04:40:35.845Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java AQS Condition的实现分析">
-<meta name="twitter:description" content="本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明  AQS:AbstractQueuedSynchronizer ConditionObject是同步器AQS的内部类，因为Condition的操作需要获取相关联的锁，所以作为同步器的内部类也较为合理。每个Condition对象都包含着一个队列（以下称为等待队列），该队列是Condition对象实现等待/通知功能的关键。 下面">
+<meta name="twitter:description" content="本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明">
 <meta name="twitter:image" content="https://jiankunking.com/images/java-juc-aqs-condition/59.png">
   <link rel="canonical" href="https://jiankunking.com/Java-AQS-Condition的实现分析">
 
@@ -290,7 +290,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-01 09:17:00" itemprop="dateModified" datetime="2019-08-01T09:17:00+08:00">2019-08-01</time>
+                <time title="修改时间：2019-08-07 12:40:35" itemprop="dateModified" datetime="2019-08-07T12:40:35+08:00">2019-08-07</time>
               </span>
             
           
@@ -324,6 +324,8 @@
         <blockquote>
 <p>本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明</p>
 </blockquote>
+<a id="more"></a>
+
 <p>AQS:AbstractQueuedSynchronizer</p>
 <p>ConditionObject是同步器AQS的内部类，因为Condition的操作需要获取相关联的锁，所以作为同步器的内部类也较为合理。每个Condition对象都包含着一个队列（以下称为等待队列），该队列是Condition对象实现等待/通知功能的关键。</p>
 <p>下面将分析Condition的实现，主要包括：等待队列、等待和通知，下面提到的Condition如果不加说明均指的是ConditionObject。</p>

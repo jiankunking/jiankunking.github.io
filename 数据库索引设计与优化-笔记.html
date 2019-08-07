@@ -57,20 +57,20 @@
   };
 </script>
 
-  <meta name="description" content="概述索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表">
+  <meta name="description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach">
 <meta name="keywords" content="Database,MySQL,Oracle,SQL Server,DB2,Index,读书笔记">
 <meta property="og:type" content="article">
 <meta property="og:title" content="数据库索引设计与优化 笔记">
 <meta property="og:url" content="https://jiankunking.com/数据库索引设计与优化-笔记.html">
 <meta property="og:site_name" content="衣舞晨风的博客">
-<meta property="og:description" content="概述索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表">
+<meta property="og:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
 <meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E5%9B%BE4.2.png">
-<meta property="og:updated_time" content="2019-08-05T07:23:08.218Z">
+<meta property="og:updated_time" content="2019-08-07T04:39:49.279Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="数据库索引设计与优化 笔记">
-<meta name="twitter:description" content="概述索引误区误区1：索引层级不要超过5层由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。 误区2：单表的索引数不要超过6个我建议不要给表的索引数目设置上限。 保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表">
+<meta name="twitter:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach">
 <meta name="twitter:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
   <link rel="canonical" href="https://jiankunking.com/数据库索引设计与优化-笔记">
 
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-05 15:23:08" itemprop="dateModified" datetime="2019-08-05T15:23:08+08:00">2019-08-05</time>
+                <time title="修改时间：2019-08-07 12:39:49" itemprop="dateModified" datetime="2019-08-07T12:39:49+08:00">2019-08-07</time>
               </span>
             
           
@@ -318,7 +318,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><h2 id="索引误区"><a href="#索引误区" class="headerlink" title="索引误区"></a>索引误区</h2><h3 id="误区1：索引层级不要超过5层"><a href="#误区1：索引层级不要超过5层" class="headerlink" title="误区1：索引层级不要超过5层"></a>误区1：索引层级不要超过5层</h3><p>由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。</p>
+        <p>本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach</p>
+<a id="more"></a>
+
+<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><h2 id="索引误区"><a href="#索引误区" class="headerlink" title="索引误区"></a>索引误区</h2><h3 id="误区1：索引层级不要超过5层"><a href="#误区1：索引层级不要超过5层" class="headerlink" title="误区1：索引层级不要超过5层"></a>误区1：索引层级不要超过5层</h3><p>由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。</p>
 <h3 id="误区2：单表的索引数不要超过6个"><a href="#误区2：单表的索引数不要超过6个" class="headerlink" title="误区2：单表的索引数不要超过6个"></a>误区2：单表的索引数不要超过6个</h3><p>我建议不要给表的索引数目设置上限。</p>
 <p>保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表上建立10个索引。</p>
 <h3 id="误区3：不应该索引不稳定的列"><a href="#误区3：不应该索引不稳定的列" class="headerlink" title="误区3：不应该索引不稳定的列"></a>误区3：不应该索引不稳定的列</h3><p><font color="DeepPink">索引行是按索引键的顺序存储的，所以当索引键中存一列被更新时，DBMS可能不得不把相应的行从旧的索引位置移到新的位置来保持这一顺序。这个新的位迓可能与旧的位晋位于相同的叶子贞上，在这种情况下，只有一个页会受到影响。然而，如果被修改的键是第一列或唯一的列，那么新的索引行可能必须被迁移到一个不同的叶子页上，即DBMS必须更新两个叶子页。三十年前，如果这个索引为一个4层索引，这也许需要6次磁盘随机读取：3次常规读取，即2次非叶子页读取和1次叶子页读取，加上新的位置所涉及的3次随机读取。当一次随机读取耗时30ms 时，迁移一个索引行可能会给该更新操作额外增加6 x 30ms =180ms 的响应时间。因此，不稳定的列很少被索引就不足为奇了。</font></p>
