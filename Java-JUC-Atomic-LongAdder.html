@@ -61,7 +61,7 @@
 <meta name="keywords" content="JDK,Concurrent,Atomic,LongAdder">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java JUC Atomic LongAdder">
-<meta property="og:url" content="https://jiankunking.com/Java-JUC-Atomic-LongAdder.html">
+<meta property="og:url" content="https://jiankunking.com/java-juc-atomic-longadder.html">
 <meta property="og:site_name" content="衣舞晨风的博客">
 <meta property="og:description" content="基于OpenJDK 12">
 <meta property="og:locale" content="zh-CN">
@@ -69,12 +69,12 @@
 <meta property="og:image" content="https://jiankunking.com/images/java-juc-atomic-longadder/%E7%83%AD%E7%82%B9%E5%88%86%E7%A6%BB%E7%A4%BA%E6%84%8F%E5%9B%BE.png">
 <meta property="og:image" content="https://jiankunking.com/images/java-juc-atomic-longadder/LongAdder%E5%87%BD%E6%95%B0%E5%88%97%E8%A1%A8.png">
 <meta property="og:image" content="https://jiankunking.com/images/wechat/wechat.jpg">
-<meta property="og:updated_time" content="2019-08-08T04:48:57.919Z">
+<meta property="og:updated_time" content="2019-08-08T08:30:38.371Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java JUC Atomic LongAdder">
 <meta name="twitter:description" content="基于OpenJDK 12">
 <meta name="twitter:image" content="https://jiankunking.com/images/java-juc-atomic-longadder/LongAdder%E7%B1%BB%E5%9B%BE.png">
-  <link rel="canonical" href="https://jiankunking.com/Java-JUC-Atomic-LongAdder">
+  <link rel="canonical" href="https://jiankunking.com/java-juc-atomic-longadder">
 
 
 <script id="page.configurations">
@@ -242,12 +242,12 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/Java-JUC-Atomic-LongAdder.html">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-juc-atomic-longadder.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="jiankunking">
       <meta itemprop="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。">
-      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="image" content="/images/avatar/avatar.jpg">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -289,7 +289,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-08 12:48:57" itemprop="dateModified" datetime="2019-08-08T12:48:57+08:00">2019-08-08</time>
+                <time title="修改时间：2019-08-08 16:30:38" itemprop="dateModified" datetime="2019-08-08T16:30:38+08:00">2019-08-08</time>
               </span>
             
           
@@ -336,8 +336,13 @@
 </blockquote>
 <p>那么LongAdder是怎么实现的？</p>
 <p>先看一下LongAdder的类图：<br><img src="/images/java-juc-atomic-longadder/LongAdder%E7%B1%BB%E5%9B%BE.png" alt></p>
-<p>再看一下基类Number，Number是一个抽象类其中没有任何逻辑，该类是byte、double、float、int、long、short的基类。</p>
-<h1 id="Striped64"><a href="#Striped64" class="headerlink" title="Striped64"></a>Striped64</h1><h2 id="设计思想"><a href="#设计思想" class="headerlink" title="设计思想"></a>设计思想</h2><p>再看一下Striped64，从Striped64类注释可以看到：</p>
+<p>基类Number，Number是一个抽象类其中没有任何逻辑，该类是byte、double、float、int、long、short的基类。</p>
+<h1 id="Striped64"><a href="#Striped64" class="headerlink" title="Striped64"></a>Striped64</h1><h2 id="设计思想"><a href="#设计思想" class="headerlink" title="设计思想"></a>设计思想</h2><p>该部分翻译自Striped64源码注释，可以略过，概括起来就是：</p>
+<blockquote>
+<p>分散热点，将value值分散到一个数组中，不同线程会命中到数组的不同槽中，各个线程只对自己槽中的那个值进行CAS操作，这样热点就被分散了，冲突的概率就小很多。如果要获取真正的long值，只要将各个槽中的变量值累加返回。</p>
+</blockquote>
+<hr>
+<p>从Striped64类注释可以看到：</p>
 <blockquote>
 <p>Striped64是package内使用的，对于在64位元素上动态分片提供统一实现（感觉有点像：AbstractQueuedSynchronizer）<br>Striped64继承了Number类，这也就是说具体实现的子类也必须实现相关的内容</p>
 </blockquote>
@@ -346,8 +351,9 @@
 <p>在某种程度上，因为Cell类相对较大，只有他们真正被需要的时候，我们才创建。<font color="DeepPink">如果没有竞争，那么所有的更新操作将对base字段实现。当发生第一次争用（也就是说如果第一次对base字段的CAS操作失败），初始化为大小是2的表格。当进一步的争用发生的时候,表的大小会加倍，直到达到等于大于cpu的数量。表在未使用之前一直为null。</font></p>
 <p>利用一个自旋锁（cellsBusy）来初始化和调整表的大小，以及用新Cells填充slots。这个地方没有必要使用阻塞锁，如果锁不可达，线程可以尝试其他的slots，或者尝试base字段。在这些重试期间，竞争加剧，但是降低了局部性，这仍然比阻塞锁来得好。</p>
 <p>通过ThreadLocalRandom维护的Thread.probe字段用作每个线程的哈希码。我们让它们保持未初始化（为零）(如果它们以这种方式出现)，直到它们在插槽0竞争。出现竞争后初始化为通常不会和其他的的值冲突的值，比如线程的哈希码。在执行更新时发生CAS操作失败意味着出现了争用或者表碰撞，或两者都有。在发生冲突时，如果表的大小小于容量，那么它的大小将加倍，除非其他线程持有锁。如果哈希后的slot为空，并且锁可用，则创建一个新单元格。如果存在了那么会进行CAS尝试。通过双重哈希进行重试，利用一个辅助哈希（Marsaglia XorShift随机数算法）来尝试寻找一个空闲的slot。</p>
-<p>表的大小是有上限的，因为当线程多于CPU时，假设每个线程都绑定到一个CPU，就会有一个完美的散列函数将线程映射到插槽，从而消除冲突。当我们达到容量时，我们通过随机改变冲突线程的哈希代码来搜索这个映射。因为搜索是随机的，冲突只有通过CAS失败才知道，收敛可能会很慢，而且因为线程通常不会永远绑定到CPU，所以根本不会发生。然而，尽管有这些限制，在这些情况下观察到的竞争率通常很低。</p>
-<p>Cell可能会出现不可用的情况，包括进行哈希的线程终止，或者由于table扩容导致线程哈希不正确。我们不尝试检测或删除这样的单元格，假设对于长时间运行的实例，争用会再次发生，因此最终将再次需要这些单元格;而对于短时间运行的实例，花费时间去销毁又没有什么必要。</p>
+<p><font color="DeepPink">表的大小是有上限的，因为当线程多于CPU时，假设每个线程都绑定到一个CPU，就会有一个完美的散列函数将线程映射到插槽，从而消除冲突。当我们达到容量时，我们通过随机改变冲突线程的哈希代码来搜索这个映射。因为搜索是随机的，冲突只有通过CAS失败才知道，收敛可能会很慢，而且因为线程通常不会永远绑定到CPU，所以根本不会发生。然而，尽管有这些限制，在这些情况下观察到的竞争率通常很低。</font></p>
+<p><font color="DeepPink">Cell可能会出现不可用的情况，包括进行哈希的线程终止，或者由于table扩容导致线程哈希不正确。我们不尝试检测或删除这样的单元格，假设对于长时间运行的实例，争用会再次发生，因此最终将再次需要这些单元格;而对于短时间运行的实例，花费时间去销毁又没有什么必要。</font></p>
+<hr>
 <h2 id="Cell类"><a href="#Cell类" class="headerlink" title="Cell类"></a>Cell类</h2><p>Atomiclong的变体，仅支持原始访问和CAS。</p>
 <blockquote>
 <p>Cell类被注解@jdk.internal.vm.annotation.Contended修饰。<br>Contended的作用（详细信息参见：<a href="http://openjdk.java.net/jeps/142" target="_blank" rel="noopener">JEP 142</a>）：<br>Define a way to specify that one or more fields in an object are likely to be highly contended across processor cores so that the VM can arrange for them not to share cache lines with other fields, or other objects, that are likely to be independently accessed.</p>
@@ -436,7 +442,7 @@
         </div>
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
-              <a href="/数据库索引设计与优化-笔记.html" rel="next" title="数据库索引设计与优化 笔记">
+              <a href="/relational-database-index-design-and-the-optimizers-note.html" rel="next" title="数据库索引设计与优化 笔记">
                 <i class="fa fa-chevron-left"></i> 数据库索引设计与优化 笔记
               </a>
             
@@ -445,7 +451,7 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-              <a href="/Java-JUC-Atomic-AtomicLong.html" rel="prev" title="Java JUC Atomic AtomicLong">
+              <a href="/java-juc-atomic-atomiclong.html" rel="prev" title="Java JUC Atomic AtomicLong">
                 Java JUC Atomic AtomicLong <i class="fa fa-chevron-right"></i>
               </a>
             
@@ -493,7 +499,7 @@
 
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image"
-      src="/images/avatar/avatar.png"
+      src="/images/avatar/avatar.jpg"
       alt="jiankunking">
   <p class="site-author-name" itemprop="name">jiankunking</p>
   <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
@@ -503,7 +509,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -633,7 +639,9 @@
         
           
         
-        <span class="site-state-item-count">38</span>
+          
+        
+        <span class="site-state-item-count">39</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
