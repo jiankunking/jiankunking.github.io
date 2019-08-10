@@ -69,7 +69,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/java-juc-atomic-longadder/%E7%83%AD%E7%82%B9%E5%88%86%E7%A6%BB%E7%A4%BA%E6%84%8F%E5%9B%BE.png">
 <meta property="og:image" content="https://jiankunking.com/images/java-juc-atomic-longadder/LongAdder%E5%87%BD%E6%95%B0%E5%88%97%E8%A1%A8.png">
 <meta property="og:image" content="https://jiankunking.com/images/wechat/wechat.jpg">
-<meta property="og:updated_time" content="2019-08-08T08:30:38.371Z">
+<meta property="og:updated_time" content="2019-08-10T04:46:27.288Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java JUC Atomic LongAdder">
 <meta name="twitter:description" content="基于OpenJDK 12">
@@ -289,7 +289,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-08 16:30:38" itemprop="dateModified" datetime="2019-08-08T16:30:38+08:00">2019-08-08</time>
+                <time title="修改时间：2019-08-10 12:46:27" itemprop="dateModified" datetime="2019-08-10T12:46:27+08:00">2019-08-10</time>
               </span>
             
           
@@ -380,6 +380,14 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Equivalent to &#123;@code add(1)&#125;.</span><br><span class="line"> */</span><br><span class="line">public void increment() &#123;</span><br><span class="line">	add(1L);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line">* Adds the given value.</span><br><span class="line">*</span><br><span class="line">* @param x the value to add</span><br><span class="line">*/</span><br><span class="line">public void add(long x) &#123;</span><br><span class="line">    Cell[] cs; long b, v; int m; Cell c;</span><br><span class="line">    if ((cs = cells) != null || !casBase(b = base, b + x)) &#123;</span><br><span class="line">    	//到了这里 表明cs不为null or 线程有并发冲突，导致caseBase失败</span><br><span class="line">        boolean uncontended = true;</span><br><span class="line">        if (cs == null || // cells 为null</span><br><span class="line">            (m = cs.length - 1) &lt; 0 || // cells 不为null 但只有一个元素</span><br><span class="line">            (c = cs[getProbe() &amp; m]) == null || //哈希取模 对应位置元素为null</span><br><span class="line">            !(uncontended = c.cas(v = c.value, v + x))) //cas 替换失败（并发竞争）</span><br><span class="line">            longAccumulate(x, null, uncontended);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line">* CASes the base field (Striped64类中的方法)</span><br><span class="line">*/</span><br><span class="line">final boolean casBase(long cmp, long val) &#123;</span><br><span class="line">    return BASE.compareAndSet(this, cmp, val);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//当在sum的过程中，有可能别的线程正在操作cells（因为没有加锁）</span><br><span class="line">//sum取的值，不一定准确</span><br><span class="line">public long sum() &#123;</span><br><span class="line">     Cell[] cs = cells;</span><br><span class="line">     long sum = base;</span><br><span class="line">     if (cs != null) &#123;</span><br><span class="line">        for (Cell c : cs)</span><br><span class="line">            if (c != null)</span><br><span class="line">                sum += c.value;</span><br><span class="line">    &#125;</span><br><span class="line">    return sum;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h2 id="LongAdder-vs-AtomicLong-Performance"><a href="#LongAdder-vs-AtomicLong-Performance" class="headerlink" title="LongAdder vs AtomicLong Performance"></a>LongAdder vs AtomicLong Performance</h2><p><a href="http://blog.palominolabs.com/2014/02/10/java-8-performance-improvements-longadder-vs-atomiclong/" target="_blank" rel="noopener">Java 8 Performance Improvements: LongAdder vs AtomicLong</a></p>
+<h1 id="对比LongAccumulator"><a href="#对比LongAccumulator" class="headerlink" title="对比LongAccumulator"></a>对比LongAccumulator</h1><p>LongAdder类可以看做是LongAccumulator的一个特例，LongAccumulator提供了比LongAdder更强大、灵活的功能。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Creates a new instance using the given accumulator function</span><br><span class="line"> * and identity element.</span><br><span class="line"> * @param accumulatorFunction a side-effect-free function of two arguments</span><br><span class="line"> * @param identity identity (initial value) for the accumulator function</span><br><span class="line">*/</span><br><span class="line">public LongAccumulator(LongBinaryOperator accumulatorFunction,</span><br><span class="line">                           long identity) &#123;</span><br><span class="line">    this.function = accumulatorFunction;</span><br><span class="line">    base = this.identity = identity;</span><br><span class="line">&#125;</span><br><span class="line">@FunctionalInterface</span><br><span class="line">public interface LongBinaryOperator &#123;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Applies this operator to the given operands.</span><br><span class="line"> *</span><br><span class="line"> * @param left the first operand</span><br><span class="line"> * @param right the second operand</span><br><span class="line"> * @return the operator result</span><br><span class="line">*/</span><br><span class="line">long applyAsLong(long left, long right);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>构造函数其中accumulatorFunction一个双目运算接口，根据输入的两个参数返回一个计算值，identity则是LongAccumulator累加器的初始值。</p>
+<p>accumulatorFunction主要用于Striped64 longAccumulate中使用，如果fn==null，则默认是相加，否则会调用fn.applyAsLong(v, x)</p>
+<blockquote>
+<p>LongAccumulator相比于LongAdder，可以为累加器提供非0的初始值，而LongAdder只能提供默认的0值。<br>另外，LongAccumulator还可以指定累加规则，比如累加或者相乘，只需要在构造LongAccumulator时，传入自定义的双目运算器即可，后者则内置累加规则。</p>
+</blockquote>
 <h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><p><a href="https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/java/util/concurrent/atomic/LongAdder.java" target="_blank" rel="noopener">https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/java/util/concurrent/atomic/LongAdder.java</a></p>
 <p><a href="https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/jdk/internal/vm/annotation/Contended.java" target="_blank" rel="noopener">https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/jdk/internal/vm/annotation/Contended.java</a></p>
 <p><a href="https://www.jianshu.com/p/9a7de5644dd4" target="_blank" rel="noopener">https://www.jianshu.com/p/9a7de5644dd4</a></p>
@@ -524,7 +532,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -674,17 +682,6 @@
         <a href="https://github.com/jiankunking" title="GitHub &rarr; https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
     
-      <span class="links-of-author-item">
-      
-      
-        
-      
-      
-        
-      
-        <a href="mailto:jiankunking@163.com" title="E-Mail &rarr; mailto:jiankunking@163.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
-      </span>
-    
   </div>
 
 
@@ -717,7 +714,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Striped64"><span class="nav-number">1.</span> <span class="nav-text">Striped64</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#设计思想"><span class="nav-number">1.1.</span> <span class="nav-text">设计思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cell类"><span class="nav-number">1.2.</span> <span class="nav-text">Cell类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#示意图"><span class="nav-number">1.3.</span> <span class="nav-text">示意图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#具体实现"><span class="nav-number">1.4.</span> <span class="nav-text">具体实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LongAdder"><span class="nav-number">2.</span> <span class="nav-text">LongAdder</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#说明"><span class="nav-number">2.1.</span> <span class="nav-text">说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#具体实现-1"><span class="nav-number">2.2.</span> <span class="nav-text">具体实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LongAdder-vs-AtomicLong-Performance"><span class="nav-number">2.3.</span> <span class="nav-text">LongAdder vs AtomicLong Performance</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Reference"><span class="nav-number">3.</span> <span class="nav-text">Reference</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Striped64"><span class="nav-number">1.</span> <span class="nav-text">Striped64</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#设计思想"><span class="nav-number">1.1.</span> <span class="nav-text">设计思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cell类"><span class="nav-number">1.2.</span> <span class="nav-text">Cell类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#示意图"><span class="nav-number">1.3.</span> <span class="nav-text">示意图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#具体实现"><span class="nav-number">1.4.</span> <span class="nav-text">具体实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LongAdder"><span class="nav-number">2.</span> <span class="nav-text">LongAdder</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#说明"><span class="nav-number">2.1.</span> <span class="nav-text">说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#具体实现-1"><span class="nav-number">2.2.</span> <span class="nav-text">具体实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LongAdder-vs-AtomicLong-Performance"><span class="nav-number">2.3.</span> <span class="nav-text">LongAdder vs AtomicLong Performance</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#对比LongAccumulator"><span class="nav-number">3.</span> <span class="nav-text">对比LongAccumulator</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Reference"><span class="nav-number">4.</span> <span class="nav-text">Reference</span></a></li></ol></div>
             
 
           </div>
