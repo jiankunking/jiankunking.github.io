@@ -58,13 +58,13 @@
   };
 </script>
 
-  <meta name="description" content="概要Package 本文主要阐述：Load、Store、Delete，更加详细的阐述可以参考源码描述（建议先大体浏览一下Map源码）。 实现思路 空间换时间。 通过冗余的两个数据结构(read、dirty),实现加锁对性能的影响。 使用只读数据(read)，避免读写冲突。 动态调整，miss次数多了之后，将dirty数据提升为read。 double-checking。 延迟删除。 删除一个键值只">
+  <meta name="description" content="基于Go 1.9 解析Sync Map">
 <meta name="keywords" content="Go,Sync,Map">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Go 1.9 Sync Map">
 <meta property="og:url" content="https://jiankunking.com/go-sync-map.html">
 <meta property="og:site_name" content="衣舞晨风的博客">
-<meta property="og:description" content="概要Package 本文主要阐述：Load、Store、Delete，更加详细的阐述可以参考源码描述（建议先大体浏览一下Map源码）。 实现思路 空间换时间。 通过冗余的两个数据结构(read、dirty),实现加锁对性能的影响。 使用只读数据(read)，避免读写冲突。 动态调整，miss次数多了之后，将dirty数据提升为read。 double-checking。 延迟删除。 删除一个键值只">
+<meta property="og:description" content="基于Go 1.9 解析Sync Map">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/go-sync-map/package.png">
 <meta property="og:image" content="https://jiankunking.com/images/go-sync-map/map%E7%BB%93%E6%9E%84%E5%85%B3%E7%B3%BB%E7%A4%BA%E6%84%8F%E5%9B%BE">
@@ -72,10 +72,10 @@
 <meta property="og:image" content="https://jiankunking.com/images/go-sync-map/store%E6%B5%81%E7%A8%8B%E5%9B%BE.bmp">
 <meta property="og:image" content="https://jiankunking.com/images/go-sync-map/delete%E6%B5%81%E7%A8%8B%E5%9B%BE.png">
 <meta property="og:image" content="https://jiankunking.com/images/wechat/wechat.jpg">
-<meta property="og:updated_time" content="2019-08-12T06:07:02.053Z">
+<meta property="og:updated_time" content="2019-08-12T11:54:05.826Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Go 1.9 Sync Map">
-<meta name="twitter:description" content="概要Package 本文主要阐述：Load、Store、Delete，更加详细的阐述可以参考源码描述（建议先大体浏览一下Map源码）。 实现思路 空间换时间。 通过冗余的两个数据结构(read、dirty),实现加锁对性能的影响。 使用只读数据(read)，避免读写冲突。 动态调整，miss次数多了之后，将dirty数据提升为read。 double-checking。 延迟删除。 删除一个键值只">
+<meta name="twitter:description" content="基于Go 1.9 解析Sync Map">
 <meta name="twitter:image" content="https://jiankunking.com/images/go-sync-map/package.png">
   <link rel="canonical" href="https://jiankunking.com/go-sync-map">
 
@@ -292,7 +292,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-12 14:07:02" itemprop="dateModified" datetime="2019-08-12T14:07:02+08:00">2019-08-12</time>
+                <time title="修改时间：2019-08-12 19:54:05" itemprop="dateModified" datetime="2019-08-12T19:54:05+08:00">2019-08-12</time>
               </span>
             
           
@@ -323,7 +323,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h1><h2 id="Package"><a href="#Package" class="headerlink" title="Package"></a>Package</h2><p><img src="/images/go-sync-map/package.png" alt></p>
+        <blockquote>
+<p>基于Go 1.9 解析Sync Map</p>
+</blockquote>
+<a id="more"></a>
+
+<h1 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h1><h2 id="Package"><a href="#Package" class="headerlink" title="Package"></a>Package</h2><p><img src="/images/go-sync-map/package.png" alt></p>
 <p>本文主要阐述：Load、Store、Delete，更加详细的阐述可以参考源码描述（建议先大体浏览一下Map源码）。</p>
 <h2 id="实现思路"><a href="#实现思路" class="headerlink" title="实现思路"></a>实现思路</h2><ul>
 <li>空间换时间。 通过冗余的两个数据结构(read、dirty),实现加锁对性能的影响。</li>
