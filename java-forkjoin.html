@@ -60,19 +60,21 @@
   };
 </script>
 
-  <meta name="description" content="翻译自：JEP 333">
-<meta name="keywords" content="Java,GC,ZGC">
+  <meta name="description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join）代码基于 OpenJDK 12">
+<meta name="keywords" content="Java,ForkJoin">
 <meta property="og:type" content="article">
-<meta property="og:title" content="[译]ZGC: 一个可伸缩的低延迟垃圾收集器">
-<meta property="og:url" content="https://jiankunking.com/zgc-a-scalable-low-latency-garbage-collector.html">
+<meta property="og:title" content="Java ForkJoin 解析">
+<meta property="og:url" content="https://jiankunking.com/java-forkjoin.html">
 <meta property="og:site_name" content="衣舞晨风的博客">
-<meta property="og:description" content="翻译自：JEP 333">
+<meta property="og:description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join）代码基于 OpenJDK 12">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-13T01:33:29.428Z">
+<meta property="og:image" content="https://jiankunking.com/images/java-forkjoin/steal.png">
+<meta property="og:updated_time" content="2019-08-13T07:11:21.474Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="[译]ZGC: 一个可伸缩的低延迟垃圾收集器">
-<meta name="twitter:description" content="翻译自：JEP 333">
-  <link rel="canonical" href="https://jiankunking.com/zgc-a-scalable-low-latency-garbage-collector">
+<meta name="twitter:title" content="Java ForkJoin 解析">
+<meta name="twitter:description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join）代码基于 OpenJDK 12">
+<meta name="twitter:image" content="https://jiankunking.com/images/java-forkjoin/steal.png">
+  <link rel="canonical" href="https://jiankunking.com/java-forkjoin">
 
 
 <script id="page.configurations">
@@ -81,7 +83,7 @@
   };
 </script>
 
-  <title>[译]ZGC: 一个可伸缩的低延迟垃圾收集器 | 衣舞晨风的博客</title>
+  <title>Java ForkJoin 解析 | 衣舞晨风的博客</title>
   
 
 
@@ -240,7 +242,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/zgc-a-scalable-low-latency-garbage-collector.html">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-forkjoin.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="jiankunking">
@@ -254,7 +256,7 @@
       <header class="post-header">
 
         
-          <h2 class="post-title" itemprop="name headline">[译]ZGC: 一个可伸缩的低延迟垃圾收集器
+          <h2 class="post-title" itemprop="name headline">Java ForkJoin 解析
 
               
             
@@ -274,7 +276,7 @@
                 
               
 
-              <time title="创建时间：2019-07-31 20:49:32" itemprop="dateCreated datePublished" datetime="2019-07-31T20:49:32+08:00">2019-07-31</time>
+              <time title="创建时间：2019-08-10 10:20:56" itemprop="dateCreated datePublished" datetime="2019-08-10T10:20:56+08:00">2019-08-10</time>
             </span>
           
             
@@ -287,7 +289,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-13 09:33:29" itemprop="dateModified" datetime="2019-08-13T09:33:29+08:00">2019-08-13</time>
+                <time title="修改时间：2019-08-13 15:11:21" itemprop="dateModified" datetime="2019-08-13T15:11:21+08:00">2019-08-13</time>
               </span>
             
           
@@ -299,7 +301,7 @@
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/GC/" itemprop="url" rel="index"><span itemprop="name">GC</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a></span>
 
                 
                 
@@ -328,66 +330,34 @@
 
       
         <blockquote>
-<p>翻译自：JEP 333</p>
+<p>本文主要想了解两个地方：如何窃取任务、task如何等待（join）<br>代码基于 OpenJDK 12</p>
 </blockquote>
 <a id="more"></a>
 
-<blockquote>
-<p>地址：<a href="https://openjdk.java.net/jeps/333" target="_blank" rel="noopener">https://openjdk.java.net/jeps/333</a></p>
-</blockquote>
-<h1 id="一、摘要"><a href="#一、摘要" class="headerlink" title="一、摘要"></a>一、摘要</h1><p>Z垃圾收集器，也称为ZGC，是一个可伸缩的低延迟垃圾收集器。</p>
-<h1 id="二、目标"><a href="#二、目标" class="headerlink" title="二、目标"></a>二、目标</h1><ul>
-<li>GC暂停时间不超过10ms</li>
-<li>能处理大小从相对较小(几百MB)到非常大(TB级)的堆</li>
-<li>与使用G1相比，应用程序吞吐量减少不超过15%</li>
-<li>方便日后在此基础上利用彩色指针和内存屏障进一步优化收集器及实现新特性。【原文：Lay a foundation for future GC features and optimizations leveraging colored pointers and load barriers】</li>
-<li>支持平台:Linux/x64</li>
-</ul>
-<blockquote>
-<p>注：此处及下文中的内存屏障即load barrier，在ZGC中用的是读屏障。</p>
-</blockquote>
-<h1 id="三、动机"><a href="#三、动机" class="headerlink" title="三、动机"></a>三、动机</h1><p>垃圾收集是Java的主要优势之一。但是，当垃圾收集暂停太长时，就会对应用程序的响应时间产生负面影响。通过大幅度缩短停顿时间，我们可以让Java适用于更多类型的应用程序。</p>
-<p>此外，现代系统中可用的内存数量还在继续增长。<strong>用户和应用程序开发人员希望JVM能够以一种有效的方式充分利用这种内存，并且不会出现很长的GC暂停时间。</strong></p>
-<h1 id="四、-描述"><a href="#四、-描述" class="headerlink" title="四、 描述"></a>四、 描述</h1><p>ZGC是一个并发的、单代（不再区分新生代和老年代）的、基于region的、支持numa的压缩收集器。Stop-the-world阶段仅限于根扫描，所以GC暂停时间不会随着堆或存活对象的多少而增加。</p>
-<p><font color="DeepPink">ZGC的一个核心设计原则是结合使用内存屏障和彩色对象指针。这使得ZGC能够在运行Java应用程序线程时执行并发操作，比如对象重定位。从Java线程的角度来看，在Java对象中加载引用字段的行为受到内存屏障的限制。除了对象地址之外，有色对象指针还包含内存屏障需要的信息，用于确定在允许Java线程使用该指针之前是否需要采取某些操作。</font>例如，对象可能已经被重新定位，在这种情况下，内存屏障将检测情况并采取适当的操作。</p>
-<p>与其他技术相比，我们认为颜色指针方案提供了一些非常吸引人的特性。特别是:</p>
+<h1 id="窃取算法（work-stealing）"><a href="#窃取算法（work-stealing）" class="headerlink" title="窃取算法（work-stealing）"></a>窃取算法（work-stealing）</h1><p>从<a href="/attachments/ForkJoin-Paper-DougLea.pdf" target="_blank">ForkJoin-Paper-DougLea</a>中可以看出:</p>
 <ul>
-<li><p>这允许我们在移动对象/整理内存阶段，在指向可回收/重用区域的指针确定之前回收/重用这部分内存【原文：It allows us to reclaim and reuse memory during the relocation/compaction phase, before pointers pointing into the reclaimed/reused regions have been fixed. 】。这有助于降低堆开销。这还意味着不需要实现单独的标记压缩算法来处理完整的GC。</p>
-</li>
-<li><p>这允许我们使用相对较少且简单的GC屏障。这有助于降低运行时开销。这还意味着在解释器和JIT编译器中更容易实现、优化和维护GC barrier代码。</p>
-</li>
-<li><p>我们目前将标记和重新定位相关信息存储在彩色指针中。然而，此方案的通用性允许我们存储任何类型的信息(只要我们能将其放入指针中)，并允许内存屏障根据该信息采取它想要采取的任何操作。我们相信这将为将来的许多特性打下基础。举一个例子，在异构内存环境中，这可以用来跟踪堆访问模式，以指导GC重新定位决策，将很少使用的对象移动到冷存储(不常访问的内存区域)中【原文：To pick one example, in a heterogeneous memory environment, this could be used to track heap access patterns to guide GC relocation decisions to move rarely used objects to cold storage.】。</p>
-</li>
+<li>每个队列创建一个单独的线程来执行队列里的任务，线程和队列一一对应。</li>
+<li>队列使用的是双端队列，支持LIFO、FIFO。</li>
+<li>子任务会被放到对应线程（不一定是当前线程）的队列中。</li>
+<li>工作线程按照LIFO的顺序处理自己队列中数据。</li>
+<li>当一个工作线程处理完自己队列中数据的时候，会随机挑选一个工作线程，并“窃取”的该工作线程队列队尾的task。</li>
 </ul>
-<h1 id="五、性能"><a href="#五、性能" class="headerlink" title="五、性能"></a>五、性能</h1><p>我们已经使用SPECjbb 2015[1]做了常规性能测试。从吞吐量和延迟角度来看，性能都很好。下面是使用128G堆在复合模式下比较ZGC和G1的典型基准分数(以百分比为单位，根据ZGC的max-jOPS进行标准化)【原文：Below are typical benchmark scores (in percent, normalized against ZGC’s max-jOPS), comparing ZGC and G1, in composite mode using a 128G heap.】：</p>
-<blockquote>
-<p>越高越好</p>
-</blockquote>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ZGC</span><br><span class="line">       max-jOPS: 100%</span><br><span class="line">  critical-jOPS: 76.1%</span><br><span class="line"></span><br><span class="line">G1</span><br><span class="line">       max-jOPS: 91.2%</span><br><span class="line">  critical-jOPS: 54.7%</span><br></pre></td></tr></table></figure>
+<p><img src="/images/java-forkjoin/steal.png" alt></p>
+<p>到了这里就可以知道，窃取任务从其他线程队列的尾部窃取的了。</p>
+<h2 id="窃取算法优缺点"><a href="#窃取算法优缺点" class="headerlink" title="窃取算法优缺点"></a>窃取算法优缺点</h2><p>工作窃取算法的优点：充分利用线程进行并行计算，减少了线程间的竞争。<br>工作窃取算法的缺点：在某些情况下还是存在竞争，比如双端队列里只有一个任务时。并且该算法会消耗了更多的系统资源，比如创建多个线程和多个双端队列。</p>
+<h1 id="Task-等待（join）"><a href="#Task-等待（join）" class="headerlink" title="Task 等待（join）"></a>Task 等待（join）</h1><p>Join方法的主要作用是阻塞当前线程并等待获取结果。具体代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public final V join() &#123;</span><br><span class="line">    int s;</span><br><span class="line">    if (((s = doJoin()) &amp; ABNORMAL) != 0)</span><br><span class="line">        reportException(s);</span><br><span class="line">    return getRawResult();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>下面是来自相同基准测试的GC暂停时间。ZGC设法保持远低于10ms的目标。注意，确切的数字可能会根据使用的机器和设置而变化(上下都有，但不是很明显)。</p>
-<blockquote>
-<p>越低越好</p>
-</blockquote>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">ZGC</span><br><span class="line">                avg: 1.091ms (+/-0.215ms)</span><br><span class="line">    95th percentile: 1.380ms</span><br><span class="line">    99th percentile: 1.512ms</span><br><span class="line">  99.9th percentile: 1.663ms</span><br><span class="line"> 99.99th percentile: 1.681ms</span><br><span class="line">                max: 1.681ms</span><br><span class="line"></span><br><span class="line">G1</span><br><span class="line">                avg: 156.806ms (+/-71.126ms)</span><br><span class="line">    95th percentile: 316.672ms</span><br><span class="line">    99th percentile: 428.095ms</span><br><span class="line">  99.9th percentile: 543.846ms</span><br><span class="line"> 99.99th percentile: 543.846ms</span><br><span class="line">                max: 543.846ms</span><br></pre></td></tr></table></figure>
+<p>首先，它调用了doJoin()方法，通过doJoin()方法得到当前任务的状态来判断返回什么结果，任务状态有4种：已完成（NORMAL）、被取消（CANCELLED）、信号（SIGNAL）和出现异常（EXCEPTIONAL）。</p>
+<ul>
+<li>如果任务状态是已完成，则直接返回任务结果。</li>
+<li>如果任务状态是被取消，则直接抛出CancellationException。</li>
+<li>如果任务状态是抛出异常，则直接抛出对应的异常。</li>
+</ul>
+<p>让我们再来分析一下doJoin()方法的实现代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Implementation for join, get, quietlyJoin. Directly handles</span><br><span class="line"> * only cases of already-completed, external wait, and</span><br><span class="line"> * unfork+exec.  Others are relayed to ForkJoinPool.awaitJoin.</span><br><span class="line"> *</span><br><span class="line"> * @return status upon completion</span><br><span class="line"> */</span><br><span class="line">private int doJoin() &#123;</span><br><span class="line">    int s; Thread t; ForkJoinWorkerThread wt; ForkJoinPool.WorkQueue w;</span><br><span class="line">    return </span><br><span class="line">        //已完成,返回status</span><br><span class="line">    	(s = status) &lt; 0 ? s :</span><br><span class="line">    	//未完成,如果当前线程是ForkJoinWorkerThread,从该线程中取出workQueue,并尝试将</span><br><span class="line">        //当前task出队然后执行,执行的结果是完成则返回状态,否则使用当线程池所在的ForkJoinPool的awaitJoin方法等待</span><br><span class="line">        ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) ?</span><br><span class="line">        (w = (wt = (ForkJoinWorkerThread)t).workQueue).tryUnpush(this) &amp;&amp; (s = doExec()) &lt; 0 ? s : wt.pool.awaitJoin(w, this, 0L) :</span><br><span class="line">        //当前线程不是ForkJoinWorkerThread,调用externalAwaitDone方法</span><br><span class="line">        //externalAwaitDone: Blocks a non-worker-thread until completion.</span><br><span class="line">        externalAwaitDone();</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * Pops the given task only if it is at the current top.</span><br><span class="line"> */</span><br><span class="line">final boolean tryUnpush(ForkJoinTask&lt;?&gt; task) &#123;</span><br><span class="line">    boolean popped = false;</span><br><span class="line">    int s, cap; ForkJoinTask&lt;?&gt;[] a;</span><br><span class="line">    if ((a = array) != null &amp;&amp; (cap = a.length) &gt; 0 &amp;&amp;</span><br><span class="line">        (s = top) != base &amp;&amp;</span><br><span class="line">        (popped = QA.compareAndSet(a, (cap - 1) &amp; --s, task, null)))</span><br><span class="line">        TOP.setOpaque(this, s);</span><br><span class="line">    return popped;</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * Primary execution method for stolen tasks. Unless done, calls</span><br><span class="line"> * exec and records status if completed, but doesn&apos;t wait for</span><br><span class="line"> * completion otherwise.</span><br><span class="line"> *</span><br><span class="line"> * @return status on exit from this method</span><br><span class="line">*/</span><br><span class="line">final int doExec() &#123;</span><br><span class="line">    int s; boolean completed;</span><br><span class="line">    // 仅未完成的任务会运行,其他情况会忽略.</span><br><span class="line">    if ((s = status) &gt;= 0) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            //exec是abstract方法</span><br><span class="line">            //调用ForkJoinTask子类中exec</span><br><span class="line">            completed = exec();</span><br><span class="line">        &#125; catch (Throwable rex) &#123;</span><br><span class="line">            completed = false;</span><br><span class="line">            s = setExceptionalCompletion(rex);</span><br><span class="line">        &#125;</span><br><span class="line">        if (completed)</span><br><span class="line">            s = setDone();</span><br><span class="line">        &#125;</span><br><span class="line">        return s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>我们还对其他各种SPEC®基准测试和内部工作负载进行了特别的性能测量。一般情况下，ZGC能够维护个位数的毫秒暂停时间。</p>
-<h1 id="六、-局限性"><a href="#六、-局限性" class="headerlink" title="六、 局限性"></a>六、 局限性</h1><p>ZGC的初始实验版本将不支持类卸载。默认情况下，classunload和ClassUnloadingWithConcurrentMark选项将被禁用。即便你启用也是不生效的。</p>
-<p>此外，ZGC最初不支持JVMCI(即Graal)。如果启用EnableJVMCI选项，将打印一条错误消息。</p>
-<p>这些限制将在本项目的后期解决。</p>
-<h1 id="七、-构建和使用"><a href="#七、-构建和使用" class="headerlink" title="七、 构建和使用"></a>七、 构建和使用</h1><p>按照惯例，构建系统默认禁用JVM中的实验性特性。ZGC是一个实验性特性，因此不会出现在JDK构建中，除非在编译时使用configure选项:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--with-jvm-features=zgc</span><br></pre></td></tr></table></figure>
-
-<p>显式地启用它。</p>
-<p>(ZGC将出现在Oracle发布的所有Linux/x64 JDK版本中)</p>
-<p>JVM中的实验特性还需要在运行时显式地解锁。因此，要启用/使用ZGC，需要以下JVM选项:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+ unlockexperimental alvmoptions -XX:+UseZGC</span><br></pre></td></tr></table></figure>
-
-<p>有关如何设置和调优ZGC的更多信息，请参阅ZGC项目Wiki（wiki地址：<a href="https://wiki.openjdk.java.net/display/zgc/Main）。" target="_blank" rel="noopener">https://wiki.openjdk.java.net/display/zgc/Main）。</a></p>
-<p>ZGC paper可以参考Azul Pauseless GC Algorithm：</p>
-<p><a href="https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/Azul_Pauseless_GC_Algorithm.pdf" target="_blank" rel="noopener">https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/Azul_Pauseless_GC_Algorithm.pdf</a></p>
-<p>ZGC 简介PPT:</p>
-<p><a href="https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/ZGC-FOSDEM-2018.pdf" target="_blank" rel="noopener">https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/ZGC-FOSDEM-2018.pdf</a></p>
+<p>在doJoin()方法里，首先通过查看任务的状态，看任务是否已经执行完成，如果执行完成，则直接返回任务状态；如果没有执行完，则从任务队列中取出任务并执行。如果任务顺利执行完成，则设置任务状态为NORMAL，如果出现异常，则记录异常，并将任务状态设置为EXCEPTIONAL。</p>
 
     </div>
 
@@ -432,7 +402,7 @@
     <strong>本文作者： </strong>jiankunking</li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://jiankunking.com/zgc-a-scalable-low-latency-garbage-collector.html" title="[译]ZGC: 一个可伸缩的低延迟垃圾收集器">https://jiankunking.com/zgc-a-scalable-low-latency-garbage-collector.html</a>
+    <a href="https://jiankunking.com/java-forkjoin.html" title="Java ForkJoin 解析">https://jiankunking.com/java-forkjoin.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
@@ -446,15 +416,13 @@
         <div class="post-tags">
             <a href="/tags/Java/" rel="tag"># Java</a>
           
-            <a href="/tags/GC/" rel="tag"># GC</a>
-          
-            <a href="/tags/ZGC/" rel="tag"># ZGC</a>
+            <a href="/tags/ForkJoin/" rel="tag"># ForkJoin</a>
           
         </div>
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
-              <a href="/java-lambda.html" rel="next" title="Java Lambda表达式 实现原理分析">
-                <i class="fa fa-chevron-left"></i> Java Lambda表达式 实现原理分析
+              <a href="/java-atomic-operation-principle.html" rel="next" title="Java 原子操作的实现原理">
+                <i class="fa fa-chevron-left"></i> Java 原子操作的实现原理
               </a>
             
           </div>
@@ -462,8 +430,8 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-              <a href="/go-channels.html" rel="prev" title="理解 Go Channels">
-                理解 Go Channels <i class="fa fa-chevron-right"></i>
+              <a href="/go-sync-map.html" rel="prev" title="Go 1.9 Sync Map">
+                Go 1.9 Sync Map <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -728,7 +696,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、摘要"><span class="nav-number">1.</span> <span class="nav-text">一、摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、目标"><span class="nav-number">2.</span> <span class="nav-text">二、目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、动机"><span class="nav-number">3.</span> <span class="nav-text">三、动机</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、-描述"><span class="nav-number">4.</span> <span class="nav-text">四、 描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#五、性能"><span class="nav-number">5.</span> <span class="nav-text">五、性能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#六、-局限性"><span class="nav-number">6.</span> <span class="nav-text">六、 局限性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#七、-构建和使用"><span class="nav-number">7.</span> <span class="nav-text">七、 构建和使用</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#窃取算法（work-stealing）"><span class="nav-number">1.</span> <span class="nav-text">窃取算法（work-stealing）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#窃取算法优缺点"><span class="nav-number">1.1.</span> <span class="nav-text">窃取算法优缺点</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Task-等待（join）"><span class="nav-number">2.</span> <span class="nav-text">Task 等待（join）</span></a></li></ol></div>
             
 
           </div>
