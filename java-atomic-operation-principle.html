@@ -33,7 +33,7 @@
     version: '7.2.0',
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
     back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
-    copycode: {"enable":true,"show_result":false,"style":null},
+    copycode: {"enable":false,"show_result":false,"style":null},
     fancybox: true,
     mediumzoom: false,
     lazyload: true,
@@ -68,12 +68,10 @@
 <meta property="og:site_name" content="衣舞晨风的博客">
 <meta property="og:description" content="本文整理自《Java并发编程的艺术》第二章 作者：方腾飞　魏鹏　程晓明">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.com/images/java-atomic-operation-principle/%E5%9B%BE23.png">
 <meta property="og:updated_time" content="2019-08-13T01:31:04.421Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java 原子操作的实现原理">
 <meta name="twitter:description" content="本文整理自《Java并发编程的艺术》第二章 作者：方腾飞　魏鹏　程晓明">
-<meta name="twitter:image" content="https://jiankunking.com/images/java-atomic-operation-principle/%E5%9B%BE23.png">
   <link rel="canonical" href="https://jiankunking.com/java-atomic-operation-principle">
 
 
@@ -378,7 +376,7 @@ table th:nth-of-type(2) {
 <p>在Intel 2019年的文档中，该部分阐述基本不变，具体可以查考文末Intel文档的2957页 8.1 LOCKED ATOMIC OPERATIONS</p>
 </blockquote>
 <h2 id="使用总线锁保证原子性"><a href="#使用总线锁保证原子性" class="headerlink" title="使用总线锁保证原子性"></a>使用总线锁保证原子性</h2><p>第一个机制是通过总线锁保证原子性。如果多个处理器同时对共享变量进行读改写操作（i++就是经典的读改写操作），那么共享变量就会被多个处理器同时进行操作，这样读改写操作就不是原子的，操作完之后共享变量的值会和期望的不一致。举个例子，如果i=1，我们进行两次i++操作，我们期望的结果是3，但是有可能结果是2，如图2-3所示。</p>
-<p><img src="/images/java-atomic-operation-principle/%E5%9B%BE23.png" alt></p>
+<p><img alt data-src="/images/java-atomic-operation-principle/%E5%9B%BE23.png"></p>
 <p>原因可能是多个处理器同时从各自的缓存中读取变量i，分别进行加1操作，然后分别写入系统内存中。那么，想要保证读改写共享变量的操作是原子的，就必须保证CPU1读改写共享变量的时候，CPU2不能操作缓存了该共享变量内存地址的缓存。处理器使用总线锁就是来解决这个问题的。<font color="DeepPink">所谓总线锁就是使用处理器提供的一个LOCK＃信号，当一个处理器在总线上输出此信号时，其他处理器的请求将被阻塞住，那么该处理器可以独占共享内存。</font></p>
 <blockquote>
 <p>Intel文档的2959页 8.1.2 Bus Locking</p>
@@ -415,7 +413,7 @@ table th:nth-of-type(2) {
 
     </div>
       
-  <div class="popular-posts-header">相关文章</div>
+  <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
       

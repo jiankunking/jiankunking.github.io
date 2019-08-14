@@ -33,7 +33,7 @@
     version: '7.2.0',
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
     back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
-    copycode: {"enable":true,"show_result":false,"style":null},
+    copycode: {"enable":false,"show_result":false,"style":null},
     fancybox: true,
     mediumzoom: false,
     lazyload: true,
@@ -68,17 +68,10 @@
 <meta property="og:site_name" content="衣舞晨风的博客">
 <meta property="og:description" content="G1(Garbage-First)回收器是在JDK1.7中正式使用的全新垃圾回收器，G1拥有独特的垃圾回收策略，从分代上看，G1依然属于分代垃圾回收器，它会区分年代和老年代，依然有eden和survivor区，但从堆的结构上看，它并不要求整个eden区、年清代或者老年代都连续。它使用了全新的分区算法。 其特点如下：  并行性：G1在回收期间，可以由多个GC线程同时工作，有效利用多核计算能力。  并">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.com/images/java-gc-g1/%E6%96%B0%E7%94%9F%E4%BB%A3.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-gc-g1/%E5%9B%9E%E6%94%B6%E5%BE%AA%E7%8E%AF.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-gc-g1/%E5%B9%B6%E5%8F%91%E6%A8%A1%E5%BC%8F%E5%A4%B1%E6%95%88.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-gc-g1/%E6%99%8B%E5%8D%87%E5%A4%B1%E8%B4%A5.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-gc-g1/%E7%96%8F%E6%95%A3%E5%A4%B1%E8%B4%A5.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-gc-g1/GC%E8%84%89%E7%BB%9C.png">
 <meta property="og:updated_time" content="2019-08-13T01:31:20.931Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java 垃圾回收算法之G1">
 <meta name="twitter:description" content="G1(Garbage-First)回收器是在JDK1.7中正式使用的全新垃圾回收器，G1拥有独特的垃圾回收策略，从分代上看，G1依然属于分代垃圾回收器，它会区分年代和老年代，依然有eden和survivor区，但从堆的结构上看，它并不要求整个eden区、年清代或者老年代都连续。它使用了全新的分区算法。 其特点如下：  并行性：G1在回收期间，可以由多个GC线程同时工作，有效利用多核计算能力。  并">
-<meta name="twitter:image" content="https://jiankunking.com/images/java-gc-g1/%E6%96%B0%E7%94%9F%E4%BB%A3.png">
   <link rel="canonical" href="https://jiankunking.com/java-gc-g1">
 
 
@@ -362,7 +355,7 @@
 </ul>
 <h1 id="二、G1的新生代GC"><a href="#二、G1的新生代GC" class="headerlink" title="二、G1的新生代GC"></a>二、G1的新生代GC</h1><p>新生代GC的主要工作是回收eden区和survivor区。</p>
 <p>一旦eden区被占满，新生代GC就会启动。新生代GC收集前后的堆数据如下图所示，其中E表示eden区，S表示survivor区，O表示老年代。</p>
-<p><img src="/images/java-gc-g1/%E6%96%B0%E7%94%9F%E4%BB%A3.png" alt></p>
+<p><img alt data-src="/images/java-gc-g1/%E6%96%B0%E7%94%9F%E4%BB%A3.png"></p>
 <p>可以看到，新生代GC只处理eden和survivor区，回收后，所有的eden区都应该被清空，而survivor区会被收集一部分数据，但是应该至少仍然存在一个survivor区，类比其他的新生代收集器，这一点似乎并没有太大变化。另一个重要的变化是老年代的区域增多，因为部分survivor区或者eden区的对象可能会晋升到老年代。</p>
 <p>三、G1并发标记周期</p>
 <p>G1的并发阶段和CMS有些类似，它们都是为了降低一次停顿时间，而将可以和应用程序并发执行的部分单独提取出来执行。</p>
@@ -393,17 +386,17 @@
 <h1 id="四、混合回收"><a href="#四、混合回收" class="headerlink" title="四、混合回收"></a>四、混合回收</h1><p><strong>在并发标记周期中，虽有部分对象被回收，但是回收的比例是非常低的。但是在并发标记周期后，G1已经明确知道哪些区域含有比较多的垃圾对象，在混合回收阶段，就可以专门针对这些区域进行回收。当然G1会优先回收垃圾比例较高的区域（回收这些区域的性价比高），这正是G1名字的由来（Garbage First Garbage Collector：译为垃圾优先的垃圾回收器），这里的垃圾优先（Garbage First）指的是回收时优先选取垃圾比例最高的区域。</strong></p>
 <p>这个阶段叫做混合回收，是因为在这个阶段，即会执行正常的年轻代GC,又会选取一些被标记的老年代区域进行回收，同时处理了新生代和老年代。</p>
 <p><font color="DeepPink">混合回收会被执行多次，直到回收了足够多的内存空间</font>，然后，它会触发一次新生代GC。新生代GC后，又可能会发生一次并发标记周期的处理，最后又会引起混合回收，因此整个过程可能是如下图：</p>
-<p><img src="/images/java-gc-g1/%E5%9B%9E%E6%94%B6%E5%BE%AA%E7%8E%AF.png" alt></p>
+<p><img alt data-src="/images/java-gc-g1/%E5%9B%9E%E6%94%B6%E5%BE%AA%E7%8E%AF.png"></p>
 <h1 id="五、必要时的Full-GC"><a href="#五、必要时的Full-GC" class="headerlink" title="五、必要时的Full GC"></a>五、必要时的Full GC</h1><p>和CMS类似，并发收集让应用程序和GC线程交替工作，因此在特别繁忙的情况下无可避免的会发生回收过程中内存不足的情况，当遇到这种情况，G1会转入一个Full GC 进行回收。</p>
 <p>以下4种情况会触发这类的Full GC：</p>
 <h2 id="1、并发模式失效"><a href="#1、并发模式失效" class="headerlink" title="1、并发模式失效"></a>1、并发模式失效</h2><p>G1启动标记周期，但在Mix GC之前，老年代就被填满，这时候G1会放弃标记周期。这种情形下，需要增加堆大小，或者调整周期（例如增加线程数-XX:ConcGCThreads等）。</p>
 <p>GC日志如下的示例：</p>
-<p><img src="/images/java-gc-g1/%E5%B9%B6%E5%8F%91%E6%A8%A1%E5%BC%8F%E5%A4%B1%E6%95%88.png" alt></p>
+<p><img alt data-src="/images/java-gc-g1/%E5%B9%B6%E5%8F%91%E6%A8%A1%E5%BC%8F%E5%A4%B1%E6%95%88.png"></p>
 <p>解决办法：发生这种失败意味着堆的大小应该增加了，或者G1收集器的后台处理应该更早开始，或者需要调整周期，让它运行得更快（如，增加后台处理的线程数）。</p>
 <h2 id="2、晋升失败"><a href="#2、晋升失败" class="headerlink" title="2、晋升失败"></a>2、晋升失败</h2><p>（to-space exhausted或者to-space overflow）</p>
 <p>G1收集器完成了标记阶段，开始启动混合式垃圾回收，清理老年代的分区，不过，老年代空间在垃圾回收释放出足够内存之前就会被耗尽。（G1在进行GC的时候没有足够的内存供存活对象或晋升对象使用），由此触发了Full GC。</p>
 <p>下面日志中（可以在日志中看到(to-space exhausted)或者（to-space overflow）），反应的现象是混合式GC之后紧接着一次Full GC。</p>
-<p><img src="/images/java-gc-g1/%E6%99%8B%E5%8D%87%E5%A4%B1%E8%B4%A5.png" alt></p>
+<p><img alt data-src="/images/java-gc-g1/%E6%99%8B%E5%8D%87%E5%A4%B1%E8%B4%A5.png"></p>
 <p>这种失败通常意味着混合式收集需要更迅速的完成垃圾收集：每次新生代垃圾收集需要处理更多老年代的分区。</p>
 <p>解决这种问题的方式是：</p>
 <ul>
@@ -416,7 +409,7 @@
 </ul>
 <h2 id="3、疏散失败"><a href="#3、疏散失败" class="headerlink" title="3、疏散失败"></a>3、疏散失败</h2><p>（to-space exhausted或者to-space overflow）</p>
 <p>进行新生代垃圾收集是，Survivor空间和老年代中没有足够的空间容纳所有的幸存对象。这种情形在GC日志中通常是：</p>
-<p><img src="/images/java-gc-g1/%E7%96%8F%E6%95%A3%E5%A4%B1%E8%B4%A5.png" alt></p>
+<p><img alt data-src="/images/java-gc-g1/%E7%96%8F%E6%95%A3%E5%A4%B1%E8%B4%A5.png"></p>
 <p>这条日志表明堆已经几乎完全用尽或者碎片化了。G1收集器会尝试修复这一失败，但可以预期，结果会更加恶化：G1收集器会转而使用Full GC。</p>
 <p>解决这种问题的方式是：</p>
 <ul>
@@ -497,7 +490,7 @@
 </ul>
 <p>会在文章结束，补充上JEP官网地址跟我收集的一些GC资料（包含部分paper）github地址。</p>
 <p>补一个我自己归纳的GC图：</p>
-<p><img src="/images/java-gc-g1/GC%E8%84%89%E7%BB%9C.png" alt></p>
+<p><img alt data-src="/images/java-gc-g1/GC%E8%84%89%E7%BB%9C.png"></p>
 <p>各种GC算法都是围绕着，图中内容展开的，只是各自的处理方式不同而已。</p>
 <p>资料推荐：</p>
 <p>1、GC算法及paper</p>
@@ -513,7 +506,7 @@
 
     </div>
       
-  <div class="popular-posts-header">相关文章</div>
+  <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
       
@@ -539,14 +532,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-threadlocal.html" rel="bookmark">Java ThreadLocal</a></div>
+      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
+      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
       
     </li>
   

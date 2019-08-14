@@ -33,7 +33,7 @@
     version: '7.2.0',
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
     back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
-    copycode: {"enable":true,"show_result":false,"style":null},
+    copycode: {"enable":false,"show_result":false,"style":null},
     fancybox: true,
     mediumzoom: false,
     lazyload: true,
@@ -68,14 +68,10 @@
 <meta property="og:site_name" content="衣舞晨风的博客">
 <meta property="og:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
-<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E5%9B%BE4.2.png">
-<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E6%98%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F.png">
 <meta property="og:updated_time" content="2019-08-13T01:33:07.409Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="数据库索引设计与优化 笔记">
 <meta name="twitter:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
-<meta name="twitter:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
   <link rel="canonical" href="https://jiankunking.com/relational-database-index-design-and-the-optimizers-note">
 
 
@@ -364,7 +360,7 @@
 <li>SEX = ‘M’ AND  ( WEIGHT &gt; 90 OR HEIGHT &gt; 190 )</li>
 </ul>
 <p>谓词表达式是索引设计的主要入手点。如果一个索引能够满足SELECT查询语句的所有谓词表达式，那么优化器就很有可能建立起一个高效的访问路径。</p>
-<p>核实确认访问路径（执行计划）<br><img src="/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png" alt></p>
+<p>核实确认访问路径（执行计划）<br><img alt data-src="/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png"></p>
 <h1 id="为SELETE语句创建理想的索引【重点】"><a href="#为SELETE语句创建理想的索引【重点】" class="headerlink" title="为SELETE语句创建理想的索引【重点】"></a>为SELETE语句创建理想的索引【重点】</h1><blockquote>
 <p>很多调优人员（尽管没经验）认为，如果一个SQL语句使用了索引，那这个 SQL就是被很好地优化过的，我对此感到很惊讶。你应该总是问自己，”这是不是可用的最好的索引？” 或 “再添加另外一个索引能否提升<br>响应性能？”，又或者 “全表扫描会不会更快地返回结果？”</p>
 </blockquote>
@@ -373,7 +369,7 @@
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">DECLARE CURSOR41 CURSOR FOR</span><br><span class="line">SELECT    CNO, FNAME</span><br><span class="line">FROM      CUST</span><br><span class="line">WHERE     LNAME = :LNAME</span><br><span class="line">          AND</span><br><span class="line">          CITY  = :CITY</span><br><span class="line">ORDER BY  FNAME</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/database-index-design-optimizers/%E5%9B%BE4.2.png" alt></p>
+<p><img alt data-src="/images/database-index-design-optimizers/%E5%9B%BE4.2.png"></p>
 <h2 id="星级是如何给定的"><a href="#星级是如何给定的" class="headerlink" title="星级是如何给定的"></a>星级是如何给定的</h2><p>如果与一个查询相关的索引行是相邻的，或者至少相距足够靠近的话，那这个索引就可以被标记上第一颗星。这<font color="DeepPink">最小化</font>了必须扫描的索引片的宽度。 </p>
 <p>如果索引行的顺序与查询语句的需求一致，则索引可以被标记上第二颗星。这<font color="DeepPink">排除了排序操作</font>。 </p>
 <p>如果索引行包含的查询语句中的所有列，那么索引就可以被标记上第三颗星。这避免了访问表的操作：<font color="DeepPink">仅访问索引就可以了</font>。 </p>
@@ -539,7 +535,7 @@
 <li>如下图所示，位于星型结构中心位置的表称为<strong>事实表</strong>，它的数据量远大于它周围的表—<strong>维度表</strong>。</li>
 <li>最佳的访问路径通常是包含维度表的<strong>笛卡尔积</strong>，这意味着他们<strong>没有相同的冗余列</strong>，满足本地谓词的维度表数据行都会参与连接。</li>
 </ol>
-<p><img src="/images/database-index-design-optimizers/%E6%98%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F.png" alt></p>
+<p><img alt data-src="/images/database-index-design-optimizers/%E6%98%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F.png"></p>
 <p>SALES 销售记录<br>STORE 出售的店铺<br>ITEM  出售的商品<br>DATE  出售的时间<br>CUST  出售的客户</p>
 <p>在星型连接中，事实表的数据量通过都比较大。在这种情况下，至少依据经验法则，事实表应该作为嵌套循环连接方式中最内层的表。一般情况下未读表都没有共同的列，所以这种链接顺序意味着是笛卡尔连接。</p>
 <h2 id="事实表的索引"><a href="#事实表的索引" class="headerlink" title="事实表的索引"></a>事实表的索引</h2><p>事实上，宽索引通常比事实表还大，原因有两个 :</p>
@@ -602,7 +598,7 @@
 
     </div>
       
-  <div class="popular-posts-header">相关文章</div>
+  <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
       

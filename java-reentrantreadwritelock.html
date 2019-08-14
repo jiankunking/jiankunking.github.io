@@ -33,7 +33,7 @@
     version: '7.2.0',
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
     back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
-    copycode: {"enable":true,"show_result":false,"style":null},
+    copycode: {"enable":false,"show_result":false,"style":null},
     fancybox: true,
     mediumzoom: false,
     lazyload: true,
@@ -68,15 +68,10 @@
 <meta property="og:site_name" content="衣舞晨风的博客">
 <meta property="og:description" content="Java JDK 11 ReentrantReadWriteLock 原理分析">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/32%E4%BD%8D%E8%AF%BB%E5%86%99%E6%A0%87%E8%AF%86.png">
 <meta property="og:updated_time" content="2019-08-13T01:32:15.793Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ReentrantReadWriteLock原理解析">
 <meta name="twitter:description" content="Java JDK 11 ReentrantReadWriteLock 原理分析">
-<meta name="twitter:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png">
   <link rel="canonical" href="https://jiankunking.com/java-reentrantreadwritelock">
 
 
@@ -355,14 +350,14 @@
 
 <p>4、读写锁的接口与示例</p>
 <p>ReadWriteLock仅定义了获取读锁和写锁的两个方法，即readLock()方法和writeLock()方法，而其实现：ReentrantReadWriteLock，除了接口方法之外，还提供了一些便于外界监控其内部工作状态的方法，这些方法以及描述如表所示：</p>
-<p><img src="/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png" alt><br>接下来，通过一个缓存示例说明读写锁的使用方式，示例代码如下：</p>
+<p><img alt data-src="/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png"><br>接下来，通过一个缓存示例说明读写锁的使用方式，示例代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public class Cache &#123;</span><br><span class="line">    static Map&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();</span><br><span class="line">    static ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();</span><br><span class="line">    static Lock r = rwl.readLock();</span><br><span class="line">    static Lock w = rwl.writeLock();</span><br><span class="line"></span><br><span class="line">    // 获取一个key对应的value</span><br><span class="line">    public static final Object get(String key) &#123;</span><br><span class="line">        r.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            return map.get(key);</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            r.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // 设置key对应的value，并返回旧的value</span><br><span class="line">    public static final Object put(String key, Object value) &#123;</span><br><span class="line">        w.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            return map.put(key, value);</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            w.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // 清空所有的内容</span><br><span class="line">    public static final void clear() &#123;</span><br><span class="line">        w.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            map.clear();</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            w.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>上述示例中，Cache组合一个非线程安全的HashMap作为缓存的实现，同时使用读写锁的读锁和写锁来保证Cache是线程安全的。在读操作get(String key)方法中，需要获取读锁，这使得并发访问该方法时不会被阻塞。写操作put(String key,Object value)方法和clear()方法，在更新HashMap时必须提前获取写锁，当获取写锁后，其他线程对于读锁和写锁的获取均被阻塞，而只有写锁被释放之后，其他读写操作才能继续。Cache使用读写锁提升读操作的并发性，也保证每次写操作对所有的读写操作的可见性，同时简化了编程方式。</p>
 <h1 id="5、ReentrantReadWriteLock脉络梳理"><a href="#5、ReentrantReadWriteLock脉络梳理" class="headerlink" title="5、ReentrantReadWriteLock脉络梳理"></a>5、ReentrantReadWriteLock脉络梳理</h1><p>代码地址：<a href="https://github.com/jiankunking/openjdk11/blob/master/src/java.base/share/classes/java/util/concurrent/locks/ReentrantReadWriteLock.java" target="_blank" rel="noopener">ReentrantReadWriteLock</a></p>
 <p>先看一下继承结构：</p>
-<p><img src="/images/java-reentrantreadwritelock/%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png" alt><br>再看一下代码结构：</p>
-<p><img src="/images/java-reentrantreadwritelock/%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84.png" alt><br>图中可以看出ReentrantReadWriteLock的实现还是比较复杂的，所以接下来主要分析ReentrantReadWriteLock实现关键点，包括：</p>
+<p><img alt data-src="/images/java-reentrantreadwritelock/%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png"><br>再看一下代码结构：</p>
+<p><img alt data-src="/images/java-reentrantreadwritelock/%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84.png"><br>图中可以看出ReentrantReadWriteLock的实现还是比较复杂的，所以接下来主要分析ReentrantReadWriteLock实现关键点，包括：</p>
 <ul>
 <li>读写状态的设计</li>
 <li>写锁的获取与释放</li>
@@ -371,7 +366,7 @@
 </ul>
 <h2 id="5-1-读写状态的设计"><a href="#5-1-读写状态的设计" class="headerlink" title="5.1 读写状态的设计"></a>5.1 读写状态的设计</h2><p>读写锁同样依赖自定义同步器来实现同步功能，而读写状态就是其同步器的同步状态。回想ReentrantLock中自定义同步器的实现，同步状态表示锁被一个线程重复获取的次数，而读写锁的自定义同步器需要在同步状态（一个整型变量）上维护多个读线程和一个写线程的状态，使得该状态的设计成为读写锁实现的关键。</p>
 <p>如果在一个整型变量上维护多种状态，就一定需要“按位切割使用”这个变量，读写锁将变量切分成了两个部分，高16位表示读，低16位表示写，划分方式如下图所示:</p>
-<p><img src="/images/java-reentrantreadwritelock/32%E4%BD%8D%E8%AF%BB%E5%86%99%E6%A0%87%E8%AF%86.png" alt></p>
+<p><img alt data-src="/images/java-reentrantreadwritelock/32%E4%BD%8D%E8%AF%BB%E5%86%99%E6%A0%87%E8%AF%86.png"></p>
 <p>当前同步状态表示一个线程已经获取了写锁，且重进入了两次，同时也连续获取了两次读锁。读写锁是如何迅速确定读和写各自的状态呢？</p>
 <p>答案是通过位运算。假设当前同步状态值为S，写状态等于S&amp;0x0000FFFF（将高16位全部抹去），读状态等于S&gt;&gt;&gt;16（无符号补0右移16位）。当写状态增加1时，等于S+1，当读状态增加1时，等于S+(1&lt;&lt;16)，也就是S+0x00010000。</p>
 <blockquote>
@@ -434,7 +429,7 @@
 
     </div>
       
-  <div class="popular-posts-header">相关文章</div>
+  <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
       

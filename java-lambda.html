@@ -33,7 +33,7 @@
     version: '7.2.0',
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
     back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
-    copycode: {"enable":true,"show_result":false,"style":null},
+    copycode: {"enable":false,"show_result":false,"style":null},
     fancybox: true,
     mediumzoom: false,
     lazyload: true,
@@ -68,15 +68,10 @@
 <meta property="og:site_name" content="衣舞晨风的博客">
 <meta property="og:description" content="本文分析基于JDK 9">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javap.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javac-FunctionTest.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javac-LambdaTest.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/dumpProxyClasses.png">
 <meta property="og:updated_time" content="2019-08-13T01:32:08.669Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java Lambda表达式 实现原理分析">
 <meta name="twitter:description" content="本文分析基于JDK 9">
-<meta name="twitter:image" content="https://jiankunking.com/images/java-lambda/javap.png">
   <link rel="canonical" href="https://jiankunking.com/java-lambda">
 
 
@@ -341,7 +336,7 @@
 <p>1、函数式接口 到底是什么？ </p>
 <p>2、Lambda表达式是怎么实现的？</p>
 <p>先介绍一个jdk的bin目录下的一个字节码查看工具及反编译工具：javap</p>
-<p><img src="/images/java-lambda/javap.png" alt></p>
+<p><img alt data-src="/images/java-lambda/javap.png"></p>
 <h1 id="二、函数式接口"><a href="#二、函数式接口" class="headerlink" title="二、函数式接口"></a>二、函数式接口</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@FunctionalInterface</span><br><span class="line">interface IFunctionTest&lt;T&gt; &#123;</span><br><span class="line">    public void print(T x);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>通过javap 反编译IFunctionTest.class 可以看到如下信息:</p>
@@ -351,7 +346,7 @@
 <p>为什么说需要是唯一一个抽象方法？</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@FunctionalInterface</span><br><span class="line">interface IFunctionTest&lt;T&gt; &#123;</span><br><span class="line">    public void print(T x);</span><br><span class="line">    public void print22(T x,int rr);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/java-lambda/javac-FunctionTest.png" alt></p>
+<p><img alt data-src="/images/java-lambda/javac-FunctionTest.png"></p>
 <p>虽然不能在函数式接口中定义多个方法，但可以定义默认方法、静态方法、定义java.lang.Object里的public方法：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">@FunctionalInterface</span><br><span class="line">interface Print&lt;T&gt; &#123;</span><br><span class="line">    public void print(T x);</span><br><span class="line">    default void doSomeMoreWork1()&#123;</span><br><span class="line">        // Method body</span><br><span class="line">    &#125;</span><br><span class="line">    static void printHello()&#123;</span><br><span class="line">        System.out.println(&quot;Hello&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    @Override</span><br><span class="line">    boolean equals(Object obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -363,7 +358,7 @@
 <p>通过javac编译LambdaTest.java文件，会生成LambdaTest.class、Print.class两个class文件。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">javac LambdaTest.java</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/java-lambda/javac-LambdaTest.png" alt></p>
+<p><img alt data-src="/images/java-lambda/javac-LambdaTest.png"></p>
 <h2 id="3-2-对于lambda实现的猜测"><a href="#3-2-对于lambda实现的猜测" class="headerlink" title="3.2 对于lambda实现的猜测"></a>3.2 对于lambda实现的猜测</h2><p>那么编译器对Lambda 都做了什么？反编译一下代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\Code\Java\study&gt;javap -p LambdaTest.class</span><br><span class="line">Compiled from &quot;LambdaTest.java&quot;</span><br><span class="line">public class LambdaTest &#123;</span><br><span class="line">  public LambdaTest();</span><br><span class="line">  public static void printString(java.lang.String, Print&lt;java.lang.String&gt;);</span><br><span class="line">  public static void main(java.lang.String[]);</span><br><span class="line">  private static void lambda$main$0(java.lang.String);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -461,7 +456,7 @@
 <p>可以在运行时加上-Djdk.internal.lambda.dumpProxyClasses，加上这个参数后，运行时，会将生成的内部类class码输出到一个文件中。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -Djdk.internal.lambda.dumpProxyClasses LambdaTest</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/java-lambda/dumpProxyClasses.png" alt><br>通过jad反编译LambdaTest$$Lambda$1.class文件，内容如下：</p>
+<p><img alt data-src="/images/java-lambda/dumpProxyClasses.png"><br>通过jad反编译LambdaTest$$Lambda$1.class文件，内容如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.</span><br><span class="line">// Jad home page: http://www.kpdus.com/jad.html</span><br><span class="line">// Decompiler options: packimports(3) </span><br><span class="line">final class LambdaTest$$Lambda$1 implements Print &#123;</span><br><span class="line">    private LambdaTest$$Lambda$1() &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void print(Object obj) &#123;</span><br><span class="line">        LambdaTest.lambda$main$0((String) obj);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="3-3-5-代码还原"><a href="#3-3-5-代码还原" class="headerlink" title="3.3.5 代码还原"></a>3.3.5 代码还原</h3><p>至此，我们可以推断出最终执行代码应该是这样的：</p>
@@ -482,7 +477,7 @@
 
     </div>
       
-  <div class="popular-posts-header">相关文章</div>
+  <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
       
@@ -508,14 +503,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-threadlocal.html" rel="bookmark">Java ThreadLocal</a></div>
+      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
+      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
       
     </li>
   
