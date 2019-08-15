@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="generator" content="Hexo 3.9.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="google-site-verification" content="true">
+  <meta name="baidu-site-verification" content="true">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: true,
+    pangu: false,
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    search: {
+      root: '/',
+      path: 'search.xml'
+    },
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
+<meta name="keywords" content="Java,Performance,读书笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java性能优化权威指南 笔记">
+<meta property="og:url" content="https://jiankunking.com/java-performance-note.html">
+<meta property="og:site_name" content="衣舞晨风的博客">
+<meta property="og:description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-08-15T08:34:06.746Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java性能优化权威指南 笔记">
+<meta name="twitter:description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
+  <link rel="canonical" href="https://jiankunking.com/java-performance-note">
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Java性能优化权威指南 笔记 | 衣舞晨风的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">衣舞晨风的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+    <ul id="menu" class="menu">
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br/>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br/>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br/>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>归档</a>
+
+  </li>
+    </ul>
+</nav>
+
+</div>
+    </header>
+
+    
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-performance-note.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风的博客">
+    </span>
+      <header class="post-header">
+
+        
+          <h2 class="post-title" itemprop="name headline">Java性能优化权威指南 笔记
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-08-14 19:37:35" itemprop="dateCreated datePublished" datetime="2019-08-14T19:37:35+08:00">2019-08-14</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-08-15 16:34:06" itemprop="dateModified" datetime="2019-08-15T16:34:06+08:00">2019-08-15</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon"
+              >
+                <i class="fa fa-eye"></i>
+                 阅读次数： 
+                <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+              </span>
+            </span>
+          <br/>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span title="本文字数">9.2k</span>
+            </span>
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span title="阅读时长">8 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John </p>
+<p>出版时间：2014-03</p>
+<a id="more"></a>
+
+<h1 id="操作系统性能监控"><a href="#操作系统性能监控" class="headerlink" title="操作系统性能监控"></a>操作系统性能监控</h1><h2 id="CPU使用率"><a href="#CPU使用率" class="headerlink" title="CPU使用率"></a>CPU使用率</h2><p>大多数的操作系统的CPU使用率分为用户态CPU使用率和系统态CPU使用率。</p>
+<p>用户态CPU使用率是指执行应用程序代码的时间占总CPU时间的百分比。</p>
+<p>系统态CPU使用率是指应用执行操作系统调用的时间占总CPU时间的百分比。<font color="DeepPink">系统态CPU使用率高意味着共享资源有竞争或者I/O设备之间有大量的交互。</font></p>
+<p>既然原本用于执行操作系统内核调用的CPU周期也可以用来执行应用代码，所以理想情况下，应用达到最高性能和扩展性时，它的系统态CPU使用率为0%，所以提高应用性能和扩展性的一个目标是尽可能降低系统态CPU使用率。</p>
+<p>对于计算密集型应用来说，不仅要监控用户态和系统态CPU使用率，还要进一步监控每时钟指令数（Instructions Per Clock，IPC）或每指令时钟周期（Cycles Per Instruction，CPI）等指标。这两个指标对于计算密集型应用来说很重要，因为现代操作系统自带的CPU使用率监控工具只能报告CPU使用率，而没有CPU执行指令占用CPU时钟周期的百分比，<font color="DeepPink">这意味着，即便CPU在等待着内存中的数据，操作系统工具仍然会报告CPU繁忙。这种情况通常被称为停滞。当CPU执行指令所用的操作数据不在寄存器或者缓存中时，就会发生停滞，由于指令执行前必须等待数据从内存中装入CPU寄存器，所以一旦发生停滞，就会浪费时钟周期。</font>CPU停滞通常会等待好几百个时钟周期，因此提高计算密集型应用性能的策略就是减少停滞或者改善CPU高速缓存使用率，从而减少CPU在等待内存数据时浪费的时钟周期。</p>
+<h2 id="CPU调度程序运行队列"><a href="#CPU调度程序运行队列" class="headerlink" title="CPU调度程序运行队列"></a>CPU调度程序运行队列</h2><p>监控CPU调度程序运行队列对于分辨系统是否满负荷也有重要意义。<font color="DeepPink">运行队列中就是那些已准备好运行、正等待可用CPU的轻量级进程。如果准备运行的轻量级进程数超过系统所能处理的上限，运行队列就会很长。</font>运行队列长表明系统负载可能饱和。系统运行队列长度等于虚拟机处理器的个数时，用户不会明显感觉到性能下降。此处虚拟处理器的个数就是系统硬件线程的个数，也是Java API Runtime.availableProcessors()的返回值。当运行队列长度达到虚拟处理的4倍或者更多时，系统的响应就非常迟缓了。</p>
+<p>一般性的指导原则是：如果在很长一段时间里，运行队列的长度一直都超过虚拟处理器个数的1倍，就需要关注了，只是暂时还不需要立刻采取行动。如果在很长一段时间里，运行队列长度达到虚拟处理器个数的3~4倍或更高，则需要立刻引起注意和采取行动。</p>
+<h2 id="内存使用率"><a href="#内存使用率" class="headerlink" title="内存使用率"></a>内存使用率</h2><p>系统在进行页面交换或者使用虚拟内存时，Java应用或JVM会表现出明显的性能问题。当应用运行所需的内存超过可用物理内存时，就会发生页面交换。为了应对这种可能出现的情况，通常要为系统配置swap空间。swap空间一般会在一个独立的磁盘分区上。当应用耗尽内存时，操作系统会将应用的一部分置换到磁盘上的swap空间。通常是应用中最少运行的部分，以免影响整个应用或者应用最忙的那部分。当访问应用中被置换出去的部分时，就必须将它从磁盘置换进内存，而这种置换活动会对应用的响应性和吞吐量造成很大影响。</p>
+<p><font color="DeepPink">JVM垃圾收集器在系统页面交换时的性能也很差，这是由于垃圾收集器为了回收不可达对象所占用的空间，需要访问大量的内存。如果Java堆得一部分被置换出去，就必须先置换进内存以便垃圾收集器扫描存活对象，这会增加垃圾收集的持续时间。</font>垃圾收集是一种Stop-The-World操作，即停止所有正在运行的应用线程，如果此时系统正在进行页面交换，则会引起JVM长时间的停顿。</p>
+<h3 id="监控抢占式上下文切换"><a href="#监控抢占式上下文切换" class="headerlink" title="监控抢占式上下文切换"></a>监控抢占式上下文切换</h3><p>让步式上下文切换时指执行线程主动释放CPU，抢占式上下文切换时指线程因为分配的时间片用尽而被迫放弃CPU或者被其他优先级更高的线程锁抢占。pidstat的输出结果中cswch/s是每秒的让步式上下文切换，nvccswch/s是抢占式上下文切换。</p>
+<h3 id="监控线程迁移"><a href="#监控线程迁移" class="headerlink" title="监控线程迁移"></a>监控线程迁移</h3><p>我们发现，待运行线程在处理器之前的迁移也会导致性能的下降。大多数操作系统的CPU调度程序会将待运行线程分配给上次运行它的虚拟处理器。如果这个虚拟处理器忙，调度程序就会将待处理线程迁移到其他可用的虚拟处理器。<font color="DeepPink">线程迁移会对应用性能造成影响，这是因为新的虚拟处理器缓存中可能没有待运行线程所需的数据或状态信息。</font>多核系统上运行Java应用可能会发生大量的线程迁移，减少迁移的策略是创建处理器组并将应用分配给这些处理器组。一般性准则是，如果横跨多核或虚拟处理器的Java应用每秒迁移超过500此将Java应用绑定在处理器组上就有好处。</p>
+<h2 id="网络I-O使用率"><a href="#网络I-O使用率" class="headerlink" title="网络I/O使用率"></a>网络I/O使用率</h2><h3 id="应用性能改进的考虑"><a href="#应用性能改进的考虑" class="headerlink" title="应用性能改进的考虑"></a>应用性能改进的考虑</h3><p>单次读写数据量小而网络读写量大的应用会消耗大量的系统态CPU，产生大量的系统调用。对于这类应用，减少系统态CPU的策略是减少网络读写的系统调用。此外，使用非阻塞的Java NIO而不是阻塞的java.net.Socket，减少处理请求和发送相应的线程数，也可以改善应用性能。</p>
+<p>从非阻塞Socket中读取数据的策略是，应用在每次读请求时尽可能多地读取数据。同样，当往Socket中写数据时，每个写调用应该尽可能多地写。</p>
+<h1 id="JVM概览"><a href="#JVM概览" class="headerlink" title="JVM概览"></a>JVM概览</h1><h2 id="HotSpot-运行时"><a href="#HotSpot-运行时" class="headerlink" title="HotSpot 运行时"></a>HotSpot 运行时</h2><h3 id="命令行选项"><a href="#命令行选项" class="headerlink" title="命令行选项"></a>命令行选项</h3><p>HotSpot VM 命令行选项有3类：</p>
+<ul>
+<li>标准选项（Standard option）：标准选项是 Java virtual Machine Specification 要求所有java JVM 都必须实现的选项。</li>
+<li>非标准选项（NonStandard option）：非标准选项(以 –X 为前缀)，不保证也不强制所有JVM实现都必须支持。</li>
+<li>非稳定选项（Developer option）：非稳定选项(以-XX为前缀),通常为了特定需要而对JVM的运行进行矫正。选项名称前+代表 true启用，-代表false关闭。</li>
+</ul>
+<h3 id="VM生命周期"><a href="#VM生命周期" class="headerlink" title="VM生命周期"></a>VM生命周期</h3><p>启动器启动HotSpot VM时会执行一系列操作。步骤概述如下：</p>
+<ol>
+<li>解析命令行选项</li>
+<li>设置堆的大小和JIT编译器<br>如果命令行没有明确设置堆的大小和JIT编译器，启动器则通过自动优化进行设置。</li>
+<li>设定环境变量如：LD_LIBRARY_PATH和CLASSPATH</li>
+<li>如果命令行有-jar选项，启动器则从指定JAR的manifest中查找Main-Class，否则从命令行读取Main-Class</li>
+<li>使用标准Java本地接口（Java Native Interface，JNI）方法JNI_CreateJavaVM在新创建的线程中创建HotSpot VM</li>
+<li>一旦创建并初始化号HotSpot VM，就会加载Java Main-Class，启动器也会从Java Main-Class中取得Java main方法的参数</li>
+<li>HotSpot VM通过JNI方法CallStartVoidMethod调用Java main方法，并将命令行选项传给它</li>
+</ol>
+<h3 id="VM类加载阶段"><a href="#VM类加载阶段" class="headerlink" title="VM类加载阶段"></a>VM类加载阶段</h3><h4 id="类加载阶段"><a href="#类加载阶段" class="headerlink" title="类加载阶段"></a>类加载阶段</h4><p>对于给定的Java类或接口，类加载时会依据它的名字找到Java类的二进制类文件，定义Java类，然后创建代表这个类或者接口的java.lang.Class对象。如果没有找到Java类或接口的二进制表示就会抛出NoClassDefFound。此外，类加载阶段会对类的格式进行语法检查，如果有错，则会抛出ClassFormatError或UnsupportedClassVersionError。Java类加载前，HotSpot VM必须先加载它的所有超类和超接口，如果类的继承层次有错，例如Java类是它自己的超类或超接口（类层次递归）,HotSpot VM则会抛之l}ClassCircularityError。如果所引用的直接超接口本身并不是接口，或者直接超类实际上是接口，HotSpot VM则会抛出VM会抛出IncompatibleClassChangeError。</p>
+<p>链接的第一步是验证，检查类文件的语义、常量池符号以及类型。如果检查有错，就会抛出VerifyError。链接的下一步是准备，它会创建静态字段，初始化为标准默认值，以及分配方法表、请注意，此时还没有执行任何Java代码。接下来解析符号引用，这一步是可选的。然后初始化类，运行类构造器。这是迄今为止，类中运行的第一段Java代码。值得注意的是，<font color="DeepPink">初始化类需要首先初始化超类（不会初始化超接口）</font>。</p>
+<blockquote>
+<p>如：int的标准默认值为0；public static int alue=123，准备阶段将其初始化为0而不是123，value=123的赋值操作在内构造器<clinit>()中。<br>public static final int value=123，编译时会为value在字段属性表中生成ConstantValue，从而在准备阶段就被初始化成123。</clinit></p>
+</blockquote>
+<p>Java Virtual Machine Specification规定首次使用类时进行类初始化，而Java Language Specification则允许在链接阶段符号解析时灵活处理，只要保持语言的语义不变，JVM依次执行加载、链接和初始化，保证及时抛出错误即叮。出于性能优化的考虑，通常直到类初始化时HotspotVM才会加载和链接类。<font color="DeepPink">这意味着．类A引用类B。加载A不一定导致加载B（除非B需要验证）。执行B的第一条指令会导致初始化B，从而加载和链接B。</font></p>
+<h4 id="类加载器委派"><a href="#类加载器委派" class="headerlink" title="类加载器委派"></a>类加载器委派</h4><p>当请求类加载器查找和加载某个类时，该类加载器可以转而请求别的类加载器来加载。这被称为类加载器委派。类的首个类加找器称为初始类加载器（Initiating ClassLoader)，最终定义类的类加载器称为定义类加载器（Defining ClassLoader）。<font color="DeepPink">就字节码解析而言，某个类的初始类加载器是指对该类进行常量池符号解析的类加载器。</font></p>
+<p>类加载器之间是层级化关系，每个类加载器都可以委派给上一级类加载器。这种委派关系定义了二进制类的查找顺序。Java SE类加载器的层级查找顺序为启动类加载器、扩展类加载器及系统类加载器。系统类加载器是默认的应用程序类加载器，它加载Java类的main方法并从classpath上加载类。应用程序类加载器可以是Java SE系统自带的类加载器，或者由应用程序开发人员提供。扩展类加载器则JavaSE系统实现，它负责从JRE(Java Runtime Environment,Java运行环境）的lib/ext目录下加载类。</p>
+<h4 id="启动类加载器"><a href="#启动类加载器" class="headerlink" title="启动类加载器"></a>启动类加载器</h4><p>启动类加载器是由HotSpot VM实现的，负责加载BOOTCLASSPATH路径中的类，如包含Java SE类库的rt.jar。为了加快启动速度，Client模式的HotSpot VM可以通过称为类教据共享（Class Data Sharing）的特性使用已经预加载的类。这个特性默认为开启，可由HotSpot VM命令行开关-Xshare:on开启，-Xshare:off关闭。到本书编写时为止，Server模式的HotSpot VM还不支持类数据共享，而且即便是Client模式，也只有使用Serial收集器时才支持该机制。</p>
+<h4 id="类型安全"><a href="#类型安全" class="headerlink" title="类型安全"></a>类型安全</h4><p>Java类或接口的名字为全限定名（包括包名）。Java的类型由全限定名和类加载器唯一确定。</p>
+<h4 id="HotSpot类元数据"><a href="#HotSpot类元数据" class="headerlink" title="HotSpot类元数据"></a>HotSpot类元数据</h4><p>类加载时，HotSpot VM会在永久代创建类的内部表示instanceKlass或arrayKlass。instanceKlass应用了与之对应的java.lang.Class实例，后者是前者的Java镜像。HotSpot VM内部使用称为klassOop的数据结构访问instanceKlass。后缀“Oop”表示普通对象指针，所以klassOop是应用java.lang.Class的HotSpot内部抽象，它是指向Klass（与Java类对应的内部表示）的普通对象指针。</p>
+<h4 id="内部的类加载数据"><a href="#内部的类加载数据" class="headerlink" title="内部的类加载数据"></a>内部的类加载数据</h4><p>类加载过程中，HotSpot VM维护了3张散列表。SystemDictionary包含已加载的类，它将建立类名/类加载器（包括初始类加载器和定义类加载器）与klassOop对象之间的映射。目前只有在安全点事才能移除SystemDictionary中的元素。Placeholder-Table包含当前正在加载的类，它用于检查ClassCircularityError，多线程类加载器并行加载类时也会用到它。LoaderConstraintTable用于追踪类型安全检查的约束条件。<font color="DeepPink">这些散列表都需要加锁保证访问安全，在HotSpot VM中，这个锁称为SystemDictionary_lock。通常，HotSpot VM借助类加载器对象锁对加载类的过程进行序列化。</font></p>
+<h3 id="字节码验证"><a href="#字节码验证" class="headerlink" title="字节码验证"></a>字节码验证</h3><p>Java是一门类型安全语言，官方标准的Java编译器（javac）可以生成合法的类文件和类型安全的字节码，但Java虚拟机无法确保字节码一定是由可信的javac编译器产生的，所以在链接时必须进行字节码验证以保障类型安全。</p>
+<h3 id="类数据共享"><a href="#类数据共享" class="headerlink" title="类数据共享"></a>类数据共享</h3><p>类数据共享是Java 5引人的特性，以缩短Java程序（特別是小程序）的启动时间，同时也能减少它们的内存占用。使用Java HotSpot JRE安装程序在32位平台上安装Java运行环境（JRE)时，安装程序会加载系统jar中的部分类，变成私有的内部表示并转储成文件，称为共享文档(Shared Archive)。如果过没有使用Java HotSpot JRE安装程序，也可以手工生成该文件。之后调用Java虚拟机时，共享文档会映射到JVM内存中，从而减少减少加载这些类的开销，也使得这些类的大部分JVM允数椐能在多个JVM进程间共享。</p>
+<h3 id="解释器"><a href="#解释器" class="headerlink" title="解释器"></a>解释器</h3><p>HotSpot VM解释器是一种基于模板的解释器。JVM启动时，HotSpot VM运行时系统利用内部TemplateTable中的信息在内存中生成解析器。TemplateTable包含于每个字节码对应的机器代码，每个模板描述一个字节码。</p>
+<p>HotSpot VM解释器堪于模板的设计要好于传统的switch语句循环方式。switch语句需要重复执行比较操作，最差情况需要和所冇字节码比较。此外，switch语句必须使用单独的软件栈传递 Java 参数。HotSpot VM使用本地C栈传递 Java 参数。一些存储在C变量中的HotSpot VM内部变量，例如Java线程的程序计数器或栈指针，并不能保证总是存储在底层硬件寄存器中。结果，管理这些软件解释器数据结构就会占去总执行时间的相当大一部分。不过总体来说，HotSpot解释器显著缩短HotSpot VM和实体机之问的性能差距，解释速度也明显变快了，然而代价是大量与机器相关的代码。例如，Intel X86平台特定的代码大约有10000行，SPARC平台专用的代码大约打14000行。由于需要支持动态代码生成（JIT编译），整体的代码量和复杂度也显著变大。并且调 试动态生成的机器码（ JIT编译代码）比调试静态代码困难多了。虽然这些不利于运行时系统的改善，但也并非不可能完成的任务。</p>
+<h3 id="异常处理"><a href="#异常处理" class="headerlink" title="异常处理"></a>异常处理</h3><p>当与Java的语义约束冲突时，Java虚拟机会用异常通知程序。异常处理由HotSpot VM解释器、JIT编译器和其他HotSpot VM组件一起协作实现。异常处理主要有两种情形，同一方法中抛出和捕获异常，或由调用方法捕获异常。异常可以由抛出字节码、VM内部调用返回、JNI调用返回或Java调用返回所引发。</p>
+<h3 id="线程管理"><a href="#线程管理" class="headerlink" title="线程管理"></a>线程管理</h3><p><font color="DeepPink">HotSpot VM通过协作、轮询的机制创建安全点</font>。简中来说，线程会经常询问：“我该在安全点停住么？ ”高效地询问这个问题并不是件容易的事。线程在状态变迁的过程中，会经常询问这个问题，但并非所有的状态变迁都会如此询问，比如线程离开HotSpot VM进人本地代码的情况。此外，JIT编译代码从java方法中返回或正作循环迭代的某个阶段时，线程也会询问“我该在安全点停住吗？ ”。正在执行解释代码的线程通常不会询问它们是否该在安全点停住。相反，当解释器切换到不同的分配表时，会请求安全点。切换操作中包含一部分代码，用以询问何时离开安全点。当离开安全点时，分配表会再次切换回来。一旦请求了安全点，VMThread就必须在继续执行VM操作前等待，直到确定所行线程都已进入安全点保全状态为止。在安全点时，VMThread用Threads_lock阻塞所有正在运行的线程，VM操作完成后 , VMThread释放Threads_lock。</p>
+<h3 id="Java本地接口（JNI）"><a href="#Java本地接口（JNI）" class="headerlink" title="Java本地接口（JNI）"></a>Java本地接口（JNI）</h3><p>切记，一旦在应用中使用JNI，就意味着丧失了Java平台的两个好处,依赖JNI的Java应用难以在多种异构的硬件平台上运行。即便应用中Java语言编写的部分可以移植到多种硬件平台，采用本地编程语言的部分也需要重新编译。换句话说，一旦使用JNI就失去了Java承诺的特性，即“一次编写，到处运行”。其次，Java是强类型和安全的语言,本地语言如C或C++则不是。因此，Java开发者用JNI编写应用时必须格外小心。误用本地力可能破坏整个应用。鉴于此，在调JNI方法前，Java应用常常需要安仝检查。额外的安全检查以及HotSpot VM在Java与JNI之间的数据复制会降低应用的性能。</p>
+<p>HotSpot VM追踪正在执行本地方法的线稈时必须特別小心。在HotSpot VM的某些活动过程中，尤其是垃圾收柒的某些阶段，线程必须在安全点时暂停，以保证Java内存堆不被更改，确保垃圾收集的准确性。当HotSpot VM线程执行本地代码到达安全点时，线程可以继续执行本地代码，直到它Java代码或者发起JNI调用为止。</p>
+<h3 id="VM致命错误处理"><a href="#VM致命错误处理" class="headerlink" title="VM致命错误处理"></a>VM致命错误处理</h3><p>HotSpot内部使用信号进行通信。当无法识别信号时，将调用致命错误处理程序。在无法识别的情况下，它可能来自应用程序JNI代码，OS本地库，JRE本地库或JVM本身的错误。</p>
+<h2 id="HotSpot-VM垃圾收集器"><a href="#HotSpot-VM垃圾收集器" class="headerlink" title="HotSpot VM垃圾收集器"></a>HotSpot VM垃圾收集器</h2><h3 id="分代垃圾收集"><a href="#分代垃圾收集" class="headerlink" title="分代垃圾收集"></a>分代垃圾收集</h3><p>垃圾收集器不耑要扫描幣个（可能比新生代更大）老年代就能识别新生代中的存活对象，从而缩短Minor GC的时间。HotSpot VM的垃圾收集器使用称为卡表（CardTable)的数据结构来达到这个目的。老年代以512字节为块划分成若十张卡（Card)。卡表是个单字节数组，每个数组元索对位堆中的一张卡。每次老年代对象中某个引用新生代的字段发生变化时，HotSpot VM就必须将该卡所对位的卡表元素设置为适当的值，从而将该引用字段所在的卡标记为脏。在Minor GC过程中，垃圾收集器只会在脏卡中扫描查找老年代-新生代引用。<br><img alt data-src="/images/java-performance-note/%E5%9B%BE3-3.png"><br>HotSpot VM的字节码解释器和JIT编译器使用写屏障(Write Barrier)维护卡表。写屏障足是一小段将卡状态设罝为脏的代码。解释器每次执行更新引用的字节码时，邰会执行一段写屏障；JIT 编译器在生成更新引用的代码后，也会生成一段写屏障。虽然写屏障使得应用线程增加了一些性能开销，但Minor GC变快了许多，整天的垃圾收集效率也提高了许多。通常应用的吞吐量也会有所改善。</p>
+<h3 id="新生代"><a href="#新生代" class="headerlink" title="新生代"></a>新生代</h3><p>需要指出的足，<font color="DeepPink">在Minor GC过程中，Survivor可能不足以容纳Eden和另一个Survivor中的存活对象。如果Survivor 中的存活对象溢出，多余的对象将被移到老年代。这称为过早提升(Premature Promotion)</font>。这会导致老年代中短期存活对象的增长，可能会引发严重的性能问题。再进一步说，在Minor GC过程中，如果老年代满了而无法容纳更多的对象，Minor GC之后通常就会进行Full GC,这将导致遍历整个Java堆。这称为提升失败（Promotion Failure）。</p>
+<h3 id="快速内存分配"><a href="#快速内存分配" class="headerlink" title="快速内存分配"></a>快速内存分配</h3><p>对象内存分配器的操作需要和垃圾收集器紧密配合。垃圾收災器必须记录它冋收的空间，而分配器在重用堆空间之前耑要找到可以满足其分配需求的空闲空间。垃圾收集器以复制方式回收Hotspot VM 新生代，其好处在于回收以后Eden总为空，在Eden中运用被称为指计碰撞(Bump-the-Pointer)的技术就可以有效地分配空间。这种技水迫踪最后—个分配的对象（常称为top),当有新的分己请求时，分配器只需要检查top和eden未端之间的空间是否能容纳。如果能容纳，top则跳到新近分配对象的未端。</p>
+<p><font color="DeepPink">重要的Java应用大多是多线程的，因此内存分配的操作需要考虑多线程安全。如果只用全局锁，在Eden中的分配操作就会成为瓶颈而降低性能。HotSpot VM没有采用这种方式，而是以一种称为线程本地分配缓冲区（thread-Local Allocation Buffer,TLAB)的技术，为每个线程设设置各自的缓冲区(即Eden的一小块），以此改善多线程分配的吞吐量。因为每个TLAB都只有一个线程从中分配对象，所以可以使用指针碰撞技术快速分配而不需要任何锁。然而当线程的TLAB填满耑要获取新的空间时（不常见），它就需要采用多线程安全的方式了。大部分时候，HotSpot VM的new Object()操作只需要大约十条指令。垃圾收集器清空Eden区域，然后就可以支持快速内存分配了。</font></p>
+<h2 id="Hotspot-VM-JIT编译器"><a href="#Hotspot-VM-JIT编译器" class="headerlink" title="Hotspot VM JIT编译器"></a>Hotspot VM JIT编译器</h2><p>经典的寄存器分配策略是图着色算法，通常可以使机器寄存器的使用率达到最高，而且多余的值很少会卸载到栈中。图表示的是同时有哪些变量在使用．以及哪些寄存器可以存放这些变虽。如果同时存活的变量数超过了可用的寄存器数，垂要性最低的变狱将被移到栈中，使得其他变量可以使用寄存器。指派某个变量给寄存器通常需要来回几次构建图和着色。这也份致了它的不足，图着色算法花费的时间、数据结构所需的空间都比较昂贵。</p>
+<h1 id="JVM性能监控"><a href="#JVM性能监控" class="headerlink" title="JVM性能监控"></a>JVM性能监控</h1><h2 id="垃圾收集"><a href="#垃圾收集" class="headerlink" title="垃圾收集"></a>垃圾收集</h2><h3 id="重要的垃圾收集数据"><a href="#重要的垃圾收集数据" class="headerlink" title="重要的垃圾收集数据"></a>重要的垃圾收集数据</h3><p>重要的垃圾收集数据包括：</p>
+<ul>
+<li>当前使用的垃圾收集器</li>
+<li>Java堆的大小</li>
+<li>新生代和老年代的大小</li>
+<li>永久代的大小</li>
+<li>Minor GC的持续时间</li>
+<li>Minor GC的频率</li>
+<li>Minor GC的空间回收量</li>
+<li>Full GC的持续时间</li>
+<li>Full GC的频率</li>
+<li>每个并发垃圾收集周期内的空间回收量</li>
+<li>垃圾收集前后Java堆的占用量</li>
+<li>垃圾收集前后新生代和老年代的占用量</li>
+<li>垃圾收集前后永久代的占用量</li>
+<li>是否老年代或永久代的占用触发了 Full GC</li>
+<li>应用是否显式调用了 System.gc()</li>
+</ul>
+<h3 id="垃圾回收报告"><a href="#垃圾回收报告" class="headerlink" title="垃圾回收报告"></a>垃圾回收报告</h3><h3 id="JIT编译器"><a href="#JIT编译器" class="headerlink" title="JIT编译器"></a>JIT编译器</h3><p>可以使用-XX:+ Print Compilation监控 HotSpot JIT编译器。-XX:+ PrintCompilation为每</p>
+<p>次编译生成一行日志。日志样例如下:</p>
+
+    </div>
+      
+  <div class="popular-posts-header">推荐阅读</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-aqs-condition.html" rel="bookmark">Java AQS Condition的实现分析</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-forkjoin.html" rel="bookmark">Java ForkJoin 解析</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-threadlocal.html" rel="bookmark">Java ThreadLocal</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+    
+    
+      <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat/wechat.jpg" alt="jiankunking wechat" style="width: 200px; max-width: 100%;">
+  <div>喜欢就关注一下呗</div>
+</div>
+
+    
+      <div>
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信支付">
+        <p>微信支付</p>
+      </div>
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+      </div>
+      <div>
+        
+
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>jiankunking</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://jiankunking.com/java-performance-note.html" title="Java性能优化权威指南 笔记">https://jiankunking.com/java-performance-note.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+
+      </div>
+
+    <footer class="post-footer">
+          
+        
+        <div class="post-tags">
+            <a href="/tags/Java/" rel="tag"># Java</a>
+          
+            <a href="/tags/Performance/" rel="tag"># Performance</a>
+          
+            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
+          
+        </div>
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+              <a href="/api-gateway-design.html" rel="next" title="API Gateway Design">
+                <i class="fa fa-chevron-left"></i> API Gateway Design
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+          </div>
+        </div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/avatar/avatar.png"
+      alt="jiankunking">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/jiankunking" title="GitHub &rarr; https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+  </div>
+
+
+  <div class="links-of-blogroll motion-element links-of-blogroll-block">
+    <div class="links-of-blogroll-title">
+      <i class="fa  fa-fw fa-book"></i>
+      推荐阅读
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">个人CSDN</a>
+        </li>
+      
+    </ul>
+  </div>
+
+        </div>
+      </div>
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#操作系统性能监控"><span class="nav-number">1.</span> <span class="nav-text">操作系统性能监控</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#CPU使用率"><span class="nav-number">1.1.</span> <span class="nav-text">CPU使用率</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CPU调度程序运行队列"><span class="nav-number">1.2.</span> <span class="nav-text">CPU调度程序运行队列</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存使用率"><span class="nav-number">1.3.</span> <span class="nav-text">内存使用率</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#监控抢占式上下文切换"><span class="nav-number">1.3.1.</span> <span class="nav-text">监控抢占式上下文切换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#监控线程迁移"><span class="nav-number">1.3.2.</span> <span class="nav-text">监控线程迁移</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#网络I-O使用率"><span class="nav-number">1.4.</span> <span class="nav-text">网络I/O使用率</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#应用性能改进的考虑"><span class="nav-number">1.4.1.</span> <span class="nav-text">应用性能改进的考虑</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#JVM概览"><span class="nav-number">2.</span> <span class="nav-text">JVM概览</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HotSpot-运行时"><span class="nav-number">2.1.</span> <span class="nav-text">HotSpot 运行时</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#命令行选项"><span class="nav-number">2.1.1.</span> <span class="nav-text">命令行选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VM生命周期"><span class="nav-number">2.1.2.</span> <span class="nav-text">VM生命周期</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VM类加载阶段"><span class="nav-number">2.1.3.</span> <span class="nav-text">VM类加载阶段</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#类加载阶段"><span class="nav-number">2.1.3.1.</span> <span class="nav-text">类加载阶段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#类加载器委派"><span class="nav-number">2.1.3.2.</span> <span class="nav-text">类加载器委派</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#启动类加载器"><span class="nav-number">2.1.3.3.</span> <span class="nav-text">启动类加载器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#类型安全"><span class="nav-number">2.1.3.4.</span> <span class="nav-text">类型安全</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#HotSpot类元数据"><span class="nav-number">2.1.3.5.</span> <span class="nav-text">HotSpot类元数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内部的类加载数据"><span class="nav-number">2.1.3.6.</span> <span class="nav-text">内部的类加载数据</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#字节码验证"><span class="nav-number">2.1.4.</span> <span class="nav-text">字节码验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#类数据共享"><span class="nav-number">2.1.5.</span> <span class="nav-text">类数据共享</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解释器"><span class="nav-number">2.1.6.</span> <span class="nav-text">解释器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异常处理"><span class="nav-number">2.1.7.</span> <span class="nav-text">异常处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程管理"><span class="nav-number">2.1.8.</span> <span class="nav-text">线程管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Java本地接口（JNI）"><span class="nav-number">2.1.9.</span> <span class="nav-text">Java本地接口（JNI）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VM致命错误处理"><span class="nav-number">2.1.10.</span> <span class="nav-text">VM致命错误处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HotSpot-VM垃圾收集器"><span class="nav-number">2.2.</span> <span class="nav-text">HotSpot VM垃圾收集器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#分代垃圾收集"><span class="nav-number">2.2.1.</span> <span class="nav-text">分代垃圾收集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新生代"><span class="nav-number">2.2.2.</span> <span class="nav-text">新生代</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#快速内存分配"><span class="nav-number">2.2.3.</span> <span class="nav-text">快速内存分配</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hotspot-VM-JIT编译器"><span class="nav-number">2.3.</span> <span class="nav-text">Hotspot VM JIT编译器</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#JVM性能监控"><span class="nav-number">3.</span> <span class="nav-text">JVM性能监控</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾收集"><span class="nav-number">3.1.</span> <span class="nav-text">垃圾收集</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#重要的垃圾收集数据"><span class="nav-number">3.1.1.</span> <span class="nav-text">重要的垃圾收集数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#垃圾回收报告"><span class="nav-number">3.1.2.</span> <span class="nav-text">垃圾回收报告</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JIT编译器"><span class="nav-number">3.1.3.</span> <span class="nav-text">JIT编译器</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">304k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">4:36</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.2.0</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+      </div>
+
+    
+
+  </div>
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+  <script src="/lib/lazyload/lozad.min.js?v=1.10.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+  
+  <script src="/js/affix.js?v=7.2.0"></script>
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
