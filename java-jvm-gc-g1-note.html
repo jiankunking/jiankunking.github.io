@@ -65,10 +65,10 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="深入理解JVM＆G1GC 笔记">
 <meta property="og:url" content="https://jiankunking.com/java-jvm-gc-g1-note.html">
-<meta property="og:site_name" content="衣舞晨风的博客">
+<meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《深入理解JVM＆G1GC》 作者：周明耀本书很一般出版时间：2017-06-01">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-21T05:00:25.089Z">
+<meta property="og:updated_time" content="2019-08-21T09:54:14.129Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解JVM＆G1GC 笔记">
 <meta name="twitter:description" content="本文整理自：《深入理解JVM＆G1GC》 作者：周明耀本书很一般出版时间：2017-06-01">
@@ -81,7 +81,7 @@
   };
 </script>
 
-  <title>深入理解JVM＆G1GC 笔记 | 衣舞晨风的博客</title>
+  <title>深入理解JVM＆G1GC 笔记 | 衣舞晨风</title>
   
 
 
@@ -139,7 +139,7 @@
     <div class="custom-logo-site-title">
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
-        <span class="site-title">衣舞晨风的博客</span>
+        <span class="site-title">衣舞晨风</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
@@ -249,7 +249,7 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="衣舞晨风的博客">
+      <meta itemprop="name" content="衣舞晨风">
     </span>
       <header class="post-header">
 
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-21 13:00:25" itemprop="dateModified" datetime="2019-08-21T13:00:25+08:00">2019-08-21</time>
+                <time title="修改时间：2019-08-21 17:54:14" itemprop="dateModified" datetime="2019-08-21T17:54:14+08:00">2019-08-21</time>
               </span>
             
           
@@ -357,9 +357,9 @@
 <li>混合回收(A Mixed Collection)</li>
 <li>全量回收(A Full GC)</li>
 </ul>
-<h2 id="基本术语"><a href="#基本术语" class="headerlink" title="基本术语"></a>基本术语</h2><h3 id="Java相关术语"><a href="#Java相关术语" class="headerlink" title="Java相关术语"></a>Java相关术语</h3><h4 id="Interned-Strings"><a href="#Interned-Strings" class="headerlink" title="Interned Strings"></a>Interned Strings</h4><p>在Java语言中有8种基本类型和一种比较特殊的类型 String这些类型为了使它们在运行过程中速度更快、更节省内存,都提供了一种常量池的概念。常量池就类似一个Java系统级别提供的缓存。8种基本类型的常量池都是系统协调的,Sing类型的常量池比较特殊。它的主要使用方法有两种。</p>
+<h2 id="基本术语"><a href="#基本术语" class="headerlink" title="基本术语"></a>基本术语</h2><h3 id="Java相关术语"><a href="#Java相关术语" class="headerlink" title="Java相关术语"></a>Java相关术语</h3><h4 id="Interned-Strings"><a href="#Interned-Strings" class="headerlink" title="Interned Strings"></a>Interned Strings</h4><p>在Java语言中有8种基本类型和一种比较特殊的类型 String这些类型为了使它们在运行过程中速度更快、更节省内存,都提供了一种常量池的概念。常量池就类似一个Java系统级别提供的缓存。8种基本类型的常量池都是系统协调的,String类型的常量池比较特殊。它的主要使用方法有两种。</p>
 <ul>
-<li>直接使用双引号声明出来的 tring对象会直接存储在常量池中</li>
+<li>直接使用双引号声明出来的String对象会直接存储在常量池中</li>
 <li>如果不是用双引号声明的String对象,可以使用String提供的Intern方法。 intern方法会从字符串常量池中查询当前字符串是否存在,若不存在就会将当前字符串放入常量池中。</li>
 </ul>
 <p>通俗点讲,Interned String就是确保字符串在内存里只有一份拷贝,这样可以节约内存空间,加快字符串操作任务的执行速度。注意,这个值会被存放在字符串内部池(String Intern Pool)。</p>
@@ -540,7 +540,7 @@
 <p>获取full GC前后的heap dump</p>
 </blockquote>
 <h3 id="XX-InitiatingHeapOccypancyPercent"><a href="#XX-InitiatingHeapOccypancyPercent" class="headerlink" title="-XX:InitiatingHeapOccypancyPercent"></a>-XX:InitiatingHeapOccypancyPercent</h3><p>该选项的默认值是45,表示G1 GC并行循环初始设置的堆大小值,这个值决定了一个并行循环是不是要开始执行。它的逻辑是在一次GC完成后,比较老年代占用的空间和整个Java堆之间的比例。如果大于这个值,则预约下一次GC开始一个并行循环回收垃圾,从初始标记阶段开始。这个值越小,GC越频繁,反之,值越大,可以让应用程序执行时间更长。不过在内存消耗很快的情况下,我认为早运行并行循环比晚运行要好,看病要趁早。</p>
-<h3 id="XX-UseStringDeduplication"><a href="#XX-UseStringDeduplication" class="headerlink" title="-XX:+UseStringDeduplication"></a>-XX:+UseStringDeduplication</h3><p>该选项启动Java String对象的去重工作。JDK8u20开始引入该选项,默认为不启用。我们知道一个判断Java String对象值是否一样的语句“Stringl equals(String2)tue”,如果开启了该选项,并且如果两个对象包含相同的内容,即返回“tue”,则两个Sing对象只会共享一个字符数组。这个选项是G1GC独有的,也可以和其他GC一起使用。</p>
+<h3 id="XX-UseStringDeduplication"><a href="#XX-UseStringDeduplication" class="headerlink" title="-XX:+UseStringDeduplication"></a>-XX:+UseStringDeduplication</h3><p>该选项启动Java String对象的去重工作。JDK8u20开始引入该选项,默认为不启用。我们知道一个判断Java String对象值是否一样的语句“Stringl equals(String2)tue”,如果开启了该选项,并且如果两个对象包含相同的内容,即返回“tue”,则两个String对象只会共享一个字符数组。这个选项是G1GC独有的,也可以和其他GC一起使用。</p>
 <p>延伸一点我们的知识面,一个去重对象的必备条件有如下三点:</p>
 <ul>
 <li>Java.lang String对象的一个实例。</li>
@@ -670,7 +670,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-aqs.html" rel="bookmark">Java AQS 实现原理（图文）分析</a></div>
+      <div class="popular-posts-title"><a href="\java-threadlocal.html" rel="bookmark">Java ThreadLocal</a></div>
       
     </li>
   
