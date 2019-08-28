@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="generator" content="Hexo 3.9.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="google-site-verification" content="true">
+  <meta name="baidu-site-verification" content="true">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: true,
+    pangu: false,
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    search: {
+      root: '/',
+      path: 'search.xml'
+    },
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
+<meta name="keywords" content="Network,HTTP,TCP,UDP,读书笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Web性能权威指南 笔记">
+<meta property="og:url" content="https://jiankunking.com/high-performance-browser-networking-note.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-08-27T11:48:50.316Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Web性能权威指南 笔记">
+<meta name="twitter:description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
+  <link rel="canonical" href="https://jiankunking.com/high-performance-browser-networking-note">
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Web性能权威指南 笔记 | 衣舞晨风</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">衣舞晨风</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+    <ul id="menu" class="menu">
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br/>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br/>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br/>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>归档</a>
+
+  </li>
+    </ul>
+</nav>
+
+</div>
+    </header>
+
+    
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/high-performance-browser-networking-note.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+    </span>
+      <header class="post-header">
+
+        
+          <h2 class="post-title" itemprop="name headline">Web性能权威指南 笔记
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-08-27 13:21:28 / 修改时间：19:48:50" itemprop="dateCreated datePublished" datetime="2019-08-27T13:21:28+08:00">2019-08-27</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Network/" itemprop="url" rel="index"><span itemprop="name">Network</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon"
+              >
+                <i class="fa fa-eye"></i>
+                 阅读次数： 
+                <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+              </span>
+            </span>
+          <br/>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span title="本文字数">3.2k</span>
+            </span>
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span title="阅读时长">3 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文整理自：《Web性能权威指南》 作者：Ilya Grigorik</p>
+<p>出版时间：2014-04</p>
+<a id="more"></a>
+
+<h1 id="网络技术概览"><a href="#网络技术概览" class="headerlink" title="网络技术概览"></a>网络技术概览</h1><h2 id="带宽与延迟"><a href="#带宽与延迟" class="headerlink" title="带宽与延迟"></a>带宽与延迟</h2><h3 id="延迟的最后一公里"><a href="#延迟的最后一公里" class="headerlink" title="延迟的最后一公里"></a>延迟的最后一公里</h3><p>traceroute (Windows 系统下是tracert) 命令利用ICMP协议定位您的计算机和目标计算机之间的所有路由器。</p>
+<h2 id="TCP的构成"><a href="#TCP的构成" class="headerlink" title="TCP的构成"></a>TCP的构成</h2><p>因特网有两个核心协议：IP和TCP。IP，即 Internet Protocol（因特网协议），负责联网主机之间的路由选择和寻址；TCP，即 Transmission Control Protocol（传输控制协议），负责在不可靠的传输信道之上提供可靠的抽象层。</p>
+<h3 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h3><p>所有TCP连接一开始都要经过三次握手（见图 2-1）。客户端与服务器在交换应用数据之前，必须就起始分组序列号，以及其他一些连接相关的细节达成一致。出于安全考虑，序列号由两端随机生成。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE21%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.png"></p>
+<ul>
+<li>SYN<br>客户端选择一个随机序列号x，并发送一个SYN分组，其中可能还包括其他TCP标志和选项。</li>
+<li>SYN ACK<br>服务器给x加1，并选择自己的一个随机序列号y，追加自己的标志和选项，然后返回响应。</li>
+<li>ACK<br>客户端给x和y加1并发送握手期间的最后一个ACK分组。</li>
+</ul>
+<blockquote>
+<p>SYN：同步序列编号（Synchronize Sequence Numbers）<br>ACK (Acknowledge character）即是确认字符</p>
+</blockquote>
+<p>三次握手完成后，客户端与服务器之间就可以通信了。<font color="DeepPink">客户端可以在发送ACK分组之后立即发送数据，而服务器必须等接收到ACK分组之后才能发送数据。</font>这个启动通信的过程适用于所有TCP连接，因此对所有使用TCP的应用具有非常大的性能影响，因为每次传输应用数据之前，都必须经历一次完整的往返。</p>
+<h3 id="队首阻塞"><a href="#队首阻塞" class="headerlink" title="队首阻塞"></a>队首阻塞</h3><blockquote>
+<p>丢包就丢包<br>事实上，丢包是让TCP达到最佳性能的关键。被删除的包恰恰是一种反馈机制，能够让接收端和发送端各自调整速度，以避免网络拥堵，同时保持延迟最短。另外，有些应用程序可以容忍丢失一定数量的包，比如语音和游戏状态通信，就不需要可靠传输或按序交付。<br>就算有个包丢了，音频编解码器只要在音频中插入一个小小的间歇，就可以继续处理后来的包。只要间歇够小，用户就注意不到，而等待丢失的包则可能导致音频输出产生无法预料的暂停。相对来说，后者的用户体验更糟糕。<br>类似地，更新3D游戏中角色的状态也一样：收到T时刻的包而等待T-1时刻的包通常毫无必要。理想情况下，应该可以接收所有状态更新，但为避免游戏延迟，间歇性的丢包也是可以接受的。</p>
+</blockquote>
+<h2 id="针对TCP的优化建议"><a href="#针对TCP的优化建议" class="headerlink" title="针对TCP的优化建议"></a>针对TCP的优化建议</h2><p>TCP是一个自适应的、对所有网络节点一视同仁的、最大限制利用底层网络的协议。因此，优化TCP的最佳途径就是调整它感知当前网络状况的方式，根据它之上或之下的抽象层的类型和需求来改变它的行为。</p>
+<h3 id="服务器配置调优"><a href="#服务器配置调优" class="headerlink" title="服务器配置调优"></a>服务器配置调优</h3><p>在着手调整TCP的缓冲区、超时等数十个变量之前，最好先把主机操作系统升级到最新版本。TCP 的最佳实践以及影响其性能的底层算法一直在与时俱进，而且大多数变化都只在最新内核中才有实现。一句话，让你的服务器跟上时代是优化发送端和接收端TCP栈的首要措施。</p>
+<p>有了最新的内核，我们推荐你遵循如下最佳实践来配置自己的服务器。</p>
+<ul>
+<li>增大TCP的初始拥塞窗口<br>加大起始拥塞窗口可以让TCP在第一次往返就传输较多数据，而随后的速度提升也会很明显。对于突发性的短暂连接，这也是特别关键的一个优化。</li>
+<li>慢启动重启<br>在连接空闲时禁用慢启动可以改善瞬时发送数据的长TCP连接的性能。</li>
+<li>窗口缩放<br>启用窗口缩放可以增大最大接收窗口大小，可以让高延迟的连接达到更好吞吐量。</li>
+<li>TCP快速打开<br>在某些条件下，允许在第一个SYN分组中发送应用程序数据。TFO（TCP Fast Open，TCP 快速打开）是一种新的优化选项，需要客户端和服务器共同支持。为此，首先要搞清楚你的应用程序是否可以利用这个特性。</li>
+</ul>
+<blockquote>
+<p>Linux用户可以使用ss来查看当前打开的套接字的各种统计信息。在命令行里运行ss –options –extended –memory –processes –info ，可以看到当前通信节点以及它们相应的连接设置。</p>
+</blockquote>
+<h2 id="UDP的构成"><a href="#UDP的构成" class="headerlink" title="UDP的构成"></a>UDP的构成</h2><p>关于UDP的应用，最广为人知同时也是所有浏览器和因特网应用都赖以运作的，就是DNS（Domain Name System，域名系统）。</p>
+<p>IETF和W3C工作组共同制定了一套新API WebRTC（Web Real-Time Communication，Web 实时通信）。WebRTC着眼于在浏览器中通过UDP实现原生的语音和视频实时通信，以及其他形式的 P2P（Peer-to-Peer，端到端）通信。</p>
+<h3 id="无协议服务"><a href="#无协议服务" class="headerlink" title="无协议服务"></a>无协议服务</h3><p>要理解为什么UDP被人称作“无协议”，必须从作为TCP和UDP下一层的IP协议说起。<font color="DeepPink">IP层的主要任务就是按照地址从源主机向目标主机发送数据报</font>。为此，消息会被封装在一个IP分组内（图3-1），其中载明了源地址和目标地址，以及其他一些路由参数。注意，数据报这个词暗示了一个重要的信息：<font color="DeepPink">IP层不保证消息可靠的交付，也不发送失败通知，实际上是把底层网络的不可靠性直接暴露给了上一层</font>。如果某个路由节点因为网络拥塞、负载过高或其他原因而删除了IP分组，那么在必要的情况下，IP 的上一层协议要负责检测、恢复和重发数据。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE31IPv4%E9%A6%96%E9%83%A8.png"><br>UDP协议会用自己的分组结构（图3-2）封装用户消息，它只增加 4个字段：<font color="DeepPink">源端口、目标端口、分组长度和校验和</font>。这样，当IP把分组送达目标主机时，该主机能够拆开UDP分组，根据目标端口找到目标应用程序，然后再把消息发送过去。仅此而已。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE32UDP%E9%A6%96%E9%83%A8.png"><br>事实上，UDP数据报中的源端口和校验和字段都是可选的。IP分组的首部也有校验和，应用程序可以忽略UDP校验和。也就是说，所有错误检测和错误纠正工作都可以委托给上层的应用程序。说到底，<font color="DeepPink">UDP仅仅是在IP层之上通过嵌入应用程序的源端口和目标端口</font>，提供了一个“应用程序多路复用”机制。明白了这一点，就可以总结一下UDP的无服务是怎么回事了。</p>
+<ul>
+<li>不保证消息交付<br>不确认，不重传，无超时。</li>
+<li>不保证交付顺序<br>不设置包序号，不重排，不会发生队首阻塞。</li>
+<li>不跟踪连接状态<br>不必建立连接或重启状态机。</li>
+<li>不需要拥塞控制<br>不内置客户端或网络反馈机制。</li>
+</ul>
+<p>TCP是一个面向字节流的协议，能够以多个分组形式发送应用程序消息，且对分组中的消息范围没有任何明确限制。因此，连接的两端存在一个连接状态，每个分组都有序号，丢失还要重发，并且要按顺序交付。相对来说，<font color="DeepPink">UDP数据报有明确的限制：数据报必须封装在IP分组中，应用程序必须读取完整的消息。换句话说，数据报不能分片。</font></p>
+<h3 id="UDP与网络地址转换器"><a href="#UDP与网络地址转换器" class="headerlink" title="UDP与网络地址转换器"></a>UDP与网络地址转换器</h3><p>作为监管全球IP地址分配的机构，IANA（Internet Assigned Numbers Authority，因特网号码分配机构）为私有网络保留了三段IP地址，这些IP地址经常可以在NAT设备后面的内网中看到。</p>
+<p>保留的IP地址范围：</p>
+<table>
+<thead>
+<tr>
+<th>IP地址范围</th>
+<th>地址数量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10.0.0.0~10.255.255.255</td>
+<td>16 777 216</td>
+</tr>
+<tr>
+<td>172.16.0.0~172.31.255.255</td>
+<td>1 048 576</td>
+</tr>
+<tr>
+<td>192.168.0.0~192.168.255.255</td>
+<td>65 536</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>为防止路由错误和引起不必要的麻烦，不允许给外网计算机分配这些保留的私有IP地址。</p>
+</blockquote>
+<h2 id="传输层安全（TLS）"><a href="#传输层安全（TLS）" class="headerlink" title="传输层安全（TLS）"></a>传输层安全（TLS）</h2><p>SSL（Secure Sockets Layer，安全套接字层）协议最初是网景公司为了保障网上交易安全而开发的，该协议通过加密来保护客户个人资料，通过认证和完整性检查来确保交易安全。为达到这个目标，SSL协议在直接位于TCP上一层的应用层被实现（图 4-1）。SSL不会影响上层协议（如HTTP、电子邮件、即时通讯），但能够保证上层协议的网络通信安全。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE41%E4%BC%A0%E8%BE%93%E5%B1%82%E5%AE%89%E5%85%A8.png"><br>在正确使用SSL的情况下，第三方监听者只能推断出连接的端点、加密类型，以及发送数据的频率和大致数量，不能实际读取或修改任何数据。</p>
+
+    </div>
+      
+  <div class="popular-posts-header">推荐阅读</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\what-happens-when.html" rel="bookmark">当你在浏览器中输入 google.com 并且按下回车之后发生了什么？</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-jrockit-note.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\relational-database-index-design-and-the-optimizers-note.html" rel="bookmark">数据库索引设计与优化 笔记</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-performance-note.html" rel="bookmark">Java性能优化权威指南 笔记</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-jvm-gc-g1-note.html" rel="bookmark">深入理解JVM＆G1GC 笔记</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+    
+    
+      <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat/wechat.jpg" alt="jiankunking wechat" style="width: 200px; max-width: 100%;">
+  <div>喜欢就关注一下呗</div>
+</div>
+
+    
+      <div>
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信支付">
+        <p>微信支付</p>
+      </div>
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+      </div>
+      <div>
+        
+
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>jiankunking</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://jiankunking.com/high-performance-browser-networking-note.html" title="Web性能权威指南 笔记">https://jiankunking.com/high-performance-browser-networking-note.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+
+      </div>
+
+    <footer class="post-footer">
+          
+        
+        <div class="post-tags">
+            <a href="/tags/Network/" rel="tag"># Network</a>
+          
+            <a href="/tags/HTTP/" rel="tag"># HTTP</a>
+          
+            <a href="/tags/TCP/" rel="tag"># TCP</a>
+          
+            <a href="/tags/UDP/" rel="tag"># UDP</a>
+          
+            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
+          
+        </div>
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+              <a href="/java-forkjoin.html" rel="next" title="Java ForkJoin 解析">
+                <i class="fa fa-chevron-left"></i> Java ForkJoin 解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+              <a href="/encrypted-communication-elasticsearch-java-rest-client.html" rel="prev" title="encrypted communication elasticsearch java rest client">
+                encrypted communication elasticsearch java rest client <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/avatar/avatar.png"
+      alt="jiankunking">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">68</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/jiankunking" title="GitHub &rarr; https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+  </div>
+
+
+  <div class="links-of-blogroll motion-element links-of-blogroll-block">
+    <div class="links-of-blogroll-title">
+      <i class="fa  fa-fw fa-book"></i>
+      推荐阅读
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">个人笔记CSDN</a>
+        </li>
+      
+    </ul>
+  </div>
+
+        </div>
+      </div>
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#网络技术概览"><span class="nav-number">1.</span> <span class="nav-text">网络技术概览</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#带宽与延迟"><span class="nav-number">1.1.</span> <span class="nav-text">带宽与延迟</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#延迟的最后一公里"><span class="nav-number">1.1.1.</span> <span class="nav-text">延迟的最后一公里</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的构成"><span class="nav-number">1.2.</span> <span class="nav-text">TCP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次握手"><span class="nav-number">1.2.1.</span> <span class="nav-text">三次握手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队首阻塞"><span class="nav-number">1.2.2.</span> <span class="nav-text">队首阻塞</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#针对TCP的优化建议"><span class="nav-number">1.3.</span> <span class="nav-text">针对TCP的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#服务器配置调优"><span class="nav-number">1.3.1.</span> <span class="nav-text">服务器配置调优</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP的构成"><span class="nav-number">1.4.</span> <span class="nav-text">UDP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#无协议服务"><span class="nav-number">1.4.1.</span> <span class="nav-text">无协议服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP与网络地址转换器"><span class="nav-number">1.4.2.</span> <span class="nav-text">UDP与网络地址转换器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传输层安全（TLS）"><span class="nav-number">1.5.</span> <span class="nav-text">传输层安全（TLS）</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">424k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:25</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.2.0</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+      </div>
+
+    
+
+  </div>
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+  <script src="/lib/lazyload/lozad.min.js?v=1.10.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+  
+  <script src="/js/affix.js?v=7.2.0"></script>
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
