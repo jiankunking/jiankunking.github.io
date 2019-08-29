@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-29T05:12:14.458Z">
+<meta property="og:updated_time" content="2019-08-29T07:34:53.665Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Web性能权威指南 笔记">
 <meta name="twitter:description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-29 13:12:14" itemprop="dateModified" datetime="2019-08-29T13:12:14+08:00">2019-08-29</time>
+                <time title="修改时间：2019-08-29 15:34:53" itemprop="dateModified" datetime="2019-08-29T15:34:53+08:00">2019-08-29</time>
               </span>
             
           
@@ -342,7 +342,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">5.4k</span>
+              <span title="本文字数">7.3k</span>
             </span>
           
             <span class="post-meta-item">
@@ -352,7 +352,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">5 分钟</span>
+              <span title="阅读时长">7 分钟</span>
             </span>
           
 
@@ -476,7 +476,64 @@
 <blockquote>
 <p>虽然不能使用TLS压缩，但应该使用服务器的Gzip设置压缩所有文本资源，同时对图像、视频、音频等媒体采用最合适的压缩格式。</p>
 </blockquote>
-
+<h1 id="无线网络性能"><a href="#无线网络性能" class="headerlink" title="无线网络性能"></a>无线网络性能</h1><h2 id="移动网络的优化建议"><a href="#移动网络的优化建议" class="headerlink" title="移动网络的优化建议"></a>移动网络的优化建议</h2><h3 id="消除周期性及无效的数据传输"><a href="#消除周期性及无效的数据传输" class="headerlink" title="消除周期性及无效的数据传输"></a>消除周期性及无效的数据传输</h3><p>对推送而言，原生应用可以访问平台专有的推送服务，因此应该尽可能使用。对 Web 应用来说，可以使用SSE（Server Sent Events，服务器发送事件）和WebSocket以降低延迟时间和协议消耗，尽可能不使用轮询和更耗资源的XHR技术。</p>
+<h3 id="消除不必要的长连接"><a href="#消除不必要的长连接" class="headerlink" title="消除不必要的长连接"></a>消除不必要的长连接</h3><p>TCP或UDP连接的连接状态及生命期与设备的无线状态是相互独立的。换句话说，即便与运营商网络仍维持着（两端间）连接不中断，无线模块也可以处于低耗电状态。外部网络的分组到来时，运营商无线网络会通知设备，使其无线模块切换到连接状态，从而恢复数据传输。</p>
+<p>明白了吗，应用不必让无线模块“活动”也可以保持连接不被断开。但不必要的长连接也有可能极大地消耗电量，而且由于人们对移动网络无线通信的误解，这种情况经常发生。</p>
+<h3 id="预测网络延迟上限"><a href="#预测网络延迟上限" class="headerlink" title="预测网络延迟上限"></a>预测网络延迟上限</h3><p>在移动网络中，一个HTTP请求很可能会导致一连串长达几百甚至上几千ms的网络延迟。这一方面是因为有往返延迟，另一方面也不能忘记DNS、TCP、TLS及控制面的延迟（图8-2）。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE82%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84HTTP%E8%AF%B7%E6%B1%82%E7%9A%84%E6%9E%84%E6%88%90.png"></p>
+<h1 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h1><h2 id="HTTP-简史"><a href="#HTTP-简史" class="headerlink" title="HTTP 简史"></a>HTTP 简史</h2><h3 id="HTTP-1-0：迅速发展及参考性RFC"><a href="#HTTP-1-0：迅速发展及参考性RFC" class="headerlink" title="HTTP 1.0：迅速发展及参考性RFC"></a>HTTP 1.0：迅速发展及参考性RFC</h3><p>今天，几乎所有Web服务器都支持，而且以后还会继续支持HTTP 1.0。除此之外，剩下的你都知道了。但HTTP 1.0对每个请求都打开一个新TCP连接严重影响性能。</p>
+<h3 id="HTTP-1-1：互联网标准"><a href="#HTTP-1-1：互联网标准" class="headerlink" title="HTTP 1.1：互联网标准"></a>HTTP 1.1：互联网标准</h3><p>HTTP 1.1 标准厘清了之前版本中很多有歧义的地方，而且还加入了很多重要的性能优化：<font color="DeepPink">持久连接、分块编码传输、字节范围请求、增强的缓存机制、传输编码及请求管道</font>。</p>
+<p>HTTP 1.1 改变了HTTP协议的语义，默认使用持久连接。换句话说，除非明确告知（通过Connection: close 首部），否则服务器默认会保持连接打开。</p>
+<p>不过，这个功能也反向移植到了HTTP 1.0，可以通过Connection: Keep-Alive 首部来启用。实际上，如果你使用的是HTTP 1.1，从技术上说不需要Connection: Keep-Alive首部，但很多客户端还是选择加上它。</p>
+<p>此外，HTTP 1.1 协议添加了内容、编码、字符集，甚至语言的协商机制，还添加了传输编码、缓存指令、客户端cookie 等十几个可以每次请求都协商的字段。</p>
+<h3 id="HTTP-2-0：改进传输性能"><a href="#HTTP-2-0：改进传输性能" class="headerlink" title="HTTP 2.0：改进传输性能"></a>HTTP 2.0：改进传输性能</h3><blockquote>
+<p>HTTP（Hypertext Transfer Protocol）是一个应用层协议，可用于分布协作式的超媒体系统。它是一个通用、无状态的协议。除了超文本，通过扩展它的请求方式、错误编码及首部，还可以将它用于很多其他领域，比如域名服务器和分布式对象管理系统。HTTP的一个功能就是允许数据的类型变化和协商，从而允许系统独立于被传输的数据构建。——RFC 2616：HTTP/1.1（1999 年 6 月）</p>
+</blockquote>
+<blockquote>
+<p>当前，出现了一种保持HTTP语义，但脱离HTTP/1.x消息分帧及语法的协议用法。这种用法被证明有碍于性能，并且是在鼓励滥用底层传输协议。本工作组将制定一个新规范，从有序、半双工流的角度重新表达当前HTTP的语义。与HTTP/1.x一样，主要将使用TCP作为传输层，不过也应该支持其他传输协议。——HTTP 2.0 纲领 （2012 年 1 月）</p>
+</blockquote>
+<p>HTTP 2.0 的主要目标是改进传输性能，实现低延迟和高吞吐量。主版本号的增加听起来像是要做大的改进，从性能角度说的确如此。但从另一方面看，HTTP的高层协议语义并不会因为这次版本升级而受影响。所有 HTTP 首部、值，以及它们的使用场景都不会变。</p>
+<h2 id="Web性能要点"><a href="#Web性能要点" class="headerlink" title="Web性能要点"></a>Web性能要点</h2><h3 id="剖析现代Web应用"><a href="#剖析现代Web应用" class="headerlink" title="剖析现代Web应用"></a>剖析现代Web应用</h3><h4 id="速度、性能与用户期望"><a href="#速度、性能与用户期望" class="headerlink" title="速度、性能与用户期望"></a>速度、性能与用户期望</h4><p>时间和用户感觉</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>感觉</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0 ~100 ms</td>
+<td>很快</td>
+</tr>
+<tr>
+<td>100~300 ms</td>
+<td>有一点点慢</td>
+</tr>
+<tr>
+<td>300~1000 ms</td>
+<td>机器在工作呢</td>
+</tr>
+<tr>
+<td>&gt; 1000 ms</td>
+<td>先干点别的吧</td>
+</tr>
+<tr>
+<td>&gt; 10000 ms</td>
+<td>不能用了</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>这个表格解释了Web性能社区总结的经验法则：必须250 ms内渲染页面，或者至少提供视觉反馈，才能保证用户不走开！</p>
+</blockquote>
+<h2 id="HTTP-1-x"><a href="#HTTP-1-x" class="headerlink" title="HTTP 1.x"></a>HTTP 1.x</h2><p>HTTP 1.0的优化策略非常简单，就一句话：升级到HTTP 1.1。完了！</p>
+<p>改进 HTTP 的性能是 HTTP 1.1 工作组的一个重要目标，后来这个版本也引入了大量增强性能的重要特性，其中一些大家比较熟知的有：</p>
+<ul>
+<li>持久化连接以支持连接重用； </li>
+<li>分块传输编码以支持流式响应； </li>
+<li>请求管道以支持并行请求处理； </li>
+<li>字节服务以支持基于范围的资源请求；　 </li>
+<li>改进的更好的缓存机制。 </li>
+</ul>
+<h3 id="持久连接的优点"><a href="#持久连接的优点" class="headerlink" title="持久连接的优点"></a>持久连接的优点</h3>
     </div>
       
   <div class="popular-posts-header">推荐阅读</div>
@@ -491,14 +548,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-jrockit-note.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
+      <div class="popular-posts-title"><a href="\relational-database-index-design-and-the-optimizers-note.html" rel="bookmark">数据库索引设计与优化 笔记</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\relational-database-index-design-and-the-optimizers-note.html" rel="bookmark">数据库索引设计与优化 笔记</a></div>
+      <div class="popular-posts-title"><a href="\java-jrockit-note.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
       
     </li>
   
@@ -657,7 +714,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-count">42</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -855,7 +912,9 @@
         
           
         
-        <span class="site-state-item-count">69</span>
+          
+        
+        <span class="site-state-item-count">70</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -901,7 +960,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#网络技术概览"><span class="nav-number">1.</span> <span class="nav-text">网络技术概览</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#带宽与延迟"><span class="nav-number">1.1.</span> <span class="nav-text">带宽与延迟</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#延迟的最后一公里"><span class="nav-number">1.1.1.</span> <span class="nav-text">延迟的最后一公里</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的构成"><span class="nav-number">1.2.</span> <span class="nav-text">TCP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次握手"><span class="nav-number">1.2.1.</span> <span class="nav-text">三次握手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队首阻塞"><span class="nav-number">1.2.2.</span> <span class="nav-text">队首阻塞</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#针对TCP的优化建议"><span class="nav-number">1.3.</span> <span class="nav-text">针对TCP的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#服务器配置调优"><span class="nav-number">1.3.1.</span> <span class="nav-text">服务器配置调优</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP的构成"><span class="nav-number">1.4.</span> <span class="nav-text">UDP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#无协议服务"><span class="nav-number">1.4.1.</span> <span class="nav-text">无协议服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP与网络地址转换器"><span class="nav-number">1.4.2.</span> <span class="nav-text">UDP与网络地址转换器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传输层安全（TLS）"><span class="nav-number">1.5.</span> <span class="nav-text">传输层安全（TLS）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#信任链与证书颁发机构"><span class="nav-number">1.5.1.</span> <span class="nav-text">信任链与证书颁发机构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#证书撤销"><span class="nav-number">1.5.2.</span> <span class="nav-text">证书撤销</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#证书撤销名单（CRL）"><span class="nav-number">1.5.2.1.</span> <span class="nav-text">证书撤销名单（CRL）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#在线证书状态协议（OCSP）"><span class="nav-number">1.5.2.2.</span> <span class="nav-text">在线证书状态协议（OCSP）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对TLS的优化建议"><span class="nav-number">1.5.3.</span> <span class="nav-text">针对TLS的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS记录大小"><span class="nav-number">1.5.3.1.</span> <span class="nav-text">TLS记录大小</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS压缩"><span class="nav-number">1.5.3.2.</span> <span class="nav-text">TLS压缩</span></a></li></ol></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#网络技术概览"><span class="nav-number">1.</span> <span class="nav-text">网络技术概览</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#带宽与延迟"><span class="nav-number">1.1.</span> <span class="nav-text">带宽与延迟</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#延迟的最后一公里"><span class="nav-number">1.1.1.</span> <span class="nav-text">延迟的最后一公里</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的构成"><span class="nav-number">1.2.</span> <span class="nav-text">TCP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次握手"><span class="nav-number">1.2.1.</span> <span class="nav-text">三次握手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队首阻塞"><span class="nav-number">1.2.2.</span> <span class="nav-text">队首阻塞</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#针对TCP的优化建议"><span class="nav-number">1.3.</span> <span class="nav-text">针对TCP的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#服务器配置调优"><span class="nav-number">1.3.1.</span> <span class="nav-text">服务器配置调优</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP的构成"><span class="nav-number">1.4.</span> <span class="nav-text">UDP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#无协议服务"><span class="nav-number">1.4.1.</span> <span class="nav-text">无协议服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP与网络地址转换器"><span class="nav-number">1.4.2.</span> <span class="nav-text">UDP与网络地址转换器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传输层安全（TLS）"><span class="nav-number">1.5.</span> <span class="nav-text">传输层安全（TLS）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#信任链与证书颁发机构"><span class="nav-number">1.5.1.</span> <span class="nav-text">信任链与证书颁发机构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#证书撤销"><span class="nav-number">1.5.2.</span> <span class="nav-text">证书撤销</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#证书撤销名单（CRL）"><span class="nav-number">1.5.2.1.</span> <span class="nav-text">证书撤销名单（CRL）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#在线证书状态协议（OCSP）"><span class="nav-number">1.5.2.2.</span> <span class="nav-text">在线证书状态协议（OCSP）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对TLS的优化建议"><span class="nav-number">1.5.3.</span> <span class="nav-text">针对TLS的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS记录大小"><span class="nav-number">1.5.3.1.</span> <span class="nav-text">TLS记录大小</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS压缩"><span class="nav-number">1.5.3.2.</span> <span class="nav-text">TLS压缩</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#无线网络性能"><span class="nav-number">2.</span> <span class="nav-text">无线网络性能</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#移动网络的优化建议"><span class="nav-number">2.1.</span> <span class="nav-text">移动网络的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#消除周期性及无效的数据传输"><span class="nav-number">2.1.1.</span> <span class="nav-text">消除周期性及无效的数据传输</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消除不必要的长连接"><span class="nav-number">2.1.2.</span> <span class="nav-text">消除不必要的长连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#预测网络延迟上限"><span class="nav-number">2.1.3.</span> <span class="nav-text">预测网络延迟上限</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP"><span class="nav-number">3.</span> <span class="nav-text">HTTP</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP-简史"><span class="nav-number">3.1.</span> <span class="nav-text">HTTP 简史</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-1-0：迅速发展及参考性RFC"><span class="nav-number">3.1.1.</span> <span class="nav-text">HTTP 1.0：迅速发展及参考性RFC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-1-1：互联网标准"><span class="nav-number">3.1.2.</span> <span class="nav-text">HTTP 1.1：互联网标准</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-2-0：改进传输性能"><span class="nav-number">3.1.3.</span> <span class="nav-text">HTTP 2.0：改进传输性能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Web性能要点"><span class="nav-number">3.2.</span> <span class="nav-text">Web性能要点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#剖析现代Web应用"><span class="nav-number">3.2.1.</span> <span class="nav-text">剖析现代Web应用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#速度、性能与用户期望"><span class="nav-number">3.2.1.1.</span> <span class="nav-text">速度、性能与用户期望</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP-1-x"><span class="nav-number">3.3.</span> <span class="nav-text">HTTP 1.x</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#持久连接的优点"><span class="nav-number">3.3.1.</span> <span class="nav-text">持久连接的优点</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
@@ -928,12 +987,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">429k</span>
+    <span title="站点总字数">442k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">6:30</span>
+    <span title="站点阅读时长">6:41</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
