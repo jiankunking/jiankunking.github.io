@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T05:58:23.179Z">
+<meta property="og:updated_time" content="2019-08-30T12:50:44.325Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java AQS Condition的实现分析">
 <meta name="twitter:description" content="本文整理自《Java并发编程的艺术》第五章 作者：方腾飞　魏鹏　程晓明">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 13:58:23" itemprop="dateModified" datetime="2019-08-30T13:58:23+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 20:50:44" itemprop="dateModified" datetime="2019-08-30T20:50:44+08:00">2019-08-30</time>
               </span>
             
           
@@ -375,8 +375,8 @@
 <p>下面将分析Condition的实现，主要包括：等待队列、等待和通知，下面提到的Condition如果不加说明均指的是ConditionObject。</p>
 <h1 id="1、等待队列"><a href="#1、等待队列" class="headerlink" title="1、等待队列"></a>1、等待队列</h1><p>等待队列是一个FIFO的队列，在队列中的每个节点都包含了一个线程引用，该线程就是在Condition对象上等待的线程，如果一个线程调用了Condition.await()方法，那么该线程将会释放锁、构造成节点加入等待队列并进入等待状态。事实上，节点的定义复用了同步器中节点的定义，也就是说，同步队列和等待队列中节点类型都是同步器的静态内部类AbstractQueuedSynchronizer.Node。</p>
 <p>一个Condition包含一个等待队列，Condition拥有首节点（firstWaiter）和尾节点（lastWaiter）。当前线程调用Condition.await()方法，将会以当前线程构造节点，并将节点从尾部加入等待队列，等待队列的基本结构如图5-9所示。<br><img alt data-src="/images/java-juc-aqs-condition/59.png"></p>
-<p>如图所示，Condition拥有首尾节点的引用，而新增节点只需要将原有的尾节点nextWaiter指向它，并且更新尾节点即可。上述节点引用更新的过程并没有使用CAS保证，原因在于<font color="DeepPink">*<em>调用await()方法的线程必定是获取了锁的线程，也就是说该过程是由锁来保证线程安全的。 *</em></font></p>
-<p>在Object的监视器模型上，一个对象拥有一个同步队列和等待队列，而<font color="DeepPink">*<em>并发包中的Lock（更确切地说是同步器）拥有一个同步队列和多个等待队列 *</em></font>，其对应关系如图5-10所示。</p>
+<p>如图所示，Condition拥有首尾节点的引用，而新增节点只需要将原有的尾节点nextWaiter指向它，并且更新尾节点即可。上述节点引用更新的过程并没有使用CAS保证，原因在于<font color="DeepPink">调用await()方法的线程必定是获取了锁的线程，也就是说该过程是由锁来保证线程安全的。 </font></p>
+<p>在Object的监视器模型上，一个对象拥有一个同步队列和等待队列，而<font color="DeepPink">并发包中的Lock（更确切地说是同步器\）拥有一个同步队列和多个等待队列</font>，其对应关系如图5-10所示。</p>
 <p><img alt data-src="/images/java-juc-aqs-condition/510.png"></p>
 <h1 id="2、等待"><a href="#2、等待" class="headerlink" title="2、等待"></a>2、等待</h1><p><font color="DeepPink"><strong>调用Condition的await()方法（或者以await开头的方法），会使当前线程进入等待队列并释放锁，同时线程状态变为等待状态。当从await()方法返回时，当前线程一定获取了Condition相关联的锁。</strong></font></p>
 <p>如果从队列（同步队列和等待队列）的角度看await()方法，当调用await()方法时，相当于同步队列的首节点（获取了锁的节点）移动到Condition的等待队列中。</p>
@@ -405,14 +405,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
+      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
+      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
       
     </li>
   

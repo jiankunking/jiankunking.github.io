@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="gRPC Practice了解gRPC，更知REST">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T05:56:04.206Z">
+<meta property="og:updated_time" content="2019-08-30T12:30:20.504Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="gRPC 从学习到生产">
 <meta name="twitter:description" content="gRPC Practice了解gRPC，更知REST">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 13:56:04" itemprop="dateModified" datetime="2019-08-30T13:56:04+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 20:30:20" itemprop="dateModified" datetime="2019-08-30T20:30:20+08:00">2019-08-30</time>
               </span>
             
           
@@ -398,7 +398,7 @@
 <h1 id="建一个缓存服务"><a href="#建一个缓存服务" class="headerlink" title="建一个缓存服务"></a>建一个缓存服务</h1><p>使用 gRPC 这类东西，我们并非开始于写 Go 代码，我们是从撰写 gRPC 的 <a href="https://developers.google.com/protocol-buffers/docs/overview" target="_blank" rel="noopener">IDL</a> 开始的。</p>
 <h2 id="app-proto"><a href="#app-proto" class="headerlink" title="app.proto"></a>app.proto</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">syntax = &quot;proto3&quot;</span><br><span class="line">package rpc;</span><br><span class="line">service Cache &#123;</span><br><span class="line">  rpc Store(StoreReq) returns (StoreResp) &#123;&#125;</span><br><span class="line">  rpc Get(GetReq) returns (GetResp) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message StoreReq &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">&#125;</span><br><span class="line">message StoreResp &#123;</span><br><span class="line">&#125;</span><br><span class="line">message GetReq &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">&#125;</span><br><span class="line">message GetResp &#123;</span><br><span class="line">  bytes val = 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>当写了这个文件后，我们立刻拥有了<font color="DeepPink">** 9 **</font>种语言的客户端的库。</p>
+<p>当写了这个文件后，我们立刻拥有了 <font color="DeepPink"><strong>9</strong></font> 种语言的客户端的库。</p>
 <ul>
 <li>C++</li>
 <li>Java(and Android)</li>
@@ -410,7 +410,7 @@
 <li>Objective-C (iOS!)</li>
 <li>PHP</li>
 </ul>
-<p>同时，我们也拥有了<font color="DeepPink">** 7 **</font>种语言的服务端的 API Stub：</p>
+<p>同时，我们也拥有了 <font color="DeepPink"><strong>7</strong></font> 种语言的服务端的 API Stub：</p>
 <ul>
 <li>C++</li>
 <li>Java</li>
@@ -427,7 +427,7 @@
 
 <h2 id="client-go"><a href="#client-go" class="headerlink" title="client.go"></a>client.go</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">func clientMain() &#123;</span><br><span class="line">  if err != runClient(); err != nil &#123;</span><br><span class="line">    fmt.Fprintf(os.Stderr, &quot;failed: %v\n&quot;, err)</span><br><span class="line">    os.Exit(1)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">func runClient() error &#123;</span><br><span class="line">  //  建立连接</span><br><span class="line">  conn, err := grpc.Dial(&quot;localhost:5053&quot;, grpc.WithInsecure())</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to dial server: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  cache := rpc.NewCacheClient(conn)</span><br><span class="line">  //  调用 grpc 的 store() 方法存储键值对 &#123; &quot;gopher&quot;: &quot;con&quot; &#125;</span><br><span class="line">  _, err = cache.Store(context.Background(), &amp;rpc.StoreReq&#123;Key: &quot;gopher&quot;, Val: []byte(&quot;con&quot;)&#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to store: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  //  调用 grpc 的 get() 方法取回键为 `gopher` 的值</span><br><span class="line">  resp, err := cache.Get(context.Background(), &amp;rpc.GetReq&#123;Key: &quot;gopher&quot;&#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to get: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  //  输出</span><br><span class="line">  fmt.Printf(&quot;Got cached value %s\n&quot;, resp.Val)</span><br><span class="line">  return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="这不就是-WSDL-么？"><a href="#这不就是-WSDL-么？" class="headerlink" title="这不就是 WSDL 么？"></a>这不就是 WSDL 么？</h2><p>或许有些人会认为这和<font color="DeepPink">** WSDL **</font>也太像了，这么想没有错，因为 gRPC 在借鉴之前的 SOAP/WSDL 的错误基础上，也吸取了他们优秀的地方。</p>
+<h2 id="这不就是-WSDL-么？"><a href="#这不就是-WSDL-么？" class="headerlink" title="这不就是 WSDL 么？"></a>这不就是 WSDL 么？</h2><p>或许有些人会认为这和 <font color="DeepPink"><strong>WSDL</strong></font> 也太像了，这么想没有错，因为 gRPC 在借鉴之前的 SOAP/WSDL 的错误基础上，也吸取了他们优秀的地方。</p>
 <ul>
 <li>和 XML 关系没那么紧(grpc 是可插拔式的，可以换成各种底层表述)</li>
 <li>写过 XML/XSD 的人都知道这些服务定义太繁重了，gRPC 没有这个问题</li>
@@ -458,7 +458,7 @@
 <li>允许模拟飞行模式的 RPC 调用</li>
 </ul>
 </li>
-<li>允许客户端<font color="DeepPink">** 和 **</font>服务端 Streaming</li>
+<li>允许客户端 <font color="DeepPink"><strong>和</strong></font> 服务端 Streaming</li>
 </ul>
 <h2 id="gRPC-的实现"><a href="#gRPC-的实现" class="headerlink" title="gRPC 的实现"></a>gRPC 的实现</h2><p>现在有3个高性能的、事件驱动的实现</p>
 <ul>
@@ -505,13 +505,13 @@
 <h2 id="生产环境案例：性能"><a href="#生产环境案例：性能" class="headerlink" title="生产环境案例：性能"></a>生产环境案例：性能</h2><p>上面的问题解决了，我们服务又恢复了正常，不会有用户建立过多的键值了。但是很快，我们就又收到了其他用户发来的新的 issue，很多人反应说新系统变慢了，没有达到 <a href="https://en.wikipedia.org/wiki/Service-level_agreement" target="_blank" rel="noopener">SLA</a> 的要求。</p>
 <p>可是我们根本不知道到底发生了什么，于是意识到了，我们的程序没有任何可观察性（Observability），换句话说，我们的程序没有任何计量系统来统计性能相关的数据。</p>
 <p>我们先从最简单的做起，添加日志。</p>
-<p>我们先从<font color="DeepPink">** client.go **</font>开始，增加一些测量和计数以及日志输出。</p>
+<p>我们先从 <font color="DeepPink"><strong>client.go</strong></font> 开始，增加一些测量和计数以及日志输出。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">//  开始计时</span><br><span class="line">start := time.Now()</span><br><span class="line">_, err = cache.Store(context.Background(), &amp;rpc.StoreReq&#123;</span><br><span class="line">  AccountToken: &quot;inconshreveable&quot;,</span><br><span class="line">  Key:          &quot;gopher&quot;,</span><br><span class="line">  Val:          []byte(&quot;con&quot;),</span><br><span class="line">&#125;)</span><br><span class="line">//  计算 cache.Store() 调用时间</span><br><span class="line">log.Printf(&quot;cache.Store duration %s&quot;, time.Since(start))</span><br><span class="line">if err != nil &#123;</span><br><span class="line">  return fmt.Errorf(&quot;failed to store: %v&quot;, err)</span><br><span class="line">&#125;</span><br><span class="line">//  再次开始计时</span><br><span class="line">start = time.Now()</span><br><span class="line">//  调用 grpc 的 get() 方法取回键为 `gopher` 的值</span><br><span class="line">resp, err := cache.Get(context.Background(), &amp;rpc.GetReq&#123;Key: &quot;gopher&quot;&#125;)</span><br><span class="line">//  计算 cache.Get() 调用时间</span><br><span class="line">log.Printf(&quot;cache.Get duration %s&quot;, time.Since(start))</span><br><span class="line">if err != nil &#123;</span><br><span class="line">  return fmt.Errorf(&quot;failed to get: %v&quot;, err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>同样，在服务端也这么处理。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  //  开始计时</span><br><span class="line">  start := time.Now()</span><br><span class="line">  //  调用另一个服务取得账户信息，包含其键值限制</span><br><span class="line">  resp, err := s.accounts.GetByToken(context.Background(), &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  //  输出 account.GetByToken() 的调用时间</span><br><span class="line">  log.Printf(&quot;accounts.GetByToken duration %s&quot;, time.Since(start))</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>经过这些修改后，我们发现一样的事情在反反复复的做，那么有什么办法可以改变这种无聊的做法么？查阅 grpc 文档后，看到有一个叫做<font color="DeepPink">** Client Interceptor **</font>的东西。</p>
+<p>经过这些修改后，我们发现一样的事情在反反复复的做，那么有什么办法可以改变这种无聊的做法么？查阅 grpc 文档后，看到有一个叫做 <font color="DeepPink"><strong>Client Interceptor</strong></font> 的东西。</p>
 <p>这相当于是一个中间件，但是是在客户端。当客户端进行 rpc 调用的时候，这个中间件先会被调用，因此这个中间件可以对调用进行一层包装，然后再进行调用。</p>
 <p>为了实现这个功能，我们创建一个新的文件，叫做 interceptor.go：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">func WithClientInterceptor() grpc.DialOption &#123;</span><br><span class="line">  return grpc.WithUnaryInterceptor(clientInterceptor)</span><br><span class="line">&#125;</span><br><span class="line">func clientInterceptor(</span><br><span class="line">  ctx context.Context,</span><br><span class="line">  method string,</span><br><span class="line">  req interface&#123;&#125;,</span><br><span class="line">  reply interface&#123;&#125;,</span><br><span class="line">  cc *grpc.ClientConn,</span><br><span class="line">  invoker grpc.UnaryInvoker,</span><br><span class="line">  opts ...grpc.CallOption,</span><br><span class="line">) error &#123;</span><br><span class="line">  start := time.Now()</span><br><span class="line">  err := invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">  log.Printf(&quot;invoke remote method=%s duration=%s error=%v&quot;, method, time.Since(start), err)</span><br><span class="line">  return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -675,14 +675,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\golang-for-crypto-developers.html" rel="bookmark">Go 密码学应用</a></div>
+      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
+      <div class="popular-posts-title"><a href="\golang-for-crypto-developers.html" rel="bookmark">Go 密码学应用</a></div>
       
     </li>
   

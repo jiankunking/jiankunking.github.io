@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="通过Fescar（Seata）了解分布式事务框架设计思路">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T05:52:21.466Z">
+<meta property="og:updated_time" content="2019-08-30T12:45:47.325Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="阿里分布式事务解决方案 Fescar 解析">
 <meta name="twitter:description" content="通过Fescar（Seata）了解分布式事务框架设计思路">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 13:52:21" itemprop="dateModified" datetime="2019-08-30T13:52:21+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 20:45:47" itemprop="dateModified" datetime="2019-08-30T20:45:47+08:00">2019-08-30</time>
               </span>
             
           
@@ -449,7 +449,7 @@
 <h2 id="分支事务如何提交和回滚？"><a href="#分支事务如何提交和回滚？" class="headerlink" title="分支事务如何提交和回滚？"></a>分支事务如何提交和回滚？</h2><p>首先，<font color="DeepPink"><strong>应用需要使用 Fescar 的 JDBC 数据源代理，也就是 Fescar 的 RM。</strong></font></p>
 <p><img alt data-src="/images/alibaba-seata-design/data_sourc_proxy.png"></p>
 <p><strong>Phase1：</strong></p>
-<p><font color="DeepPink"><strong>Fescar 的 JDBC 数据源代理通过对业务 SQL 的解析，把业务数据在更新前后的数据镜像组织成回滚日志，利用 **本地事务</strong> 的 ACID 特性，将业务数据的更新和回滚日志的写入在同一个 <strong>本地事务</strong> 中提交。**</font></p>
+<p><font color="DeepPink">Fescar 的 JDBC 数据源代理通过对业务 SQL 的解析，把业务数据在更新前后的数据镜像组织成回滚日志，利用 <strong>本地事务</strong> 的 ACID 特性，将业务数据的更新和回滚日志的写入在同一个 <strong>本地事务</strong> 中提交。</font></p>
 <p>这样，可以保证：<font color="DeepPink"><strong>任何提交的业务数据的更新一定有相应的回滚日志存在。</strong></font></p>
 <p><img alt data-src="/images/alibaba-seata-design/branch_transaction_with_undo_log.png"></p>
 <p>基于这样的机制，分支的本地事务便可以在全局事务的 Phase1 提交，马上释放本地事务锁定的资源。</p>
@@ -479,7 +479,7 @@
 <p>我们对隔离级别的共识是：微服务场景产生的分布式事务，绝大部分应用在 <strong>读已提交</strong> 的隔离级别下工作是没有问题的。而实际上，这当中又有绝大多数的应用场景，实际上工作在 <strong>读未提交</strong> 的隔离级别下同样没有问题。</p>
 <p>在极端场景下，应用如果需要达到全局的 <strong>读已提交</strong>，Fescar 也提供了相应的机制来达到目的。默认，Fescar 是工作在 <strong>读未提交</strong> 的隔离级别下，保证绝大多数场景的高效性。</p>
 <p><img alt data-src="/images/alibaba-seata-design/isolation.png"><br>事务的 ACID 属性在 Fescar 中的体现是一个比较复杂的话题，我们会有专门的文章来深入分析，这里不做进一步展开。</p>
-<h1 id="适用场景分析"><a href="#适用场景分析" class="headerlink" title="适用场景分析"></a>适用场景分析</h1><p>前文所述的 <font color="DeepPink"><strong>Fescar 的核心原理中有一个 **重要前提</strong>：分支事务中涉及的资源，<strong>必须</strong> 是支持 <strong>ACID 事务</strong>的 <strong>关系型数据库</strong>。分支的提交和回滚机制，都依赖于本地事务的保障。所以，如果应用使用的数据库是不支持事务的，或根本不是关系型数据库，就不适用。**</font></p>
+<h1 id="适用场景分析"><a href="#适用场景分析" class="headerlink" title="适用场景分析"></a>适用场景分析</h1><p>前文所述的 <font color="DeepPink">Fescar 的核心原理中有一个 <strong>重要前提</strong>：分支事务中涉及的资源，<strong>必须</strong> 是支持 <strong>ACID 事务</strong>的 <strong>关系型数据库</strong>。分支的提交和回滚机制，都依赖于本地事务的保障。所以，如果应用使用的数据库是不支持事务的，或根本不是关系型数据库，就不适用。</font></p>
 <p>另外，目前 Fescar 的实现还存在一些局限，比如：事务隔离级别最高支持到 <strong>读已提交</strong> 的水平，SQL 的解析还不能涵盖全部的语法等。</p>
 <p>为了覆盖 Fescar 原生机制暂时不能支持应用场景，我们定义了另外一种工作模式。</p>
 <p>上面介绍的 Fescar 原生工作模式称为 AT（Automatic Transaction）模式，这种模式是对业务无侵入的。与之相应的另外一种工作模式称为 MT（Manual Transaction）模式，这种模式下，分支事务需要应用自己来定义业务本身及提交和回滚的逻辑。</p>
@@ -574,14 +574,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\multi-live-high-available-architecture-design.html" rel="bookmark">异地多活高可用架构设计</a></div>
+      <div class="popular-posts-title"><a href="\log-service-architecture-design.html" rel="bookmark">日志服务架构设计</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\log-service-architecture-design.html" rel="bookmark">日志服务架构设计</a></div>
+      <div class="popular-posts-title"><a href="\multi-live-high-available-architecture-design.html" rel="bookmark">异地多活高可用架构设计</a></div>
       
     </li>
   

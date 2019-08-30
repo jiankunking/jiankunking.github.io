@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="从事服务端开发，少不了要接触网络编程。epoll 作为 Linux 下高性能网络服务器的必备技术至关重要，nginx、Redis、Skynet 和大部分游戏服务器都使用到这一多路复用技术。 epoll 很重要，但是 epoll 与 select 的区别是什么呢？epoll 高效的原因是什么？  网上虽然也有不少讲解 epoll的文章，但要么是过于浅显，或者陷入源码解析，很少能有通俗易懂的。笔者于是">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T05:54:06.804Z">
+<meta property="og:updated_time" content="2019-08-30T12:43:24.970Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Epoll 的本质是什么？">
 <meta name="twitter:description" content="从事服务端开发，少不了要接触网络编程。epoll 作为 Linux 下高性能网络服务器的必备技术至关重要，nginx、Redis、Skynet 和大部分游戏服务器都使用到这一多路复用技术。 epoll 很重要，但是 epoll 与 select 的区别是什么呢？epoll 高效的原因是什么？  网上虽然也有不少讲解 epoll的文章，但要么是过于浅显，或者陷入源码解析，很少能有通俗易懂的。笔者于是">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 13:54:06" itemprop="dateModified" datetime="2019-08-30T13:54:06+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 20:43:24" itemprop="dateModified" datetime="2019-08-30T20:43:24+08:00">2019-08-30</time>
               </span>
             
           
@@ -342,7 +342,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">7.4k</span>
+              <span title="本文字数">7.3k</span>
             </span>
           
             <span class="post-meta-item">
@@ -411,7 +411,7 @@
 </ul>
 <p>第一个问题：<font color="DeepPink"><strong>因为一个 socket 对应着一个端口号，而网络数据包中包含了 ip 和端口的信息，内核可以通过端口号找到对应的 socket。当然，为了提高处理速度，操作系统会维护端口号到 socket 的索引结构，以快速读取。</strong></font></p>
 <p>第二个问题是多路复用的重中之重，也正是本文后半部分的重点。</p>
-<h1 id="五、同时监视多个-socket-的简单方法"><a href="#五、同时监视多个-socket-的简单方法" class="headerlink" title="五、同时监视多个 socket 的简单方法"></a>五、同时监视多个 socket 的简单方法</h1><p>服务端需要管理多个客户端连接，而 recv 只能监视单个 socket，这种矛盾下，人们开始寻找监视多个 socket 的方法。<font color="DeepPink">** epoll 的要义就是高效地监视多个 socket**</font>。</p>
+<h1 id="五、同时监视多个-socket-的简单方法"><a href="#五、同时监视多个-socket-的简单方法" class="headerlink" title="五、同时监视多个 socket 的简单方法"></a>五、同时监视多个 socket 的简单方法</h1><p>服务端需要管理多个客户端连接，而 recv 只能监视单个 socket，这种矛盾下，人们开始寻找监视多个 socket 的方法。<font color="DeepPink"><strong>epoll的要义就是高效地监视多个 socket</strong></font>。</p>
 <p>从历史发展角度看，必然先出现一种不太高效的方法，人们再加以改进，正如 select 之于 epoll。</p>
 <p>先理解不太高效的 select，才能够更好地理解 epoll 的本质。</p>
 <p>假如能够预先传入一个 socket 列表，如果列表中的 socket 都没有数据，挂起进程，直到有一个 socket 收到数据，唤醒进程。这种方法很直接，也是 select 的设计思想。</p>

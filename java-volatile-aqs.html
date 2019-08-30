@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="提到volatile首先想到就是：  保证此变量对所有线程的可见性，这里的 “可见性”是指当一条线程修改了这个变量的值，新值对于其他线程来说是可以立即得知的。 禁止指令重排序优化。  到这里大家感觉自己对volatile理解了吗？  如果理解了，大家考虑这么一个问题：ReentrantLock（或者其它基于AQS实现的锁）是如何保证代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性？">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T06:07:29.140Z">
+<meta property="og:updated_time" content="2019-08-30T12:58:00.359Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java volatile的内存语义与AQS锁内存可见性">
 <meta name="twitter:description" content="提到volatile首先想到就是：  保证此变量对所有线程的可见性，这里的 “可见性”是指当一条线程修改了这个变量的值，新值对于其他线程来说是可以立即得知的。 禁止指令重排序优化。  到这里大家感觉自己对volatile理解了吗？  如果理解了，大家考虑这么一个问题：ReentrantLock（或者其它基于AQS实现的锁）是如何保证代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性？">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 14:07:29" itemprop="dateModified" datetime="2019-08-30T14:07:29+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 20:58:00" itemprop="dateModified" datetime="2019-08-30T20:58:00+08:00">2019-08-30</time>
               </span>
             
           
@@ -478,7 +478,7 @@
 <p>8、小结</p>
 <p>如果我们仔细分析concurrent包的源代码实现，会发现一个通用化的实现模式。 </p>
 <ul>
-<li>首先，<font color="DeepPink">*<em>声明共享变量为volatile。 *</em></font></li>
+<li>首先，<font color="DeepPink"><strong>声明共享变量为volatile。</strong></font></li>
 <li>然后，<font color="DeepPink"><strong>使用CAS的原子条件更新来实现线程之间的同步。</strong></font></li>
 <li>同时，<font color="DeepPink"><strong>配合以volatile的读/写和CAS所具有的volatile读和写的内存语义来实现线程之间的通信。</strong></font><blockquote>
 <p>前文我们提到过，编译器不会对volatile读与volatile读后面的任意内存操作重排序；编译器不会对volatile写与volatile写前面的任意内存操作重排序。组合这两个条件，意味着为了同时实现volatile读和volatile写的内存语义，编译器不能对CAS与CAS前面和后面的任意内存操作重排序。</p>

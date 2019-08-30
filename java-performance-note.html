@@ -61,14 +61,14 @@
 </script>
 
   <meta name="description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
-<meta name="keywords" content="Java,Performance,GC,读书笔记,JVM">
+<meta name="keywords" content="Java,GC,Performance,读书笔记,JVM">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java性能优化权威指南 笔记">
 <meta property="og:url" content="https://jiankunking.com/java-performance-note.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T06:04:53.152Z">
+<meta property="og:updated_time" content="2019-08-30T12:41:29.846Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java性能优化权威指南 笔记">
 <meta name="twitter:description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 14:04:53" itemprop="dateModified" datetime="2019-08-30T14:04:53+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 20:41:29" itemprop="dateModified" datetime="2019-08-30T20:41:29+08:00">2019-08-30</time>
               </span>
             
           
@@ -578,7 +578,7 @@
 <p>一个通用原则是使用 Throughput收集器时,垃圾收集的开销应该小于5%。如果可以将垃圾收集的开销减少到1%甚至更少,那基本上就已经到了极限,进一步优化花费的代价很大。</p>
 </blockquote>
 <h3 id="调优并行垃圾收集线程"><a href="#调优并行垃圾收集线程" class="headerlink" title="调优并行垃圾收集线程"></a>调优并行垃圾收集线程</h3><p>并行垃圾收集器使用的线程数也应该依据系统上运行的应用程序数以及底层的硬件平台进行相应的调优。多个应用程序运行于同一个系统上时,建议通过命令行选项-XX:ParallelGCThreads=&lt;n&gt;将并行垃圾收集的线程数设置为小于其默认值。</p>
-<p>否则,由于大量的垃圾收集线程同时运行,其他应用程序的性能将受到严重影响。截至Java6 Update23,默认情况下并行垃圾收集的线程数等于Java API Runtime.availableProcessors()的返回值(如果该返回值小于等于8),否则其等于8+(Runtime.availableProcessors()-8)<em>5/8。<font color="DeepPink">*</font></em>多个应用程序运行于同一系统上时设置并行垃圾收集线程的一个通用原则是用虚拟处理器的数目 (Runtime.availableProcessors()的返回值)除以该系统上运行的应用程序数。**这里我们假设这些应用程序的负荷及堆大小的情况相差不大。如果应用程序的负荷及Java堆大小差异很大,那么为每个Java应用设置不同权重,并据此设置并行垃圾线程数是一个比较好的方法。</p>
+<p>否则,由于大量的垃圾收集线程同时运行,其他应用程序的性能将受到严重影响。截至Java6 Update23,默认情况下并行垃圾收集的线程数等于Java API Runtime.availableProcessors()的返回值(如果该返回值小于等于8),否则其等于8+(Runtime.availableProcessors()-8)*5/8。<font color="DeepPink">多个应用程序运行于同一系统上时设置并行垃圾收集线程的一个通用原则是用虚拟处理器的数目 (Runtime.availableProcessors()的返回值)除以该系统上运行的应用程序数。</font>这里我们假设这些应用程序的负荷及堆大小的情况相差不大。如果应用程序的负荷及Java堆大小差异很大,那么为每个Java应用设置不同权重,并据此设置并行垃圾线程数是一个比较好的方法。</p>
 <h3 id="在NUMA系统上部署"><a href="#在NUMA系统上部署" class="headerlink" title="在NUMA系统上部署"></a>在NUMA系统上部署</h3><p>如果应用程序需要在NUMA(非一致性内存架构)系统上部署,还有一个可以与Throughput收集器一起使用的HotSpot命令行选项是:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseNUMA</span><br></pre></td></tr></table></figure>
 
@@ -670,7 +670,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-threadlocal.html" rel="bookmark">Java ThreadLocal</a></div>
+      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
       
     </li>
   
@@ -732,9 +732,9 @@
         <div class="post-tags">
             <a href="/tags/Java/" rel="tag"># Java</a>
           
-            <a href="/tags/Performance/" rel="tag"># Performance</a>
-          
             <a href="/tags/GC/" rel="tag"># GC</a>
+          
+            <a href="/tags/Performance/" rel="tag"># Performance</a>
           
             <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
           

@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="行锁的三种算法InnoDB存储引擎有3种行锁的算法，其分别是：  Record Lock：单个行记录上的范围 Gap Lock：间隙锁，锁定一个范围，但不包含记录本身 Next-Key Lock：Gap Lock + Record Lock，锁定一个范围，并且锁定记录本身  Record Lock总是会锁住索引记录，如果InnoDB存储引擎建立的时候没有设置任何一个索引，这时InnoDB存储引擎会">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T06:10:38.240Z">
+<meta property="og:updated_time" content="2019-08-30T12:53:08.098Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL InnoDB存储引擎：行锁的3种算法">
 <meta name="twitter:description" content="行锁的三种算法InnoDB存储引擎有3种行锁的算法，其分别是：  Record Lock：单个行记录上的范围 Gap Lock：间隙锁，锁定一个范围，但不包含记录本身 Next-Key Lock：Gap Lock + Record Lock，锁定一个范围，并且锁定记录本身  Record Lock总是会锁住索引记录，如果InnoDB存储引擎建立的时候没有设置任何一个索引，这时InnoDB存储引擎会">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 14:10:38" itemprop="dateModified" datetime="2019-08-30T14:10:38+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 20:53:08" itemprop="dateModified" datetime="2019-08-30T20:53:08+08:00">2019-08-30</time>
               </span>
             
           
@@ -372,14 +372,14 @@
 <li><font color="DeepPink"><strong>Next-Key Lock：Gap Lock + Record Lock，锁定一个范围，并且锁定记录本身</strong></font></li>
 </ul>
 <p>Record Lock总是会锁住索引记录，如果InnoDB存储引擎建立的时候没有设置任何一个索引，这时InnoDB存储引擎会使用隐式的主键来进行锁定。</p>
-<p><font color="DeepPink">*<em>Next-Key Lock是结合了Gap Lock和Record Lock的一种锁定算法，在Next-Key Lock算法下，innodb对于行的查询都是采用这种锁定算法。 *</em></font>例如一个索引有9,11,13,20这4个值，那么该索引可能被Next-Key Locking的范围为（左开右闭 ）：<br>(- &amp;，9]<br>(9,11]<br>(13,20]<br>(20,+ &amp;)</p>
+<p><font color="DeepPink"><strong>Next-Key Lock是结合了Gap Lock和Record Lock的一种锁定算法，在Next-Key Lock算法下，innodb对于行的查询都是采用这种锁定算法。</strong></font>例如一个索引有9,11,13,20这4个值，那么该索引可能被Next-Key Locking的范围为（左开右闭 ）：<br>(- &amp;，9]<br>(9,11]<br>(13,20]<br>(20,+ &amp;)</p>
 <p>采用Next-Key Lock的锁定技术称为Next-Key Locking。这种设计的目的是为了解决幻读（Phantom Problem）。利用这种锁定技术，锁定的不是单个值，而是一个范围。</p>
 <blockquote>
 <p>当查询的索引含有唯一属性时，innodb存储引擎会对Next-Key Lock进行优化，将其降级为Record Lock，即锁住索引记录本身，而不再是范围。<br>对于唯一索引，其加上的是Record Lock，仅锁住记录本身。但也有特别情况，那就是唯一索引由多个列组成，而查询仅是查找多个唯一索引列中的其中一个，那么加锁的情况依然是Next-key lock。</p>
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">DROP TABLE</span><br><span class="line">IF EXISTS t;</span><br><span class="line"></span><br><span class="line">CREATE TABLE t (a INT PRIMARY KEY);</span><br><span class="line"></span><br><span class="line">INSERT INTO t</span><br><span class="line">VALUES</span><br><span class="line">	(1),</span><br><span class="line">	(2),</span><br><span class="line">	(5);</span><br></pre></td></tr></table></figure>
 
-<p><img alt data-src="/images/mysql-innodb-row-lock-algorithm/%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%94%81%E5%AE%9A%E7%A4%BA%E4%BE%8B.png"><br>表t中共有1、2、5三个值。在上面的例子中，在会话A中首先对a=5进行X锁定。而由于a是主键且唯一，因此锁定的仅是5这个值，而不是(2,5)这个范围，这样在会话B中插入值4而不会阻塞，可以立即插入并返回。即锁定由Next-Key Lock算法降级为了Record Lock，从而提高应用的并发性。正如前面所介绍的，<font color="DeepPink">*<em>Next-Key降级为Record Lock仅在查询的列是唯一索引的情况下。若是辅助索引，则情况会完全不同。 *</em></font>同样，首先根据如下代码创建测试表z：</p>
+<p><img alt data-src="/images/mysql-innodb-row-lock-algorithm/%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%94%81%E5%AE%9A%E7%A4%BA%E4%BE%8B.png"><br>表t中共有1、2、5三个值。在上面的例子中，在会话A中首先对a=5进行X锁定。而由于a是主键且唯一，因此锁定的仅是5这个值，而不是(2,5)这个范围，这样在会话B中插入值4而不会阻塞，可以立即插入并返回。即锁定由Next-Key Lock算法降级为了Record Lock，从而提高应用的并发性。正如前面所介绍的，<font color="DeepPink"><strong>Next-Key降级为Record Lock仅在查询的列是唯一索引的情况下。若是辅助索引，则情况会完全不同。</strong></font>同样，首先根据如下代码创建测试表z：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE Z (</span><br><span class="line">	a INT,</span><br><span class="line">	b INT,</span><br><span class="line">	PRIMARY KEY (a),</span><br><span class="line">	KEY (b)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">INSERT INTO Z</span><br><span class="line">VALUES</span><br><span class="line">	(1, 1),</span><br><span class="line">	(3, 1),</span><br><span class="line">	(5, 3),</span><br><span class="line">	(7, 6),</span><br><span class="line">	(10, 8);</span><br></pre></td></tr></table></figure>
 
 <p>表z的列b是辅助索引，若在<strong>会话A</strong>中执行下面的SQL语句：</p>
@@ -415,7 +415,7 @@
 <p>若这时事务T1执行如下的SQL语句:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM t WHERE a&gt; 2 FOR UPDATE;</span><br></pre></td></tr></table></figure>
 
-<p>注意这时事务T1并没有进行提交操作，上述应该返回5这个结果。若与此同时,另一个事务T2插入了 4这个值，并且数据库允许该操作，那么事务T1再次执行上述SQL语句会得到结果4和5。这与第一次得到的结果不同，违反了事务的隔离性，即当前事务能够看到其他事务的结果。其过程如表6-13所示：<br><img alt data-src="/images/mysql-innodb-row-lock-algorithm/%E5%B9%BB%E8%AF%BB%E9%97%AE%E9%A2%98%E6%BC%94%E7%A4%BA.png"><br>InnoDB存储引擎采用Next-Key Locking的算法避免Phantom Problem。对于上述的SQL语句SELECT* FROM t WHERE a&gt;2 FOR UPDATE,其锁住的不是5这单个值，而是对（2, +〇〇)这个范围加了 X锁。因此任何对于这个范围的插入都是不被允许的，从而避免 Phantom Problem。</p>
+<p>注意这时事务T1并没有进行提交操作，上述应该返回5这个结果。若与此同时,另一个事务T2插入了 4这个值，并且数据库允许该操作，那么事务T1再次执行上述SQL语句会得到结果4和5。这与第一次得到的结果不同，违反了事务的隔离性，即当前事务能够看到其他事务的结果。其过程如表6-13所示：<br><img alt data-src="/images/mysql-innodb-row-lock-algorithm/%E5%B9%BB%E8%AF%BB%E9%97%AE%E9%A2%98%E6%BC%94%E7%A4%BA.png"><br>InnoDB存储引擎采用Next-Key Locking的算法避免Phantom Problem。对于上述的SQL语句SELECT * FROM t WHERE a&gt;2 FOR UPDATE,其锁住的不是5这单个值，而是对（2, +〇〇)这个范围加了 X锁。因此任何对于这个范围的插入都是不被允许的，从而避免 Phantom Problem。</p>
 <p>InnoDB存储引擎默认的事务隔离级别是REPEATABLE READ,在该隔离级别下,<br>其采用Next-Key Locking的方式来加锁。而在事务隔离级别READ COMMITTED下,其仅采用Record Lock，因此在上述的示例中，会话A需要将事务的隔离级别设置为READ COMMITTED。</p>
 <p>此外，<font color="DeepPink"><strong>用户可以通过InnoDB存储引擎的Next-Key Locking机制在应用层面实现唯一性的检查。</strong></font> 例如：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM table WHERE col=xxx LOCK IN SHARE MODE;</span><br><span class="line">If not found any row:</span><br><span class="line"># unique for insert value</span><br><span class="line">INSERT INTO table VALUES (...);</span><br></pre></td></tr></table></figure>
@@ -429,14 +429,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
       
     </li>
   

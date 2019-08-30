@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Java JDK 11 ReentrantReadWriteLock 原理分析">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T06:05:22.067Z">
+<meta property="og:updated_time" content="2019-08-30T12:47:06.820Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ReentrantReadWriteLock原理解析">
 <meta name="twitter:description" content="Java JDK 11 ReentrantReadWriteLock 原理分析">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 14:05:22" itemprop="dateModified" datetime="2019-08-30T14:05:22+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 20:47:06" itemprop="dateModified" datetime="2019-08-30T20:47:06+08:00">2019-08-30</time>
               </span>
             
           
@@ -425,7 +425,7 @@
 <h2 id="5-3-读锁的获取与释放"><a href="#5-3-读锁的获取与释放" class="headerlink" title="5.3 读锁的获取与释放"></a>5.3 读锁的获取与释放</h2><p>读锁是一个支持重进入的共享锁，它能够被多个线程同时获取，在没有其他写线程访问（或者写状态为0）时，读锁总会被成功地获取，而所做的也只是（线程安全的）增加读状态。如果当前线程已经获取了读锁，则增加读状态。如果当前线程在获取读锁时，写锁已被其他线程获取，则进入等待状态。获取读锁的实现从Java 5到Java 6变得复杂许多，主要原因是新增了一些功能，例如getReadHoldCount()方法，作用是返回当前线程获取读锁的次数。读状态是所有线程获取读锁次数的总和，而每个线程各自获取读锁的次数只能选择保存在ThreadLocal中，由线程自身维护，这使获取读锁的实现变得复杂。因此，这里将获取读锁的代码做了删减，保留必要的部分，如代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">protected final int tryAcquireShared(int unused) &#123;</span><br><span class="line">          for (;;) &#123;</span><br><span class="line">                  int c = getState();</span><br><span class="line">                  int nextc = c + (1 &lt;&lt; 16);</span><br><span class="line">                  if (nextc &lt; c)</span><br><span class="line">                    throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">                  if (exclusiveCount(c) != 0 &amp;&amp; owner != Thread.currentThread())</span><br><span class="line">                    return -1;</span><br><span class="line">                  if (compareAndSetState(c, nextc))</span><br><span class="line">                    return 1;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>在tryAcquireShared(int unused)方法中，如果其他线程已经获取了写锁，则当前线程获取读锁失败，进入等待状态。<font color="DeepPink">** 如果当前线程获取了写锁或者写锁未被获取，则当前线程（线程安全，依靠CAS保证）增加读状态，成功获取读锁。**</font></p>
+<p>在tryAcquireShared(int unused)方法中，如果其他线程已经获取了写锁，则当前线程获取读锁失败，进入等待状态。<font color="DeepPink"><strong>如果当前线程获取了写锁或者写锁未被获取，则当前线程（线程安全，依靠CAS保证）增加读状态，成功获取读锁。</strong></font></p>
 <p>读锁的每次释放（线程安全的，可能有多个读线程同时释放读锁）均减少读状态，减少的值是（1&lt;&lt;16）。</p>
 <h2 id="5-4-锁降级"><a href="#5-4-锁降级" class="headerlink" title="5.4 锁降级"></a>5.4 锁降级</h2><p>锁降级指的是写锁降级成为读锁。如果当前线程拥有写锁，然后将其释放，最后再获取读锁，这种分段完成的过程不能称之为锁降级。锁降级是指把持住（当前拥有的）写锁，再获取到读锁，随后释放（先前拥有的）写锁的过程。</p>
 <p>接下来看一个锁降级的示例。因为数据不常变化，所以多个线程可以并发地进行数据处理，当数据变更后，如果当前线程感知到数据变化，则进行数据的准备工作，同时其他处理线程被阻塞，直到当前线程完成数据的准备工作，如代码如下所示：</p>
