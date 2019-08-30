@@ -60,18 +60,18 @@
   };
 </script>
 
-  <meta name="description" content="gRPC Practice">
+  <meta name="description" content="gRPC Practice了解gRPC，更知REST">
 <meta name="keywords" content="Go,gRPC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="gRPC 从学习到生产">
 <meta property="og:url" content="https://jiankunking.com/golang-grpc-from-tutorial-to-production.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="gRPC Practice">
+<meta property="og:description" content="gRPC Practice了解gRPC，更知REST">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T00:57:23.222Z">
+<meta property="og:updated_time" content="2019-08-30T01:37:21.761Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="gRPC 从学习到生产">
-<meta name="twitter:description" content="gRPC Practice">
+<meta name="twitter:description" content="gRPC Practice了解gRPC，更知REST">
   <link rel="canonical" href="https://jiankunking.com/golang-grpc-from-tutorial-to-production">
 
 
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 08:57:23" itemprop="dateModified" datetime="2019-08-30T08:57:23+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-30 09:37:21" itemprop="dateModified" datetime="2019-08-30T09:37:21+08:00">2019-08-30</time>
               </span>
             
           
@@ -342,7 +342,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">15k</span>
+              <span title="本文字数">22k</span>
             </span>
           
             <span class="post-meta-item">
@@ -352,7 +352,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">14 分钟</span>
+              <span title="阅读时长">20 分钟</span>
             </span>
           
 
@@ -366,7 +366,7 @@
 
       
         <blockquote>
-<p>gRPC Practice</p>
+<p>gRPC Practice<br>了解gRPC，更知REST</p>
 </blockquote>
 <a id="more"></a>
 
@@ -560,6 +560,93 @@
 
 <p>然后在我们的 clientInterceptor() 实现中加入 isIdempotent() 判断：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">func clientInterceptor(...) error &#123;</span><br><span class="line">  var (</span><br><span class="line">    start     = time.Now()</span><br><span class="line">    attempts  = 0</span><br><span class="line">    err       error</span><br><span class="line">    backoff   retryBackOff</span><br><span class="line">  )</span><br><span class="line">  for &#123;</span><br><span class="line">    attempts += 1</span><br><span class="line">    select &#123;</span><br><span class="line">    case &lt;-ctx.Done():</span><br><span class="line">      err = status.Errorf(codes.DeadlineExceeded, &quot;timeout reached before next retry attempt&quot;)</span><br><span class="line">    case &lt;-backoff.Next():</span><br><span class="line">      startAttempt := time.Now()</span><br><span class="line">      err = invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">      if err != nil &amp;&amp; isIdempotent(ctx) &#123;</span><br><span class="line">        log.Printf(...)</span><br><span class="line">        continue</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    break</span><br><span class="line">  &#125;</span><br><span class="line">  log.Printf(...)</span><br><span class="line">  return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样当调用失败后，客户端检查发现是幂等的情况，才重试，否则不重试。避免了非幂等操作的反复操作。</p>
+<h2 id="生产环境案例：结构化错误"><a href="#生产环境案例：结构化错误" class="headerlink" title="生产环境案例：结构化错误"></a>生产环境案例：结构化错误</h2><p>感觉没啥问题了，于是部署上线了。可是运行一段时间后，发现有些不对劲。所有成功的RPC调用，也就是说这个操作本身是正确的，都没有问题，超时重试也正常。但是所有失败的 RPC 调用都不对了，所有失败的 RPC 调用，都返回超时，而不是错误本身。这里说的失败，不是说网络问题导致超时啥的，而是说请求本身的失败，比如之前提到的，Get() 不存在的键，应该返回错误；或者 Store() 超过了配额，应该返回错误，这类错误在日志中都没看到，反而都对应了超时。</p>
+<p>经过分析发现，服务端该报错都报错，没啥问题，但是客户端不对，本应该返回错误给调用方的地方，客户端代码反而又开始重试这个操作了。看来之前重试的代码还有问题。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">err = invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">if err != nil &amp;&amp; isIdempotent(ctx) &#123;</span><br><span class="line">  log.Printf(...)</span><br><span class="line">  continue</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果仔细观察这部分代码，会发现，无论 err 是什么，只要非 nil，我们就重试。其实这是不对的，我们只有针对某些错误重试，比如网络问题之类的，而不应该对我们希望返回给调用方的错误重试，那没有意义。</p>
+<p>那么问题就变成了，我们到底应该怎么对 err 判断来决定是否重试？</p>
+<ul>
+<li>可以使用不同的 Error Code，特定的 Code 需要 Retry，其它的不需要，那就需要自定义 gRPC 错误码；</li>
+<li>我们也可以定义一个 Error 类型的数据，里面包含了某种标志位，来告知是否值得 retry</li>
+<li>或者干脆把错误码放到 Response 的消息里，确保每个消息都有一个我们定义的错误码，来标明是否需要 retry。</li>
+</ul>
+<p>所以，我们需要的是一个完整的结构化的错误信息，而不是简单的一个 Error Code 和字符串。当然这条路不好走，但是我们已经做了这么多了，坚持一下还是可以克服的。</p>
+<p>这里我们还是从 IDL 开始：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">message Error &#123;</span><br><span class="line">  int64 code = 1;</span><br><span class="line">  string messsage = 2;</span><br><span class="line">  bool temporary = 3;</span><br><span class="line">  int64 userErrorCode = 4;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后我们实现这个 Error 类型。<br><font color="DeepPink">rpc/error.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">func (e *Error) Error() string &#123;</span><br><span class="line">  return e.Message</span><br><span class="line">&#125;</span><br><span class="line">func Errorf(code codes.Code, temporary bool, msg string, args ..interface&#123;&#125;) error &#123;</span><br><span class="line">  return &amp;Error&#123;</span><br><span class="line">    Code:      int64(code),</span><br><span class="line">    Message:   fmt.Sprintf(msg, args...),</span><br><span class="line">    Temporary: temporary,</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>有这两个函数，我们可以显示和构造这个 Error 类型的变量了，但是我们该怎么把错误消息传回客户端呢？然后问题就开始变的繁琐起来了：<br><font color="DeepPink">rpc/error.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">func MarshalError (err error, ctx context.Context) error &#123;</span><br><span class="line">  rerr, ok := err.(*Error)</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br><span class="line">  pberr, marshalerr := pb.Marshal(rerr)</span><br><span class="line">  if marshalerr == nil &#123;</span><br><span class="line">    md := metadata.Pairs(&quot;rpc-error&quot;, base64.StdEncoding.EncodeToString(pberr))</span><br><span class="line">    _ = grpc.SetTrailer(ctx, md)</span><br><span class="line">  &#125;</span><br><span class="line">  return status.Errorf(codes.Code(rerr.Code), rerr.Message)</span><br><span class="line">&#125;</span><br><span class="line">func UnmarshalError(err error, md metadata.MD) *Error &#123;</span><br><span class="line">  vals, ok := md[&quot;rpc-error&quot;]</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return nil</span><br><span class="line">  &#125;</span><br><span class="line">  buf, err := base64.StdEncoding.DecodeString(vals[0])</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return nil</span><br><span class="line">  &#125;</span><br><span class="line">  var rerr Error</span><br><span class="line">  if err := pb.Unmarshal(buf, &amp;rerr); err != nil &#123;</span><br><span class="line">    return nil</span><br><span class="line">  &#125;</span><br><span class="line">  return &amp;rerr</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><font color="DeepPink">interceptor.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">func serverInterceptor (</span><br><span class="line">  ctx context.Context,</span><br><span class="line">  req interface&#123;&#125;,</span><br><span class="line">  info *grpc.UnaryServerInfo,</span><br><span class="line">  handler grpc.UnaryHandler,</span><br><span class="line">) (interface&#123;&#125;, error) &#123;</span><br><span class="line">  start := time.Now()</span><br><span class="line">  resp, err := handler(ctx, req)</span><br><span class="line">  err = rpc.MarshalError(err, ctx)</span><br><span class="line">  log.Print(...)</span><br><span class="line">  return resp, err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>it’s ugly，but works.</p>
+<p>这是在 gRPC 不支持高级 Error 的情况下，怎么去 work around 这个问题，并且凑合用起来。现在这么做，错误就可以跨主机边界传递了。</p>
+<h2 id="生产环境案例：Dump"><a href="#生产环境案例：Dump" class="headerlink" title="生产环境案例：Dump"></a>生产环境案例：Dump</h2><p>又有客户前来提需求了，有的客户说我们可以存、也可以取，但是如何才能把里面所有的数据都获取下来？于是有了需求，希望实现 Dump() 操作，可以取回所有数据。</p>
+<p>现在已经轻车熟路了，我们先改 IDL，添加一个 Dump() 函数。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">service Cache &#123;</span><br><span class="line">  rpc Store(StoreReq) returns (StoreResp) &#123;&#125;</span><br><span class="line">  rpc Get(GetReq) returns (GetResp) &#123;&#125;</span><br><span class="line">  rpc Dump(DumpReq) returns (DumpResp) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message DumpReq&#123;</span><br><span class="line">&#125;</span><br><span class="line">message DumpResp &#123;</span><br><span class="line">  repeated DumpItem items = 1;</span><br><span class="line">&#125;</span><br><span class="line">message DumpItem &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里 DumpResp 里面用的是 repeated，因为 protobuf 里面不知道为啥不叫 array。</p>
+<h2 id="生产环境案例：流量控制"><a href="#生产环境案例：流量控制" class="headerlink" title="生产环境案例：流量控制"></a>生产环境案例：流量控制</h2><p>新功能 Dump 上线了，结果发现大家都很喜欢 Dump，有很多人在 Dump，结果服务器的内存开始不够了。于是我们需要一些限制手段，可以控制流量。</p>
+<p>查阅了文档后，发现我们可以控制同时最大有多少并发可以访问，以及可以多频繁的来访问服务。<br><font color="DeepPink">server.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">func runServer() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  srv := grpc.NewServer(grpc.Creds(tlsCreds),</span><br><span class="line">    ServerInterceptor(),</span><br><span class="line">    grpc.MaxConcurrentStreams(64),</span><br><span class="line">    grpc.InTapHandle(NewTap().Handler))</span><br><span class="line">  rpc.RegisterCacheServer(srv, NewCacheService(accounts))</span><br><span class="line">  l, err := net.Listen(&quot;tcp&quot;, &quot;localhost:5051&quot;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br><span class="line">  l = netutil.LimitListener(l, 1024)</span><br><span class="line">  return srv.Serve(l)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里使用了 netutil.LimitListener(l, 1024) 控制了总共可以有多少个连接，然后用 grpc.MaxConcurrentStreams(64) 指定了每个 grpc 的连接可以有多少个并发流(stream)。这两个结合起来基本控制了并发的总数。</p>
+<p>但是 gRPC 里没有地方限定可以多频繁的访问。因此这里用了 grpc.InTapHandle(NewTap().Handler)) 来进行定制，这是在更靠前的位置执行的。</p>
+<p><font color="DeepPink">tap.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">type Tap struct &#123;</span><br><span class="line">  lim *rate.Limiter</span><br><span class="line">&#125;</span><br><span class="line">func NewTap() *Tap &#123;</span><br><span class="line">  return &amp;Tap(rate.NewLimiter(150, 5))</span><br><span class="line">&#125;</span><br><span class="line">func (t *Tap) Handler(ctx context.Context, info *tap.Info) (context.Context, error) &#123;</span><br><span class="line">  if !t.lim.Allow() &#123;</span><br><span class="line">    return nil, status.Errorf(codes.ResourceExhausted, &quot;service is over rate limit&quot;)</span><br><span class="line">  &#125;</span><br><span class="line">  return ctx, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="生产环境案例：Streaming"><a href="#生产环境案例：Streaming" class="headerlink" title="生产环境案例：Streaming"></a>生产环境案例：Streaming</h2><p>之前的方案部署后，内存终于降下来了，但是还没休息，就发现大家越来越喜欢用这个缓存服务，内存又不够用了。这个时候我们就开始思考，是不是可以调整一下设计，不是每次 Dump 就立即在内存生成完整的返回数组，而是以流的形式，按需发回。<br><font color="DeepPink">app.proto</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">syntax = &quot;proto3&quot;;</span><br><span class="line">package rpc;</span><br><span class="line">service Cache &#123;</span><br><span class="line">  rpc Store(StoreReq) returns (StoreResp) &#123;&#125;</span><br><span class="line">  rpc Get(GetReq) returns (GetResp) &#123;&#125;</span><br><span class="line">  rpc Dump(DumpReq) returns (stream DumpItem) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message DumpReq&#123;</span><br><span class="line">&#125;</span><br><span class="line">message DumpItem &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里不再使用数组性质的 repeated，而是用 stream，客户端请求 Dump() 后，将结果以流的形式发回去。<br><font color="DeepPink">server.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">func (s *CacheService) Dump(req *rpc.DumpReq, stream rpc.Cache_DumpServer) error &#123;</span><br><span class="line">  for k, v := range s.store &#123;</span><br><span class="line">    stream.Send(&amp;rpc.DumpItem&#123;</span><br><span class="line">      Key: k,</span><br><span class="line">      Val: v,</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line">  return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们修改 Dump() 的实现，对于每个记录，利用 stream.Send() 发送到流。</p>
+<p>注意这里我们没有 context，只有个 stream。<br><font color="DeepPink">client.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  stream, err := cache.Dump(context.Background(), &amp;rpc.DumpReq&#123;&#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to dump: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  for &#123;</span><br><span class="line">    item, err := stream.Recv()</span><br><span class="line">    if err == io.EOF &#123;</span><br><span class="line">      break</span><br><span class="line">    &#125;</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">      return fmt.Errorf(&quot;failed to stream item: %v&quot;, err)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="生产环境案例：横向扩展、负载均衡"><a href="#生产环境案例：横向扩展、负载均衡" class="headerlink" title="生产环境案例：横向扩展、负载均衡"></a>生产环境案例：横向扩展、负载均衡</h2><p>使用流后，服务器性能提高了很多，但是，我们的服务太吸引人了，用户越来越多，结果又内存不够了。这时候我们审查代码，感觉能做的事情都做了，或许是时候从单一服务器，扩展为多个服务器，然后之间使用负载均衡。</p>
+<p>gRPC 是长连接性质的通讯，因此如果一个客户端连接了一个 gRPC Endpoint，那么他就会一直连接到一个固定的服务器，因此多服务器的负载均衡对同一个客户端来说是没有意义的，不会因为这个客户端有大量的请求而导致分散请求到不同的服务器上去。</p>
+<p>如果我们希望客户端可以利用多服务器的机制，我们就需要更智能的客户端，让客户端意识到服务器存在多个副本，因此客户端建立多条连接到不同的服务器，这样就可以让单一客户端利用负载均衡的横向扩展能力。</p>
+<h2 id="生产环境案例：多语言协作"><a href="#生产环境案例：多语言协作" class="headerlink" title="生产环境案例：多语言协作"></a>生产环境案例：多语言协作</h2><p>在复杂的环境中，我们 gRPC 的客户端（甚至服务端）可能是不同语言平台的。这其实是 gRPC 的优势，可以比较容易的实现跨语言平台的通讯。</p>
+<p>比如我们可以做一个 Python 客户端：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">import grpc</span><br><span class="line">import rpc_pb2 as rpc</span><br><span class="line">channel = grpc.insecure_channel(&apos;localhost:5051&apos;)</span><br><span class="line">cache_svc = rpc.CacheStub(channel)</span><br><span class="line">resp = cache_svc.Get(rpc.GetReq(</span><br><span class="line">  key=&quot;gopher&quot;,</span><br><span class="line">))</span><br><span class="line">print resp.val</span><br></pre></td></tr></table></figure>
+
+<p>一个不是很爽的地方是虽然 gRPC 的跨语言通讯很方便，但是各个语言的实现都比较随意，比如 Go 中叫做 CacheClient()，而 Python 中则叫做 CacheStub()。这里没有什么特别的原因非不一样的名字，就是由于不同的作者实现的时候按照自己的想法命名的。</p>
+<h1 id="gRPC-尚不完美的地方"><a href="#gRPC-尚不完美的地方" class="headerlink" title="gRPC 尚不完美的地方"></a>gRPC 尚不完美的地方</h1><ul>
+<li>负载均衡</li>
+<li>结构化的错误信息</li>
+<li>还不支持浏览器的 JS （某种角度上讲，这是最常用的客户端）</li>
+<li>还经常发生 API 改变（即使都1.0了）</li>
+<li>某些语言实现的文档非常差</li>
+<li>没有跨语言的标准化的做法</li>
+</ul>
+<h1 id="gRPC-在生产环境中的用例"><a href="#gRPC-在生产环境中的用例" class="headerlink" title="gRPC 在生产环境中的用例"></a>gRPC 在生产环境中的用例</h1><ul>
+<li>ngrok，所有内部20多个通讯都走的是 gRPC</li>
+<li>Square，将内部的通讯都换成了 gRPC，是最早使用 gRPC 的用户和贡献者</li>
+<li>CoreOS，etcd v3 完全走的是 gRPC</li>
+<li>Google，Google Cloud Service（PubSub, Speech Rec）走的是 gRPC</li>
+<li>Netflix, Yik Yak, VSCO, Cockroach, …</li>
+</ul>
+<h1 id="gRPC-未来的变化"><a href="#gRPC-未来的变化" class="headerlink" title="gRPC 未来的变化"></a>gRPC 未来的变化</h1><ul>
+<li>想了解未来的变化可以查看：<ul>
+<li><a href="https://github.com/grpc/proposal" target="_blank" rel="noopener">grpc/proposal</a></li>
+<li><a href="https://groups.google.com/forum/#!forum/grpc-io" target="_blank" rel="noopener">grpc-io 邮件列表</a></li>
+</ul>
+</li>
+<li>新的语言支持（<a href="https://github.com/grpc/grpc-swift" target="_blank" rel="noopener">Swift</a> 和 <a href="https://github.com/grpc/grpc-haskell" target="_blank" rel="noopener">Haskell</a>正在试验阶段）</li>
+<li>稳定性、可靠性、性能的提高</li>
+<li>增加更多细化的 API 来支持自定义的行为（连接管理、频道跟踪）</li>
+<li>浏览器的 JS</li>
+</ul>
+
     </div>
       
   <div class="popular-posts-header">推荐阅读</div>
@@ -581,14 +668,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
+      <div class="popular-posts-title"><a href="\go-channels.html" rel="bookmark">理解 Go Channels</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\go-channels.html" rel="bookmark">理解 Go Channels</a></div>
+      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
       
     </li>
   
@@ -980,7 +1067,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#视频信息"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#微服务之间应该如何通讯？"><span class="nav-number">2.</span> <span class="nav-text">微服务之间应该如何通讯？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么-REST-API-不好用？"><span class="nav-number">3.</span> <span class="nav-text">为什么 REST API 不好用？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是-gRPC"><span class="nav-number">4.</span> <span class="nav-text">什么是 gRPC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#建一个缓存服务"><span class="nav-number">5.</span> <span class="nav-text">建一个缓存服务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#app-proto"><span class="nav-number">5.1.</span> <span class="nav-text">app.proto</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#server-go"><span class="nav-number">5.2.</span> <span class="nav-text">server.go</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#client-go"><span class="nav-number">5.3.</span> <span class="nav-text">client.go</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#这不就是-WSDL-么？"><span class="nav-number">5.4.</span> <span class="nav-text">这不就是 WSDL 么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现具体的-CacheService"><span class="nav-number">5.5.</span> <span class="nav-text">实现具体的 CacheService</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#错误处理"><span class="nav-number">5.6.</span> <span class="nav-text">错误处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#加密传输"><span class="nav-number">5.7.</span> <span class="nav-text">加密传输</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#生产环境如何使用-gRPC"><span class="nav-number">6.</span> <span class="nav-text">生产环境如何使用 gRPC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#gRPC-的实现"><span class="nav-number">6.1.</span> <span class="nav-text">gRPC 的实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gRPC-从哪来的"><span class="nav-number">6.2.</span> <span class="nav-text">gRPC 从哪来的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：多租户"><span class="nav-number">6.3.</span> <span class="nav-text">生产环境案例：多租户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：性能"><span class="nav-number">6.4.</span> <span class="nav-text">生产环境案例：性能</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：超时"><span class="nav-number">6.5.</span> <span class="nav-text">生产环境案例：超时</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：上下文传递"><span class="nav-number">6.6.</span> <span class="nav-text">生产环境案例：上下文传递</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：GRPC-Metadata"><span class="nav-number">6.7.</span> <span class="nav-text">生产环境案例：GRPC Metadata</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：Retry"><span class="nav-number">6.8.</span> <span class="nav-text">生产环境案例：Retry</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#视频信息"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#微服务之间应该如何通讯？"><span class="nav-number">2.</span> <span class="nav-text">微服务之间应该如何通讯？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么-REST-API-不好用？"><span class="nav-number">3.</span> <span class="nav-text">为什么 REST API 不好用？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是-gRPC"><span class="nav-number">4.</span> <span class="nav-text">什么是 gRPC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#建一个缓存服务"><span class="nav-number">5.</span> <span class="nav-text">建一个缓存服务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#app-proto"><span class="nav-number">5.1.</span> <span class="nav-text">app.proto</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#server-go"><span class="nav-number">5.2.</span> <span class="nav-text">server.go</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#client-go"><span class="nav-number">5.3.</span> <span class="nav-text">client.go</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#这不就是-WSDL-么？"><span class="nav-number">5.4.</span> <span class="nav-text">这不就是 WSDL 么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现具体的-CacheService"><span class="nav-number">5.5.</span> <span class="nav-text">实现具体的 CacheService</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#错误处理"><span class="nav-number">5.6.</span> <span class="nav-text">错误处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#加密传输"><span class="nav-number">5.7.</span> <span class="nav-text">加密传输</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#生产环境如何使用-gRPC"><span class="nav-number">6.</span> <span class="nav-text">生产环境如何使用 gRPC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#gRPC-的实现"><span class="nav-number">6.1.</span> <span class="nav-text">gRPC 的实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gRPC-从哪来的"><span class="nav-number">6.2.</span> <span class="nav-text">gRPC 从哪来的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：多租户"><span class="nav-number">6.3.</span> <span class="nav-text">生产环境案例：多租户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：性能"><span class="nav-number">6.4.</span> <span class="nav-text">生产环境案例：性能</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：超时"><span class="nav-number">6.5.</span> <span class="nav-text">生产环境案例：超时</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：上下文传递"><span class="nav-number">6.6.</span> <span class="nav-text">生产环境案例：上下文传递</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：GRPC-Metadata"><span class="nav-number">6.7.</span> <span class="nav-text">生产环境案例：GRPC Metadata</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：Retry"><span class="nav-number">6.8.</span> <span class="nav-text">生产环境案例：Retry</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：结构化错误"><span class="nav-number">6.9.</span> <span class="nav-text">生产环境案例：结构化错误</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：Dump"><span class="nav-number">6.10.</span> <span class="nav-text">生产环境案例：Dump</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：流量控制"><span class="nav-number">6.11.</span> <span class="nav-text">生产环境案例：流量控制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：Streaming"><span class="nav-number">6.12.</span> <span class="nav-text">生产环境案例：Streaming</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：横向扩展、负载均衡"><span class="nav-number">6.13.</span> <span class="nav-text">生产环境案例：横向扩展、负载均衡</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：多语言协作"><span class="nav-number">6.14.</span> <span class="nav-text">生产环境案例：多语言协作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#gRPC-尚不完美的地方"><span class="nav-number">7.</span> <span class="nav-text">gRPC 尚不完美的地方</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#gRPC-在生产环境中的用例"><span class="nav-number">8.</span> <span class="nav-text">gRPC 在生产环境中的用例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#gRPC-未来的变化"><span class="nav-number">9.</span> <span class="nav-text">gRPC 未来的变化</span></a></li></ol></div>
             
 
           </div>
@@ -1007,12 +1094,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">459k</span>
+    <span title="站点总字数">466k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">6:57</span>
+    <span title="站点阅读时长">7:03</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
