@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="提到volatile首先想到就是：  保证此变量对所有线程的可见性，这里的 “可见性”是指当一条线程修改了这个变量的值，新值对于其他线程来说是可以立即得知的。 禁止指令重排序优化。  到这里大家感觉自己对volatile理解了吗？  如果理解了，大家考虑这么一个问题：ReentrantLock（或者其它基于AQS实现的锁）是如何保证代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性？">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-23T05:18:41.085Z">
+<meta property="og:updated_time" content="2019-08-30T06:07:29.140Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java volatile的内存语义与AQS锁内存可见性">
 <meta name="twitter:description" content="提到volatile首先想到就是：  保证此变量对所有线程的可见性，这里的 “可见性”是指当一条线程修改了这个变量的值，新值对于其他线程来说是可以立即得知的。 禁止指令重排序优化。  到这里大家感觉自己对volatile理解了吗？  如果理解了，大家考虑这么一个问题：ReentrantLock（或者其它基于AQS实现的锁）是如何保证代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性？">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-23 13:18:41" itemprop="dateModified" datetime="2019-08-23T13:18:41+08:00">2019-08-23</time>
+                <time title="修改时间：2019-08-30 14:07:29" itemprop="dateModified" datetime="2019-08-30T14:07:29+08:00">2019-08-30</time>
               </span>
             
           
@@ -385,7 +385,7 @@
 <blockquote>
 <p>It does this in a way that can be implemented correctly using a wide variety of hardware and a wide variety of compiler optimizations.</p>
 </blockquote>
-<p><font color="DeepPink">Java内存模型的主要目标是定义程序中各个变量的访问规则，即在虚拟机中将变量存储到内存和从内存中取出变量这样的底层细节。</font>此处的变量主要是指共享变量，存在竞争问题的变量。Java内存模型规定所有的变量都存储在主内存中，而每条线程还有自己的工作内存，线程的工作内存中保存了该线程使用到的变量的主内存副本拷贝，线程对变量的所有操作（读取、赋值等）都必须在工作内存中进行，而不能直接读写主内存中的变量（<font color="DeepPink">根据Java虚拟机规范的规定，volatile变量依然有共享内存的拷贝，但是由于它特殊的操作顺序性规定——从工作内存中读写数据前，必须先将主内存中的数据同步到工作内存中，所有看起来如同直接在主内存中读写访问一般，因此这里的描述对于volatile也不例外</font>）。不同线程之间也无法直接访问对方工作内存中的变量，线程间变量值得传递均需要通过主内存来完成。</p>
+<p><font color="DeepPink"><strong>Java内存模型的主要目标是定义程序中各个变量的访问规则，即在虚拟机中将变量存储到内存和从内存中取出变量这样的底层细节。</strong></font>此处的变量主要是指共享变量，存在竞争问题的变量。Java内存模型规定所有的变量都存储在主内存中，而每条线程还有自己的工作内存，线程的工作内存中保存了该线程使用到的变量的主内存副本拷贝，线程对变量的所有操作（读取、赋值等）都必须在工作内存中进行，而不能直接读写主内存中的变量（<font color="DeepPink"><strong>根据Java虚拟机规范的规定，volatile变量依然有共享内存的拷贝，但是由于它特殊的操作顺序性规定——从工作内存中读写数据前，必须先将主内存中的数据同步到工作内存中，所有看起来如同直接在主内存中读写访问一般，因此这里的描述对于volatile也不例外</strong></font>）。不同线程之间也无法直接访问对方工作内存中的变量，线程间变量值得传递均需要通过主内存来完成。</p>
 <h1 id="2、重排序"><a href="#2、重排序" class="headerlink" title="2、重排序"></a>2、重排序</h1><p>在执行程序时，为了提高性能，编译器和处理器常常会对指令做重排序。重排序分3种类型：</p>
 <ul>
 <li>编译器优化的重排序。编译器在不改变单线程程序语义的前提下，可以重新安排语句的执行顺序。</li>
@@ -407,8 +407,8 @@
 </blockquote>
 <h1 id="4、内存屏障"><a href="#4、内存屏障" class="headerlink" title="4、内存屏障"></a>4、内存屏障</h1><ul>
 <li>硬件层的内存屏障分为两种：Load Barrier 和 Store Barrier即读屏障和写屏障。</li>
-<li><font color="DeepPink">对于Load Barrier来说，在指令前插入Load Barrier，可以让高速缓存中的数据失效，强制从新从主内存加载数据；</font></li>
-<li><font color="DeepPink">对于Store Barrier来说，在指令后插入Store Barrier，能让写入缓存中的最新数据更新写入主内存，让其他线程可见。</font></li>
+<li><font color="DeepPink"><strong>对于Load Barrier来说，在指令前插入Load Barrier，可以让高速缓存中的数据失效，强制从新从主内存加载数据；</strong></font></li>
+<li><font color="DeepPink"><strong>对于Store Barrier来说，在指令后插入Store Barrier，能让写入缓存中的最新数据更新写入主内存，让其他线程可见。</strong></font></li>
 <li>内存屏障有两个作用：<ul>
 <li>阻止屏障两侧的指令重排序；</li>
 <li>强制把写缓冲区/高速缓存中的数据等写回主内存，让缓存中相应的数据失效。<h1 id="5、volatile的内存语义"><a href="#5、volatile的内存语义" class="headerlink" title="5、volatile的内存语义"></a>5、volatile的内存语义</h1></li>
@@ -416,7 +416,7 @@
 </li>
 </ul>
 <p>从JSR-133开始（即从JDK5开始），volatile变量的写-读可以实现线程之间的通信。</p>
-<p><font color="DeepPink">从内存语义的角度来说，volatile的写-读与锁的释放-获取有相同的内存效果</font>：</p>
+<p><font color="DeepPink"><strong>从内存语义的角度来说，volatile的写-读与锁的释放-获取有相同的内存效果</strong></font>：</p>
 <ul>
 <li>volatile写和锁的释放有相同的内存语义；</li>
 <li>volatile读与锁的获取有相同的内存语义。<blockquote>
@@ -431,16 +431,16 @@
 </ul>
 <p>volatile写和volatile读的内存语义：</p>
 <ul>
-<li><font color="DeepPink">线程A写一个volatile变量，实质上是线程A向接下来将要读这个volatile变量的某个线程发出了（其对共享变量所做修改的）消息。</font></li>
-<li><font color="DeepPink">线程B读一个volatile变量，实质上是线程B接收了之前某个线程发出的（在写这个volatile变量之前对共享变量所做修改的）消息。</font></li>
-<li><font color="DeepPink">线程A写一个volatile变量，随后线程B读这个volatile变量，这个过程实质上是线程A通过主内存向线程B发送消息。</font></li>
+<li><font color="DeepPink"><strong>线程A写一个volatile变量，实质上是线程A向接下来将要读这个volatile变量的某个线程发出了（其对共享变量所做修改的）消息。</strong></font></li>
+<li><font color="DeepPink"><strong>线程B读一个volatile变量，实质上是线程B接收了之前某个线程发出的（在写这个volatile变量之前对共享变量所做修改的）消息。</strong></font></li>
+<li><font color="DeepPink"><strong>线程A写一个volatile变量，随后线程B读这个volatile变量，这个过程实质上是线程A通过主内存向线程B发送消息。</strong></font></li>
 </ul>
 <p>JMM针对编译器制定的volatile重排序规则表</p>
 <p><img alt data-src="/images/java-aqs-voliate/JMM%E9%92%88%E5%AF%B9%E7%BC%96%E8%AF%91%E5%99%A8%E5%88%B6%E5%AE%9A%E7%9A%84volatile%E9%87%8D%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99%E8%A1%A8.png"></p>
 <ul>
-<li><font color="DeepPink">当第二个操作是volatile写时，不管第一个操作是什么，都不能重排序。这个规则确保volatile写之前的操作不会被编译器重排序到volatile写之后。</font></li>
-<li><font color="DeepPink">当第一个操作是volatile读时，不管第二个操作是什么，都不能重排序。这个规则确保volatile读之后的操作不会被编译器重排序到volatile读之前。</font></li>
-<li><font color="DeepPink">当第一个操作是volatile写，第二个操作是volatile读时，不能重排序。</font></li>
+<li><font color="DeepPink"><strong>当第二个操作是volatile写时，不管第一个操作是什么，都不能重排序。这个规则确保volatile写之前的操作不会被编译器重排序到volatile写之后。</strong></font></li>
+<li><font color="DeepPink"><strong>当第一个操作是volatile读时，不管第二个操作是什么，都不能重排序。这个规则确保volatile读之后的操作不会被编译器重排序到volatile读之前。</strong></font></li>
+<li><font color="DeepPink"><strong>当第一个操作是volatile写，第二个操作是volatile读时，不能重排序。</strong></font></li>
 </ul>
 <p>为了实现volatile的内存语义，编译器在生成字节码时，会在指令序列中插入内存屏障来禁止特定类型的处理器重排序。<strong>对于编译器来说，发现一个最优布置来最小化插入屏障几乎是不可能的。为此，JMM采取保守策略。下面是基于保守策略的JMM内存屏障插入策略。</strong></p>
 <ul>
@@ -474,13 +474,13 @@
 <h1 id="7、ReentrantLock"><a href="#7、ReentrantLock" class="headerlink" title="7、ReentrantLock"></a>7、ReentrantLock</h1><p>以公平锁为例，看看 ReentrantLock 获取锁 &amp; 释放锁的关键代码：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * The synchronization state.</span><br><span class="line"> */</span><br><span class="line">private volatile int state;</span><br><span class="line">/**</span><br><span class="line"> * Returns the current value of synchronization state.</span><br><span class="line"> * This operation has memory semantics of a &#123;@code volatile&#125; read.</span><br><span class="line"> * @return current state value</span><br><span class="line"> */</span><br><span class="line">protected final int getState() &#123;</span><br><span class="line">    return state;</span><br><span class="line">&#125;</span><br><span class="line">protected final boolean tryRelease(int releases) &#123;</span><br><span class="line">    int c = getState() - releases;</span><br><span class="line">    if (Thread.currentThread() != getExclusiveOwnerThread())</span><br><span class="line">        throw new IllegalMonitorStateException();</span><br><span class="line">    boolean free = false;</span><br><span class="line">    if (c == 0) &#123;</span><br><span class="line">        free = true;</span><br><span class="line">        setExclusiveOwnerThread(null);</span><br><span class="line">    &#125;</span><br><span class="line">    setState(c);// 释放锁的最后，写volatile变量state</span><br><span class="line">    return free;</span><br><span class="line">&#125;</span><br><span class="line"> protected final boolean tryAcquire(int acquires) &#123;</span><br><span class="line">        final Thread current = Thread.currentThread();</span><br><span class="line">        int c = getState();// 获取锁的开始，首先读volatile变量state</span><br><span class="line">        if (c == 0) &#123;</span><br><span class="line">            if (!hasQueuedPredecessors() &amp;&amp;</span><br><span class="line">                compareAndSetState(0, acquires)) &#123;</span><br><span class="line">                setExclusiveOwnerThread(current);</span><br><span class="line">                return true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        else if (current == getExclusiveOwnerThread()) &#123;</span><br><span class="line">            int nextc = c + acquires;</span><br><span class="line">            if (nextc &lt; 0)</span><br><span class="line">                throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">            setState(nextc);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><font color="DeepPink">公平锁在释放锁的最后写volatile变量state，在获取锁时首先读这个volatile变量。根据volatile的happens-before规则，释放锁的线程在写volatile变量之前可见的共享变量，在获取锁的线程读取同一个volatile变量后将立即变得对获取锁的线程可见。从而保证了代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性。</font></p>
+<p><font color="DeepPink"><strong>公平锁在释放锁的最后写volatile变量state，在获取锁时首先读这个volatile变量。根据volatile的happens-before规则，释放锁的线程在写volatile变量之前可见的共享变量，在获取锁的线程读取同一个volatile变量后将立即变得对获取锁的线程可见。从而保证了代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性。</strong></font></p>
 <p>8、小结</p>
 <p>如果我们仔细分析concurrent包的源代码实现，会发现一个通用化的实现模式。 </p>
 <ul>
-<li>首先，<font color="DeepPink">声明共享变量为volatile。 </font></li>
-<li>然后，<font color="DeepPink">使用CAS的原子条件更新来实现线程之间的同步。</font></li>
-<li>同时，<font color="DeepPink">配合以volatile的读/写和CAS所具有的volatile读和写的内存语义来实现线程之间的通信。</font><blockquote>
+<li>首先，<font color="DeepPink">*<em>声明共享变量为volatile。 *</em></font></li>
+<li>然后，<font color="DeepPink"><strong>使用CAS的原子条件更新来实现线程之间的同步。</strong></font></li>
+<li>同时，<font color="DeepPink"><strong>配合以volatile的读/写和CAS所具有的volatile读和写的内存语义来实现线程之间的通信。</strong></font><blockquote>
 <p>前文我们提到过，编译器不会对volatile读与volatile读后面的任意内存操作重排序；编译器不会对volatile写与volatile写前面的任意内存操作重排序。组合这两个条件，意味着为了同时实现volatile读和volatile写的内存语义，编译器不能对CAS与CAS前面和后面的任意内存操作重排序。</p>
 </blockquote>
 </li>
@@ -667,7 +667,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -873,7 +873,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -946,12 +948,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

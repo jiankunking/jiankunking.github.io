@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Golang Practice Advice">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-29T14:48:13.110Z">
+<meta property="og:updated_time" content="2019-08-30T05:56:39.469Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="给 Go 库作者的建议">
 <meta name="twitter:description" content="Golang Practice Advice">
@@ -274,11 +274,21 @@
                 
               
 
-              <time title="创建时间：2019-08-29 22:27:51 / 修改时间：22:48:13" itemprop="dateCreated datePublished" datetime="2019-08-29T22:27:51+08:00">2019-08-29</time>
+              <time title="创建时间：2019-08-29 22:27:51" itemprop="dateCreated datePublished" datetime="2019-08-29T22:27:51+08:00">2019-08-29</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-08-30 13:56:39" itemprop="dateModified" datetime="2019-08-30T13:56:39+08:00">2019-08-30</time>
+              </span>
             
           
             <span class="post-meta-item">
@@ -377,12 +387,12 @@
 <p>在默认0值的情况下，各个方法要处理好0值，比如有些东西发现是0值后，给入一个默认值。</p>
 <p>New() 构造函数很灵活，可以做任何事情，因此对于代码阅读上不利，意味着隐藏了很多东西。</p>
 <p>有些库使用私有 struct，公开接口的方法，authImpl struct and Auth interface，这是反模式，不推荐使用。</p>
-<p>不推荐使用 <font color="DeepPink">Singleton</font>，虽然标准库中大量使用了 <font color="DeepPink">Singleton</font> 模式，但是 Jack 个人不喜欢这种模式。</p>
+<p>不推荐使用 <font color="DeepPink"><strong>Singleton</strong></font>，虽然标准库中大量使用了 <font color="DeepPink"><strong>Singleton</strong></font> 模式，但是 Jack 个人不喜欢这种模式。</p>
 <p>使用高阶函数作为选项这种形式不推荐：NewSomething(WithThingA(), WithThingB())</p>
 <h1 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h1><p>一些日志是直接打印到标准输出去，这是非常不好的设计，因为用户如果想关根本关不了。</p>
 <p>建议</p>
 <ul>
-<li>确定一下作为<font color="DeepPink">库</font>是不是真的需要打印日志，是不是应该把输出日志的工作交给调用方决定？</li>
+<li>确定一下作为<font color="DeepPink"><strong>库</strong></font>是不是真的需要打印日志，是不是应该把输出日志的工作交给调用方决定？</li>
 <li>如果一定需要日志，那么使用回调函数方式</li>
 <li>输出日志到一个 interface</li>
 <li>不要假定传进来的就是标准库的 log ，有很多选择。</li>
@@ -392,12 +402,12 @@
 <h1 id="interface-vs-struct"><a href="#interface-vs-struct" class="headerlink" title="interface vs struct"></a>interface vs struct</h1><p>接受 interface ，但返回的是 struct</p>
 <p>这点和 Java 不同，Java 更倾向于所有东西都是通过 interface 操作。而 golang 不需要，golang 使用的是隐性interface。</p>
 <h1 id="什么时候-panic"><a href="#什么时候-panic" class="headerlink" title="什么时候 panic"></a>什么时候 panic</h1><p>最好都不 panic。如果非要 panic，可能最合适的地方是 init 的时候，因为刚一运行就能看到挂了，比较容易处理。但即使如此，也尽量不要 panic。</p>
-<h1 id="检查-error"><a href="#检查-error" class="headerlink" title="检查 error"></a>检查 error</h1><p>问：我们是需要检查所有的 error 么？比如有些似乎不大容易出错。<br>答：需要，<font color="DeepPink">特别是你说的这些不大容易出错的</font>！！</p>
+<h1 id="检查-error"><a href="#检查-error" class="headerlink" title="检查 error"></a>检查 error</h1><p>问：我们是需要检查所有的 error 么？比如有些似乎不大容易出错。<br>答：需要，<font color="DeepPink"><strong>特别是你说的这些不大容易出错的</strong></font>！！</p>
 <p>我们用 error 代替了 exception，所以不要忽略这个东西。</p>
 <p>处理的办法</p>
 <ul>
 <li>最好的办法是 Bubble up，也就是传回调用方</li>
-<li>但有的时候（比如 <font color="DeepPink">goroutine</font>) 不适合，那就：<ul>
+<li>但有的时候（比如 <font color="DeepPink"><strong>goroutine</strong></font>) 不适合，那就：<ul>
 <li>做日志</li>
 <li>或者增加某个计数器</li>
 </ul>
@@ -412,7 +422,7 @@
 <li>为了方便自己测试</li>
 <li>为了方便库用户测试</li>
 </ul>
-<h1 id="并发"><a href="#并发" class="headerlink" title="并发"></a>并发</h1><h2 id="channels"><a href="#channels" class="headerlink" title="channels"></a>channels</h2><p>虽然 <font color="DeepPink">channel</font> 是 golang 一个处理并发很好地东西，但是并非所有场合都需要。比如标准库中就很少有在 API 中使用 channel 的。</p>
+<h1 id="并发"><a href="#并发" class="headerlink" title="并发"></a>并发</h1><h2 id="channels"><a href="#channels" class="headerlink" title="channels"></a>channels</h2><p>虽然 <font color="DeepPink"><strong>channel</strong></font> 是 golang 一个处理并发很好地东西，但是并非所有场合都需要。比如标准库中就很少有在 API 中使用 channel 的。</p>
 <ul>
 <li>将使用 channel 的位置向上层移动。</li>
 <li>可以使用回调函数。</li>
@@ -464,6 +474,13 @@
     <li class="popular-posts-item">
       
       
+      <div class="popular-posts-title"><a href="\golang-for-crypto-developers.html" rel="bookmark">Go 密码学应用</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
       <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
       
     </li>
@@ -472,13 +489,6 @@
       
       
       <div class="popular-posts-title"><a href="\how-to-correctly-use-package-context.html" rel="bookmark">如何正确使用 Context</a></div>
-      
-    </li>
-  
-    <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\golang-grpc-from-tutorial-to-production.html" rel="bookmark">gRPC 从学习到生产</a></div>
       
     </li>
   
@@ -617,7 +627,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -823,7 +833,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -896,12 +908,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

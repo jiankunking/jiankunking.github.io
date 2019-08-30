@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="基于OpenJDK 12">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-13T01:31:53.769Z">
+<meta property="og:updated_time" content="2019-08-30T06:03:09.742Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java JUC Atomic LongAdder">
 <meta name="twitter:description" content="基于OpenJDK 12">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-13 09:31:53" itemprop="dateModified" datetime="2019-08-13T09:31:53+08:00">2019-08-13</time>
+                <time title="修改时间：2019-08-30 14:03:09" itemprop="dateModified" datetime="2019-08-30T14:03:09+08:00">2019-08-30</time>
               </span>
             
           
@@ -377,7 +377,7 @@
 </ul>
 <p>LongAdder是JDK 1.8 新增的原子类，基于Striped64实现。 从官方文档看，LongAdder在高并发的场景下会比AtomicLong 具有更好的性能，代价是消耗更多的内存空间：</p>
 <blockquote>
-<p>This class is usually preferable to AtomicLong when multiple threads update a common sum that is used for purposes such as collecting statistics, not for fine-grained synchronization control. <font color="DeepPink">Under low update contention, the two classes have similar characteristics. But under high contention, expected throughput of this class is significantly higher, at the expense of higher space consumption.</font></p>
+<p>This class is usually preferable to AtomicLong when multiple threads update a common sum that is used for purposes such as collecting statistics, not for fine-grained synchronization control. <font color="DeepPink"><strong>Under low update contention, the two classes have similar characteristics. But under high contention, expected throughput of this class is significantly higher, at the expense of higher space consumption.</strong></font></p>
 </blockquote>
 <p>那么LongAdder是怎么实现的？</p>
 <p>先看一下LongAdder的类图：<br><img alt data-src="/images/java-juc-atomic-longadder/LongAdder%E7%B1%BB%E5%9B%BE.png"></p>
@@ -393,11 +393,11 @@
 </blockquote>
 <p>该类维护一个原子更新变量的延迟初始化表，以及一个额外的“base”字段。表的大小是2的幂。索引使用掩码下的每个线程的hash code。这个类中的几乎所有声明都是package私有的，由子类直接访问。</p>
 <p>表格内的元素是Cell类，Cell类是一个为了减少缓存争用而填充的AtomicLong的变种。填充对于大多数原子来说是多余的，因为它们通常不规则地分散在内存中，因此彼此之间不会有太多的干扰。但是，驻留在数组中的原子对象往往是彼此相邻的，因此在没有这种预防措施的情况下，最常见的情况是共享高速缓存线(这对性能有很大的负面影响)。</p>
-<p>在某种程度上，因为Cell类相对较大，只有他们真正被需要的时候，我们才创建。<font color="DeepPink">如果没有竞争，那么所有的更新操作将对base字段实现。当发生第一次争用（也就是说如果第一次对base字段的CAS操作失败），初始化为大小是2的表格。当进一步的争用发生的时候,表的大小会加倍，直到达到等于大于cpu的数量。表在未使用之前一直为null。</font></p>
+<p>在某种程度上，因为Cell类相对较大，只有他们真正被需要的时候，我们才创建。<font color="DeepPink"><strong>如果没有竞争，那么所有的更新操作将对base字段实现。当发生第一次争用（也就是说如果第一次对base字段的CAS操作失败），初始化为大小是2的表格。当进一步的争用发生的时候,表的大小会加倍，直到达到等于大于cpu的数量。表在未使用之前一直为null。</strong></font></p>
 <p>利用一个自旋锁（cellsBusy）来初始化和调整表的大小，以及用新Cells填充slots。这个地方没有必要使用阻塞锁，如果锁不可达，线程可以尝试其他的slots，或者尝试base字段。在这些重试期间，竞争加剧，但是降低了局部性，这仍然比阻塞锁来得好。</p>
 <p>通过ThreadLocalRandom维护的Thread.probe字段用作每个线程的哈希码。我们让它们保持未初始化（为零）(如果它们以这种方式出现)，直到它们在插槽0竞争。出现竞争后初始化为通常不会和其他的的值冲突的值，比如线程的哈希码。在执行更新时发生CAS操作失败意味着出现了争用或者表碰撞，或两者都有。在发生冲突时，如果表的大小小于容量，那么它的大小将加倍，除非其他线程持有锁。如果哈希后的slot为空，并且锁可用，则创建一个新单元格。如果存在了那么会进行CAS尝试。通过双重哈希进行重试，利用一个辅助哈希（Marsaglia XorShift随机数算法）来尝试寻找一个空闲的slot。</p>
-<p><font color="DeepPink">表的大小是有上限的，因为当线程多于CPU时，假设每个线程都绑定到一个CPU，就会有一个完美的散列函数将线程映射到插槽，从而消除冲突。当我们达到容量时，我们通过随机改变冲突线程的哈希代码来搜索这个映射。因为搜索是随机的，冲突只有通过CAS失败才知道，收敛可能会很慢，而且因为线程通常不会永远绑定到CPU，所以根本不会发生。然而，尽管有这些限制，在这些情况下观察到的竞争率通常很低。</font></p>
-<p><font color="DeepPink">Cell可能会出现不可用的情况，包括进行哈希的线程终止，或者由于table扩容导致线程哈希不正确。我们不尝试检测或删除这样的单元格，假设对于长时间运行的实例，争用会再次发生，因此最终将再次需要这些单元格;而对于短时间运行的实例，花费时间去销毁又没有什么必要。</font></p>
+<p><font color="DeepPink"><strong>表的大小是有上限的，因为当线程多于CPU时，假设每个线程都绑定到一个CPU，就会有一个完美的散列函数将线程映射到插槽，从而消除冲突。当我们达到容量时，我们通过随机改变冲突线程的哈希代码来搜索这个映射。因为搜索是随机的，冲突只有通过CAS失败才知道，收敛可能会很慢，而且因为线程通常不会永远绑定到CPU，所以根本不会发生。然而，尽管有这些限制，在这些情况下观察到的竞争率通常很低。</strong></font></p>
+<p><font color="DeepPink"><strong>Cell可能会出现不可用的情况，包括进行哈希的线程终止，或者由于table扩容导致线程哈希不正确。我们不尝试检测或删除这样的单元格，假设对于长时间运行的实例，争用会再次发生，因此最终将再次需要这些单元格;而对于短时间运行的实例，花费时间去销毁又没有什么必要。</strong></font></p>
 <hr>
 <h2 id="Cell类"><a href="#Cell类" class="headerlink" title="Cell类"></a>Cell类</h2><p>Atomiclong的变体，仅支持原始访问和CAS。</p>
 <blockquote>
@@ -418,7 +418,7 @@
 <p>LongAdder的基本思路就是分散热点，将value值分散到一个数组中，不同线程会命中到数组的不同槽中，各个线程只对自己槽中的那个值进行CAS操作，这样热点就被分散了，冲突的概率就小很多。如果要获取真正的long值，只要将各个槽中的变量值累加返回。</p>
 </blockquote>
 <h2 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h2><p>保持一个或者多个变量，初始值设置为零用于求和。当更新出现多个线程竞争时，变量集合动态增长以减少争用。最后当需要求和的时候或者说需要这个Long型的值时，可以通过把当前这些变量求和，合并后得出最终的和。</p>
-<p><font color="DeepPink">LongAdder在一些高并发场景下表现要比AtomicLong好，比如多个线程同时更新一个求和的变量，比如统计集合的数量，但是不能用于细粒度同步控制，换句话说这个是可能有误差的（因为更新与读取是并行的）。在低并发场景场景下LongAdder和AtomicLong的性能表现没什么差别，但是当高并发竞争的时候，这个类将具备更好的吞吐性能，但是相应的也会耗费相当的空间。</font></p>
+<p><font color="DeepPink"><strong>LongAdder在一些高并发场景下表现要比AtomicLong好，比如多个线程同时更新一个求和的变量，比如统计集合的数量，但是不能用于细粒度同步控制，换句话说这个是可能有误差的（因为更新与读取是并行的）。在低并发场景场景下LongAdder和AtomicLong的性能表现没什么差别，但是当高并发竞争的时候，这个类将具备更好的吞吐性能，但是相应的也会耗费相当的空间。</strong></font></p>
 <p>LongAdder继承了Number抽象类，但是并没有实现一些方法例如: equals、hashCode、compareTo，因为LongAdder实例的预期用途是进行一些比较频繁的变化，所以也不适合作为集合的key。</p>
 <h2 id="具体实现-1"><a href="#具体实现-1" class="headerlink" title="具体实现"></a>具体实现</h2><p>看一下LongAdder有哪些方法：<br><img alt data-src="/images/java-juc-atomic-longadder/LongAdder%E5%87%BD%E6%95%B0%E5%88%97%E8%A1%A8.png"></p>
 <p>下面主要解析LongAdder increment、sum方法，先看一下源码：</p>
@@ -453,14 +453,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-atomic-operation-principle.html" rel="bookmark">Java 原子操作的实现原理</a></div>
+      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
+      <div class="popular-posts-title"><a href="\java-atomic-operation-principle.html" rel="bookmark">Java 原子操作的实现原理</a></div>
       
     </li>
   
@@ -615,7 +615,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -821,7 +821,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -894,12 +896,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

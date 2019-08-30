@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="AQS：AbstractQueuedSynchronizer 1、AQS设计简介 AQS的实现是基于一个FIFO的等待队列。 使用单个原子变量来表示获取、释放锁状态（final int）改变该int值使用的是CAS。（思考：为什么一个int值可以保证内存可见性？） 子类应该定义一个非公开的内部类继承AQS，并实现其中方法。 AQS支持exclusive与shared两种模式。 内部类Conditi">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-23T05:14:57.468Z">
+<meta property="og:updated_time" content="2019-08-30T05:59:00.159Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java AQS 实现原理（图文）分析">
 <meta name="twitter:description" content="AQS：AbstractQueuedSynchronizer 1、AQS设计简介 AQS的实现是基于一个FIFO的等待队列。 使用单个原子变量来表示获取、释放锁状态（final int）改变该int值使用的是CAS。（思考：为什么一个int值可以保证内存可见性？） 子类应该定义一个非公开的内部类继承AQS，并实现其中方法。 AQS支持exclusive与shared两种模式。 内部类Conditi">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-23 13:14:57" itemprop="dateModified" datetime="2019-08-23T13:14:57+08:00">2019-08-23</time>
+                <time title="修改时间：2019-08-30 13:59:00" itemprop="dateModified" datetime="2019-08-30T13:59:00+08:00">2019-08-30</time>
               </span>
             
           
@@ -368,8 +368,8 @@
         <p>AQS：AbstractQueuedSynchronizer</p>
 <h1 id="1、AQS设计简介"><a href="#1、AQS设计简介" class="headerlink" title="1、AQS设计简介"></a>1、AQS设计简介</h1><ul>
 <li>AQS的实现是基于一个FIFO的等待队列。</li>
-<li><font color="DeepPink">使用单个原子变量来表示获取、释放锁状态（final int）改变该int值使用的是CAS。</font>（思考：为什么一个int值可以保证内存可见性？）</li>
-<li><font color="DeepPink">子类应该定义一个非公开的内部类继承AQS，并实现其中方法。</font></li>
+<li><font color="DeepPink"><strong>使用单个原子变量来表示获取、释放锁状态（final int）改变该int值使用的是CAS。</strong></font>（思考：为什么一个int值可以保证内存可见性？）</li>
+<li><font color="DeepPink"><strong>子类应该定义一个非公开的内部类继承AQS，并实现其中方法。</strong></font></li>
 <li>AQS支持exclusive与shared两种模式。</li>
 <li>内部类ConditionObject用于支持子类实现exclusive模式</li>
 <li>子类需要重写：<ul>
@@ -404,7 +404,7 @@
 <li>compareAndSetState()</li>
 </ul>
 <p>AQS定义两种资源共享方式：Exclusive（独占，只有一个线程能执行，如ReentrantLock）和Share（共享，多个线程可同时执行，如Semaphore/CountDownLatch）。</p>
-<p>不同的自定义同步器争用共享资源的方式也不同。<font color="DeepPink">自定义同步器在实现时只需要实现共享资源state的获取与释放方式即可</font>，至于具体线程等待队列的维护（如获取资源失败入队/唤醒出队等），AQS已经在顶层实现好了。</p>
+<p>不同的自定义同步器争用共享资源的方式也不同。<font color="DeepPink"><strong>自定义同步器在实现时只需要实现共享资源state的获取与释放方式即可</strong></font>，至于具体线程等待队列的维护（如获取资源失败入队/唤醒出队等），AQS已经在顶层实现好了。</p>
 <p>自定义同步器实现时主要实现以下几种方法：</p>
 <ul>
 <li>isHeldExclusively()：该线程是否正在独占资源。只有用到condition才需要去实现它。</li>
@@ -413,7 +413,7 @@
 <li>tryAcquireShared(int)：共享方式。尝试获取资源。负数表示失败；0表示成功，但没有剩余可用资源；正数表示成功，且有剩余资源。</li>
 <li>tryReleaseShared(int)：共享方式。尝试释放资源，如果释放后允许唤醒后续等待结点返回true，否则返回false。</li>
 </ul>
-<p>以ReentrantLock为例，state初始化为0，表示未锁定状态。A线程lock()时，会调用tryAcquire()独占该锁并将state+1。此后，其他线程再tryAcquire()时就会失败，直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。但要注意，<font color="DeepPink">获取多少次就要释放多么次，这样才能保证state是能回到零态的。</font></p>
+<p>以ReentrantLock为例，state初始化为0，表示未锁定状态。A线程lock()时，会调用tryAcquire()独占该锁并将state+1。此后，其他线程再tryAcquire()时就会失败，直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。但要注意，<font color="DeepPink"><strong>获取多少次就要释放多么次，这样才能保证state是能回到零态的。</strong></font></p>
 <p>再以CountDownLatch以例，任务分为N个子线程去执行，state也初始化为N（注意N要与线程个数一致）。这N个子线程是并行执行的，每个子线程执行完后countDown()一次，state会CAS减1。等到所有子线程都执行完后(即state=0)，会unpark()主调用线程，然后主调用线程就会从await()函数返回，继续后续动作。</p>
 <p>一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现：<br>tryAcquire-tryRelease<br>tryAcquireShared-tryReleaseShared<br>中的一种即可。</p>
 <p>当然AQS也支持自定义同步器同时实现独占和共享两种方式，如ReentrantReadWriteLock。</p>
@@ -449,31 +449,31 @@
 
 <p>最后,我们对获取独占式锁过程对做个总结:</p>
 <p>AQS的模板方法acquire通过调用子类自定义实现的tryAcquire获取同步状态失败后-&gt;将线程构造成Node节点(addWaiter)-&gt;将Node节点添加到同步队列对尾(addWaiter)-&gt;节点以自旋的方法获取同步状态(acquirQueued)。在节点自旋获取同步状态时，只有其前驱节点是头节点的时候才会尝试获取同步状态，如果该节点的前驱不是头节点或者该节点的前驱节点是头节点单获取同步状态失败，则判断当前线程需要阻塞，如果需要阻塞则需要被唤醒过后才返回。</p>
-<p><font color="DeepPink">获取锁的过程：</font></p>
+<p><font color="DeepPink"><strong>获取锁的过程：</strong></font></p>
 <ul>
-<li><font color="DeepPink">当线程调用acquire()申请获取锁资源，如果成功，则进入临界区。</font></li>
-<li><font color="DeepPink">当获取锁失败时，则进入一个FIFO等待队列，然后被挂起等待唤醒。</font></li>
-<li><font color="DeepPink">当队列中的等待线程被唤醒以后就重新尝试获取锁资源，如果成功则进入临界区，否则继续挂起等待。</font></li>
+<li><font color="DeepPink"><strong>当线程调用acquire()申请获取锁资源，如果成功，则进入临界区。</strong></font></li>
+<li><font color="DeepPink"><strong>当获取锁失败时，则进入一个FIFO等待队列，然后被挂起等待唤醒。</strong></font></li>
+<li><font color="DeepPink"><strong>当队列中的等待线程被唤醒以后就重新尝试获取锁资源，如果成功则进入临界区，否则继续挂起等待。</strong></font></li>
 </ul>
 <h3 id="5-1-2-独占模式同步状态的释放"><a href="#5-1-2-独占模式同步状态的释放" class="headerlink" title="5.1.2 独占模式同步状态的释放"></a>5.1.2 独占模式同步状态的释放</h3><p>既然是释放,那肯定是持有锁的该线程执行释放操作,即head节点中的线程释放锁.</p>
 <p>AQS中的release释放同步状态和acquire获取同步状态一样，都是模板方法，tryRelease释放的具体操作都有子类去实现，父类AQS只提供一个算法骨架。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">public final boolean release(int arg) &#123;</span><br><span class="line">    if (tryRelease(arg)) &#123;</span><br><span class="line">        Node h = head;</span><br><span class="line">        if (h != null &amp;&amp; h.waitStatus != 0)</span><br><span class="line">            unparkSuccessor(h);</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br><span class="line">//如果node的后继节点不为空且不是作废状态,则唤醒这个后继节点,</span><br><span class="line">//否则从末尾开始寻找合适的节点,如果找到,则唤醒</span><br><span class="line">private void unparkSuccessor(Node node) &#123;</span><br><span class="line">        int ws = node.waitStatus;</span><br><span class="line">        if (ws &lt; 0)</span><br><span class="line">            compareAndSetWaitStatus(node, ws, 0);</span><br><span class="line">        Node s = node.next;</span><br><span class="line">        if (s == null || s.waitStatus &gt; 0) &#123;</span><br><span class="line">            s = null;</span><br><span class="line">            for (Node t = tail; t != null &amp;&amp; t != node; t = t.prev)</span><br><span class="line">                if (t.waitStatus &lt;= 0)</span><br><span class="line">                    s = t;</span><br><span class="line">        &#125;</span><br><span class="line">        if (s != null)</span><br><span class="line">            LockSupport.unpark(s.thread);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 
 <p>过程：首先调用子类的tryRelease()方法释放锁，然后唤醒后继节点，在唤醒的过程中，需要判断后继节点是否满足情况，如果后继节点不为空且不是作废状态，则唤醒这个后继节点，否则从tail节点向前寻找合适的节点，如果找到，则唤醒。</p>
-<p><font color="DeepPink">释放锁过程：</font></p>
+<p><font color="DeepPink"><strong>释放锁过程：</strong></font></p>
 <ul>
-<li><font color="DeepPink">当线程调用release()进行锁资源释放时，如果没有其他线程在等待锁资源，则释放完成。</font></li>
-<li><font color="DeepPink">如果队列中有其他等待锁资源的线程需要唤醒，则唤醒队列中的第一个等待节点（先入先出）。</font></li>
+<li><font color="DeepPink"><strong>当线程调用release()进行锁资源释放时，如果没有其他线程在等待锁资源，则释放完成。</strong></font></li>
+<li><font color="DeepPink"><strong>如果队列中有其他等待锁资源的线程需要唤醒，则唤醒队列中的第一个等待节点（先入先出）。</strong></font></li>
 </ul>
 <h2 id="5-2、共享模式"><a href="#5-2、共享模式" class="headerlink" title="5.2、共享模式"></a>5.2、共享模式</h2><h3 id="5-2-1-共享模式同步状态的获取"><a href="#5-2-1-共享模式同步状态的获取" class="headerlink" title="5.2.1 共享模式同步状态的获取"></a>5.2.1 共享模式同步状态的获取</h3><ul>
-<li><font color="DeepPink">当线程调用acquireShared()申请获取锁资源时，如果成功，则进入临界区。</font></li>
-<li><font color="DeepPink">当获取锁失败时，则创建一个共享类型的节点并进入一个FIFO等待队列，然后被挂起等待唤醒。</font></li>
-<li><font color="DeepPink">当队列中的等待线程被唤醒以后就重新尝试获取锁资源，如果成功则唤醒后面还在等待的共享节点并把该唤醒事件传递下去，即会依次唤醒在该节点后面的所有共享节点，然后进入临界区，否则继续挂起等待。</font></li>
+<li><font color="DeepPink"><strong>当线程调用acquireShared()申请获取锁资源时，如果成功，则进入临界区。</strong></font></li>
+<li><font color="DeepPink"><strong>当获取锁失败时，则创建一个共享类型的节点并进入一个FIFO等待队列，然后被挂起等待唤醒。</strong></font></li>
+<li><font color="DeepPink"><strong>当队列中的等待线程被唤醒以后就重新尝试获取锁资源，如果成功则唤醒后面还在等待的共享节点并把该唤醒事件传递下去，即会依次唤醒在该节点后面的所有共享节点，然后进入临界区，否则继续挂起等待。</strong></font></li>
 </ul>
 <h3 id="5-2-2-共享模式同步状态的释放"><a href="#5-2-2-共享模式同步状态的释放" class="headerlink" title="5.2.2 共享模式同步状态的释放"></a>5.2.2 共享模式同步状态的释放</h3><ul>
-<li><font color="DeepPink">当线程调用releaseShared()进行锁资源释放时，如果释放成功，则唤醒队列中等待的节点，如果有的话。</font></li>
+<li><font color="DeepPink"><strong>当线程调用releaseShared()进行锁资源释放时，如果释放成功，则唤醒队列中等待的节点，如果有的话。</strong></font></li>
 </ul>
-<h1 id="6-AQS小结"><a href="#6-AQS小结" class="headerlink" title="6. AQS小结"></a>6. AQS小结</h1><p>java.util.concurrent中的很多可阻塞类（比如ReentrantLock）都是基于AQS来实现的。<font color="DeepPink">AQS是一个同步框架，它提供通用机制来原子性管理同步状态、阻塞和唤醒线程，以及维护被阻塞线程的队列。</font></p>
+<h1 id="6-AQS小结"><a href="#6-AQS小结" class="headerlink" title="6. AQS小结"></a>6. AQS小结</h1><p>java.util.concurrent中的很多可阻塞类（比如ReentrantLock）都是基于AQS来实现的。<font color="DeepPink"><strong>AQS是一个同步框架，它提供通用机制来原子性管理同步状态、阻塞和唤醒线程，以及维护被阻塞线程的队列。</strong></font></p>
 <p>JDK中AQS被广泛使用，基于AQS实现的同步器包括：</p>
 <ul>
 <li>ReentrantLock</li>
@@ -487,7 +487,7 @@
 <li>至少一个acquire操作。这个操作阻塞调用线程，除非/直到AQS的状态允许这个线程继续执行。</li>
 <li>至少一个release操作。这个操作改变AQS的状态，改变后的状态可允许一个或多个阻塞线程被解除阻塞。</li>
 </ul>
-<p><font color="DeepPink">基于“复合优先于继承”的原则，基于AQS实现的同步器一般都是：声明一个内部私有的继承于AQS的子类Sync，对同步器所有公有方法的调用都会委托给这个内部子类。</font></p>
+<p><font color="DeepPink"><strong>基于“复合优先于继承”的原则，基于AQS实现的同步器一般都是：声明一个内部私有的继承于AQS的子类Sync，对同步器所有公有方法的调用都会委托给这个内部子类。</strong></font></p>
 <h1 id="7-后续"><a href="#7-后续" class="headerlink" title="7.后续"></a>7.后续</h1><p>后面会推出以下有关AQS的文章，已加深对于AQS的理解</p>
 <ul>
 <li>AQS ConditionObject对象解析</li>
@@ -504,14 +504,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
+      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
+      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
       
     </li>
   
@@ -673,7 +673,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -879,7 +879,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -952,12 +954,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

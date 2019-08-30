@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-29T07:34:53.665Z">
+<meta property="og:updated_time" content="2019-08-30T05:57:09.676Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Web性能权威指南 笔记">
 <meta name="twitter:description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-29 15:34:53" itemprop="dateModified" datetime="2019-08-29T15:34:53+08:00">2019-08-29</time>
+                <time title="修改时间：2019-08-30 13:57:09" itemprop="dateModified" datetime="2019-08-30T13:57:09+08:00">2019-08-30</time>
               </span>
             
           
@@ -380,7 +380,7 @@
 <blockquote>
 <p>SYN：同步序列编号（Synchronize Sequence Numbers）<br>ACK (Acknowledge character）即是确认字符</p>
 </blockquote>
-<p>三次握手完成后，客户端与服务器之间就可以通信了。<font color="DeepPink">客户端可以在发送ACK分组之后立即发送数据，而服务器必须等接收到ACK分组之后才能发送数据。</font>这个启动通信的过程适用于所有TCP连接，因此对所有使用TCP的应用具有非常大的性能影响，因为每次传输应用数据之前，都必须经历一次完整的往返。</p>
+<p>三次握手完成后，客户端与服务器之间就可以通信了。<font color="DeepPink"><strong>客户端可以在发送ACK分组之后立即发送数据，而服务器必须等接收到ACK分组之后才能发送数据。</strong></font>这个启动通信的过程适用于所有TCP连接，因此对所有使用TCP的应用具有非常大的性能影响，因为每次传输应用数据之前，都必须经历一次完整的往返。</p>
 <h3 id="队首阻塞"><a href="#队首阻塞" class="headerlink" title="队首阻塞"></a>队首阻塞</h3><blockquote>
 <p>丢包就丢包<br>事实上，丢包是让TCP达到最佳性能的关键。被删除的包恰恰是一种反馈机制，能够让接收端和发送端各自调整速度，以避免网络拥堵，同时保持延迟最短。另外，有些应用程序可以容忍丢失一定数量的包，比如语音和游戏状态通信，就不需要可靠传输或按序交付。<br>就算有个包丢了，音频编解码器只要在音频中插入一个小小的间歇，就可以继续处理后来的包。只要间歇够小，用户就注意不到，而等待丢失的包则可能导致音频输出产生无法预料的暂停。相对来说，后者的用户体验更糟糕。<br>类似地，更新3D游戏中角色的状态也一样：收到T时刻的包而等待T-1时刻的包通常毫无必要。理想情况下，应该可以接收所有状态更新，但为避免游戏延迟，间歇性的丢包也是可以接受的。</p>
 </blockquote>
@@ -398,14 +398,14 @@
 </blockquote>
 <h2 id="UDP的构成"><a href="#UDP的构成" class="headerlink" title="UDP的构成"></a>UDP的构成</h2><p>关于UDP的应用，最广为人知同时也是所有浏览器和因特网应用都赖以运作的，就是DNS（Domain Name System，域名系统）。</p>
 <p>IETF和W3C工作组共同制定了一套新API WebRTC（Web Real-Time Communication，Web 实时通信）。WebRTC着眼于在浏览器中通过UDP实现原生的语音和视频实时通信，以及其他形式的 P2P（Peer-to-Peer，端到端）通信。</p>
-<h3 id="无协议服务"><a href="#无协议服务" class="headerlink" title="无协议服务"></a>无协议服务</h3><p>要理解为什么UDP被人称作“无协议”，必须从作为TCP和UDP下一层的IP协议说起。<font color="DeepPink">IP层的主要任务就是按照地址从源主机向目标主机发送数据报</font>。为此，消息会被封装在一个IP分组内（图3-1），其中载明了源地址和目标地址，以及其他一些路由参数。注意，数据报这个词暗示了一个重要的信息：<font color="DeepPink">IP层不保证消息可靠的交付，也不发送失败通知，实际上是把底层网络的不可靠性直接暴露给了上一层</font>。如果某个路由节点因为网络拥塞、负载过高或其他原因而删除了IP分组，那么在必要的情况下，IP 的上一层协议要负责检测、恢复和重发数据。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE31IPv4%E9%A6%96%E9%83%A8.png"><br>UDP协议会用自己的分组结构（图3-2）封装用户消息，它只增加 4个字段：<font color="DeepPink">源端口、目标端口、分组长度和校验和</font>。这样，当IP把分组送达目标主机时，该主机能够拆开UDP分组，根据目标端口找到目标应用程序，然后再把消息发送过去。仅此而已。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE32UDP%E9%A6%96%E9%83%A8.png"><br>事实上，UDP数据报中的源端口和校验和字段都是可选的。IP分组的首部也有校验和，应用程序可以忽略UDP校验和。也就是说，所有错误检测和错误纠正工作都可以委托给上层的应用程序。说到底，<font color="DeepPink">UDP仅仅是在IP层之上通过嵌入应用程序的源端口和目标端口</font>，提供了一个“应用程序多路复用”机制。明白了这一点，就可以总结一下UDP的无服务是怎么回事了。</p>
+<h3 id="无协议服务"><a href="#无协议服务" class="headerlink" title="无协议服务"></a>无协议服务</h3><p>要理解为什么UDP被人称作“无协议”，必须从作为TCP和UDP下一层的IP协议说起。<font color="DeepPink"><strong>IP层的主要任务就是按照地址从源主机向目标主机发送数据报</strong></font>。为此，消息会被封装在一个IP分组内（图3-1），其中载明了源地址和目标地址，以及其他一些路由参数。注意，数据报这个词暗示了一个重要的信息：<font color="DeepPink"><strong>IP层不保证消息可靠的交付，也不发送失败通知，实际上是把底层网络的不可靠性直接暴露给了上一层</strong></font>。如果某个路由节点因为网络拥塞、负载过高或其他原因而删除了IP分组，那么在必要的情况下，IP 的上一层协议要负责检测、恢复和重发数据。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE31IPv4%E9%A6%96%E9%83%A8.png"><br>UDP协议会用自己的分组结构（图3-2）封装用户消息，它只增加 4个字段：<font color="DeepPink"><strong>源端口、目标端口、分组长度和校验和</strong></font>。这样，当IP把分组送达目标主机时，该主机能够拆开UDP分组，根据目标端口找到目标应用程序，然后再把消息发送过去。仅此而已。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE32UDP%E9%A6%96%E9%83%A8.png"><br>事实上，UDP数据报中的源端口和校验和字段都是可选的。IP分组的首部也有校验和，应用程序可以忽略UDP校验和。也就是说，所有错误检测和错误纠正工作都可以委托给上层的应用程序。说到底，<font color="DeepPink"><strong>UDP仅仅是在IP层之上通过嵌入应用程序的源端口和目标端口</strong></font>，提供了一个“应用程序多路复用”机制。明白了这一点，就可以总结一下UDP的无服务是怎么回事了。</p>
 <ul>
 <li>不保证消息交付<br>不确认，不重传，无超时。</li>
 <li>不保证交付顺序<br>不设置包序号，不重排，不会发生队首阻塞。</li>
 <li>不跟踪连接状态<br>不必建立连接或重启状态机。</li>
 <li>不需要拥塞控制<br>不内置客户端或网络反馈机制。</li>
 </ul>
-<p>TCP是一个面向字节流的协议，能够以多个分组形式发送应用程序消息，且对分组中的消息范围没有任何明确限制。因此，连接的两端存在一个连接状态，每个分组都有序号，丢失还要重发，并且要按顺序交付。相对来说，<font color="DeepPink">UDP数据报有明确的限制：数据报必须封装在IP分组中，应用程序必须读取完整的消息。换句话说，数据报不能分片。</font></p>
+<p>TCP是一个面向字节流的协议，能够以多个分组形式发送应用程序消息，且对分组中的消息范围没有任何明确限制。因此，连接的两端存在一个连接状态，每个分组都有序号，丢失还要重发，并且要按顺序交付。相对来说，<font color="DeepPink"><strong>UDP数据报有明确的限制：数据报必须封装在IP分组中，应用程序必须读取完整的消息。换句话说，数据报不能分片。</strong></font></p>
 <h3 id="UDP与网络地址转换器"><a href="#UDP与网络地址转换器" class="headerlink" title="UDP与网络地址转换器"></a>UDP与网络地址转换器</h3><p>作为监管全球IP地址分配的机构，IANA（Internet Assigned Numbers Authority，因特网号码分配机构）为私有网络保留了三段IP地址，这些IP地址经常可以在NAT设备后面的内网中看到。</p>
 <p>保留的IP地址范围：</p>
 <table>
@@ -481,7 +481,7 @@
 <p>明白了吗，应用不必让无线模块“活动”也可以保持连接不被断开。但不必要的长连接也有可能极大地消耗电量，而且由于人们对移动网络无线通信的误解，这种情况经常发生。</p>
 <h3 id="预测网络延迟上限"><a href="#预测网络延迟上限" class="headerlink" title="预测网络延迟上限"></a>预测网络延迟上限</h3><p>在移动网络中，一个HTTP请求很可能会导致一连串长达几百甚至上几千ms的网络延迟。这一方面是因为有往返延迟，另一方面也不能忘记DNS、TCP、TLS及控制面的延迟（图8-2）。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE82%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84HTTP%E8%AF%B7%E6%B1%82%E7%9A%84%E6%9E%84%E6%88%90.png"></p>
 <h1 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h1><h2 id="HTTP-简史"><a href="#HTTP-简史" class="headerlink" title="HTTP 简史"></a>HTTP 简史</h2><h3 id="HTTP-1-0：迅速发展及参考性RFC"><a href="#HTTP-1-0：迅速发展及参考性RFC" class="headerlink" title="HTTP 1.0：迅速发展及参考性RFC"></a>HTTP 1.0：迅速发展及参考性RFC</h3><p>今天，几乎所有Web服务器都支持，而且以后还会继续支持HTTP 1.0。除此之外，剩下的你都知道了。但HTTP 1.0对每个请求都打开一个新TCP连接严重影响性能。</p>
-<h3 id="HTTP-1-1：互联网标准"><a href="#HTTP-1-1：互联网标准" class="headerlink" title="HTTP 1.1：互联网标准"></a>HTTP 1.1：互联网标准</h3><p>HTTP 1.1 标准厘清了之前版本中很多有歧义的地方，而且还加入了很多重要的性能优化：<font color="DeepPink">持久连接、分块编码传输、字节范围请求、增强的缓存机制、传输编码及请求管道</font>。</p>
+<h3 id="HTTP-1-1：互联网标准"><a href="#HTTP-1-1：互联网标准" class="headerlink" title="HTTP 1.1：互联网标准"></a>HTTP 1.1：互联网标准</h3><p>HTTP 1.1 标准厘清了之前版本中很多有歧义的地方，而且还加入了很多重要的性能优化：<font color="DeepPink"><strong>持久连接、分块编码传输、字节范围请求、增强的缓存机制、传输编码及请求管道</strong></font>。</p>
 <p>HTTP 1.1 改变了HTTP协议的语义，默认使用持久连接。换句话说，除非明确告知（通过Connection: close 首部），否则服务器默认会保持连接打开。</p>
 <p>不过，这个功能也反向移植到了HTTP 1.0，可以通过Connection: Keep-Alive 首部来启用。实际上，如果你使用的是HTTP 1.1，从技术上说不需要Connection: Keep-Alive首部，但很多客户端还是选择加上它。</p>
 <p>此外，HTTP 1.1 协议添加了内容、编码、字符集，甚至语言的协商机制，还添加了传输编码、缓存指令、客户端cookie 等十几个可以每次请求都协商的字段。</p>
@@ -548,14 +548,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-jrockit-note.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
+      <div class="popular-posts-title"><a href="\relational-database-index-design-and-the-optimizers-note.html" rel="bookmark">数据库索引设计与优化 笔记</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\relational-database-index-design-and-the-optimizers-note.html" rel="bookmark">数据库索引设计与优化 笔记</a></div>
+      <div class="popular-posts-title"><a href="\java-jrockit-note.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
       
     </li>
   
@@ -714,7 +714,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -920,7 +920,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -993,12 +995,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

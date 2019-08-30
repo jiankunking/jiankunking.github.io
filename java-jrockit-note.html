@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《JRockit权威指南深入理解JVM》 作者：Marcus Hirt , Marcus Lagergren 出版时间：2018-12-10">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-21T05:00:36.407Z">
+<meta property="og:updated_time" content="2019-08-30T06:02:01.924Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JRockit权威指南深入理解JVM 笔记">
 <meta name="twitter:description" content="本文整理自：《JRockit权威指南深入理解JVM》 作者：Marcus Hirt , Marcus Lagergren 出版时间：2018-12-10">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-21 13:00:36" itemprop="dateModified" datetime="2019-08-21T13:00:36+08:00">2019-08-21</time>
+                <time title="修改时间：2019-08-30 14:02:01" itemprop="dateModified" datetime="2019-08-30T14:02:01+08:00">2019-08-30</time>
               </span>
             
           
@@ -401,27 +401,27 @@
 <h2 id="代码流水线"><a href="#代码流水线" class="headerlink" title="代码流水线"></a>代码流水线</h2><h3 id="代码生成概述"><a href="#代码生成概述" class="headerlink" title="代码生成概述"></a>代码生成概述</h3><blockquote>
 <p>在生成优化代码时,如何分配寄存器非常重要。编译器教材上都将寄存器分配问题作为图的着色问题处理,这是因为同时用到的两个变量不能共享同一个寄存器,从这点上讲,与着色问题相同。同时使用的多个变量可以用图中相连接的节点来表示,这样,寄存器分配问题就可以被抽象为“如何为图中的节点着色,5能使相连节点有不同的颜色”。这里可用颜色的数量等于指定平台上可用寄存器的数量。不过,遗憾的是,从计算复杂性上讲,着色问题是NP-hard的,也就是说现在还没有一个高效的算法(指可以在多项式时间内完成计算)能解决这个问题。但是,着色问题可以在线性对数时间内给出近似解,因此大多数编译器都使用着色算法的某个变种来处理寄存器分配问题。</p>
 </blockquote>
-<h1 id="自适应内存管理"><a href="#自适应内存管理" class="headerlink" title="自适应内存管理"></a>自适应内存管理</h1><h2 id="堆管理基础"><a href="#堆管理基础" class="headerlink" title="堆管理基础"></a>堆管理基础</h2><h3 id="对象的分配与释放"><a href="#对象的分配与释放" class="headerlink" title="对象的分配与释放"></a>对象的分配与释放</h3><p><font color="DeepPink">一般来说,为对象分配内存时,并不会直接在堆上划分内存,而是先在线程局部缓冲(thread local buffer)或其他类似的结构中找地方放置对象,然后随着应用程序的运行、新对象的不断分配,垃圾回收逐次执行,这些对象可能最终会被提升到堆中保存,也有可能会当作垃圾被释放掉。</font></p>
+<h1 id="自适应内存管理"><a href="#自适应内存管理" class="headerlink" title="自适应内存管理"></a>自适应内存管理</h1><h2 id="堆管理基础"><a href="#堆管理基础" class="headerlink" title="堆管理基础"></a>堆管理基础</h2><h3 id="对象的分配与释放"><a href="#对象的分配与释放" class="headerlink" title="对象的分配与释放"></a>对象的分配与释放</h3><p><font color="DeepPink"><strong>一般来说,为对象分配内存时,并不会直接在堆上划分内存,而是先在线程局部缓冲(thread local buffer)或其他类似的结构中找地方放置对象,然后随着应用程序的运行、新对象的不断分配,垃圾回收逐次执行,这些对象可能最终会被提升到堆中保存,也有可能会当作垃圾被释放掉。</strong></font></p>
 <p>为了能够在堆中给新创建的对象找一个合适的位置,内存管理系统必须知道堆中有哪些地方是空闲的,即还没有存活对象占用。内存管理系统使用空闲列表(free list)—串联起内存中可用内存块的链表,来管理内存中可用的空闲区域,并按照某个维度的优先级排序。</p>
 <p>在空闲列表中搜索足够存储新对象的空闲块时,可以选择大小最适合的空闲块,也可以选择第一个放得下的空闲块。这其中会用到几种不同的算法去实现,各有优劣,后文会详细讨论。</p>
-<h2 id="垃圾回收算法"><a href="#垃圾回收算法" class="headerlink" title="垃圾回收算法"></a>垃圾回收算法</h2><p><font color="DeepPink">在后文中,根集合(root set)专指上述搜索算法的初始输入集合,即开始执行引用跟踪时的存活对象集合。一般情况下,根集合中包括了因为执行垃圾回收而暂停的应用程序的当前栈帧中所有的对象,包含了可以从当前线程上下文的用户栈和寄存器中能得到的所有信息。此外,根集合中还包含全局数据,例如类的静态属性。简单来说就是,根集合中包含了所有无须跟踪引用就可以得到的对象。</font></p>
+<h2 id="垃圾回收算法"><a href="#垃圾回收算法" class="headerlink" title="垃圾回收算法"></a>垃圾回收算法</h2><p><font color="DeepPink"><strong>在后文中,根集合(root set)专指上述搜索算法的初始输入集合,即开始执行引用跟踪时的存活对象集合。一般情况下,根集合中包括了因为执行垃圾回收而暂停的应用程序的当前栈帧中所有的对象,包含了可以从当前线程上下文的用户栈和寄存器中能得到的所有信息。此外,根集合中还包含全局数据,例如类的静态属性。简单来说就是,根集合中包含了所有无须跟踪引用就可以得到的对象。</strong></font></p>
 <p>Java使用的是准确式垃圾回收器(exact garbage collector),可以将对象指针类型数据和其他类型的数据区分开,只需要将元数据信息告知垃圾回收器即可,这些元数据信息,一般可以从Java方法的代码中得到。</p>
 <p>近些年,使用信号来暂停线程的方式受到颇多争议。实践发现,在某些操作系统上,尤以Linux为例,应用程序对信号的使用和测试很不到位,还有一些第三方的本地库不遵守信号约定,导致信号冲突等事件的发生。因此,与信号相关的外部依赖已经不再可靠。</p>
-<h3 id="分代垃圾回收"><a href="#分代垃圾回收" class="headerlink" title="分代垃圾回收"></a>分代垃圾回收</h3><p>事实上,将堆划分为两个或多个称为代(generation)的空间,并分别存放具有不同长度生命周期的对象,可以提升垃圾回收的执行效率。<font color="DeepPink">在JRockit中,新创建(young)的对象存放在称为新生代(nursery)的空间中,一般来说,它的大小会比老年代(old collections)小很多,随着垃圾回收的重复执行,生命周期较长的对象会被提升(promote)到老年代中。</font>因此,新生代垃圾回收和老年代垃圾回收两种不同的垃圾回收方式应运而生,分别用于对各自空间中的对象执行垃圾回收。</p>
+<h3 id="分代垃圾回收"><a href="#分代垃圾回收" class="headerlink" title="分代垃圾回收"></a>分代垃圾回收</h3><p>事实上,将堆划分为两个或多个称为代(generation)的空间,并分别存放具有不同长度生命周期的对象,可以提升垃圾回收的执行效率。<font color="DeepPink"><strong>在JRockit中,新创建(young)的对象存放在称为新生代(nursery)的空间中,一般来说,它的大小会比老年代(old collections)小很多,随着垃圾回收的重复执行,生命周期较长的对象会被提升(promote)到老年代中。</strong></font>因此,新生代垃圾回收和老年代垃圾回收两种不同的垃圾回收方式应运而生,分别用于对各自空间中的对象执行垃圾回收。</p>
 <p>新生代垃圾回收的速度比老年代快几个数量级,即使新生代垃圾回收的频率更高,执行效率也仍然比老年代垃圾回收强,这是因为大多数对象的生命周期都很短,根本无须提升到老年代。理想情况下,新生代垃圾回收可以大大提升系统的吞吐量,并消除潜在的内存碎片。</p>
 <h4 id="写屏障"><a href="#写屏障" class="headerlink" title="写屏障"></a>写屏障</h4><p>在实现分代式垃圾回收时,大部分JVM都是用名为写屏障(write barrier)的技术来记录执行垃圾回收时需要遍历堆的哪些部分。当对象A指向对象B时,即对象B成为对象A的属性的值时,就会触发写屏障,在完成属性域赋值后执行一些辅助操作。</p>
 <p>写屏障的传统实现方式是将堆划分成多个小的连续空间(例如每块512字节),每块空间称为卡片(card),于是,堆被映射为一个粗粒度的卡表(card table)。当Java应用程序将某个对象赋值给对象引用时,会通过写屏障设置脏标志位(dirty bit),将该对象所在的卡片标记为脏。</p>
 <p>这样,遍历从老年代指向新生代的引用时间得以缩短,垃圾回收器在做新生代垃圾回收时只需要检查老年代中被标记为脏的卡片所对应的内存区域即可。</p>
 <h3 id="JRockit中的垃圾回收"><a href="#JRockit中的垃圾回收" class="headerlink" title="JRockit中的垃圾回收"></a>JRockit中的垃圾回收</h3><h4 id="老年代垃圾回收"><a href="#老年代垃圾回收" class="headerlink" title="老年代垃圾回收"></a>老年代垃圾回收</h4><p>JRockit不仅将卡表应用于分代式垃圾回收,还用在并发标记阶段结束时的清理工作,避免搜索整个存活对象图。这是因为JRockit需要找出在执行并发标记操作时,应用程序又创建了哪些对象。修改引用关系时通过写屏障可以更新卡表,存活对象图中的每个区域使用卡表中的一个卡片表示,卡片的状态可以是干净或者脏,有新对象创建或者对象引用关系修改了的卡片会被标记为脏。在并发标记阶段结束时,垃圾回收器只需要检查那些标记为脏的卡片所对应的堆中区域即可,这样就可以找到在并发标记期间新创建的和被更新过引用关系的对象</p>
-<h2 id="性能与伸缩性"><a href="#性能与伸缩性" class="headerlink" title="性能与伸缩性"></a>性能与伸缩性</h2><h3 id="线程局部分配"><a href="#线程局部分配" class="headerlink" title="线程局部分配"></a>线程局部分配</h3><p><font color="DeepPink">在JRockit中,使用了名为线程局部分配(thread local allocation)的技术来大幅加速对象的分配过程。正常情况下,在线程内的缓冲区中为对象分配内存要比直接在需要同步操作的堆上分配内存快得多。垃圾回收器在堆上直接分配内存时是需要对整个堆加锁的,对于多线程竞争激烈的应用程序来说,这将会是一场灾难。</font>因此,如果每个Java线程能够有一块局部对象缓冲区那么绝大部分的对象分配操作只需要移动一下指针即可完成,在大多数硬件平台上,只需要一条汇编指令就行了。这块转为分配对象而保留的区域,就称为线程局部缓冲区(thread local area,TLA)。</p>
-<p>为了更好地利用缓存,达到更高的性能,一般情况下,TLA的大小介于16KB到128KB之间,当然,也可以通过命令行参数显式指定。<font color="DeepPink">当TLA被填满时,垃圾回收器会将TLA中的内容提升到堆中。因此,可以将TLA看作是线程中的新生代内存空间</font>。</p>
+<h2 id="性能与伸缩性"><a href="#性能与伸缩性" class="headerlink" title="性能与伸缩性"></a>性能与伸缩性</h2><h3 id="线程局部分配"><a href="#线程局部分配" class="headerlink" title="线程局部分配"></a>线程局部分配</h3><p><font color="DeepPink"><strong>在JRockit中,使用了名为线程局部分配(thread local allocation)的技术来大幅加速对象的分配过程。正常情况下,在线程内的缓冲区中为对象分配内存要比直接在需要同步操作的堆上分配内存快得多。垃圾回收器在堆上直接分配内存时是需要对整个堆加锁的,对于多线程竞争激烈的应用程序来说,这将会是一场灾难。</strong></font>因此,如果每个Java线程能够有一块局部对象缓冲区那么绝大部分的对象分配操作只需要移动一下指针即可完成,在大多数硬件平台上,只需要一条汇编指令就行了。这块转为分配对象而保留的区域,就称为线程局部缓冲区(thread local area,TLA)。</p>
+<p>为了更好地利用缓存,达到更高的性能,一般情况下,TLA的大小介于16KB到128KB之间,当然,也可以通过命令行参数显式指定。<font color="DeepPink"><strong>当TLA被填满时,垃圾回收器会将TLA中的内容提升到堆中。因此,可以将TLA看作是线程中的新生代内存空间</strong></font>。</p>
 <p>当Java源代码中有new操作符,并且JIT编译器对内存分配执行高级优化之后,内存分配的伪代码如下所示：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">object allocateNewobject(Class objectclass)&#123;</span><br><span class="line">	Thread current getcurrentThread():</span><br><span class="line">	int objectSize=alignedSize(objectclass)</span><br><span class="line">	if(current.nextTLAOffset+objectSize&gt; TLA_SIZE)&#123;</span><br><span class="line">		current.promoteTLAToHeap();//慢,而且是同步操作</span><br><span class="line">		current.nextTLAOffset=0;</span><br><span class="line">	&#125;</span><br><span class="line">	Object ptr= current.TLAStart+current.nextTLAOffset:</span><br><span class="line">	current.nextTLAOffset + objectSize;</span><br><span class="line">	return ptr:	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <blockquote>
 <p>为了说明内存分配问題,在上面的伪代码中省略了很多其他关联操作。例如如果待分配的对象非常大,超过了某个阈值,或对象太大导致无法存放在TLA中,则会直接在堆中为对象分配内存。</p>
 </blockquote>
-<h3 id="NUMA架构"><a href="#NUMA架构" class="headerlink" title="NUMA架构"></a>NUMA架构</h3><p>NUMA(non-uniform memory access,非统一内存访问模型)架构的出现为垃圾回收带来了更多挑战。<font color="DeepPink">在NUMA架构下,不同的处理器核心通常访问各自的内存地址空间,这是为了避免因多个CPU核心访问同一内存地址造成的总线延迟。</font>每个CPU核心都配有专用的内存和总线因此CPU核心在访问其专有内存时速度很快,而要访问相邻CPU核心的内存时就会相对慢些,CPU核心相距越远,访问速度越慢(也依赖于具体配置)传统上,多核CPU是按照UMA(uniform memory access,统一内存访问模型)架构运行的,所有的CPU核心按照统一的模式无差别地访问所有内存。</p>
+<h3 id="NUMA架构"><a href="#NUMA架构" class="headerlink" title="NUMA架构"></a>NUMA架构</h3><p>NUMA(non-uniform memory access,非统一内存访问模型)架构的出现为垃圾回收带来了更多挑战。<font color="DeepPink"><strong>在NUMA架构下,不同的处理器核心通常访问各自的内存地址空间,这是为了避免因多个CPU核心访问同一内存地址造成的总线延迟。</strong></font>每个CPU核心都配有专用的内存和总线因此CPU核心在访问其专有内存时速度很快,而要访问相邻CPU核心的内存时就会相对慢些,CPU核心相距越远,访问速度越慢(也依赖于具体配置)传统上,多核CPU是按照UMA(uniform memory access,统一内存访问模型)架构运行的,所有的CPU核心按照统一的模式无差别地访问所有内存。</p>
 <p>为了更好地利用NUMA架构,垃圾回收器线程的组织结构应该做相应的调整。如果某个CPU核心正在运行标记线程,那么该线程所要访问的那部分堆内存最好能够放置在该CPU的专有内存中,这样才能发挥NUMA架构的最大威力。在最坏情况下,如果标记线程所要访问的对象位于其他NUMA节点的专有内存中,这时垃圾回收器通常需要一个启发式对象移动算法。这是为了保证使用时间上相近的对象在存储位置上也能相近,如果这个算法能够正确工作,还是可以带来不小的性能提升的。这里所面临的主要问题是如何避免对象在不同NUMA节点的专有内存中重复移动。理论上,自适应运行时系统应该可以很好地处理这个问题。</p>
 <h3 id="大内存页"><a href="#大内存页" class="headerlink" title="大内存页"></a>大内存页</h3><p>内存分配是通过操作系统及其所使用的页表完成的。操作系统将物理内存划分成多个页来管理,从操作系统层面讲,页是实际分配内存的最小单位。传统上,页的大小是以4KB为基本单位划分的,页操作对进程来说是透明的,进程所使用的是虚拟地址空间,并非真正的物理地址。为了便于将虚拟页面转换为实际的物理内存地址,可使用名为旁路转换缓冲(translation lookaside buffer,TLB)的缓存来加速地址的转换操作。从实现上看,如果页面的容量非常小的话,会导致频繁出现旁路转换缓冲丢失的情况。</p>
 <p>修复这个问题的一种方法就是将页面的容量调大几个数量级,例如以MB为基本单位。现代操作系统普遍倾向于支持这种大内存页机制。</p>
@@ -429,15 +429,15 @@
 <blockquote>
 <p>通常情况下,对于那些内存分配和回收频繁的应用程序来说,使用大内存页可以使系统的整体性能至少提升10%。 JRockit对大内存页有很好的支持。</p>
 </blockquote>
-<h2 id="近实时垃圾回收"><a href="#近实时垃圾回收" class="headerlink" title="近实时垃圾回收"></a>近实时垃圾回收</h2><h3 id="JRockit-Real-Time"><a href="#JRockit-Real-Time" class="headerlink" title="JRockit Real Time"></a>JRockit Real Time</h3><p><font color="DeepPink">低延迟的代价是垃圾回收整体时间的延长</font>。相比于并行垃圾回收,在程序运行的同时并发垃圾回收的难度更大,而频繁中断垃圾回收则可能带来更多的麻烦。事实上,这并非什么大问题,因为大多数使用JRockit Real Time的<font color="DeepPink">用户更关心系统的可预测性,而不是减少垃圾回收的总体时间。大多数用户认为暂停时间的突然增长比垃圾回收总体时间的延长更具危害性</font>。</p>
-<h4 id="软实时的有效性"><a href="#软实时的有效性" class="headerlink" title="软实时的有效性"></a>软实时的有效性</h4><p>软实时是JRockit Real Time的核心机制。但<font color="DeepPink">非确定性系统如何提供指定程度的确定性,例如像垃圾回收器这样的系统如何保证应用程序的暂停时间不会超过某个阈值?严格来说,无法提供这样的保证</font>,但由于这样的极端案例很少,所以也就无关紧要了。</p>
+<h2 id="近实时垃圾回收"><a href="#近实时垃圾回收" class="headerlink" title="近实时垃圾回收"></a>近实时垃圾回收</h2><h3 id="JRockit-Real-Time"><a href="#JRockit-Real-Time" class="headerlink" title="JRockit Real Time"></a>JRockit Real Time</h3><p><font color="DeepPink"><strong>低延迟的代价是垃圾回收整体时间的延长</strong></font>。相比于并行垃圾回收,在程序运行的同时并发垃圾回收的难度更大,而频繁中断垃圾回收则可能带来更多的麻烦。事实上,这并非什么大问题,因为大多数使用JRockit Real Time的<font color="DeepPink"><strong>用户更关心系统的可预测性,而不是减少垃圾回收的总体时间。大多数用户认为暂停时间的突然增长比垃圾回收总体时间的延长更具危害性</strong></font>。</p>
+<h4 id="软实时的有效性"><a href="#软实时的有效性" class="headerlink" title="软实时的有效性"></a>软实时的有效性</h4><p>软实时是JRockit Real Time的核心机制。但<font color="DeepPink"><strong>非确定性系统如何提供指定程度的确定性,例如像垃圾回收器这样的系统如何保证应用程序的暂停时间不会超过某个阈值?严格来说,无法提供这样的保证</strong></font>,但由于这样的极端案例很少,所以也就无关紧要了。</p>
 <p>当然,没有什么万全之策,确实存在无法保证暂停时间的场景。但实践证明,对于那些堆中存活对象约占30%-50%的应用程序来说, JRockit Real Time的表现可以满足服务需要,而且随着JRockit Real Time各个版本的发行,30%-50%这个阈值在不断提升,可支持的暂停时间阈值则不断降低。</p>
 <h4 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h4><ul>
 <li>高效的并行执行</li>
 <li>细分垃圾回收过程,将之变成几个可回滚、可中断的子任务(work packet)</li>
 <li>高效的启发式算法</li>
 </ul>
-<p><font color="DeepPink">事实上,实现低延迟的关键仍是尽可能多让Java应用程序运行,保持堆的使用率和碎片化程度在一个较低的水平</font>。在这一点上, JRockit Real Time使用的是贪心策略,即尽可能推迟STW式的垃圾回收操作,希望问题能够由应用程序自身解决,或者能够减少不得不执行STW式操作的情况,最好在具体执行的时候需要处理的对象也尽可能少一些。</p>
+<p><font color="DeepPink"><strong>事实上,实现低延迟的关键仍是尽可能多让Java应用程序运行,保持堆的使用率和碎片化程度在一个较低的水平</strong></font>。在这一点上, JRockit Real Time使用的是贪心策略,即尽可能推迟STW式的垃圾回收操作,希望问题能够由应用程序自身解决,或者能够减少不得不执行STW式操作的情况,最好在具体执行的时候需要处理的对象也尽可能少一些。</p>
 <p>JRockit Real Time中,垃圾回收器的工作被划分为几个子任务。如果在执行其中某个子任务时(例如整理堆中的某一部分内存),应用程序的暂停时间超过了阈值,那么就放弃该子任务恢复应用程序的执行。用户根据业务需要指定可用于完成垃圾回收的总体时间,有些时候,某些子任务已经完成,但没有足够的时间完成整个垃圾回收工作,这时为了保证应用程序的运行,不得不废弃还未完成的子任务,待到下次垃圾回收的时候再重新执行,指定的响应时间越短,则废弃的子任务可能越多。</p>
 <p>前面介绍过的标记阶段的工作比较容易调整,可以与应用程序并发执行。但清理和整理阶段则需要暂停应用程序线程(STW)。幸运的是,标记阶段会占到垃圾回收总体时间的90%。如果暂停应用程序的时间过长,则不得不终止当前垃圾回收任务,重新并发执行,期望问题可以自动解决。之所以将垃圾回收划分为几个子任务就是为了便于这一目标的实现。</p>
 <h2 id="内存操作相关API"><a href="#内存操作相关API" class="headerlink" title="内存操作相关API"></a>内存操作相关API</h2><h3 id="析构方法"><a href="#析构方法" class="headerlink" title="析构方法"></a>析构方法</h3><blockquote>
@@ -445,19 +445,19 @@
 </blockquote>
 <p>这不仅仅是我们的意见,也是Java社区的一致意见。</p>
 <h3 id="JVM的行为差异"><a href="#JVM的行为差异" class="headerlink" title="JVM的行为差异"></a>JVM的行为差异</h3><p>对于JVM来说,一定谨记,编程语言只能提醒垃圾回收器工作。就Java而言,在设计上它本身并不能精确控制内存系统。例如,假设两个ⅣM厂商所实现软引用在缓存中具有相同的存活时间,这本就是不切实际的。</p>
-<p>另外一个问题就是大量用户对System.gc()方法的错误使用。<font color="DeepPink">System.gc()方法仅仅是提醒运行时“现在可以做垃圾回收了”。在某些JVM实现中,频繁调用该方法导致了频繁的垃圾回收操作,而在某些JVM实现中,大部分时间忽略了该调用。</font></p>
+<p>另外一个问题就是大量用户对System.gc()方法的错误使用。<font color="DeepPink"><strong>System.gc()方法仅仅是提醒运行时“现在可以做垃圾回收了”。在某些JVM实现中,频繁调用该方法导致了频繁的垃圾回收操作,而在某些JVM实现中,大部分时间忽略了该调用。</strong></font></p>
 <p>我过去任职为性能顾问期间,多次看到该方法被滥用。很多时候,只是去掉对 System.gc方法的几次调用就可以大幅提升性能,这也是 JRock中会有命令行参数-xx:AllowSystemGC=False来禁用System,gc方法的原因。</p>
 <h2 id="陷阱与伪优化"><a href="#陷阱与伪优化" class="headerlink" title="陷阱与伪优化"></a>陷阱与伪优化</h2><p>部分开发人员在写代码时,有时会写一些“经过优化的”的代码,期望可以帮助完成垃圾回收的工作,但实际上,这只是他们的错觉。记住,过早优化是万恶之源。就Java来说,很难在语言层面控制垃圾回收的行为。这里的主要问题时,开发人员误以为垃圾回收器有固定的运行模式,并妄图去控制它。</p>
 <p>除了垃圾回收外,对象池(object poll)也是Java中常见的伪优化(false optimization)。有人认为,保留一个存活对象池来重新使用已创建的对象可以提升垃圾回收的性能,但实际上,对象池不仅增加了应用程序的复杂度,还很容易出错。对于现代垃圾收集器来说,使用java.lang.ref.Reference系列类实现缓存,或者直接将无用对象的引用置为null就好了,不用多操心。</p>
-<p>事实上,基于现代VM,如果能够合理利用书本上的技巧,例如正确使用java.lang.ref.Reference系列类,注意Java的动态特性,完全可以写出运行良好的应用程序。<font color="DeepPink">如果应用程序真的有实时性要求,那么一开始就不该用Java编写,而应该使用那些由程序员手动控制内存的静态编程语言来实现应用程序。</font></p>
-<h2 id="JRockit中的内存管理"><a href="#JRockit中的内存管理" class="headerlink" title="JRockit中的内存管理"></a>JRockit中的内存管理</h2><p><font color="DeepPink">需要注意的是,花大力气鼓捣JVM参数并不一定会使应用程序性能有多么大的提升,而且反而可能会干扰JVM的正常运行。</font></p>
+<p>事实上,基于现代VM,如果能够合理利用书本上的技巧,例如正确使用java.lang.ref.Reference系列类,注意Java的动态特性,完全可以写出运行良好的应用程序。<font color="DeepPink"><strong>如果应用程序真的有实时性要求,那么一开始就不该用Java编写,而应该使用那些由程序员手动控制内存的静态编程语言来实现应用程序。</strong></font></p>
+<h2 id="JRockit中的内存管理"><a href="#JRockit中的内存管理" class="headerlink" title="JRockit中的内存管理"></a>JRockit中的内存管理</h2><p><font color="DeepPink"><strong>需要注意的是,花大力气鼓捣JVM参数并不一定会使应用程序性能有多么大的提升,而且反而可能会干扰JVM的正常运行。</strong></font></p>
 <h1 id="线程与同步"><a href="#线程与同步" class="headerlink" title="线程与同步"></a>线程与同步</h1><h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><p>每个对象都持有与同步操作相关的信息,例如当前对象是否作为锁使用,以及锁的具体实现等。一般情况下,为了便于快速访问,这些信息被保存在每个对象的对象头的锁字(lock word)中。JRockit使用锁字中的一些位来存储垃圾回收状态信息,虽然其中包含了垃圾回收信息,但是本书还是称之为锁字。</p>
 <p>对象头还包含了指向类型信息的指针,在 JRockit中,这称为类块(class block)下图是 JRockit中Java对象在不同的CPU平台上的内存布局。为了节省内存,并加速解引用操作,对象头中所有字的长度是32位。类块是一个32位的指针,指向另一个外部结构,该结构包含了当前对象的类型信息和虚分派表(virtual dispatch table)等信息。</p>
 <p><img alt data-src="/images/java-jrockit-note/%E5%AF%B9%E8%B1%A1%E5%A4%B4%E5%B8%83%E5%B1%80.png"><br>就目前来看,在绝大部分JVM(包括JRockit)中,对象头是使用两个32位长的字来表示的。在JRockit中,偏移为0的对象指针指向当前对象的类型信息,接下来是4字节的锁字。在SPARC平台上,对象头的布局刚好反过来,因为在使用原子指令操作指针时,如果没有偏移的话,效率会更高。与锁字不同,类块并不为原子操作所使用,因此在SPARC平台上,类块被放在锁字后面。</p>
 <blockquote>
 <p>原子操作(atomic operation)是指全部执行或全部不执行的本地指令。当原子指令全部执行时,其操作结果需要对所有潜在访问者可见。</p>
 </blockquote>
-<p><font color="DeepPink">原子操作用于读写锁字,具有排他性,这是实现JVM中同步块的基础。</font></p>
+<p><font color="DeepPink"><strong>原子操作用于读写锁字,具有排他性,这是实现JVM中同步块的基础。</strong></font></p>
 <h3 id="难以调试"><a href="#难以调试" class="headerlink" title="难以调试"></a>难以调试</h3><blockquote>
 <p>死锁是指两个线程都在等待对方释放自己所需的资源,结果导致两个线程都进入休眠状态。很明显,它们再也醒不过来了。活锁的概念与死锁类似,区别在于线程在竟争时会采取主动操作,但无法获取锁。这就像两个人面对面前进,在一个很窄的走廊相遇,为了能继续前进,他们都向侧面移动,但由于移动的方向相反导致还是无法前进。</p>
 </blockquote>
@@ -465,17 +465,17 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public synchronized void setGadget(Gadget g)&#123;</span><br><span class="line">	this.gadget = g;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>上面的方法定义中包含synchronized关键字,因此每次只能有一个线程修改给定对象的gadget域。</p>
-<p><font color="DeepPink">在同步方法中,监视器对象是隐式的,即当前对象this,而对静态同步方法来说,监视器对象是当前对象的类对象。</font>上面的示例代码与下面的代码是等效的：</p>
+<p><font color="DeepPink"><strong>在同步方法中,监视器对象是隐式的,即当前对象this,而对静态同步方法来说,监视器对象是当前对象的类对象。</strong></font>上面的示例代码与下面的代码是等效的：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public void setGadget(Gadget g)&#123;</span><br><span class="line">	synchronized(this)&#123;</span><br><span class="line">		this.gadget = g;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="java-lang-Thread类"><a href="#java-lang-Thread类" class="headerlink" title="java.lang.Thread类"></a>java.lang.Thread类</h3><p>Java中的线程也有优先级概念,但是否真的起作用取决于JVM的具体实现。setPriority方法用于设置线程的优先级,提示JVM该线程更加重要或不怎么重要。当然,对于大多数JVM来说,显式地修改线程优先级没什么大帮助。当运行时“有更好的方案”时, JRockit JVM甚至会忽略Java线程的优先级。</p>
 <p>正在运行的线程可以通过调用yield方法主动放弃剩余的时间片,以便其他线程运行,自身休眠(调用wait方法)或等待其他线程结束再运行(调用join方法)。</p>
 <h3 id="volatile-关键字"><a href="#volatile-关键字" class="headerlink" title="volatile 关键字"></a>volatile 关键字</h3><p>在多线程环境下,对某个属性域或内存地址进行写操作后,其他正在运行的线程未必能立即看到这个结果。在某些场景中,要求所有线程在执行时需要得知某个属性最新的值,为此,Java提供了关键字volatile来解决此问题。</p>
-<p><font color="DeepPink">使用volatile修饰属性后,可以保证对该属性域的写操作会直接作用到内存中。原本,数据操作仅仅将数据写到CPU缓存中,过一会再写到内存中,正因如此,在同一个属性域上,不同的线程可能看到不同的值。目前,JVM在实现volatile关键字时,是通过在写属性操作后插入内存屏障代码来实现的,只不过这种方法有一点性能损耗。</font></p>
-<p>人们常常难以理解“为什么不同的线程会在同一个属性域上看到不同的值”。<font color="DeepPink">一般来说,目前的机器的内存模型已经足够强,或者应用程序的本身结构就不容易使非volatile属性出现这个问题。但是,考虑到JIT优化编译器可能会对程序做较大改动,如果开发人员不留心的话,还是会出现问题的。</font>下面的示例代码解释了在Java程序中,为什么内存语义如此重要,尤其是当问题还没表现出来的时候。</p>
+<p><font color="DeepPink"><strong>使用volatile修饰属性后,可以保证对该属性域的写操作会直接作用到内存中。原本,数据操作仅仅将数据写到CPU缓存中,过一会再写到内存中,正因如此,在同一个属性域上,不同的线程可能看到不同的值。目前,JVM在实现volatile关键字时,是通过在写属性操作后插入内存屏障代码来实现的,只不过这种方法有一点性能损耗。</strong></font></p>
+<p>人们常常难以理解“为什么不同的线程会在同一个属性域上看到不同的值”。<font color="DeepPink"><strong>一般来说,目前的机器的内存模型已经足够强,或者应用程序的本身结构就不容易使非volatile属性出现这个问题。但是,考虑到JIT优化编译器可能会对程序做较大改动,如果开发人员不留心的话,还是会出现问题的。</strong></font>下面的示例代码解释了在Java程序中,为什么内存语义如此重要,尤其是当问题还没表现出来的时候。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class My Thread extends Thread&#123;</span><br><span class="line">	private volatile boolean finished;</span><br><span class="line">	public void run()&#123;</span><br><span class="line">		while(!finished)&#123;</span><br><span class="line">   			//</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public void signalDone()&#123;</span><br><span class="line">		this.finished = true</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>如果定义变量finished时没有加上volatile关键字,那么在理论上,JIT编译器在优化时,可能会将之修改为只在循环开始前加载一次finished的值,但这就改变了代码原本的含义如果finished的值是false,那么程序就会陷入无限循环,即使其他线程调用了signalDone方法也没用。<font color="DeepPink">Java语言规范指明,如果编译器认为合适的话,可以为非 volatile变量在线程内创建副本以便后续使用。</font></p>
+<p>如果定义变量finished时没有加上volatile关键字,那么在理论上,JIT编译器在优化时,可能会将之修改为只在循环开始前加载一次finished的值,但这就改变了代码原本的含义如果finished的值是false,那么程序就会陷入无限循环,即使其他线程调用了signalDone方法也没用。<font color="DeepPink"><strong>Java语言规范指明,如果编译器认为合适的话,可以为非 volatile变量在线程内创建副本以便后续使用。</strong></font></p>
 <blockquote>
 <p>由于一般会使用内存屏障来实现volatile关键字的语义,会导致CPU缓存失效,降低应用程序整体性能,使用的时候要谨慎。</p>
 </blockquote>
@@ -496,10 +496,10 @@
 <p>实现延迟解锁的语义其实很简单。</p>
 <p>实现 monitorenter指令。</p>
 <ul>
-<li><font color="DeepPink">如果对象是未锁定的,则加锁成功的线程将继续持有该锁,并标记该对象为延迟加锁的。</font></li>
-<li><font color="DeepPink">如果对象已经被标记为延迟加锁的</font>：<ul>
-<li><font color="DeepPink">如果对象是被同一个线程加锁的,则什么也不做(大体上是一个递归锁)</font></li>
-<li><font color="DeepPink">如果对象是被另一个线程加锁的,则暂停该线程对锁的持有状态,检查该对象真实的加锁状态,即是已加锁的还是未加锁的,这一步操作代价高昂,需要遍历调用栈。如果对象是已加锁的,则将该锁转换为瘦锁,否则强制释放该锁,以便可以被新线程获取到。</font></li>
+<li><font color="DeepPink"><strong>如果对象是未锁定的,则加锁成功的线程将继续持有该锁,并标记该对象为延迟加锁的。</strong></font></li>
+<li><font color="DeepPink"><strong>如果对象已经被标记为延迟加锁的</strong></font>：<ul>
+<li><font color="DeepPink"><strong>如果对象是被同一个线程加锁的,则什么也不做(大体上是一个递归锁)</strong></font></li>
+<li><font color="DeepPink"><strong>如果对象是被另一个线程加锁的,则暂停该线程对锁的持有状态,检查该对象真实的加锁状态,即是已加锁的还是未加锁的,这一步操作代价高昂,需要遍历调用栈。如果对象是已加锁的,则将该锁转换为瘦锁,否则强制释放该锁,以便可以被新线程获取到。</strong></font></li>
 </ul>
 </li>
 </ul>
@@ -507,8 +507,8 @@
 <p>为了能解除线程对锁的持有状态,必须要先暂停该线程的执行,这个操作有不小的开销。在释放锁之后,锁的实际状态会通过检查线程栈中的锁符号来确定。延迟解锁使用自己的锁符号,以表示“该对象是被延迟锁定的”。</p>
 <p>如果延迟锁定的对象从来也没有被撤销过,即所有的锁都只在线程局部内发挥作用,那么使用延迟锁定就可以大幅提升系统性能。但在实际应用中,如果我们的假设不成立,运行时就不得不一遍又一遍地释放已经被延迟加锁的对象,这种性能消耗实在承受不起。因此,运行时需要记录下监视器对象被不同线程获取到的次数,这部分信息存储在监视器对象的锁字中,称为转移位(transfer bit)。</p>
 <p>如果监视器对象在不同的线程之间转移的次数过多,那么该对象、其类对象或者其类的所有实例都可能会被禁用延迟加锁,只会使用标准的胖锁和瘦锁来处理加锁或解锁操作。</p>
-<p>正如之前介绍过的,对象首先是未加锁状态的,然后线程T1执行monitorenter指令,使之进入延迟加锁状态。但<font color="DeepPink">如果线程T1在该对象上执行了monitorexit指令,这时系统会假装已经解锁了,但实际上仍是锁定状态,锁对象的锁字中仍记录着线程T1的线程ID</font>。在此之后线程T1如果再执行加锁操作,就不用再执行相关操作了。</p>
-<p><font color="DeepPink">如果另一个线程T2试图获取同一个锁,则之前所做“该锁绝大部分被线T1程使用”的假设不再成立,会受到性能惩罚,将锁字中的线程ID由线程T1的ID替换为线程T2的</font>。如果这情况经常出现,那么可能会禁用该对象作为延迟锁,并将该对象作为普通的瘦锁使用。</p>
+<p>正如之前介绍过的,对象首先是未加锁状态的,然后线程T1执行monitorenter指令,使之进入延迟加锁状态。但<font color="DeepPink"><strong>如果线程T1在该对象上执行了monitorexit指令,这时系统会假装已经解锁了,但实际上仍是锁定状态,锁对象的锁字中仍记录着线程T1的线程ID</strong></font>。在此之后线程T1如果再执行加锁操作,就不用再执行相关操作了。</p>
+<p><font color="DeepPink"><strong>如果另一个线程T2试图获取同一个锁,则之前所做“该锁绝大部分被线T1程使用”的假设不再成立,会受到性能惩罚,将锁字中的线程ID由线程T1的ID替换为线程T2的</strong></font>。如果这情况经常出现,那么可能会禁用该对象作为延迟锁,并将该对象作为普通的瘦锁使用。</p>
 <h2 id="陷阱与伪优化-1"><a href="#陷阱与伪优化-1" class="headerlink" title="陷阱与伪优化"></a>陷阱与伪优化</h2><h3 id="Thread-stop、Thread-resume和Thread-suspend"><a href="#Thread-stop、Thread-resume和Thread-suspend" class="headerlink" title="Thread.stop、Thread.resume和Thread.suspend"></a>Thread.stop、Thread.resume和Thread.suspend</h3><p>永远不要使用Thread.stop方法、Thread.resume方法或Thread.suspend方法并小心处理使用这些方法的历史遗留代码。</p>
 <p>普遍建议使用wait方法、notify方法或volatile变量来做线程间的同步处理。</p>
 <h3 id="双检查锁"><a href="#双检查锁" class="headerlink" title="双检查锁"></a>双检查锁</h3><p>如果对内存模型和CPU架构缺乏理解的话,即使使用平遇到问题。以下面的代码为例,其目的是实现单例模式。</p>
@@ -518,13 +518,13 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public Gadget getGadget()&#123;</span><br><span class="line">	if (this.theGadget == null)&#123;</span><br><span class="line">		synchronized(this)&#123;</span><br><span class="line">			if(this.theGadget == null))&#123;</span><br><span class="line">				this.theGadget = new Gadget();</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	return this.theGadget;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>上面的代码使用了一个看起来很“聪明”的技巧,如果行同步操作,而是直接返回已有的对象;如果对象还未创建值。这样可以保证“线程安全”。</p>
-<p>上述代码就是所谓的双检查锁(double checked locking),下面分析一下这段代码的问题。<font color="DeepPink">假设某个线程经过内层的空值检查,开始初始化theGadget字段的值,该线程需要为新对象分配内存,并对theGadget字段赋值。可是,这一系列操作并不是原子的,且执行顺序无法保证。如果在此时正好发生线程上下文切换,则另一个线程看到的theGadget字段的值可能是未经完整初始化的,有可能会导致外层的控制检查失效,并返回这个未经完整初始化的对象。不仅仅是创建对象可能会出问题,处理其他类型数据时也要小心。例如,在32位平台上,写入一个long型数据通常需要执行两次32位数据的写操作,而写入int数据则无此顾虑。</font></p>
+<p>上述代码就是所谓的双检查锁(double checked locking),下面分析一下这段代码的问题。<font color="DeepPink"><strong>假设某个线程经过内层的空值检查,开始初始化theGadget字段的值,该线程需要为新对象分配内存,并对theGadget字段赋值。可是,这一系列操作并不是原子的,且执行顺序无法保证。如果在此时正好发生线程上下文切换,则另一个线程看到的theGadget字段的值可能是未经完整初始化的,有可能会导致外层的控制检查失效,并返回这个未经完整初始化的对象。不仅仅是创建对象可能会出问题,处理其他类型数据时也要小心。例如,在32位平台上,写入一个long型数据通常需要执行两次32位数据的写操作,而写入int数据则无此顾虑。</strong></font></p>
 <p>上述问题可以通过将 theGadget字段声明为 volatile来解决(注意,只在新版本的内存模型下才有效),增加的执行开销尽管比使用synchronized方法的小,但还是有的。如果不确定当前版本的内存模型是否实现正确,不要使用双检查锁。网上有很多文章介绍了为什么不应该使用双检查锁,不仅限于Java,其他语言也是。</p>
-<p><font color="DeepPink">双检查锁的危险之处在于,在强内存模型下,它很少会使程序崩溃。Intel IA-64平台就是个典型示例,其弱内存模型臭名远扬,原本好好运行的Java应用程序却出现故障。如果某个应用程序在x86平台运行良好,在x64平台却出问题,人们很容易怀疑是JVM的bug,却忽视了有可能是Java应用程序自身的问题。</font></p>
+<p><font color="DeepPink"><strong>双检查锁的危险之处在于,在强内存模型下,它很少会使程序崩溃。Intel IA-64平台就是个典型示例,其弱内存模型臭名远扬,原本好好运行的Java应用程序却出现故障。如果某个应用程序在x86平台运行良好,在x64平台却出问题,人们很容易怀疑是JVM的bug,却忽视了有可能是Java应用程序自身的问题。</strong></font></p>
 <p>使用静态属性来实现单例模式可以实现同样的语义,而无须使用双检查锁,如下所示:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public class GadgetMaker&#123;</span><br><span class="line">	public static Gadget theGadget= new Gadget();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><font color="DeepPink">Java语言保证类的初始化是原子操作, GadgetMaker类中没有其他的域,因此,在首次主动使用该类时会自动创建 Gadget类的实例。并赋值给theGadget字段。这种方法在新旧两种内存模型下均可正常工作。</font></p>
+<p><font color="DeepPink"><strong>Java语言保证类的初始化是原子操作, GadgetMaker类中没有其他的域,因此,在首次主动使用该类时会自动创建 Gadget类的实例。并赋值给theGadget字段。这种方法在新旧两种内存模型下均可正常工作。</strong></font></p>
 <p>总之,使用Java做并行程序开发有很多需要小心的地方,如果能够正确理解Java内存模型那么是可以避开这些陷阱的。开发人员往往不太关心当前的硬件架构,但如果不能理解Java内存模型,迟早会搬起石头砸自己的脚。</p>
 <h1 id="基准测试与性能调优"><a href="#基准测试与性能调优" class="headerlink" title="基准测试与性能调优"></a>基准测试与性能调优</h1><h2 id="wait方法、notify方法与胖锁"><a href="#wait方法、notify方法与胖锁" class="headerlink" title="wait方法、notify方法与胖锁"></a>wait方法、notify方法与胖锁</h2><h3 id="Java并非万能的"><a href="#Java并非万能的" class="headerlink" title="Java并非万能的"></a>Java并非万能的</h3><p>Java是一门强大的通用编程语言,因其友好的语义和内建的内的开发进度,但Java不是万能的,这里来谈谈不宜使用Java解决的场景：</p>
 <ul>
@@ -572,7 +572,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
+      <div class="popular-posts-title"><a href="\java-threadlocal.html" rel="bookmark">Java ThreadLocal</a></div>
       
     </li>
   
@@ -715,7 +715,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -921,7 +921,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -994,12 +996,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

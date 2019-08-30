@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="基于OpenJDK 12">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-13T01:32:23.916Z">
+<meta property="og:updated_time" content="2019-08-30T06:05:52.788Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java ThreadLocal">
 <meta name="twitter:description" content="基于OpenJDK 12">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-13 09:32:23" itemprop="dateModified" datetime="2019-08-13T09:32:23+08:00">2019-08-13</time>
+                <time title="修改时间：2019-08-30 14:05:52" itemprop="dateModified" datetime="2019-08-30T14:05:52+08:00">2019-08-30</time>
               </span>
             
           
@@ -381,8 +381,8 @@
 </blockquote>
 <p>大概的意思有两点：</p>
 <ul>
-<li><font color="DeepPink">ThreadLocal提供了一种访问某个变量的特殊方式：访问到的变量属于当前线程，即保证每个线程的变量不一样，而同一个线程在任何地方拿到的变量都是一致的，这就是所谓的线程隔离。</font></li>
-<li><font color="DeepPink">如果要使用ThreadLocal，通常定义为private static类型，在我看来最好是定义为private static final类型。</font></li>
+<li><font color="DeepPink"><strong>ThreadLocal提供了一种访问某个变量的特殊方式：访问到的变量属于当前线程，即保证每个线程的变量不一样，而同一个线程在任何地方拿到的变量都是一致的，这就是所谓的线程隔离。</strong></font></li>
+<li><font color="DeepPink"><strong>如果要使用ThreadLocal，通常定义为private static类型，在我看来最好是定义为private static final类型。</strong></font></li>
 </ul>
 <p>看一段代码：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">// 代码来自：</span><br><span class="line">// http://tutorials.jenkov.com/java-concurrency/threadlocal.html</span><br><span class="line">public class ThreadLocalExample &#123;</span><br><span class="line">    public static class MyRunnable implements Runnable &#123;</span><br><span class="line"></span><br><span class="line">        private ThreadLocal&lt;Integer&gt; threadLocal = new ThreadLocal&lt;Integer&gt;();</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            //注意这里 set的值是run函数的内部变量，如果是MyRunnable的全局变量</span><br><span class="line">            //则无法起到线程隔离的作用</span><br><span class="line">            threadLocal.set((int) (Math.random() * 100D));</span><br><span class="line">            try &#123;</span><br><span class="line">                //sleep两秒的作用是让thread2 set操作在thread1的输出之前执行</span><br><span class="line">                //如果线程之间是共用threadLocal，则thread2 set操作会覆盖掉thread1的set操作</span><br><span class="line">                //从而两者的输出都是thread2 set的值</span><br><span class="line">                Thread.sleep(2000);</span><br><span class="line">            &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                System.out.println(e);</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(threadLocal.get());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws InterruptedException &#123;</span><br><span class="line">        MyRunnable sharedRunnableInstance = new MyRunnable();</span><br><span class="line"></span><br><span class="line">        Thread thread1 = new Thread(sharedRunnableInstance);</span><br><span class="line">        Thread thread2 = new Thread(sharedRunnableInstance);</span><br><span class="line"></span><br><span class="line">        thread1.start();</span><br><span class="line">        thread2.start();</span><br><span class="line"></span><br><span class="line">        thread1.join(); //wait for thread 1 to terminate</span><br><span class="line">        thread2.join(); //wait for thread 2 to terminate</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -414,12 +414,12 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">thread1 start</span><br><span class="line">thread2 start</span><br><span class="line">//两个值不同</span><br><span class="line">12</span><br><span class="line">19</span><br><span class="line">thread1 join</span><br><span class="line">thread2 join</span><br></pre></td></tr></table></figure>
 
 <p>从输出结果看，局部引用，可以相互隔离。</p>
-<p><font color="DeepPink">到这里可以看出ThreadLocal，只是把set值或引用绑定到了当前线程，但却没有进行相应的深拷贝，所以ThreadLocal要想做的线程隔离，必须是基本类型或者run的局部变量。</font></p>
+<p><font color="DeepPink"><strong>到这里可以看出ThreadLocal，只是把set值或引用绑定到了当前线程，但却没有进行相应的深拷贝，所以ThreadLocal要想做的线程隔离，必须是基本类型或者run的局部变量。</strong></font></p>
 <h1 id="ThreadLocal-OOM-？"><a href="#ThreadLocal-OOM-？" class="headerlink" title="ThreadLocal OOM ？"></a>ThreadLocal OOM ？</h1><p>看一下ThreadLocalMap内部Entry：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">static class Entry extends WeakReference&lt;ThreadLocal&lt;?&gt;&gt; &#123;</span><br><span class="line">    /** The value associated with this ThreadLocal. */</span><br><span class="line">    Object value;</span><br><span class="line"></span><br><span class="line">    Entry(ThreadLocal&lt;?&gt; k, Object v) &#123;</span><br><span class="line">        super(k);</span><br><span class="line">        value = v;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>从代码中看到，Entry继承了WeakReference，并将ThreadLocal设置为了WeakReference，value设置为强引用。也就是：当没有强引用指向ThreadLocal变量时，它可被回收。</p>
-<p>但是，还有一个问题：<font color="DeepPink">ThreadLocalMap维护ThreadLocal变量与具体实例的映射，当ThreadLocal变量被回收后，该映射的key变为 null，而该Entry还是在ThreadLocalMap中，从而这些无法清理的Entry，会造成内存泄漏。</font></p>
+<p>但是，还有一个问题：<font color="DeepPink"><strong>ThreadLocalMap维护ThreadLocal变量与具体实例的映射，当ThreadLocal变量被回收后，该映射的key变为 null，而该Entry还是在ThreadLocalMap中，从而这些无法清理的Entry，会造成内存泄漏。</strong></font></p>
 <blockquote>
 <p>ThreadLocal自带的remove、set方法，都无法处理ThreadLocal自身为null的情况，因为代码中都直接取ThreadLocal的threadLocalHashCode属性了，所以如果ThreadLocal自身已经是null，这时调用remove、set会报空指针异常（java.lang.NullPointerException）的。</p>
 </blockquote>
@@ -461,7 +461,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
+      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
       
     </li>
   
@@ -598,7 +598,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -804,7 +804,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -877,12 +879,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

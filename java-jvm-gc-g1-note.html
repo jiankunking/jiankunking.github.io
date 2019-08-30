@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《深入理解JVM＆G1GC》 作者：周明耀本书很一般出版时间：2017-06-01">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-21T09:54:14.129Z">
+<meta property="og:updated_time" content="2019-08-30T06:03:39.980Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解JVM＆G1GC 笔记">
 <meta name="twitter:description" content="本文整理自：《深入理解JVM＆G1GC》 作者：周明耀本书很一般出版时间：2017-06-01">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-21 17:54:14" itemprop="dateModified" datetime="2019-08-21T17:54:14+08:00">2019-08-21</time>
+                <time title="修改时间：2019-08-30 14:03:39" itemprop="dateModified" datetime="2019-08-30T14:03:39+08:00">2019-08-30</time>
               </span>
             
           
@@ -389,8 +389,8 @@
 <li>对齐填充:它不是必要存在的,仅仅起着占位符的作用</li>
 </ul>
 <p>对象头大小在32位HotSpot VM和64位 HotSpot VM之间是不一样的,对象头在32位系统上占用8yte,在64位系统上占用16yte。我们可以通过Java对象布局工具获取头大小,这个工具简称为JOL。</p>
-<h2 id="G1-涉及术语"><a href="#G1-涉及术语" class="headerlink" title="G1 涉及术语"></a>G1 涉及术语</h2><h3 id="Metaspace"><a href="#Metaspace" class="headerlink" title="Metaspace"></a>Metaspace</h3><p>JDK8 HotSpot JVM使用<font color="DeepPink">本地内存</font>来存储类元数据信息并称为元空间(Metaspace)。</p>
-<p><font color="DeepPink">默认情况下,大部分类元数据都在本地内存中分配,类元数据只受可用的本地内存限制(容量取决于是32位或是64位操作系统的可用虚拟内存大小)。新参数(MaxMetaspace Size)用于限制本地内存分配给类元数据的大小。如果没有指定这个参数,元空间会在运行时根据需要动态调整。</font></p>
+<h2 id="G1-涉及术语"><a href="#G1-涉及术语" class="headerlink" title="G1 涉及术语"></a>G1 涉及术语</h2><h3 id="Metaspace"><a href="#Metaspace" class="headerlink" title="Metaspace"></a>Metaspace</h3><p>JDK8 HotSpot JVM使用<font color="DeepPink"><strong>本地内存</strong></font>来存储类元数据信息并称为元空间(Metaspace)。</p>
+<p><font color="DeepPink"><strong>默认情况下,大部分类元数据都在本地内存中分配,类元数据只受可用的本地内存限制(容量取决于是32位或是64位操作系统的可用虚拟内存大小)。新参数(MaxMetaspace Size)用于限制本地内存分配给类元数据的大小。如果没有指定这个参数,元空间会在运行时根据需要动态调整。</strong></font></p>
 <p>一般情况下,适时地监控和调整元空间对于减小垃圾回收频率和减少延时是很有必要的。持续的元空间垃圾回收情况如果频繁发生,说明可能存在类、类加载器导致的内存泄漏或是大小设置不合适。</p>
 <p>G1 GC与Metaspace相关的选项如下：</p>
 <ul>
@@ -400,47 +400,47 @@
 <li>-XX:MaxMetaspaceFreeRatio:缩小空间的最小比率,当GC后,内存占用低于这一比率,就会缩小空间。</li>
 </ul>
 <h3 id="Mixed-GC-Event"><a href="#Mixed-GC-Event" class="headerlink" title="Mixed GC Event"></a>Mixed GC Event</h3><p>即混合GC事件,在这个事件内部,所有的年轻代Region和一部分老年代Region一起被回收。混合GC事件一定是跟在Minor GC之后的,并且混合GC只有在存活对象元数据存在的情况下才会触发。</p>
-<h3 id="Reclaimable"><a href="#Reclaimable" class="headerlink" title="Reclaimable"></a>Reclaimable</h3><p><font color="DeepPink">Gl GC为了能够回收,创建了一系列专门用于存放可回收对象的Region</font>。这些Region都在个链表队列里面,这个队列只包含存活率小于-XX: GIMixedGCLiveThresholdPercent(默认85%)的Region。Region的值除以整个Java堆区,如果大于-XX:G1HeapWastePercen(默认5%),则启动回收机制。</p>
-<h3 id="Rset"><a href="#Rset" class="headerlink" title="Rset"></a>Rset</h3><p><font color="DeepPink">全称Remembered Set,简称Rset,即跟踪指向某个堆区(Region)内的对象引用。</font></p>
-<p><font color="DeepPink">在标记存活对象时,G1使用RememberSet的概念,将每个分区外指向分区内的引用记录在该分区的RememberSet中,避免了对整个Heap的扫描,使得各个分区的GC更加独立。堆内存中的每个区都有一个RSet,Rset的作用是让堆区能并行独立地进行垃圾集合。</font>RSet所占用的JVM内存小于总大小的5%。在这样的背景下,可以看出G1GC大大提高了触发 Full Gc时的Heap占用率,同时也使得 Minor GC的暂停时间更加可控,对于内存较大的环境非常友好。</p>
+<h3 id="Reclaimable"><a href="#Reclaimable" class="headerlink" title="Reclaimable"></a>Reclaimable</h3><p><font color="DeepPink"><strong>Gl GC为了能够回收,创建了一系列专门用于存放可回收对象的Region</strong></font>。这些Region都在个链表队列里面,这个队列只包含存活率小于-XX: GIMixedGCLiveThresholdPercent(默认85%)的Region。Region的值除以整个Java堆区,如果大于-XX:G1HeapWastePercen(默认5%),则启动回收机制。</p>
+<h3 id="Rset"><a href="#Rset" class="headerlink" title="Rset"></a>Rset</h3><p><font color="DeepPink"><strong>全称Remembered Set,简称Rset,即跟踪指向某个堆区(Region)内的对象引用。</strong></font></p>
+<p><font color="DeepPink"><strong>在标记存活对象时,G1使用RememberSet的概念,将每个分区外指向分区内的引用记录在该分区的RememberSet中,避免了对整个Heap的扫描,使得各个分区的GC更加独立。堆内存中的每个区都有一个RSet,Rset的作用是让堆区能并行独立地进行垃圾集合。</strong></font>RSet所占用的JVM内存小于总大小的5%。在这样的背景下,可以看出G1GC大大提高了触发 Full Gc时的Heap占用率,同时也使得 Minor GC的暂停时间更加可控,对于内存较大的环境非常友好。</p>
 <p>G1 GC引入了一些新的选项。G1RSetUpdatingPauseTimePercent设置STW阶段(独占阶段)为G1收集器指定更新RememberSet的时间占总STW时间的期望比例,默认为10。而G1ConcRefinementThreads则是在程序运行时维护RememberSet的线程数目。通过对这两个值的对应调整,我们可以把STW阶段的RememberSet更新工作压力更多地移到并行阶段。</p>
-<h3 id="CSet"><a href="#CSet" class="headerlink" title="CSet"></a>CSet</h3><p><font color="DeepPink">全称Collection Set,简称CSet,即收集集合,保存一次GC中将执行垃圾回收的区间(Region)。GC时在CSet中的所有存活数据(Live Data)都会被转移(复制/移动)。</font>集合中的堆区可以是Eden, Survivor和/或Old Generation。CSets所占用的JVM内存小于总大小的1%。</p>
+<h3 id="CSet"><a href="#CSet" class="headerlink" title="CSet"></a>CSet</h3><p><font color="DeepPink"><strong>全称Collection Set,简称CSet,即收集集合,保存一次GC中将执行垃圾回收的区间(Region)。GC时在CSet中的所有存活数据(Live Data)都会被转移(复制/移动)。</strong></font>集合中的堆区可以是Eden, Survivor和/或Old Generation。CSets所占用的JVM内存小于总大小的1%。</p>
 <p>从这里可以知道,实际上CSet相当于一个大圈,里面包含了很多的小圈(Rset),这些圈圈都是需要被回收的信息。这样可以把CSet比作垃圾场,RSet是垃圾场里面一个个绿色的可回收垃圾桶。</p>
 <h3 id="PLAB"><a href="#PLAB" class="headerlink" title="PLAB"></a>PLAB</h3><p>全称为Promotion Local Allocation Buffers,它被用于年轻代回收。PLAB的作用是避免多线程竞争相同的数据,处理方式是每个线程拥有独立的PLAB,用于针对幸存者和老年空间。当应用开启的线程较多时,最好使用-XX:-ResizePlaB来关闭PLAB()的大小调整,以避免大量的线程通信所导致的性能下降。</p>
 <h3 id="TLAB"><a href="#TLAB" class="headerlink" title="TLAB"></a>TLAB</h3><p>全称为Thread Local Allocation Buffers,即线程本地分配缓存,是一个线程专用的内存分配区域。</p>
-<p>总的来说,<font color="DeepPink">TLAB是为了加速对象分配而生的</font>。由于对象一般会分配在堆上,而堆是全局共享的。因此在同一时间,可能会有多个线程在堆上申请空间。因此,每一次对象分配都必须要进行同步,而在竞争激烈的场合分配的效率又会进一步下降。考虑到对象分配几乎是Java最最常用的操作,所以JVM就使用了TLAB这种线程专属的区间来避免多线程冲突,提高对象分配的效率。<font color="DeepPink">TLAB本身占用了Eden区的空间</font>,即JVM会为每一个Java线程分配一块TLAB空间。</p>
-<p><font color="DeepPink">对于G1 GC来说,TLAB是Eden的一个Region,被一个单一线程用于分配资源。主要用途是让一个线程通过栈操作方式独享内存空间,用于对象分配,这样比多个线程之间共享资源要快很多。如果每个线程的分配内存不够,那么它会去全局内存池申请新的内存。这样也就是说,如果TLAB值设置过小,容易造成频繁申请,也就会造成GC性能下降。反之,如果设置过大,会造成TLAB使用不完,也就是说内存浪费。</font></p>
-<h3 id="Region"><a href="#Region" class="headerlink" title="Region"></a>Region</h3><p>从字面上来说, Region表示一个区域,每个区域里面的字母代表不同的分代内存空间类型(如[E]Eden,[O]Old,[S]Survivor),<font color="DeepPink">空白的区块不属于任何一个分区</font>。G1可以在需要的时候任意指定这个区域属于Eden或是O区之类的。</p>
+<p>总的来说,<font color="DeepPink"><strong>TLAB是为了加速对象分配而生的</strong></font>。由于对象一般会分配在堆上,而堆是全局共享的。因此在同一时间,可能会有多个线程在堆上申请空间。因此,每一次对象分配都必须要进行同步,而在竞争激烈的场合分配的效率又会进一步下降。考虑到对象分配几乎是Java最最常用的操作,所以JVM就使用了TLAB这种线程专属的区间来避免多线程冲突,提高对象分配的效率。<font color="DeepPink"><strong>TLAB本身占用了Eden区的空间</strong></font>,即JVM会为每一个Java线程分配一块TLAB空间。</p>
+<p><font color="DeepPink"><strong>对于G1 GC来说,TLAB是Eden的一个Region,被一个单一线程用于分配资源。主要用途是让一个线程通过栈操作方式独享内存空间,用于对象分配,这样比多个线程之间共享资源要快很多。如果每个线程的分配内存不够,那么它会去全局内存池申请新的内存。这样也就是说,如果TLAB值设置过小,容易造成频繁申请,也就会造成GC性能下降。反之,如果设置过大,会造成TLAB使用不完,也就是说内存浪费。</strong></font></p>
+<h3 id="Region"><a href="#Region" class="headerlink" title="Region"></a>Region</h3><p>从字面上来说, Region表示一个区域,每个区域里面的字母代表不同的分代内存空间类型(如[E]Eden,[O]Old,[S]Survivor),<font color="DeepPink"><strong>空白的区块不属于任何一个分区</strong></font>。G1可以在需要的时候任意指定这个区域属于Eden或是O区之类的。</p>
 <h3 id="Ergonomics-Heuristic-Decision"><a href="#Ergonomics-Heuristic-Decision" class="headerlink" title="Ergonomics Heuristic Decision"></a>Ergonomics Heuristic Decision</h3><p>在很多英文书里都能看到这串单词,特别是Ergonomics Heuristi,它们的字面意思是人体工程学,可以理解为适合人类理解的行为、习惯。GC日志里面看到Ergonomics这个单词,它后面一般跟着的是G1 GC相关的详细描述,比如堆内存日志、CSet划分等,通常采用选项-XX:+PrintAdaptiveSizePolicy时会看到这个单词。</p>
 <h3 id="Top-at-mark-start"><a href="#Top-at-mark-start" class="headerlink" title="Top-at-mark-start"></a>Top-at-mark-start</h3><p>每个区间记录着两个TAMS指针(Top-at-mark-start),分别为prevTAMS和nextTAMS在TAMS以上的对象是新分配的,因而被视为隐式标记。</p>
 <h1 id="JVM-amp-GC-深入知识"><a href="#JVM-amp-GC-深入知识" class="headerlink" title="JVM&amp;GC 深入知识"></a>JVM&amp;GC 深入知识</h1><h2 id="Java虚拟机内存模型"><a href="#Java虚拟机内存模型" class="headerlink" title="Java虚拟机内存模型"></a>Java虚拟机内存模型</h2><p><img alt data-src="/images/java-jvm-gc-g1-note/Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.png"></p>
-<h3 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h3><p>程序计数器,英文全称Program Counter Register,它是一块很小的内存空间,它是运行速度最快的存储区域,这是因为它位于不同于其他存储区的地方—处理器内部。寄存器的数量极其有限,所以寄存器由编译器根据需求进行分配。实际上在Jaa应用程序内部不能直接控制寄存器,也不能在程序中感觉到寄存器存在的任何迹象。<font color="DeepPink">可以把程序计数器看作当前线程所执行的字节码的行号指示器。在虚拟机的概念模型里,字节码解释器的工作就是通过改变程序计数器的值来选择下一条需要执行的字节码指令,分支、循环、跳转、异常处理、线程恢复等基础功能都要依赖这个计数器来完成。</font></p>
-<p>简单概括上面的描述,即在多线程环境下,为了让线程切换后能恢复到正确的执行位置,每个线程都需要有一个独立的程序计数器,各个线程之间互不影响、独立存储,因此这块内存是线程私有的。<font color="DeepPink">JVM中的寄存器类似于物理寄存器的一种抽象模拟,正如前面说的,它是线程私有的,所以生命周期与线程的生命周期保持一致。</font></p>
-<p><font color="DeepPink">根据Java虚拟机定义来看,程序寄存器区域是唯一一个在Java虚拟机规范中没有规定任何OutOfMemory Error情况的区域。</font></p>
+<h3 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h3><p>程序计数器,英文全称Program Counter Register,它是一块很小的内存空间,它是运行速度最快的存储区域,这是因为它位于不同于其他存储区的地方—处理器内部。寄存器的数量极其有限,所以寄存器由编译器根据需求进行分配。实际上在Jaa应用程序内部不能直接控制寄存器,也不能在程序中感觉到寄存器存在的任何迹象。<font color="DeepPink"><strong>可以把程序计数器看作当前线程所执行的字节码的行号指示器。在虚拟机的概念模型里,字节码解释器的工作就是通过改变程序计数器的值来选择下一条需要执行的字节码指令,分支、循环、跳转、异常处理、线程恢复等基础功能都要依赖这个计数器来完成。</strong></font></p>
+<p>简单概括上面的描述,即在多线程环境下,为了让线程切换后能恢复到正确的执行位置,每个线程都需要有一个独立的程序计数器,各个线程之间互不影响、独立存储,因此这块内存是线程私有的。<font color="DeepPink"><strong>JVM中的寄存器类似于物理寄存器的一种抽象模拟,正如前面说的,它是线程私有的,所以生命周期与线程的生命周期保持一致。</strong></font></p>
+<p><font color="DeepPink"><strong>根据Java虚拟机定义来看,程序寄存器区域是唯一一个在Java虚拟机规范中没有规定任何OutOfMemory Error情况的区域。</strong></font></p>
 <h3 id="虚拟机栈"><a href="#虚拟机栈" class="headerlink" title="虚拟机栈"></a>虚拟机栈</h3><p>JVM的架构是基于栈的,即程序指令的每一个操作都要经过入栈和出栈这样的组合型操作才能完成。</p>
 <p>总的来说,栈的优势是访问速度比堆要快,它仅次于寄存器,并且栈数据是可以被共享的栈的缺点是存储在栈里面的数据大小与生存期必须是确定的,从这一点来看,栈明显缺乏灵活性。虚拟机栈内主要被用来存放一些基本类型的变量,例如int、 short、long、byte、foat、 double、boolea、char,以及对象引用。</p>
 <p>前面说过,虚拟机栈有一个很重要的特殊性,就是存放在栈内的数据可以共享。假设同时定义:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">int a=1;</span><br><span class="line">int b=1;</span><br></pre></td></tr></table></figure>
 
 <p>对于上面的代码,虚拟机处理第一条语句,首先它会在栈内创建一个变量为a的引用,然后查找栈内是否有1这个值,如果没找到,就将1存放进来,然后将a指向1。接下来处理第二条语句,在创建完b的引用变量后,因为在栈内已经有1这个值,便将b直接指向1。这样,就出现了a与b同时均指向1的情况。这时,如果存在第三条语句,它针对a再次定义为a=4,那么编译器会重新搜索栈内是否有4值,如果没有,则将4存放进来,并令a指向4,如果已经有了,则直接将a指向这个地址,因此a值的改变不会影响到b的值。要注意这种数据的共享与两个对象的引用同时指向一个对象的这种共享的方式存在明显的不同,因为这种情况a的修改并不会影响到b,它是由虚拟机完成的,这样的做法有利于节省空间。而一个对象引用变量修改了这个对象的内部状态,会影响到另一个对象引用变量。</p>
-<p>与程序计数器一样,<font color="DeepPink">Java虚拟机栈也是线程私有的内存空间,它和Java线程在同一时间创建,它保存方法的局部变量、部分结果,并参与方法的调用和返回</font>。</p>
+<p>与程序计数器一样,<font color="DeepPink"><strong>Java虚拟机栈也是线程私有的内存空间,它和Java线程在同一时间创建,它保存方法的局部变量、部分结果,并参与方法的调用和返回</strong></font>。</p>
 <p>虚拟机栈在运行时使用一种叫作栈帧的数据结构保存上下文数据,栈帧里面存放了方法的局部变量表、操作数栈、动态连接方法和返回地址等信息。每一个方法的调用都伴随着栈帧的入栈操作,相应地,方法的返回则表示栈帧的出栈操作。<br><img alt data-src="/images/java-jvm-gc-g1-note/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88%E5%BC%95%E7%94%A8%E5%9B%BE.png"></p>
 <blockquote>
 <p>使用JClassLib工具可以查看Class文件中每个方法所分配的最大局部变量区的容量。JClassLib工具是开源软件,它可以用于查看 Class文件的结构,包括常量池、接口、属性、方法,还可以用于查看文件的字节码。</p>
 </blockquote>
 <h3 id="Java堆"><a href="#Java堆" class="headerlink" title="Java堆"></a>Java堆</h3><p>Java堆区在JVM启动的时候即被创建,它只要求逻辑上是连续的,在物理空间上可以是不连续。所有的线程共享Java堆,在这里可以划分线程私有的缓冲区(Thread Local Allocation Buffer,TLAB)。</p>
 <p>正是因为Java堆区是GC的重点回收区域,所以GC极有可能会在大内存的使用和频繁进行垃圾回收过程上成为系统性能瓶颈。为了解决这个问题,JVM的设计者们开始考虑是否一定需要将对象实例存储到Java堆区内。基于OpenJDK深度定制的TaobaoJVM,其中创新的GCIH(GC invisible heap)技术实现了off-heap,即将生命周期较长的Java对象从heap中移到heap之外,并且GC不能管理GCH内部的Java对象,以此达到降低GC的回收频率和提升GC的回收效率的目的。</p>
-<h3 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h3><p><font color="DeepPink">方法区主要保存的信息是类的元数据</font>。方法区与堆空间类似,它也是被JVM中所有的线程共享的区域。如下图所示,方法区中最为重要的是类的类型信息、常量池、域信息、方法信息。类型信息包括类的完整名称、父类的完整名称、类型修饰符(public/protected/private)和类型的直接接口类表。<br><img alt data-src="/images/java-jvm-gc-g1-note/%E6%96%B9%E6%B3%95%E5%8C%BA%E7%BB%84%E6%88%90%E5%9B%BE.png"></p>
-<p><font color="DeepPink">常量池包括类方法、域等信息所引用的常量信息。域信息包括域名称、域类型和域修饰符方法信息包括方法名称、返回类型、方法参数、方法修饰符、方法字节码、操作数栈和方法栈帧的局部变量区大小以及异常表。方法区是线程间共享的,当两个线程同时需要加载一个类型时,只有一个类会请求ClassLoader加载,另一个线程则会等待。总而言之,方法区内保存的信息大部分来自于Class件,是Java应用程序运行必不可少的重要数据。</font></p>
+<h3 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h3><p><font color="DeepPink"><strong>方法区主要保存的信息是类的元数据</strong></font>。方法区与堆空间类似,它也是被JVM中所有的线程共享的区域。如下图所示,方法区中最为重要的是类的类型信息、常量池、域信息、方法信息。类型信息包括类的完整名称、父类的完整名称、类型修饰符(public/protected/private)和类型的直接接口类表。<br><img alt data-src="/images/java-jvm-gc-g1-note/%E6%96%B9%E6%B3%95%E5%8C%BA%E7%BB%84%E6%88%90%E5%9B%BE.png"></p>
+<p><font color="DeepPink"><strong>常量池包括类方法、域等信息所引用的常量信息。域信息包括域名称、域类型和域修饰符方法信息包括方法名称、返回类型、方法参数、方法修饰符、方法字节码、操作数栈和方法栈帧的局部变量区大小以及异常表。方法区是线程间共享的,当两个线程同时需要加载一个类型时,只有一个类会请求ClassLoader加载,另一个线程则会等待。总而言之,方法区内保存的信息大部分来自于Class件,是Java应用程序运行必不可少的重要数据。</strong></font></p>
 <p>在Hotspot虚拟机中,方法区也被称为永久区,是一块独立于Java堆的内存空间。虽然被叫作永久区,但是在永久区中的对象同样也是可以被GC回收的,只是对于GC的对应策略与Java堆空间略有不同。</p>
 <p>GC针对永久区的回收,通常主要从两个方面分析:一是GC对永久区常量池的回收,二是永久区对类元数据的回收。HotSpot虚拟机对常量池的回收策略是很明确的,只要常量池中的常量没有被任何地方引用，就可以被回收。</p>
-<h2 id="垃圾收集算法"><a href="#垃圾收集算法" class="headerlink" title="垃圾收集算法"></a>垃圾收集算法</h2><h3 id="根搜索算法"><a href="#根搜索算法" class="headerlink" title="根搜索算法"></a>根搜索算法</h3><p><font color="DeepPink">在HotSpot中,根对象集合中包含了5个元素,Java栈内的对象引用、本地方法栈内的对象引用、运行时常量池中的对象引用、方法区中类静态属性的对象引用以及与一个类对应的唯一数据类型的Class对象。</font></p>
+<h2 id="垃圾收集算法"><a href="#垃圾收集算法" class="headerlink" title="垃圾收集算法"></a>垃圾收集算法</h2><h3 id="根搜索算法"><a href="#根搜索算法" class="headerlink" title="根搜索算法"></a>根搜索算法</h3><p><font color="DeepPink"><strong>在HotSpot中,根对象集合中包含了5个元素,Java栈内的对象引用、本地方法栈内的对象引用、运行时常量池中的对象引用、方法区中类静态属性的对象引用以及与一个类对应的唯一数据类型的Class对象。</strong></font></p>
 <blockquote>
 <p>这部分了解一下就好<br>注意,在根搜索算法中不可达的对象,也并非是“非死不可”的,这时候它们暂时处于“缓刑”阶段,要真正宣告一个对象死亡,至少要经历两次标记过程。如果对象在进行根搜索后发现没有与GC Roots相连接的引用链,那它将会被第一次标记并且进行一次筛选,筛选的条件是此对象是否有必要执行finalize方法。当对象没有覆盖finalize方法,或者finalized方法已经被虚拟机调用过,虚拟机将这两种情况都视为“没有必要执行”。如果这个对象被判定为有必要执行finalize方法,那么这个对象将会被放置在一个名为F-Queue的队列之中,并在稍后由条由虚拟机自动建立的、低优先级的Finalizer线程去执行。这里所谓的“执行”是指虚拟机会触发这个方法,但并不承诺会等待它运行结束。这样做的原因是,如果一个对象在finalize方法中执行缓慢,或者发生了死循环(更极端的情况),很可能会导致F-Queue队列中的其他对象永久处于等待状态,甚至导致整个内存回收系统崩溃。finalize()方法是对象逃脱死亡命运的最后一次机会,稍后GC将对F-Queue中的对象进行第二次小规模的标记,如果对象要在finalized中成功拯救自己—只要重新与引用链上的任何一个对象建立关联即可,譬如把自己(this关键字)赋值给某个类变量或对象的成员变量,那在第二次标记时它将被移除出“即将回收”的集合。如果对象这时候还没有逃脱,那它就真的离死不远了。</p>
 </blockquote>
-<h3 id="标记清除算法-Mark-Sweep"><a href="#标记清除算法-Mark-Sweep" class="headerlink" title="标记清除算法(Mark-Sweep)"></a>标记清除算法(Mark-Sweep)</h3><p>算法涉及几个概念,先来了解一下mutator和collector,这两个名词经常在垃圾收集算法中出现,<font color="DeepPink">collector指的就是垃圾收集器,而 mutator是指除了垃圾收集器之外的部分,比如说我们的应用程序本身。</font>mutator的职责一般是NEW(分配内存)、READ(从内存中读取内容)、WRITE(将内容写入内存),而collector则就是回收不再使用的内存来供mutator进行NEW操作的使用。mutator根对象一般指的是分配在堆内存之外,可以直接被mutator直接访问到的对象,一般是指静态/全局变量以及ThreadLocal变量。</p>
-<h3 id="复制算法-Copying"><a href="#复制算法-Copying" class="headerlink" title="复制算法(Copying)"></a>复制算法(Copying)</h3><p>基于分代的概念,Java堆区如果还要更进一步细分的话,还可以划分为年轻代(Young Gen)和老年代(OldEn),其中年轻代又可以被划分为Eden空间、From Survivor空间和To Survivor空间。<font color="DeepPink">在HotSpot中,Eden空间和另外两个Survivor空间默认所占的比例是8:1,当然开发人员可以通过选项“-XX:SurvivorRatio”调整这个空间比例</font>。当执行一次Minor GC(年轻代的垃圾回收),Eden空间中的存活对象会被复制到To空间内,并且之前已经经历过一次 Minor GC并在From空间中存活下来的对象如果还年轻的话同样也会被复制到To空间内。需要注意的是,在满足两种特殊情况下,Eden和From空间中的存活对象将不会被复制到To空间内。首先是如果存活对象的分代年龄超过选项“-XX:MaxTenuringThreshold”所指定的阈值时,将会直接晋升到老年代中。其次当To空间的容量达到阈值时,存活对象同样也是直接晋升到老年代中。当所有的存活对象都被复制到To空间或者晋升到老年代后,剩下的均为垃圾对象,这就意味着GC可以对这些已经死亡了的对象执行一次Minor GC,释放掉其所占用的内存空间。</p>
-<h3 id="标记压缩算法-Mark-Compact"><a href="#标记压缩算法-Mark-Compact" class="headerlink" title="标记压缩算法(Mark-Compact)"></a>标记压缩算法(Mark-Compact)</h3><p>在HotSpot中,基于分代的概念,GC所使用的内存回收算法必须结合年轻代和老年代各自的特点。简单来说,就是针对不同的代空间,从而结合使用不同的垃圾收集算法。<font color="DeepPink">为年轻代选择的垃圾收集算法通常是以速度优先,因为年轻代中所存储的瞬时对象生命周期非常短暂,可以有针对性地使用复制算法,因此执行Minor GC时,一定要保持高效和快速。而年轻代中的生存空间通常都比较小,所以回收年轻代时一定会非常频繁。但老年代通常使用更节省内存的回收算法,因为老年代中所存储的对象生命周期都非常长,并且老年代占据了大部分的堆空间所以老年代的Full GC并不会跟年轻代的Minor GC一样频繁,不过一旦程序中发生一次Full GC,将会耗费更长的时间来完成,那么在老年代中使用标记-清除算法或者标记-压缩算法执行垃圾回收将会是不错的选择。</font></p>
+<h3 id="标记清除算法-Mark-Sweep"><a href="#标记清除算法-Mark-Sweep" class="headerlink" title="标记清除算法(Mark-Sweep)"></a>标记清除算法(Mark-Sweep)</h3><p>算法涉及几个概念,先来了解一下mutator和collector,这两个名词经常在垃圾收集算法中出现,<font color="DeepPink"><strong>collector指的就是垃圾收集器,而 mutator是指除了垃圾收集器之外的部分,比如说我们的应用程序本身。</strong></font>mutator的职责一般是NEW(分配内存)、READ(从内存中读取内容)、WRITE(将内容写入内存),而collector则就是回收不再使用的内存来供mutator进行NEW操作的使用。mutator根对象一般指的是分配在堆内存之外,可以直接被mutator直接访问到的对象,一般是指静态/全局变量以及ThreadLocal变量。</p>
+<h3 id="复制算法-Copying"><a href="#复制算法-Copying" class="headerlink" title="复制算法(Copying)"></a>复制算法(Copying)</h3><p>基于分代的概念,Java堆区如果还要更进一步细分的话,还可以划分为年轻代(Young Gen)和老年代(OldEn),其中年轻代又可以被划分为Eden空间、From Survivor空间和To Survivor空间。<font color="DeepPink"><strong>在HotSpot中,Eden空间和另外两个Survivor空间默认所占的比例是8:1,当然开发人员可以通过选项“-XX:SurvivorRatio”调整这个空间比例</strong></font>。当执行一次Minor GC(年轻代的垃圾回收),Eden空间中的存活对象会被复制到To空间内,并且之前已经经历过一次 Minor GC并在From空间中存活下来的对象如果还年轻的话同样也会被复制到To空间内。需要注意的是,在满足两种特殊情况下,Eden和From空间中的存活对象将不会被复制到To空间内。首先是如果存活对象的分代年龄超过选项“-XX:MaxTenuringThreshold”所指定的阈值时,将会直接晋升到老年代中。其次当To空间的容量达到阈值时,存活对象同样也是直接晋升到老年代中。当所有的存活对象都被复制到To空间或者晋升到老年代后,剩下的均为垃圾对象,这就意味着GC可以对这些已经死亡了的对象执行一次Minor GC,释放掉其所占用的内存空间。</p>
+<h3 id="标记压缩算法-Mark-Compact"><a href="#标记压缩算法-Mark-Compact" class="headerlink" title="标记压缩算法(Mark-Compact)"></a>标记压缩算法(Mark-Compact)</h3><p>在HotSpot中,基于分代的概念,GC所使用的内存回收算法必须结合年轻代和老年代各自的特点。简单来说,就是针对不同的代空间,从而结合使用不同的垃圾收集算法。<font color="DeepPink"><strong>为年轻代选择的垃圾收集算法通常是以速度优先,因为年轻代中所存储的瞬时对象生命周期非常短暂,可以有针对性地使用复制算法,因此执行Minor GC时,一定要保持高效和快速。而年轻代中的生存空间通常都比较小,所以回收年轻代时一定会非常频繁。但老年代通常使用更节省内存的回收算法,因为老年代中所存储的对象生命周期都非常长,并且老年代占据了大部分的堆空间所以老年代的Full GC并不会跟年轻代的Minor GC一样频繁,不过一旦程序中发生一次Full GC,将会耗费更长的时间来完成,那么在老年代中使用标记-清除算法或者标记-压缩算法执行垃圾回收将会是不错的选择。</strong></font></p>
 <h2 id="Garbage-Collection"><a href="#Garbage-Collection" class="headerlink" title="Garbage Collection"></a>Garbage Collection</h2><h3 id="GC-概念"><a href="#GC-概念" class="headerlink" title="GC 概念"></a>GC 概念</h3><p>在许多情况下,GC不应该成为影响系统性能的瓶颈,可以根据以下六点来评估一款GC的性能。</p>
 <ul>
 <li>吞吐量：程序的运行时间(程序的运行时间+内存回收的时间)。</li>
@@ -450,22 +450,22 @@
 <li>堆空间：Java堆区所占的内存大小。</li>
 <li>快速：一个对象从诞生到被回收所经历的时间。</li>
 </ul>
-<h3 id="Parallel收集器"><a href="#Parallel收集器" class="headerlink" title="Parallel收集器"></a>Parallel收集器</h3><p><font color="DeepPink">需要注意的是,垃圾收集器中吞吐量和低延迟这两个目标本身是相互矛盾的,因为如果选择以吞吐量优先,那么必然需要降低内存回收的执行频率,但是这样会导致GC需要更长的暂停时间来执行内存回收。相反的,如果选择以低延迟优先为原则,那么为了降低每次执行内存回收时的暂停时间,也只能频繁地执行内存回收,但这又引起了年轻代内存的缩减和导致程序吞吐量的下降。</font></p>
+<h3 id="Parallel收集器"><a href="#Parallel收集器" class="headerlink" title="Parallel收集器"></a>Parallel收集器</h3><p><font color="DeepPink"><strong>需要注意的是,垃圾收集器中吞吐量和低延迟这两个目标本身是相互矛盾的,因为如果选择以吞吐量优先,那么必然需要降低内存回收的执行频率,但是这样会导致GC需要更长的暂停时间来执行内存回收。相反的,如果选择以低延迟优先为原则,那么为了降低每次执行内存回收时的暂停时间,也只能频繁地执行内存回收,但这又引起了年轻代内存的缩减和导致程序吞吐量的下降。</strong></font></p>
 <p>举个例子,在60s的JVM总运行时间里,GC的执行频率是20秒/次,那么60s内一共会执行3次内存回收,按照每次GC耗时100ms来计算,最终一共会有300ms(3×100)被用于执行垃圾回收。但是如果我们将选项“-XX:MaxGCPauseMills”的值调小后,年轻代的内存空间也会自动调整,内存空间越小就越容易被耗尽,也就越容易造成GC的执行频繁发生。之前在60s的JVM总运行时间里,最终会有300ms被用于执行内存回收,而如今GC的执行频率却是10s/次,60s内将会执行6次内存回收,按照每次GC耗时60ms来计算,虽然看上去暂停时间更短了,但最终会耗时360ms(6×60)用于执行内存回收,很明显程序的吞吐量下降了。所以大家在设置这两个选项时,一定需要注意控制在一个折中的范围之内。Parallel收集器还提供个“-XX:UseAdaptiveSizePolicy”选项用于设置GC的自动分代大小调节策略,一旦设置这个选项后,就意味着开发人员将不再需要显式地设置年轻代中的一些细节参数,JVM会根据自身当前的运行情况动态调整这些相关参数。</p>
-<h3 id="Garbage-First-G1-GC"><a href="#Garbage-First-G1-GC" class="headerlink" title="Garbage First (G1) GC"></a>Garbage First (G1) GC</h3><p><font color="DeepPink">G1很重视老年代的垃圾回收,一旦整个堆空间占有率达到指定的阈值(启动时可配置),G1会立即启动一个独占的并行初始标记阶段(inil-mark phase)进行垃圾回收。在G1 GC,判断的是整个Java堆内部老年代的占有率,足以见G1对老年代的重视。</font></p>
+<h3 id="Garbage-First-G1-GC"><a href="#Garbage-First-G1-GC" class="headerlink" title="Garbage First (G1) GC"></a>Garbage First (G1) GC</h3><p><font color="DeepPink"><strong>G1很重视老年代的垃圾回收,一旦整个堆空间占有率达到指定的阈值(启动时可配置),G1会立即启动一个独占的并行初始标记阶段(inil-mark phase)进行垃圾回收。在G1 GC,判断的是整个Java堆内部老年代的占有率,足以见G1对老年代的重视。</strong></font></p>
 <p>初始标记阶段一般和年轻代GC一起运行,一旦初始标记阶段结束,并行多线程的标记阶段就开始启动去标记所有老年代还存活的对象,注意这个标记阶段不是独占式的,它允许应用程序线程和它并行执行。当这个标记阶段运行完毕之后,为了再次确认是否有逃过扫描的对象,“启动一个独占式的再次标记阶段(remark phase),尝试标记所有遗漏的对象。在这个再次标记阶段结束之后,G1就掌握了所有的老年代 Region的标记信息,这和国家的户口统计方式差不多。一旦老年代的某些Region内部存在任何的存活对象,它就可以在下一个阶段,即清除阶段(cleanup phase)被清除了,就是可以销户了,又被放回了可用Region队列。同样地,再次标记阶段结束后就可以对一些老年代执行收集动作。</p>
-<p>前面提到了CSet概念,一个CSet里面可以包含多少Region取决于多少空间可以被释放、G1停顿目标时间这两个因素。前面说起过混合GC(Mixed GC),这里就要具体说明一下了。当CSet被确定之后,会在接下来的一个年轻代回收过程当中对CSet进行回收,通过年轻代GC的几个阶段,一部分的老年代Region会被回收并放入年轻代使用。这个概念很灵活,<font color="DeepPink">即G1只关注你有没有存活对象了,如果没有,无论你属于老年代,还是属于年轻代,你都会被回收并放入可用Region队列,下一次你被分配到哪里就不确定了。</font>也正是因为Region、混合收集这些特性,让G1对老年代的垃圾收集方式有别于Serial GC、Parallel GC和CMS GC,G1采用Region方式让对象之间的联系存在于虚拟地址之上,这样就不需要针对老年代的压缩和回收动作对整个Java堆执行扫描,为老年代回收节约了时间。</p>
-<h4 id="G1-设计思路"><a href="#G1-设计思路" class="headerlink" title="G1 设计思路"></a>G1 设计思路</h4><p>Gl把整个Java堆划分为若干个区间(Region)。每个Region大小为2的倍数,范围在MB32MB之间,可能为1MB、2MB、4MB、8MB、16MB、32MB。<font color="DeepPink">所有的Region有一样的大小,在JVM生命周期内不会被改变。</font></p>
-<p>注意,在年轻代、混合代、Full GC这三个阶段,年轻代的Eden Region和Survivor Region的数量会随时变化。<font color="DeepPink">Humongous Region(大对象 Region)是老年代Region的一部分</font>,里面的对象超过每个Region的50%空间,这一点有别于一般对象Region。</p>
+<p>前面提到了CSet概念,一个CSet里面可以包含多少Region取决于多少空间可以被释放、G1停顿目标时间这两个因素。前面说起过混合GC(Mixed GC),这里就要具体说明一下了。当CSet被确定之后,会在接下来的一个年轻代回收过程当中对CSet进行回收,通过年轻代GC的几个阶段,一部分的老年代Region会被回收并放入年轻代使用。这个概念很灵活,<font color="DeepPink"><strong>即G1只关注你有没有存活对象了,如果没有,无论你属于老年代,还是属于年轻代,你都会被回收并放入可用Region队列,下一次你被分配到哪里就不确定了。</strong></font>也正是因为Region、混合收集这些特性,让G1对老年代的垃圾收集方式有别于Serial GC、Parallel GC和CMS GC,G1采用Region方式让对象之间的联系存在于虚拟地址之上,这样就不需要针对老年代的压缩和回收动作对整个Java堆执行扫描,为老年代回收节约了时间。</p>
+<h4 id="G1-设计思路"><a href="#G1-设计思路" class="headerlink" title="G1 设计思路"></a>G1 设计思路</h4><p>Gl把整个Java堆划分为若干个区间(Region)。每个Region大小为2的倍数,范围在MB32MB之间,可能为1MB、2MB、4MB、8MB、16MB、32MB。<font color="DeepPink"><strong>所有的Region有一样的大小,在JVM生命周期内不会被改变。</strong></font></p>
+<p>注意,在年轻代、混合代、Full GC这三个阶段,年轻代的Eden Region和Survivor Region的数量会随时变化。<font color="DeepPink"><strong>Humongous Region(大对象 Region)是老年代Region的一部分</strong></font>,里面的对象超过每个Region的50%空间,这一点有别于一般对象Region。</p>
 <p>从之前的介绍我们知道没有必要去刻意区分Region的用途,因为G1设计Region的分配原则是很灵活的。一开始G1会从可用 Region队列里面挑选出Region并设置为Eden Region,一个Eden Region里面填满对象以后,又会从可用Region队列里再挑出一个。当所有的Eden Region都被填满时,一个年轻代GC收集就会开始执行了,在这个收集阶段,我们会收集Eden和Survivor Region,所有的存活对象要么进入到下一个Survivor region,要么进入老年代Region。</p>
-<p><font color="DeepPink">G1提供了一个选项-XX:InitiatingHeapOccupancyPercent,默认值是Java堆空间的45%,这个选项决定了是否开始一次老年代回收动作,即年轻代GC结束之后,G1会评估剩余的对象是否达到了45%这个阈值。</font></p>
+<p><font color="DeepPink"><strong>G1提供了一个选项-XX:InitiatingHeapOccupancyPercent,默认值是Java堆空间的45%,这个选项决定了是否开始一次老年代回收动作,即年轻代GC结束之后,G1会评估剩余的对象是否达到了45%这个阈值。</strong></font></p>
 <p>如果标记阶段(Marking Phase)结束后一个老年代的Region已经不存在对象,那么它会被放回可用Region队列,反之,它会被放入混合收集器。</p>
-<p>由于标记阶段不是一个独占式的多线程并行程序,这样应用程序线程就会和它一起并行执行。<font color="DeepPink">为了避免标记阶段占用过多的CPU资源,G1采用时间片方式分段执行操作,即在时间片内全力运行,然后休息一段时间,这个休息时间就是让应用程序尽可能多地使用CPU资源运行。</font></p>
+<p>由于标记阶段不是一个独占式的多线程并行程序,这样应用程序线程就会和它一起并行执行。<font color="DeepPink"><strong>为了避免标记阶段占用过多的CPU资源,G1采用时间片方式分段执行操作,即在时间片内全力运行,然后休息一段时间,这个休息时间就是让应用程序尽可能多地使用CPU资源运行。</strong></font></p>
 <h4 id="大对象-Humongous-Object"><a href="#大对象-Humongous-Object" class="headerlink" title="大对象(Humongous Object)"></a>大对象(Humongous Object)</h4><p>大对象Region属于老年代的一部分,它只包含一个对象。当并行标记阶段发现没有存活对象时,G1会回收这个大对象 Region,注意这个动作可以是一个批量回收。</p>
-<h4 id="全垃圾收集-Full-Garbage-Collection"><a href="#全垃圾收集-Full-Garbage-Collection" class="headerlink" title="全垃圾收集(Full Garbage Collection)"></a>全垃圾收集(Full Garbage Collection)</h4><p>G1的Full GC和Serial go的FuGC采用的是同一种算法。<font color="DeepPink">Full GC会对整个Java堆进行压缩。G1的Full GC是单线程的,会引起较长的停顿时间,因此G1的设计目标是减少Full GC的发生次数。</font></p>
+<h4 id="全垃圾收集-Full-Garbage-Collection"><a href="#全垃圾收集-Full-Garbage-Collection" class="headerlink" title="全垃圾收集(Full Garbage Collection)"></a>全垃圾收集(Full Garbage Collection)</h4><p>G1的Full GC和Serial go的FuGC采用的是同一种算法。<font color="DeepPink"><strong>Full GC会对整个Java堆进行压缩。G1的Full GC是单线程的,会引起较长的停顿时间,因此G1的设计目标是减少Full GC的发生次数。</strong></font></p>
 <h4 id="并行循环-Concurrent-Cycle"><a href="#并行循环-Concurrent-Cycle" class="headerlink" title="并行循环(Concurrent Cycle)"></a>并行循环(Concurrent Cycle)</h4><p>一个G1并行循环包括几个阶段的活动:初始标记(Initial Marking)、并行Root区间扫描(Concurrent Root Region Scanning)、并行标记(Concurrent Marking)、重标记(Remarking)和清除(Cleanup)。除了最后的Cleanup阶段以外,其余阶段都属于标记存活对象阶段。</p>
 <p>初始标记阶段的目的是收集所有GC根(Roots)。 Roots是一个对象的起源指针。为了收集根引用,从应用线程开始,应用线程必须停下来,所以初始标记阶段是一个独占式的。由于个年轻代GC必须收集所有的Roots,所以G1的初始标记在一个年轻代GC里完成。</p>
-<p><font color="DeepPink">并行根区间扫描阶段必须扫描和标记所有幸存者区间的对象引用,这一阶段所有的应用程序线程都可以并行执行,唯一的约束是扫描必须在下一个GC开始前完成。这一约束的原因是个新的GC事件会产生一堆新的幸存者对象集合,这些对象和初始化标记阶段的幸存者对象不一样,容易发生混淆。</font></p>
+<p><font color="DeepPink"><strong>并行根区间扫描阶段必须扫描和标记所有幸存者区间的对象引用,这一阶段所有的应用程序线程都可以并行执行,唯一的约束是扫描必须在下一个GC开始前完成。这一约束的原因是个新的GC事件会产生一堆新的幸存者对象集合,这些对象和初始化标记阶段的幸存者对象不一样,容易发生混淆。</strong></font></p>
 <p>并行标记阶段完成了几乎所有的标记工作。在这一阶段,利用多线程并行标记存活对象及对应的逻辑地图。这一阶段允许所有的Java线程并行执行,但是对应用程序来说总体的吞吐量可能会下降。其实任何一个系统都和人体循环一样,当没有外部干扰时,系统可以正常运行，如果受到外部干扰,人体系统也会出现混乱,甚至出现短时间的休克。</p>
 <p>重标记阶段是一个独占式阶段,通常是一个很短的停顿,这个阶段会完成所有的标记工作。</p>
 <p>最后一个并行标记步骤是清除阶段。在这个阶段,没有包含存活对象的Region会被回收,并随即被加入可用Region队列。这个阶段的重要意义是最终决定了哪些 Region可以进入混合GC。在G1内部,混合GC是非常重要的释放内存机制,避免了G1出现没有可用Region的情况发生,否则就会触发Full GC事件。</p>
@@ -568,7 +568,7 @@
 <p>前面介绍过的可修改和不可修改字符串的处理方式有所不同,不可修改字符串默认就是去重的,在插入到HotSpot VM的String Table时已经注明了是去重的,这样就避免了HotSpot服务器JIT编译优化措施。</p>
 <h3 id="XX-StringDeduplicationAgeThreshold"><a href="#XX-StringDeduplicationAgeThreshold" class="headerlink" title="-XX:StringDeduplicationAgeThreshold"></a>-XX:StringDeduplicationAgeThreshold</h3><p>这个选项是针对-XX:+UseStringDeduplication选项的,默认值是3。它的意思是一个字符串对象的年龄超过设定的阈值,或者提升到G1 GC老年代Region之后,就会成为字符串去重的候选对象,去重操作只会有一次。</p>
 <h3 id="XX-PrintStringDeduplicationStatistics"><a href="#XX-PrintStringDeduplicationStatistics" class="headerlink" title="-XX:+PrintStringDeduplicationStatistics"></a>-XX:+PrintStringDeduplicationStatistics</h3><p>这个选项挺有用的,能够帮助我们通过读取输出的统计资料来了解是否字符串去重后节约了大量的堆内存空间,默认是关闭的,就是说不会输出字符串去重的统计资料。</p>
-<h3 id="XX-G1UseAdaptiveIHOP"><a href="#XX-G1UseAdaptiveIHOP" class="headerlink" title="-XX:+G1UseAdaptiveIHOP"></a>-XX:+G1UseAdaptiveIHOP</h3><p>JDK9提供的新的选项。<font color="DeepPink">这个选项的作用是通过动态调节标记阶段开始的时间,以达到提升应用程序吞吐量的目标,主要通过尽可能迟地触发标记循环方式来避免消耗老年代空间。</font></p>
+<h3 id="XX-G1UseAdaptiveIHOP"><a href="#XX-G1UseAdaptiveIHOP" class="headerlink" title="-XX:+G1UseAdaptiveIHOP"></a>-XX:+G1UseAdaptiveIHOP</h3><p>JDK9提供的新的选项。<font color="DeepPink"><strong>这个选项的作用是通过动态调节标记阶段开始的时间,以达到提升应用程序吞吐量的目标,主要通过尽可能迟地触发标记循环方式来避免消耗老年代空间。</strong></font></p>
 <p>这个选项的值在VM刚开始启动时和-XX:InitiatingHeapOccupancyPercent的值一样,如果出现标记循环阶段内存不够用,则它会自动调节大小,确保标记循环启用更多的堆内存。</p>
 <p>注意,-XX:+G1UseAdaptiveIHOP这个选项会在JDK9里默认启用,即-XX:InitiatingHeapOccupancyPercent和XX:+GIUseAdaptivelHOP在JDK9之后只需要启用一个就可以了。</p>
 <p>JDK8环境下运行该选项会输出:“Unrecognized VM option ‘G1UseAdaptivelHOP’”</p>
@@ -595,8 +595,8 @@
 <li>空间整理：G1在回收过程中,会进行适当的对象移动,不像CMS那样只是简单地标记清理对象。在若干次GC后,CMS必须进行一次碎片整理。而G1不同,它每次回收都会有效地复制对象,减少空间碎片,进而提升内部循环速度。</li>
 <li>可预见性：由于分区的原因,G1可以只选取部分区域进行内存回收,这样缩小了回收的范围,因此对于全局停顿情况的发生也能得到较好的控制。</li>
 </ul>
-<p><font color="DeepPink">随着G1 GC的出现,GC从传统的连续堆内存布局逐渐走向了不连续内存块布局,这是通过引入Region概念实现的,也就是说,由一堆不连续的Region组成了堆内存。其实也不能说是不连续的,只是它从传统的物理连续逐渐改变为逻辑上的连续</font>,这是通过Region的动态分配方式实现的,可以把一个Region分配给Eden、Surviⅳvor、老年代、大对象区间、空闲区间等区间的任意一个,而不是固定它的作用,因为越是固定,越是呆板。</p>
-<h3 id="G1的区间设计灵感"><a href="#G1的区间设计灵感" class="headerlink" title="G1的区间设计灵感"></a>G1的区间设计灵感</h3><p><font color="DeepPink">在G1中,堆被平均分成若干个大小相等的区域(Region)。每个Region都有个关联的Remembered Set(简称RS),RS的数据结构是Hash表,里面的数据是Card Table(堆中每512byte映射在card table 1byte)。简单地说,RS里面存在的是Region中存活对象的指针。当Region中数据发生变化时,首先反映到Card Table中的一个或多个Card上,RS通过扫描内部的Card Table得知Region中内存使用情况和存活对象。在使用Region过程中,如果Region 被填满了,分配内存的线程会重新选择一个新的Region,空闲Region被组织到一个基于链表的数据结构(LinkedList里面,这样可以快速找到新的Region。</font></p>
+<p><font color="DeepPink"><strong>随着G1 GC的出现,GC从传统的连续堆内存布局逐渐走向了不连续内存块布局,这是通过引入Region概念实现的,也就是说,由一堆不连续的Region组成了堆内存。其实也不能说是不连续的,只是它从传统的物理连续逐渐改变为逻辑上的连续</strong></font>,这是通过Region的动态分配方式实现的,可以把一个Region分配给Eden、Surviⅳvor、老年代、大对象区间、空闲区间等区间的任意一个,而不是固定它的作用,因为越是固定,越是呆板。</p>
+<h3 id="G1的区间设计灵感"><a href="#G1的区间设计灵感" class="headerlink" title="G1的区间设计灵感"></a>G1的区间设计灵感</h3><p><font color="DeepPink"><strong>在G1中,堆被平均分成若干个大小相等的区域(Region)。每个Region都有个关联的Remembered Set(简称RS),RS的数据结构是Hash表,里面的数据是Card Table(堆中每512byte映射在card table 1byte)。简单地说,RS里面存在的是Region中存活对象的指针。当Region中数据发生变化时,首先反映到Card Table中的一个或多个Card上,RS通过扫描内部的Card Table得知Region中内存使用情况和存活对象。在使用Region过程中,如果Region 被填满了,分配内存的线程会重新选择一个新的Region,空闲Region被组织到一个基于链表的数据结构(LinkedList里面,这样可以快速找到新的Region。</strong></font></p>
 <h2 id="G1-GC分代管理"><a href="#G1-GC分代管理" class="headerlink" title="G1 GC分代管理"></a>G1 GC分代管理</h2><h3 id="年轻代"><a href="#年轻代" class="headerlink" title="年轻代"></a>年轻代</h3><p>除非我们显示地通过命令行方式声明了年轻代的初始化值和最大值的大小,否则，一般来说,初始化值默认是整个Java堆大小的5%(通过选项-XX:G1NewSizePercent设置),最大值默认是整个Java堆大小的60%(通过选项-XX:G1MaxNewSizePercent设置)。</p>
 <h3 id="回收集合及其重要性"><a href="#回收集合及其重要性" class="headerlink" title="回收集合及其重要性"></a>回收集合及其重要性</h3><p>任何一次垃圾回收都会释放CSet里面的所有区间。一个CSet由一系列的等待回收的区间所组成。在一次垃圾回收过程中,这些回收候选区间的存活对象会被整体评估,并且在回收结束后这些区间会被加入到空闲区间队列(LinkedList队列)。在一次年轻代回收过程中,cset只会包含年轻代区间,而在一个混合回收过程中,CSet会在年轻代区间基础上再包含一些老年代区间,这就是新增的混合回收概念,不再对年轻代和老年代完全切分。</p>
 <p>G1 GC提供了两个选项用于帮助选择进入CSet的候选老年代区间: </p>
@@ -642,7 +642,7 @@
 <li>受够了太长的垃圾回收或内存整理时间(超过0.5~1s)</li>
 </ul>
 <p>注意,如果正在使用CMS或ParallelOldGC,而应用程序的垃圾收集停顿时间并不长,那么继续使用现在的垃圾收集器是个好主意。</p>
-<h1 id="G1-GC性能优化方案"><a href="#G1-GC性能优化方案" class="headerlink" title="G1 GC性能优化方案"></a>G1 GC性能优化方案</h1><h2 id="G1的年轻代回收"><a href="#G1的年轻代回收" class="headerlink" title="G1的年轻代回收"></a>G1的年轻代回收</h2><h3 id="External-Root-Regions"><a href="#External-Root-Regions" class="headerlink" title="External Root Regions"></a>External Root Regions</h3><p><font color="DeepPink">外部根区间扫描指的是从根部开始扫描通过JNI中本地的类中调用Malloc函数分配出的内存。这个步骤是并行任务的第一个任务。这个阶段堆外(off-heap)根节点被开始扫描,这些扫描范围包括JVM系统字典、VM数据结构、JNI线程句柄、硬件注册器、全局变量,以及线程栈根部等,这个过程主要是为了找到并行暂停阶段是否存在指向当前收集集合(CSet)的指针。</font></p>
+<h1 id="G1-GC性能优化方案"><a href="#G1-GC性能优化方案" class="headerlink" title="G1 GC性能优化方案"></a>G1 GC性能优化方案</h1><h2 id="G1的年轻代回收"><a href="#G1的年轻代回收" class="headerlink" title="G1的年轻代回收"></a>G1的年轻代回收</h2><h3 id="External-Root-Regions"><a href="#External-Root-Regions" class="headerlink" title="External Root Regions"></a>External Root Regions</h3><p><font color="DeepPink"><strong>外部根区间扫描指的是从根部开始扫描通过JNI中本地的类中调用Malloc函数分配出的内存。这个步骤是并行任务的第一个任务。这个阶段堆外(off-heap)根节点被开始扫描,这些扫描范围包括JVM系统字典、VM数据结构、JNI线程句柄、硬件注册器、全局变量,以及线程栈根部等,这个过程主要是为了找到并行暂停阶段是否存在指向当前收集集合(CSet)的指针。</strong></font></p>
 <p>这里还有一个情况需要引起大家的重视,就是查看工作线程是否在处理一个单一的根节点时耗时过长,导致感觉类似挂起的现象。这个现象可以通过查看工作线程对应的“termination”日志看出来。如果存在这个现象,你需要去查看是否存在比较大的系统字典(JVM System Dictionary),如果这个系统字典被当成了一个单一根节点进行处理,那么当存在大量的加载类时就会出现较长时间的耗时。</p>
 <h3 id="Rememebered-Sets-and-Processed-Buffers"><a href="#Rememebered-Sets-and-Processed-Buffers" class="headerlink" title="Rememebered Sets and Processed Buffers"></a>Rememebered Sets and Processed Buffers</h3><p>Rset帮助维护和跟踪指向G1区间的引用,而这些区间本身拥有这些RSet。还记得我们在第4章介绍过的并行Refinement线程吗?这些线程的任务是扫描更新日志缓存,并且更新区间的RSet。为了更加有效地支援这些Refinement线程的工作,在并行回收阶段,所有未被处理的缓存(已经有日志写在里面了)都会被工作线程拿来处理,这些缓存也被称为日志里面的处理缓存。</p>
 <p>为了限制花费在更新RSet上的时间,G1通过选项-XX:MaxGCPauseMills设置了目标暂停时间,采用相对于整个停顿目标时间百分比的方式,限制了更新RSet花费的总时长,让评估暂停阶段把最大量的时候花费在拷贝存活对象上。这个目标时间默认为整个停顿时间的10%,例如整个停顿时间是10s,那么花费在更新RSet上的时间最大为ls。G1 GC的设计目标是让更多的停顿时间花费在拷贝存活对象上面,因此暂停时间的10%被用于更新RSet也是比较合理的,百分比大了,花在干具体业务(各阶段拷贝存活对象)上的时间也就少了。</p>
@@ -688,7 +688,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
+      <div class="popular-posts-title"><a href="\java-threadlocal.html" rel="bookmark">Java ThreadLocal</a></div>
       
     </li>
   
@@ -831,7 +831,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1037,7 +1037,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -1110,12 +1112,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="通过Fescar（Seata）了解分布式事务框架设计思路">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-25T01:05:49.460Z">
+<meta property="og:updated_time" content="2019-08-30T05:52:21.466Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="阿里分布式事务解决方案 Fescar 解析">
 <meta name="twitter:description" content="通过Fescar（Seata）了解分布式事务框架设计思路">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-25 09:05:49" itemprop="dateModified" datetime="2019-08-25T09:05:49+08:00">2019-08-25</time>
+                <time title="修改时间：2019-08-30 13:52:21" itemprop="dateModified" datetime="2019-08-30T13:52:21+08:00">2019-08-30</time>
               </span>
             
           
@@ -432,7 +432,7 @@
 <p>至此，Fescar 的协议机制总体上看与 XA 是一致的。</p>
 <h3 id="与-XA-的差别在什么地方？"><a href="#与-XA-的差别在什么地方？" class="headerlink" title="与 XA 的差别在什么地方？"></a>与 XA 的差别在什么地方？</h3><h4 id="架构层次"><a href="#架构层次" class="headerlink" title="架构层次"></a>架构层次</h4><p><img alt data-src="/images/alibaba-seata-design/rm_in_architecture.png"></p>
 <p>XA 方案的 RM 实际上是在数据库层，RM 本质上就是数据库自身（通过提供支持 XA 的驱动程序来供应用使用）。</p>
-<p>而 <font color="DeepPink">Fescar 的 RM 是以二方包的形式作为中间件层部署在应用程序这一侧的，不依赖与数据库本身对协议的支持，当然也不需要数据库支持 XA 协议。</font>这点对于微服务化的架构来说是非常重要的：应用层不需要为本地事务和分布式事务两类不同场景来适配两套不同的数据库驱动。</p>
+<p>而 <font color="DeepPink"><strong>Fescar 的 RM 是以二方包的形式作为中间件层部署在应用程序这一侧的，不依赖与数据库本身对协议的支持，当然也不需要数据库支持 XA 协议。</strong></font>这点对于微服务化的架构来说是非常重要的：应用层不需要为本地事务和分布式事务两类不同场景来适配两套不同的数据库驱动。</p>
 <p>这个设计，剥离了分布式事务方案对数据库在 <strong>协议支持</strong> 上的要求。</p>
 <h4 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h4><p>先来看一下 XA 的 2PC 过程。</p>
 <p><img alt data-src="/images/alibaba-seata-design/xa_2pc.png"></p>
@@ -446,20 +446,20 @@
 </ul>
 <p>这个设计，极大地减少了分支事务对资源（数据和连接）的锁定时间，给整体并发和吞吐的提升提供了基础。</p>
 <p>当然，你肯定会问：Phase1 即提交的情况下，Phase2 如何回滚呢？</p>
-<h2 id="分支事务如何提交和回滚？"><a href="#分支事务如何提交和回滚？" class="headerlink" title="分支事务如何提交和回滚？"></a>分支事务如何提交和回滚？</h2><p>首先，<font color="DeepPink">应用需要使用 Fescar 的 JDBC 数据源代理，也就是 Fescar 的 RM。</font></p>
+<h2 id="分支事务如何提交和回滚？"><a href="#分支事务如何提交和回滚？" class="headerlink" title="分支事务如何提交和回滚？"></a>分支事务如何提交和回滚？</h2><p>首先，<font color="DeepPink"><strong>应用需要使用 Fescar 的 JDBC 数据源代理，也就是 Fescar 的 RM。</strong></font></p>
 <p><img alt data-src="/images/alibaba-seata-design/data_sourc_proxy.png"></p>
 <p><strong>Phase1：</strong></p>
-<p><font color="DeepPink">Fescar 的 JDBC 数据源代理通过对业务 SQL 的解析，把业务数据在更新前后的数据镜像组织成回滚日志，利用 <strong>本地事务</strong> 的 ACID 特性，将业务数据的更新和回滚日志的写入在同一个 <strong>本地事务</strong> 中提交。</font></p>
-<p>这样，可以保证：<font color="DeepPink">任何提交的业务数据的更新一定有相应的回滚日志存在。</font></p>
+<p><font color="DeepPink"><strong>Fescar 的 JDBC 数据源代理通过对业务 SQL 的解析，把业务数据在更新前后的数据镜像组织成回滚日志，利用 **本地事务</strong> 的 ACID 特性，将业务数据的更新和回滚日志的写入在同一个 <strong>本地事务</strong> 中提交。**</font></p>
+<p>这样，可以保证：<font color="DeepPink"><strong>任何提交的业务数据的更新一定有相应的回滚日志存在。</strong></font></p>
 <p><img alt data-src="/images/alibaba-seata-design/branch_transaction_with_undo_log.png"></p>
 <p>基于这样的机制，分支的本地事务便可以在全局事务的 Phase1 提交，马上释放本地事务锁定的资源。</p>
 <p><strong>Phase2：</strong></p>
 <ul>
-<li><font color="DeepPink">如果决议是全局提交，此时分支事务此时已经完成提交，不需要同步协调处理（只需要异步清理回滚日志），Phase2 可以非常快速地完成。</font></li>
+<li><font color="DeepPink"><strong>如果决议是全局提交，此时分支事务此时已经完成提交，不需要同步协调处理（只需要异步清理回滚日志），Phase2 可以非常快速地完成。</strong></font></li>
 </ul>
 <p><img alt data-src="/images/alibaba-seata-design/global_commit.png"></p>
 <ul>
-<li><font color="DeepPink">如果决议是全局回滚，RM 收到协调器发来的回滚请求，通过 XID 和 Branch ID 找到相应的回滚日志记录，通过回滚记录生成反向的更新 SQL 并执行，以完成分支的回滚。</font></li>
+<li><font color="DeepPink"><strong>如果决议是全局回滚，RM 收到协调器发来的回滚请求，通过 XID 和 Branch ID 找到相应的回滚日志记录，通过回滚记录生成反向的更新 SQL 并执行，以完成分支的回滚。</strong></font></li>
 </ul>
 <p><img alt data-src="/images/alibaba-seata-design/global_rollback.png"></p>
 <h2 id="事务传播机制"><a href="#事务传播机制" class="headerlink" title="事务传播机制"></a>事务传播机制</h2><p>XID 是一个全局事务的唯一标识，事务传播机制要做的就是把 XID 在服务调用链路中传递下去，并绑定到服务的事务上下文中，这样，服务链路中的数据库更新操作，就都会向该 XID 代表的全局事务注册分支，纳入同一个全局事务的管辖。</p>
@@ -479,7 +479,7 @@
 <p>我们对隔离级别的共识是：微服务场景产生的分布式事务，绝大部分应用在 <strong>读已提交</strong> 的隔离级别下工作是没有问题的。而实际上，这当中又有绝大多数的应用场景，实际上工作在 <strong>读未提交</strong> 的隔离级别下同样没有问题。</p>
 <p>在极端场景下，应用如果需要达到全局的 <strong>读已提交</strong>，Fescar 也提供了相应的机制来达到目的。默认，Fescar 是工作在 <strong>读未提交</strong> 的隔离级别下，保证绝大多数场景的高效性。</p>
 <p><img alt data-src="/images/alibaba-seata-design/isolation.png"><br>事务的 ACID 属性在 Fescar 中的体现是一个比较复杂的话题，我们会有专门的文章来深入分析，这里不做进一步展开。</p>
-<h1 id="适用场景分析"><a href="#适用场景分析" class="headerlink" title="适用场景分析"></a>适用场景分析</h1><p>前文所述的 <font color="DeepPink">Fescar 的核心原理中有一个 <strong>重要前提</strong>：分支事务中涉及的资源，<strong>必须</strong> 是支持 <strong>ACID 事务</strong>的 <strong>关系型数据库</strong>。分支的提交和回滚机制，都依赖于本地事务的保障。所以，如果应用使用的数据库是不支持事务的，或根本不是关系型数据库，就不适用。</font></p>
+<h1 id="适用场景分析"><a href="#适用场景分析" class="headerlink" title="适用场景分析"></a>适用场景分析</h1><p>前文所述的 <font color="DeepPink"><strong>Fescar 的核心原理中有一个 **重要前提</strong>：分支事务中涉及的资源，<strong>必须</strong> 是支持 <strong>ACID 事务</strong>的 <strong>关系型数据库</strong>。分支的提交和回滚机制，都依赖于本地事务的保障。所以，如果应用使用的数据库是不支持事务的，或根本不是关系型数据库，就不适用。**</font></p>
 <p>另外，目前 Fescar 的实现还存在一些局限，比如：事务隔离级别最高支持到 <strong>读已提交</strong> 的水平，SQL 的解析还不能涵盖全部的语法等。</p>
 <p>为了覆盖 Fescar 原生机制暂时不能支持应用场景，我们定义了另外一种工作模式。</p>
 <p>上面介绍的 Fescar 原生工作模式称为 AT（Automatic Transaction）模式，这种模式是对业务无侵入的。与之相应的另外一种工作模式称为 MT（Manual Transaction）模式，这种模式下，分支事务需要应用自己来定义业务本身及提交和回滚的逻辑。</p>
@@ -724,7 +724,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -930,7 +930,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -1003,12 +1005,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

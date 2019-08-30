@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-24T10:27:51.207Z">
+<meta property="og:updated_time" content="2019-08-30T06:10:15.086Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL InnoDB存储引擎：分区表">
 <meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-24 18:27:51" itemprop="dateModified" datetime="2019-08-24T18:27:51+08:00">2019-08-24</time>
+                <time title="修改时间：2019-08-30 14:10:15" itemprop="dateModified" datetime="2019-08-30T14:10:15+08:00">2019-08-30</time>
               </span>
             
           
@@ -369,9 +369,9 @@
 <p>出版时间：2013-05</p>
 <a id="more"></a>
 <h1 id="MySQL分区表介绍"><a href="#MySQL分区表介绍" class="headerlink" title="MySQL分区表介绍"></a>MySQL分区表介绍</h1><p>分区是一种表的设计模式，正确的分区可以极大地提升数据库的查询效率，完成更高质量的SQL编程。但是如果错误地使用分区，那么分区可能带来毁灭性的的结果。</p>
-<p><font color="DeepPink">分区功能并不是在存储引擎层完成的，因此不只有InnoDB存储引擎支持分区，常见的存储引擎MyISAM、NDB等都支持分区。</font> 但是并不是所有的存储引擎都支持，如CSV、FEDORATED、MERGE等就不支持分区。在使用此分区功能前，应该对选择的存储引擎对分区的支持有所了解。</p>
-<p>MySQL数据库在5.1版本时添加了对分区的支持，<font color="DeepPink">分区的过程是将一个表或索引分解为多个更小、更可管理的部分。就访问数据库的应用而言，从逻辑上讲，只有一个表或一个索引，但是在物理上这个表或索引可能由数十个物理分区组成。每个分区都是独立的对象，可以独自处理，也可以作为一个更大对象的一部分进行处理。</font></p>
-<p>MySQL数据库支持的分区类型为<font color="DeepPink">水平分区</font>（指将同一个表中不同行的记录分配到不同的物理文件中），并不支持垂直分区（指将同一表中不同列的记录分配到不同的物理文件中）。此外，<font color="DeepPink">MySQL数据库的分区是局部分区索引，一个分区中既存放了数据又存放了索引。</font>而全局分区是指，数据存放在各个分区中，但是所有数据的索引放在一个对象中。目前，MySQL数据库还不支持全局分区。</p>
+<p><font color="DeepPink"><strong>分区功能并不是在存储引擎层完成的，因此不只有InnoDB存储引擎支持分区，常见的存储引擎MyISAM、NDB等都支持分区。</strong></font> 但是并不是所有的存储引擎都支持，如CSV、FEDORATED、MERGE等就不支持分区。在使用此分区功能前，应该对选择的存储引擎对分区的支持有所了解。</p>
+<p>MySQL数据库在5.1版本时添加了对分区的支持，<font color="DeepPink"><strong>分区的过程是将一个表或索引分解为多个更小、更可管理的部分。就访问数据库的应用而言，从逻辑上讲，只有一个表或一个索引，但是在物理上这个表或索引可能由数十个物理分区组成。每个分区都是独立的对象，可以独自处理，也可以作为一个更大对象的一部分进行处理。</strong></font></p>
+<p>MySQL数据库支持的分区类型为<font color="DeepPink"><strong>水平分区</strong></font>（指将同一个表中不同行的记录分配到不同的物理文件中），并不支持垂直分区（指将同一表中不同列的记录分配到不同的物理文件中）。此外，<font color="DeepPink"><strong>MySQL数据库的分区是局部分区索引，一个分区中既存放了数据又存放了索引。</strong></font>而全局分区是指，数据存放在各个分区中，但是所有数据的索引放在一个对象中。目前，MySQL数据库还不支持全局分区。</p>
 <p>可以通过以下命令来查看当前数据库是否启用了分区功能：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show global variables like &apos;%partition%&apos;;</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| Variable_name     | Value |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| have_partitioning | YES   |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">1 row in set (0.04 sec)</span><br><span class="line"> </span><br><span class="line">mysql&gt; show plugins</span><br><span class="line">*************************** 43. row ***************************</span><br><span class="line">   Name: partition</span><br><span class="line"> Status: ACTIVE</span><br><span class="line">   Type: STORAGE ENGINE</span><br><span class="line">Library: NULL</span><br><span class="line">License: GPL</span><br></pre></td></tr></table></figure>
 
@@ -398,7 +398,7 @@
 </ul>
 <h1 id="分区和性能"><a href="#分区和性能" class="headerlink" title="分区和性能"></a>分区和性能</h1><p>分区真的会加快数据库的查询吗？实际上可能根本感觉不到查询速度的提升，甚至会发现查询速度急剧下降，因此在合理使用分区之前，必须了解分区的使用环境。</p>
 <p>数据库的应用分为两类：一类是OLTP（在线事务处理），如Blog、电子商务、网络游戏等；另一类是OLAP（在线分析处理），如数据仓库、数据集市。对于OLAP的应用，分区的确是可以很好地提高查询的性能，因为OLAP应用大多数查询需要频繁地扫描一张很大的表。假设有一张1亿行的表，其中有一个时间戳属性列。用户的查询需要从这张表中获取一年的数据。如果按时间戳进行分区，则只需要扫描相应的分区即可。这就是前面介绍的分区修剪技术。</p>
-<p><font color="DeepPink">对于OLTP的应用，分区应该非常小心。在这种应用下，通常不可能会获取一张大表10%的数据，大部分都是通过索引返回几条记录即可。而根据B+树索引的原理可知，对于一张大表，一般的B+树需要2~3次的磁盘IO。因此B+树可以很好地完成操作，不需要分区的帮助，并且设计不好的分区会带来严重的性能问题。</font></p>
+<p><font color="DeepPink"><strong>对于OLTP的应用，分区应该非常小心。在这种应用下，通常不可能会获取一张大表10%的数据，大部分都是通过索引返回几条记录即可。而根据B+树索引的原理可知，对于一张大表，一般的B+树需要2~3次的磁盘IO。因此B+树可以很好地完成操作，不需要分区的帮助，并且设计不好的分区会带来严重的性能问题。</strong></font></p>
 <p>如很多开发团队会认为含有1000w行的表是一张非常巨大的表，所以他们往往会选择采用分区，如对主键做10个HASH的分区，这样每个分区就只有100w的数据了，因此查询应该变得更快了。如select * from table where pk=@pk。但是有没有考虑过这样一种情况：100w和1000w行的数据本身构成的B+树的层次都是一样的，可能都是2~3层。那么上述走主键分区的索引并不会带来性能的提高。好的，如果1000w的B+树高度是3,100w的B+树高度是2，那么上述按主键分区的索引可以避免1次IO，从而提高查询的效率。这没问题，但是这张表只有主键索引，没有任何其他的列需要查询的。如果还有类似如下的SQL：select * from table where key=@key，这时对于key的查询需要扫描所有的10个分区，即使每个分区的查询开销为2次IO，则一共需要20次IO。而对于原来单表的设计，对于KEY的查询只需要2~3次IO。</p>
 <p>由以上结论可以看出，对于在OLTP场景中使用分区一定要特别小心了。</p>
 <h1 id="MySQL-5-7对分区的改进"><a href="#MySQL-5-7对分区的改进" class="headerlink" title="MySQL 5.7对分区的改进"></a>MySQL 5.7对分区的改进</h1><p>在MySQL 5.6里面，分区的信息是在MySQL Server层维护的（在.par文件里面），InnoDB引擎层是不知道有分区这个概念的，InnoDB引擎层把每一个分区都当成一张普通的InnoDB表。在打开一个分区表时，会打开很多个分区，打开这些分区表就相当于打开了同等数量的InnoDB表，这需要更多内存存放InnoDB表的元数据和各种与ibd文件打开相关的各种cache与handler的信息。在MySQL 5.7里面，InnoDB引入了Native Partitioning，它把分区的信息从Server层移到了InnoDB层，打开一个分区表和打开一个InnoDB表的内存开销基本是一样的。</p>
@@ -410,7 +410,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
       
     </li>
   
@@ -424,7 +424,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
       
     </li>
   
@@ -575,7 +575,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -781,7 +781,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -854,12 +856,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

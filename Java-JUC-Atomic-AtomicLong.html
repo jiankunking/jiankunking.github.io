@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="基于OpenJDK 12本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-13T01:31:44.882Z">
+<meta property="og:updated_time" content="2019-08-30T06:02:36.458Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java JUC Atomic AtomicLong">
 <meta name="twitter:description" content="基于OpenJDK 12本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-13 09:31:44" itemprop="dateModified" datetime="2019-08-13T09:31:44+08:00">2019-08-13</time>
+                <time title="修改时间：2019-08-30 14:02:36" itemprop="dateModified" datetime="2019-08-30T14:02:36+08:00">2019-08-30</time>
               </span>
             
           
@@ -376,7 +376,7 @@
 <li>long addAndGet(long delta)：以原子方式将输入的数值与实例中的值（AtomicLong里的<br>value）相加，并返回结果。</li>
 <li>compareAndSet(long expectedValue, long newValue)：如果输入的数值等于预期值，则以原子方<br>式将该值设置为输入的值。</li>
 <li>long getAndIncrement()：以原子方式将当前值加1，注意，这里返回的是自增前的值。</li>
-<li>void lazySet(long newValue)：最终会设置成newValue，<font color="DeepPink">使用lazySet设置值后，可能导致其他<br>线程在之后的一小段时间内还是可以读到旧的值</font>。</li>
+<li>void lazySet(long newValue)：最终会设置成newValue，<font color="DeepPink"><strong>使用lazySet设置值后，可能导致其他<br>线程在之后的一小段时间内还是可以读到旧的值</strong></font>。</li>
 <li>long getAndSet(long newValue)：以原子方式设置为newValue的值，并返回旧值。</li>
 </ul>
 <p>AtomicLong示例代码如下：</p>
@@ -391,9 +391,9 @@
 <blockquote>
 <p>@HotSpotIntrinsicCandidate JDK的源码中，被@HotSpotIntrinsicCandidate标注的方法，在HotSpot中都有一套高效的实现，该高效实现基于CPU指令，运行时，HotSpot维护的高效实现会替代JDK的源码实现，从而获得更高的效率。</p>
 </blockquote>
-<p>源码getAndAddLong(Object o, long offset, long delta)中do while循环体是实现的关键所在，其逻辑是：<br>第一步先取得AtomicLong里存储的数值，<br>第二步对AtomicLong的当前数值进行加1操作，<br>第三步调用weakCompareAndSetLong方法来进行原子更新操作，该方法先检查当前数值是否等于v，等于意味着AtomicLong的值没有被其他线程修改过，则将weakCompareAndSetLong的当前数值更新成v+delta的值，如果不等于v，weakCompareAndSetLong方法会返回false，<font color="DeepPink">程序会进入do while循环重新进行</font>weakCompareAndSetLong操作。</p>
-<p><font color="DeepPink">这里隐含了一个问题，当对于共享变量（假设变量名字是a）的竞争非常激烈的时候，在当前线程读取a、改变a之间，a的值会被别的线程改变，从而导致当前线程一直重试（自旋），一直占用CPU。</font></p>
-<p><font color="DeepPink">这就引出另一个问题，对于锁抢占很激烈的时候，串行是最好的解决办法。比如使用synchronized。</font></p>
+<p>源码getAndAddLong(Object o, long offset, long delta)中do while循环体是实现的关键所在，其逻辑是：<br>第一步先取得AtomicLong里存储的数值，<br>第二步对AtomicLong的当前数值进行加1操作，<br>第三步调用weakCompareAndSetLong方法来进行原子更新操作，该方法先检查当前数值是否等于v，等于意味着AtomicLong的值没有被其他线程修改过，则将weakCompareAndSetLong的当前数值更新成v+delta的值，如果不等于v，weakCompareAndSetLong方法会返回false，<font color="DeepPink"><strong>程序会进入do while循环重新进行</strong></font>weakCompareAndSetLong操作。</p>
+<p><font color="DeepPink"><strong>这里隐含了一个问题，当对于共享变量（假设变量名字是a）的竞争非常激烈的时候，在当前线程读取a、改变a之间，a的值会被别的线程改变，从而导致当前线程一直重试（自旋），一直占用CPU。</strong></font></p>
+<p><font color="DeepPink"><strong>这就引出另一个问题，对于锁抢占很激烈的时候，串行是最好的解决办法。比如使用synchronized。</strong></font></p>
 <blockquote>
 <p>java.util.concurrent.atomic中的原子操作基本是基于Unsafe或者VarHandle实现的。</p>
 </blockquote>
@@ -409,14 +409,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-atomic-operation-principle.html" rel="bookmark">Java 原子操作的实现原理</a></div>
+      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
+      <div class="popular-posts-title"><a href="\java-atomic-operation-principle.html" rel="bookmark">Java 原子操作的实现原理</a></div>
       
     </li>
   
@@ -569,7 +569,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -775,7 +775,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -831,12 +833,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

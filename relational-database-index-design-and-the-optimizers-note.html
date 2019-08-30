@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-22T07:58:32.322Z">
+<meta property="og:updated_time" content="2019-08-30T06:11:10.385Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="数据库索引设计与优化 笔记">
 <meta name="twitter:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-22 15:58:32" itemprop="dateModified" datetime="2019-08-22T15:58:32+08:00">2019-08-22</time>
+                <time title="修改时间：2019-08-30 14:11:10" itemprop="dateModified" datetime="2019-08-30T14:11:10+08:00">2019-08-30</time>
               </span>
             
           
@@ -372,8 +372,8 @@
 <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><h2 id="索引误区"><a href="#索引误区" class="headerlink" title="索引误区"></a>索引误区</h2><h3 id="误区1：索引层级不要超过5层"><a href="#误区1：索引层级不要超过5层" class="headerlink" title="误区1：索引层级不要超过5层"></a>误区1：索引层级不要超过5层</h3><p>由于非叶子页通常都会留在内存或者读缓存中，所以通常索引任意一个叶子页的时间为10ms~20ms，这是固定的。所以，对索引层数的限制是没有什么意义的。</p>
 <h3 id="误区2：单表的索引数不要超过6个"><a href="#误区2：单表的索引数不要超过6个" class="headerlink" title="误区2：单表的索引数不要超过6个"></a>误区2：单表的索引数不要超过6个</h3><p>我建议不要给表的索引数目设置上限。</p>
 <p>保证所有的SQL语句都能够流畅运行是设计的底线。我们总能找到一种方法来达到这一点。如果为了达到这一点需要在表上创建10个索引，那么你就应该在表上建立10个索引。</p>
-<h3 id="误区3：不应该索引不稳定的列"><a href="#误区3：不应该索引不稳定的列" class="headerlink" title="误区3：不应该索引不稳定的列"></a>误区3：不应该索引不稳定的列</h3><p><font color="DeepPink">索引行是按索引键的顺序存储的，所以当索引键中存一列被更新时，DBMS可能不得不把相应的行从旧的索引位置移到新的位置来保持这一顺序。这个新的位迓可能与旧的位晋位于相同的叶子贞上，在这种情况下，只有一个页会受到影响。然而，如果被修改的键是第一列或唯一的列，那么新的索引行可能必须被迁移到一个不同的叶子页上，即DBMS必须更新两个叶子页。三十年前，如果这个索引为一个4层索引，这也许需要6次磁盘随机读取：3次常规读取，即2次非叶子页读取和1次叶子页读取，加上新的位置所涉及的3次随机读取。当一次随机读取耗时30ms 时，迁移一个索引行可能会给该更新操作额外增加6 x 30ms =180ms 的响应时间。因此，不稳定的列很少被索引就不足为奇了。</font></p>
-<p><font color="DeepPink">现在，当四层索引中三个层级的非叶子页保留在内存中时，一次磁盘随机读取需要 l0 ms ，响应的时间变成了 2 x 10ms = 20ms 。此外，许多索引为多列索引，也称作复合或组合索引，它通常包含多列，以使得索引键值唯一。当不稳定的列为复合索引的尾列更新这个不稳定的列绝不会导致其迁移到新的叶子页。因此，在当前的磁盘条件下，更新一个不稳定的列只会对该更新操作增加10ms的响应时间。</font></p>
+<h3 id="误区3：不应该索引不稳定的列"><a href="#误区3：不应该索引不稳定的列" class="headerlink" title="误区3：不应该索引不稳定的列"></a>误区3：不应该索引不稳定的列</h3><p><font color="DeepPink"><strong>索引行是按索引键的顺序存储的，所以当索引键中存一列被更新时，DBMS可能不得不把相应的行从旧的索引位置移到新的位置来保持这一顺序。这个新的位迓可能与旧的位晋位于相同的叶子贞上，在这种情况下，只有一个页会受到影响。然而，如果被修改的键是第一列或唯一的列，那么新的索引行可能必须被迁移到一个不同的叶子页上，即DBMS必须更新两个叶子页。三十年前，如果这个索引为一个4层索引，这也许需要6次磁盘随机读取：3次常规读取，即2次非叶子页读取和1次叶子页读取，加上新的位置所涉及的3次随机读取。当一次随机读取耗时30ms 时，迁移一个索引行可能会给该更新操作额外增加6 x 30ms =180ms 的响应时间。因此，不稳定的列很少被索引就不足为奇了。</strong></font></p>
+<p><font color="DeepPink"><strong>现在，当四层索引中三个层级的非叶子页保留在内存中时，一次磁盘随机读取需要 l0 ms ，响应的时间变成了 2 x 10ms = 20ms 。此外，许多索引为多列索引，也称作复合或组合索引，它通常包含多列，以使得索引键值唯一。当不稳定的列为复合索引的尾列更新这个不稳定的列绝不会导致其迁移到新的叶子页。因此，在当前的磁盘条件下，更新一个不稳定的列只会对该更新操作增加10ms的响应时间。</strong></font></p>
 <p>在当前磁盘条件下，只有在更新频率多于10次/秒的情况下，不稳定列才可能成为问题。</p>
 <blockquote>
 <p>创建索引的目的应该是在硬件容量限制的前提下保证所有的数据库调用运行的足够快。</p>
@@ -382,8 +382,8 @@
 <li>找到由于索引不合适而导致运行<strong>太慢</strong>的查询语句<br>  最差输入：导致执行时间最长的变量值</li>
 <li>设计索引，使所有查询语句都运行的足够快<br>  表的维护（插入、更新、删除）也必须足够快</li>
 </ul>
-<h1 id="表和索引结构"><a href="#表和索引结构" class="headerlink" title="表和索引结构"></a>表和索引结构</h1><p>DBMS 会意识到多个索引或表页需要被顺序地读取，且能识別出那些不在缓冲池中的页。随后，它将发出多页I/O请求，每次请求的页的数量由DBMS决定。<font color="DeepPink">只有那些不在缓冲池中的页会被从磁盘服务器上读取，因为那些已经在缓冲池中的页中可能包含了尚未被写人磁盘的更新数据。</font></p>
-<h1 id="SQL处理过程"><a href="#SQL处理过程" class="headerlink" title="SQL处理过程"></a>SQL处理过程</h1><h2 id="谓词"><a href="#谓词" class="headerlink" title="谓词"></a>谓词</h2><p>WHERE子句由一个或者多个<font color="DeepPink">谓词（搜索参数）</font>组成。</p>
+<h1 id="表和索引结构"><a href="#表和索引结构" class="headerlink" title="表和索引结构"></a>表和索引结构</h1><p>DBMS 会意识到多个索引或表页需要被顺序地读取，且能识別出那些不在缓冲池中的页。随后，它将发出多页I/O请求，每次请求的页的数量由DBMS决定。<font color="DeepPink"><strong>只有那些不在缓冲池中的页会被从磁盘服务器上读取，因为那些已经在缓冲池中的页中可能包含了尚未被写人磁盘的更新数据。</strong></font></p>
+<h1 id="SQL处理过程"><a href="#SQL处理过程" class="headerlink" title="SQL处理过程"></a>SQL处理过程</h1><h2 id="谓词"><a href="#谓词" class="headerlink" title="谓词"></a>谓词</h2><p>WHERE子句由一个或者多个<font color="DeepPink"><strong>谓词（搜索参数）</strong></font>组成。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># SQL 3.1</span><br><span class="line">WHERE SEX = &apos;M&apos;</span><br><span class="line">      AND</span><br><span class="line">      (WEIGHT &gt; 90</span><br><span class="line">      OR</span><br><span class="line">      HEIGHT &gt; 190)</span><br></pre></td></tr></table></figure>
 
 <p>SQL 3.1中有三个简单谓词，它们是：</p>
@@ -408,10 +408,10 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">DECLARE CURSOR41 CURSOR FOR</span><br><span class="line">SELECT    CNO, FNAME</span><br><span class="line">FROM      CUST</span><br><span class="line">WHERE     LNAME = :LNAME</span><br><span class="line">          AND</span><br><span class="line">          CITY  = :CITY</span><br><span class="line">ORDER BY  FNAME</span><br></pre></td></tr></table></figure>
 
 <p><img alt data-src="/images/database-index-design-optimizers/%E5%9B%BE4.2.png"></p>
-<h2 id="星级是如何给定的"><a href="#星级是如何给定的" class="headerlink" title="星级是如何给定的"></a>星级是如何给定的</h2><p>如果与一个查询相关的索引行是相邻的，或者至少相距足够靠近的话，那这个索引就可以被标记上第一颗星。这<font color="DeepPink">最小化</font>了必须扫描的索引片的宽度。 </p>
-<p>如果索引行的顺序与查询语句的需求一致，则索引可以被标记上第二颗星。这<font color="DeepPink">排除了排序操作</font>。 </p>
-<p>如果索引行包含的查询语句中的所有列，那么索引就可以被标记上第三颗星。这避免了访问表的操作：<font color="DeepPink">仅访问索引就可以了</font>。 </p>
-<p><font color="DeepPink">对于这三颗星，第三颗通常是最重要的。将一个列排除在索引之外可能会导致许多速度较慢的磁盘随机读。</font>我们把一个至少包含第三颗星的索引称为对应查询语句的宽索引。</p>
+<h2 id="星级是如何给定的"><a href="#星级是如何给定的" class="headerlink" title="星级是如何给定的"></a>星级是如何给定的</h2><p>如果与一个查询相关的索引行是相邻的，或者至少相距足够靠近的话，那这个索引就可以被标记上第一颗星。这<font color="DeepPink"><strong>最小化</strong></font>了必须扫描的索引片的宽度。 </p>
+<p>如果索引行的顺序与查询语句的需求一致，则索引可以被标记上第二颗星。这<font color="DeepPink"><strong>排除了排序操作</strong></font>。 </p>
+<p>如果索引行包含的查询语句中的所有列，那么索引就可以被标记上第三颗星。这避免了访问表的操作：<font color="DeepPink"><strong>仅访问索引就可以了</strong></font>。 </p>
+<p><font color="DeepPink"><strong>对于这三颗星，第三颗通常是最重要的。将一个列排除在索引之外可能会导致许多速度较慢的磁盘随机读。</strong></font>我们把一个至少包含第三颗星的索引称为对应查询语句的宽索引。</p>
 <blockquote>
 <p>宽索引：宽索引是指一个至少满足第三颗星的索引。该索引包含了SELECT语句所涉及的所有列，因而能够使得查询只需访问索引而无需访问表。</p>
 </blockquote>
@@ -440,7 +440,7 @@
 <li>拥有可能的最窄索引片，不仅将需要处理的索引行数降至最低，而且将后续处理量，特别是表中数据行的同步读，减少到最少 — 拥有第一颗星</li>
 </ul>
 <p>在这个例子中，BETWEEN 谓词或者任何其他范围谓词的出现，意味着我们不能同时拥有第一颗星和第二颗星。也就是说我们不能拥有一个三星索引。这就意味着我们需要在第一颗星和第二颗星中做出选择。通常这不是一个困难的选择，<strong>因为第一颗星一般比第二颗星更重要，虽然并不总是这样</strong>。</p>
-<h2 id="为查询语句设计最佳索引的算法"><a href="#为查询语句设计最佳索引的算法" class="headerlink" title="为查询语句设计最佳索引的算法"></a>为查询语句设计最佳索引的算法</h2><p><font color="DeepPink">根据以上的讨论，理想的索引是一个三星索引。然而，正如我们所见，当存在范围谓词时，这是不可能实现的。我们（也许）不得不牺牲第二颗星来满足一个更窄的索引片（第一颗星），这样，最佳索引就只拥有两颗星。这也就是为什么我们需要仔细区分理想和最佳。</font>在这个例子中理想索引是不可能实现的。将这层因素考虑在内，我们可以对所有情况下创建最佳索引（也许不是理想索引）的过程公式化。创建出的索引将拥有三颗星或者两颗星。</p>
+<h2 id="为查询语句设计最佳索引的算法"><a href="#为查询语句设计最佳索引的算法" class="headerlink" title="为查询语句设计最佳索引的算法"></a>为查询语句设计最佳索引的算法</h2><p><font color="DeepPink"><strong>根据以上的讨论，理想的索引是一个三星索引。然而，正如我们所见，当存在范围谓词时，这是不可能实现的。我们（也许）不得不牺牲第二颗星来满足一个更窄的索引片（第一颗星），这样，最佳索引就只拥有两颗星。这也就是为什么我们需要仔细区分理想和最佳。</strong></font>在这个例子中理想索引是不可能实现的。将这层因素考虑在内，我们可以对所有情况下创建最佳索引（也许不是理想索引）的过程公式化。创建出的索引将拥有三颗星或者两颗星。</p>
 <p><strong>首先设计一个索引片尽可能窄（第一颗星）的宽索引（第三颗星）。如果查询使用这个索引时不需要排序（第二颗星），那这个索引就是三星索引。否则这个索引只能是二星索引，牺牲第二颗星。或者采用另一种选择，避免排序，牺牲第一颗星保留第二颗星。这种二星索引中的一个将会是相应查询语句的最佳索引。</strong></p>
 <h3 id="为查询语句创建最佳索引的算法"><a href="#为查询语句创建最佳索引的算法" class="headerlink" title="为查询语句创建最佳索引的算法"></a>为查询语句创建最佳索引的算法</h3><h4 id="候选-A"><a href="#候选-A" class="headerlink" title="候选 A"></a>候选 A</h4><ol>
 <li>取出对于优化器来说不过分复杂的等值谓词列。将这些列作为索引的前导列(以任意顺序皆可)。</li>
@@ -484,7 +484,7 @@
 <li>一条记录被更新后，可能因为表行过长导致其无法再存储于当前的表页中。这是DBMA就必须将该行记录迁移至另外一个表页中，同时在原有的表页中存储指向新表页的指针。当该行被访问时，会引入额外的随机访问。<br>表可以通过重组来还原行记录的顺序，从而减少不必要的随机访问。</li>
 </ol>
 <h2 id="计算访问次数"><a href="#计算访问次数" class="headerlink" title="计算访问次数"></a>计算访问次数</h2><h3 id="随机访问"><a href="#随机访问" class="headerlink" title="随机访问"></a>随机访问</h3><p>我们首先思考一下磁盘读与访问的区别。<strong>一次磁盘读所访问的对象是一个页，而一次访问的访问对象则是一行。</strong>一次随机磁盘读会将一整页(通常会包含很多行)读取至数据库的缓冲池中，但是根据定义，前后两次随机读不太可能会访问到同一个页。</p>
-<h2 id="使用满足需求的成本最低的索引还是所能达到的最有索引"><a href="#使用满足需求的成本最低的索引还是所能达到的最有索引" class="headerlink" title="使用满足需求的成本最低的索引还是所能达到的最有索引"></a>使用满足需求的成本最低的索引还是所能达到的最有索引</h2><p><font color="DeepPink">当有多个等值谓词作为匹配列时，我们需要考虑这些列在索引上的先后顺序。经常变化的列应当尽可能的排在后面。</font></p>
+<h2 id="使用满足需求的成本最低的索引还是所能达到的最有索引"><a href="#使用满足需求的成本最低的索引还是所能达到的最有索引" class="headerlink" title="使用满足需求的成本最低的索引还是所能达到的最有索引"></a>使用满足需求的成本最低的索引还是所能达到的最有索引</h2><p><font color="DeepPink"><strong>当有多个等值谓词作为匹配列时，我们需要考虑这些列在索引上的先后顺序。经常变化的列应当尽可能的排在后面。</strong></font></p>
 <blockquote>
 <p>更改现有索引列的顺序和在现有索引列之间添加新列同样危险。在这两种情况下，现有的select的执行速度都可能会急剧下降，因为匹配列减少了，或者引入了排序(导致过早产生结果集)</p>
 </blockquote>
@@ -527,7 +527,7 @@
 <p>经验法则忽略了以下因素:</p>
 <ol>
 <li>排序。</li>
-<li>很小的表。<font color="DeepPink">非常小的表及其索引可能长期存在于数据库的缓冲池中</font>，至少在一个连接查询中，没有页会被读取多次。在这样的表和索引上进行随机读取所耗费的时间小于0.1ms，至少在页被第一次读取之后是这样的。所以，当这样的表不是外层表时，对其大量的随机读取也不会称为问题。</li>
+<li>很小的表。<font color="DeepPink"><strong>非常小的表及其索引可能长期存在于数据库的缓冲池中</strong></font>，至少在一个连接查询中，没有页会被读取多次。在这样的表和索引上进行随机读取所耗费的时间小于0.1ms，至少在页被第一次读取之后是这样的。所以，当这样的表不是外层表时，对其大量的随机读取也不会称为问题。</li>
 <li>聚簇比例。索引中行的顺序和表中行的顺序的关联性(对于聚簇索引而言，该关联性在表重组后为100%)，可能会影响对最佳访问顺序的选择，当然，除非索引是宽索引。</li>
 </ol>
 <p>最好的基于成本的优化器在进行路径选择时会把这些因素考虑进来。因此，他找出的访问顺序可能比我们基于本地行的数量的经验所得出的结果更优。</p>
@@ -592,10 +592,10 @@
 <blockquote>
 <p>多索引访问的思想是：对表中数据分别使用各个索引，最后将满足条件的进行交集或并集操作。</p>
 </blockquote>
-<h1 id="索引和索引重组"><a href="#索引和索引重组" class="headerlink" title="索引和索引重组"></a>索引和索引重组</h1><h2 id="DBMS如何查找索引行"><a href="#DBMS如何查找索引行" class="headerlink" title="DBMS如何查找索引行"></a>DBMS如何查找索引行</h2><p><font color="DeepPink">在当前的硬件条件下，非叶子页很可能已经被缓存在数据库缓冲池中，或者至少在磁盘的读缓存中，因为它们经常被频繁的访问。</font></p>
-<h2 id="插入一行会发生什么？"><a href="#插入一行会发生什么？" class="headerlink" title="插入一行会发生什么？"></a>插入一行会发生什么？</h2><p>如果一张表有一个聚簇索引，那么DBMS会根据聚簇索引的键值尝试将插入的记录放在它所属的表页(主页)中。如果这行记录在主页里放不下，或者当前页被锁住，那么DBMS将会检查邻近的页。在最坏的情况下，新的行会被插入到标的最坏一页。<font color="DeepPink">依赖于DBMS和表的类型，已经插入的行通常都不会被移动，否则这将意味着更新表上已经建立的所有索引上的相关指针。</font>当有许多表行未能存在在主页中时，如果表行的顺序很重要，则需要对这个表进行重组—对于那些涉及多张大表的大规模批处理任务而言，通常需要这么做。</p>
+<h1 id="索引和索引重组"><a href="#索引和索引重组" class="headerlink" title="索引和索引重组"></a>索引和索引重组</h1><h2 id="DBMS如何查找索引行"><a href="#DBMS如何查找索引行" class="headerlink" title="DBMS如何查找索引行"></a>DBMS如何查找索引行</h2><p><font color="DeepPink"><strong>在当前的硬件条件下，非叶子页很可能已经被缓存在数据库缓冲池中，或者至少在磁盘的读缓存中，因为它们经常被频繁的访问。</strong></font></p>
+<h2 id="插入一行会发生什么？"><a href="#插入一行会发生什么？" class="headerlink" title="插入一行会发生什么？"></a>插入一行会发生什么？</h2><p>如果一张表有一个聚簇索引，那么DBMS会根据聚簇索引的键值尝试将插入的记录放在它所属的表页(主页)中。如果这行记录在主页里放不下，或者当前页被锁住，那么DBMS将会检查邻近的页。在最坏的情况下，新的行会被插入到标的最坏一页。<font color="DeepPink"><strong>依赖于DBMS和表的类型，已经插入的行通常都不会被移动，否则这将意味着更新表上已经建立的所有索引上的相关指针。</strong></font>当有许多表行未能存在在主页中时，如果表行的顺序很重要，则需要对这个表进行重组—对于那些涉及多张大表的大规模批处理任务而言，通常需要这么做。</p>
 <p>当往表中插入一条记录时，DBMS会尝试将索引行添加至其索引建所属的叶子页上，但是该索引页可能没有足够的空闲空间来存放这个索引行，在这种情况下，DBMS将会分裂该叶子页。其中一半的行将被移动到一个新的叶子页上，并尽可能地靠近被分裂的页，但是在最坏的情况下，这个索引页可能会被放置在索引的末尾。除了在每个叶子页上预留部分比例的空闲空间外，也许可以在索引被创建或重组时，每n个页面预留一个空页—当索引分裂无法避免时，这会是一个不错的办法。</p>
-<p><font color="DeepPink">当一个索引有一个不断增长的键值时，新行将被添加到索引页的最后，索引页可能永远也不会进行分裂,这样的索引可能不需要任何空闲空间。</font></p>
+<p><font color="DeepPink"><strong>当一个索引有一个不断增长的键值时，新行将被添加到索引页的最后，索引页可能永远也不会进行分裂,这样的索引可能不需要任何空闲空间。</strong></font></p>
 <h2 id="叶子页的分裂严重吗？"><a href="#叶子页的分裂严重吗？" class="headerlink" title="叶子页的分裂严重吗？"></a>叶子页的分裂严重吗？</h2><p>分裂一个索引页只需一次额外的同步读，约10ms。除了两个叶子页以外，DBMS通常还必须更新一个非叶子页，而它很可能已经在内存或者读缓存中了。</p>
 <p>在叶子页分裂后，查询任何一条索引行的速度很可能同之前一样快。在最坏情况下，一次分裂会创建一个新的索引层级，但是如果不是从磁盘读取非叶子页的话，这只会增加很少的CPU时间。</p>
 <p>然而，叶子页的分裂会导致一个索引片变得更慢。目前为止，我们在所有的场景中都假设串联索引行的链指针总是指向同一页或者下一页，这些页可能已被DBMS预读取。在索引被创建或者重组后，这种假设是接近真实情况的，但是索引片上的每处叶子页分裂都可能会增加额外的两次随机访问—一次是为了查找索引行被移动至的索引页，一次是为了返回到扫描的原始位置。其中第一次随机访问很可能会导致一次磁盘的随机读取(10ms)。</p>
@@ -648,7 +648,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
       
     </li>
   
@@ -662,7 +662,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
       
     </li>
   
@@ -820,7 +820,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1026,7 +1026,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -1099,12 +1101,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="一、什么是代理？代理是一种常用的设计模式，其目的就是为其他对象提供一个代理以控制对某个对象的访问。代理类负责为委托类预处理消息，过滤消息并转发消息，以及进行消息被委托类执行后的后续处理。 代理模式UML图： 简单结构示意图： 为了保持行为的一致性，代理类和委托类通常会实现相同的接口，所以在访问者看来两者没有丝毫的区别。通过代理类这中间一层，能有效控制对委托类对象的直接访问，也可以很好地隐藏和保护委">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-23T05:09:22.177Z">
+<meta property="og:updated_time" content="2019-08-30T06:01:26.764Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java-JDK-动态代理（AOP）使用及实现原理分析">
 <meta name="twitter:description" content="一、什么是代理？代理是一种常用的设计模式，其目的就是为其他对象提供一个代理以控制对某个对象的访问。代理类负责为委托类预处理消息，过滤消息并转发消息，以及进行消息被委托类执行后的后续处理。 代理模式UML图： 简单结构示意图： 为了保持行为的一致性，代理类和委托类通常会实现相同的接口，所以在访问者看来两者没有丝毫的区别。通过代理类这中间一层，能有效控制对委托类对象的直接访问，也可以很好地隐藏和保护委">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-23 13:09:22" itemprop="dateModified" datetime="2019-08-23T13:09:22+08:00">2019-08-23</time>
+                <time title="修改时间：2019-08-30 14:01:26" itemprop="dateModified" datetime="2019-08-30T14:01:26+08:00">2019-08-30</time>
               </span>
             
           
@@ -373,14 +373,14 @@
 <p>(1)Interface InvocationHandler：该接口中仅定义了一个方法</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public object invoke(Object obj,Method method, Object[] args)</span><br></pre></td></tr></table></figure>
 
-<p>在实际使用时，<font color="DeepPink">第一个参数obj一般是指代理类，method是被代理的方法，如上例中的request()，args为该方法的参数数组。</font>这个抽象方法在代理类中动态实现。</p>
+<p>在实际使用时，<font color="DeepPink"><strong>第一个参数obj一般是指代理类，method是被代理的方法，如上例中的request()，args为该方法的参数数组。</strong></font>这个抽象方法在代理类中动态实现。</p>
 <p>(2)Proxy：该类即为动态代理类，其中主要包含以下内容：</p>
 <p>protected Proxy(InvocationHandler h)：构造函数，用于给内部的h赋值。</p>
 <p>static Class getProxyClass(</p>
 <p>ClassLoader loader,</p>
 <p>Class[] interfaces)：获得一个代理类，其中loader是类装载器，interfaces是真实类所拥有的全部接口的数组。</p>
 <p>static Object newProxyInstance(ClassLoaderloader, Class[] interfaces,InvocationHandler h)：返回代理类的一个实例，返回后的代理类可以当作被代理类使用(可使用被代理类的在Subject接口中声明过的方法)</p>
-<p>所谓DynamicProxy是这样一种class：<font color="DeepPink">它是在运行时生成的class，在生成它时你必须提供一组interface给它，然后该class就宣称它实现了这些interface。</font>你当然可以把该class的实例当作这些interface中的任何一个来用。当然，这个DynamicProxy其实就是一个Proxy，它不会替你作实质性的工作，<font color="DeepPink">在生成它的实例时你必须提供一个handler，由它接管实际的工作。</font></p>
+<p>所谓DynamicProxy是这样一种class：<font color="DeepPink"><strong>它是在运行时生成的class，在生成它时你必须提供一组interface给它，然后该class就宣称它实现了这些interface。</strong></font>你当然可以把该class的实例当作这些interface中的任何一个来用。当然，这个DynamicProxy其实就是一个Proxy，它不会替你作实质性的工作，<font color="DeepPink"><strong>在生成它的实例时你必须提供一个handler，由它接管实际的工作。</strong></font></p>
 <p>在使用动态代理类时，我们必须实现InvocationHandler接口</p>
 <p>通过这种方式，被代理的对象(RealSubject)可以在运行时动态改变，需要控制的接口(Subject接口)可以在运行时改变，控制的方式(DynamicSubject类)也可以动态改变，从而实现了非常灵活的动态代理关系。</p>
 <p>动态代理步骤：</p>
@@ -413,7 +413,7 @@
 <h1 id="四、动态代理怎么实现的？"><a href="#四、动态代理怎么实现的？" class="headerlink" title="四、动态代理怎么实现的？"></a>四、动态代理怎么实现的？</h1><p>从使用代码中可以看出，关键点在：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Subject subject = (Subject) Proxy.newProxyInstance(loader, interfaces, handler);</span><br></pre></td></tr></table></figure>
 
-<p>通过跟踪提示代码可以看出：<font color="DeepPink">当代理对象调用真实对象的方法时，其会自动的跳转到代理对象关联的handler对象的invoke方法来进行调用。</font></p>
+<p>通过跟踪提示代码可以看出：<font color="DeepPink"><strong>当代理对象调用真实对象的方法时，其会自动的跳转到代理对象关联的handler对象的invoke方法来进行调用。</strong></font></p>
 <p>也就是说，当代码执行到：subject.SayHello(“jiankunking”)这句话时，会自动调用InvocationHandlerImpl的invoke方法。这是为啥呢？</p>
 <blockquote>
 <p>下面是代码跟分析的过程，不想看的朋友可以直接看结论</p>
@@ -504,14 +504,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-atomic-operation-principle.html" rel="bookmark">Java 原子操作的实现原理</a></div>
+      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
+      <div class="popular-posts-title"><a href="\java-atomic-operation-principle.html" rel="bookmark">Java 原子操作的实现原理</a></div>
       
     </li>
   
@@ -650,7 +650,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -856,7 +856,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -929,12 +931,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

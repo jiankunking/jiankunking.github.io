@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Golang Context">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-29T10:22:01.546Z">
+<meta property="og:updated_time" content="2019-08-30T05:57:38.917Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="如何正确使用 Context">
 <meta name="twitter:description" content="Golang Context">
@@ -274,11 +274,21 @@
                 
               
 
-              <time title="创建时间：2019-08-29 16:10:22 / 修改时间：18:22:01" itemprop="dateCreated datePublished" datetime="2019-08-29T16:10:22+08:00">2019-08-29</time>
+              <time title="创建时间：2019-08-29 16:10:22" itemprop="dateCreated datePublished" datetime="2019-08-29T16:10:22+08:00">2019-08-29</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-08-30 13:57:38" itemprop="dateModified" datetime="2019-08-30T13:57:38+08:00">2019-08-30</time>
+              </span>
             
           
             <span class="post-meta-item">
@@ -363,7 +373,7 @@
 <h1 id="视频信息"><a href="#视频信息" class="headerlink" title="视频信息"></a>视频信息</h1><p>How to correctly use package context<br>by Jack Lindamood<br>at Golang UK Conf. 2017</p>
 <p>视频：<a href="https://www.youtube.com/watch?v=-_B5uQ4UGi0" target="_blank" rel="noopener">https://www.youtube.com/watch?v=-_B5uQ4UGi0</a><br>博文：<a href="https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39" target="_blank" rel="noopener">https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39</a></p>
 <h1 id="为什么需要-Context"><a href="#为什么需要-Context" class="headerlink" title="为什么需要 Context"></a>为什么需要 Context</h1><ul>
-<li>每一个<font color="DeepPink">长请求</font>都应该有个<font color="DeepPink">超时限制</font></li>
+<li>每一个<font color="DeepPink"><strong>长请求</strong></font>都应该有个<font color="DeepPink"><strong>超时限制</strong></font></li>
 <li>需要在调用中传递这个超时<ul>
 <li>比如开始处理请求的时候我们说是 3 秒钟超时</li>
 <li>那么在函数调用中间，这个超时还剩多少时间了？</li>
@@ -388,14 +398,14 @@
 <li>其实挺合理的，因为这样就会让 goroutine 互相产生依赖</li>
 </ul>
 </li>
-<li><font color="DeepPink">非常容易被滥用</font></li>
+<li><font color="DeepPink"><strong>非常容易被滥用</strong></font></li>
 </ul>
 <h1 id="Context-实现细节"><a href="#Context-实现细节" class="headerlink" title="Context 实现细节"></a>Context 实现细节</h1><p>context.Context：</p>
 <ul>
 <li>是不可变的(immutable)树节点</li>
-<li>Cancel 一个节点，会连带 Cancel 其所有子节点 （<font color="DeepPink">从上到下</font>）</li>
+<li>Cancel 一个节点，会连带 Cancel 其所有子节点 （<font color="DeepPink"><strong>从上到下</strong></font>）</li>
 <li>Context values 是一个节点</li>
-<li>Value 查找是回溯树的方式 （<font color="DeepPink">从下到上</font>）</li>
+<li>Value 查找是回溯树的方式 （<font color="DeepPink"><strong>从下到上</strong></font>）</li>
 </ul>
 <h2 id="示例-Context-链"><a href="#示例-Context-链" class="headerlink" title="示例 Context 链"></a>示例 Context 链</h2><p>完整代码：<a href="https://play.golang.org/p/ddpofBV1QS" target="_blank" rel="noopener">https://play.golang.org/p/ddpofBV1QS</a></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line">func tree() &#123;</span><br><span class="line">  ctx1 := context.Background()</span><br><span class="line">  ctx2, _ := context.WithCancel(ctx1)</span><br><span class="line">  ctx3, _ := context.WithTimeout(ctx2, time.Second * 5)</span><br><span class="line">  ctx4, _ := context.WithTimeout(ctx3, time.Second * 3)</span><br><span class="line">  ctx5, _ := context.WithTimeout(ctx3, time.Second * 6)</span><br><span class="line">  ctx6 := context.WithValue(ctx5, &quot;userID&quot;, 12)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -404,32 +414,32 @@
 <p>当 5秒钟 超时到达时：<br><img alt data-src="/images/how-to-correctly-use-package-context/context-chain-3.svg"><br>可以看到，不仅仅 ctx3 退出了，其所有子节点，比如 ctx5 和 ctx6 也都退出了。</p>
 <h2 id="context-Context-API"><a href="#context-Context-API" class="headerlink" title="context.Context API"></a>context.Context API</h2><p>基本上是两类操作：</p>
 <ul>
-<li>3个函数用于<font color="DeepPink">限定什么时候你的子节点退出</font>；</li>
-<li>1个函数用于<font color="DeepPink">设置请求范畴的变量</font><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">type Context interface &#123;</span><br><span class="line">  //  啥时候退出</span><br><span class="line">  Deadline() (deadline time.Time, ok bool)</span><br><span class="line">  Done() &lt;-chan struct&#123;&#125;</span><br><span class="line">  Err() error</span><br><span class="line">  //  设置变量</span><br><span class="line">  Value(key interface&#123;&#125;) interface&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<li>3个函数用于<font color="DeepPink"><strong>限定什么时候你的子节点退出</strong></font>；</li>
+<li>1个函数用于<font color="DeepPink"><strong>设置请求范畴的变量</strong></font><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">type Context interface &#123;</span><br><span class="line">  //  啥时候退出</span><br><span class="line">  Deadline() (deadline time.Time, ok bool)</span><br><span class="line">  Done() &lt;-chan struct&#123;&#125;</span><br><span class="line">  Err() error</span><br><span class="line">  //  设置变量</span><br><span class="line">  Value(key interface&#123;&#125;) interface&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 </li>
 </ul>
 <h2 id="什么时候应该使用-Context？"><a href="#什么时候应该使用-Context？" class="headerlink" title="什么时候应该使用 Context？"></a>什么时候应该使用 Context？</h2><ul>
-<li>每一个 RPC 调用都应该有<font color="DeepPink">超时退出</font>的能力，这是比较合理的 API 设计</li>
-<li><font color="DeepPink">不仅仅</font> 是超时，你还需要有能力去结束那些不再需要操作的行为</li>
+<li>每一个 RPC 调用都应该有<font color="DeepPink"><strong>超时退出</strong></font>的能力，这是比较合理的 API 设计</li>
+<li><font color="DeepPink"><strong>不仅仅</strong></font> 是超时，你还需要有能力去结束那些不再需要操作的行为</li>
 <li>context.Context 是 Go 标准的解决方案</li>
 <li>任何函数可能被阻塞，或者需要很长时间来完成的，都应该有个 context.Context</li>
 </ul>
 <h2 id="如何创建-Context？"><a href="#如何创建-Context？" class="headerlink" title="如何创建 Context？"></a>如何创建 Context？</h2><ul>
 <li>在 RPC 开始的时候，使用 context.Background()<ul>
-<li>有些人把在 main() 里记录一个 context.Background()，然后把这个放到服务器的某个变量里，然后请求来了后从这个变量里继承 context。这么做是<font color="DeepPink">不对的</font>。直接每个请求，源自自己的 context.Background() 即可。</li>
+<li>有些人把在 main() 里记录一个 context.Background()，然后把这个放到服务器的某个变量里，然后请求来了后从这个变量里继承 context。这么做是<font color="DeepPink"><strong>不对的</strong></font>。直接每个请求，源自自己的 context.Background() 即可。</li>
 </ul>
 </li>
 <li>如果你没有 context，却需要调用一个 context 的函数的话，用 context.TODO()</li>
 <li>如果某步操作需要自己的超时设置的话，给它一个独立的 sub-context（如前面的例子）</li>
 </ul>
 <h2 id="如何集成到-API-里？"><a href="#如何集成到-API-里？" class="headerlink" title="如何集成到 API 里？"></a>如何集成到 API 里？</h2><ul>
-<li>如果有 Context，<font color="DeepPink">将其作为第一个变量</font>。<ul>
+<li>如果有 Context，<font color="DeepPink"><strong>将其作为第一个变量</strong></font>。<ul>
 <li>如 func (d* Dialer) DialContext(ctx context.Context, network, address string) (Conn, error)</li>
 <li>有些人把 context 放到中间的某个变量里去，这很不合习惯，不要那么做，放到第一个去。</li>
 </ul>
 </li>
-<li>将其作为<font color="DeepPink">可选的</font>方式，用 request 结构体方式。<ul>
+<li>将其作为<font color="DeepPink"><strong>可选的</strong></font>方式，用 request 结构体方式。<ul>
 <li>如：func (r *Request) WithContext(ctx context.Context) *Request</li>
 </ul>
 </li>
@@ -449,7 +459,7 @@
 <h2 id="Context-包的注意事项"><a href="#Context-包的注意事项" class="headerlink" title="Context 包的注意事项"></a>Context 包的注意事项</h2><ul>
 <li><p>要养成关闭 Context 的习惯</p>
 <ul>
-<li><font color="DeepPink">特别是</font> 超时的 Contexts</li>
+<li><font color="DeepPink"><strong>特别是</strong></font> 超时的 Contexts</li>
 </ul>
 </li>
 <li><p>如果一个 context 被 GC 而不是 cancel 了，那一般是你做错了</p>
@@ -479,7 +489,7 @@
 
 <p>在这个例子中，同时发起了两个 RPC 调用，当任何一个调用超时或者出错后，会终止另一个 RPC 调用。这里就是利用前面讲到的 errgroup 来实现的，应对有很多并非请求，并需要集中处理超时、出错终止其它并发任务的时候，这个 pattern 使用起来很方便。</p>
 <h2 id="Context-Value-Request-范畴的值"><a href="#Context-Value-Request-范畴的值" class="headerlink" title="Context.Value - Request 范畴的值"></a>Context.Value - Request 范畴的值</h2><h3 id="context-Value-API-的万金油（duct-tape"><a href="#context-Value-API-的万金油（duct-tape" class="headerlink" title="context.Value API 的万金油（duct tape)"></a>context.Value API 的万金油（duct tape)</h3><p>胶带（duct tape) 几乎可以修任何东西，从破箱子，到人的伤口，到汽车引擎，甚至到NASA登月任务中的阿波罗13号飞船（Yeah! True Story)。所以在西方文化里，胶带是个“万能”的东西。在中文里，恐怕万金油是更合适的对应词汇，从头疼、脑热，感冒发烧，到跌打损伤几乎无所不治。</p>
-<p>当然，<font color="DeepPink">治标不治本</font>，这点东西方文化中的潜台词都是一样的。这里提及的 context.Value 对于 API 而言，就是这类性质的东西，啥都可以干，但是治标不治本。</p>
+<p>当然，<font color="DeepPink"><strong>治标不治本</strong></font>，这点东西方文化中的潜台词都是一样的。这里提及的 context.Value 对于 API 而言，就是这类性质的东西，啥都可以干，但是治标不治本。</p>
 <ul>
 <li>value 节点是 Context 链中的一个节点<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package context</span><br><span class="line">type valueCtx struct &#123;</span><br><span class="line">  Context</span><br><span class="line">  key, val interface&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">func WithValue(parent Context, key, val interface&#123;&#125;) Context &#123;</span><br><span class="line">  //  ...</span><br><span class="line">  return &amp;valueCtx&#123;parent, key, val&#125;</span><br><span class="line">&#125;</span><br><span class="line">func (c *valueCtx) Value(key interface&#123;&#125;) interface&#123;&#125; &#123;</span><br><span class="line">  if c.key == key &#123;</span><br><span class="line">    return c.val</span><br><span class="line">  &#125;</span><br><span class="line">  return c.Context.Value(key)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -490,8 +500,8 @@
 <h3 id="约束-key-的空间"><a href="#约束-key-的空间" class="headerlink" title="约束 key 的空间"></a>约束 key 的空间</h3><p>为了防止树形结构中出现重复的键，建议约束键的空间。比如使用私有类型，然后用 GetXxx() 和 WithXxxx() 来操作私有实体。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">type privateCtxType string</span><br><span class="line">var (</span><br><span class="line">  reqID = privateCtxType(&quot;req-id&quot;)</span><br><span class="line">)</span><br><span class="line">func GetRequestID(ctx context.Context) (int, bool) &#123;</span><br><span class="line">  id, exists := ctx.Value(reqID).(int)</span><br><span class="line">  return id, exists</span><br><span class="line">&#125;</span><br><span class="line">func WithRequestID(ctx context.Context, reqid int) context.Context &#123;</span><br><span class="line">  return context.WithValue(ctx, reqID, reqid)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>这里使用 WithXxx 而不是 SetXxx 也是因为 Context 实际上是 immutable 的，所以不是修改 Context 里某个值，而是产生新的 Context <font color="DeepPink">带某个值</font>。</p>
-<h3 id="Context-Value-是-immutable-的"><a href="#Context-Value-是-immutable-的" class="headerlink" title="Context.Value 是 immutable 的"></a>Context.Value 是 immutable 的</h3><p>再多次的强调 Context.Value 是 <font color="DeepPink">immutable</font> 的也不过分。</p>
+<p>这里使用 WithXxx 而不是 SetXxx 也是因为 Context 实际上是 immutable 的，所以不是修改 Context 里某个值，而是产生新的 Context <font color="DeepPink"><strong>带某个值</strong></font>。</p>
+<h3 id="Context-Value-是-immutable-的"><a href="#Context-Value-是-immutable-的" class="headerlink" title="Context.Value 是 immutable 的"></a>Context.Value 是 immutable 的</h3><p>再多次的强调 Context.Value 是 <font color="DeepPink"><strong>immutable</strong></font> 的也不过分。</p>
 <ul>
 <li>context.Context 从设计上就是按照 immutable （不可变的）模式设计的</li>
 <li>同样，Context.Value 也是 immutable 的</li>
@@ -536,7 +546,7 @@
 <blockquote>
 <p>代码要以可读性为优先设计考虑。</p>
 </blockquote>
-<p>别人拿到一个代码，一般不是掉进函数实现细节里去一行行的读代码，而是会先浏览一下函数接口。所以清晰的函数接口设计，会更加利于别人（<font color="DeepPink">或者是几个月后的你自己</font>）理解这段代码。</p>
+<p>别人拿到一个代码，一般不是掉进函数实现细节里去一行行的读代码，而是会先浏览一下函数接口。所以清晰的函数接口设计，会更加利于别人（<font color="DeepPink"><strong>或者是几个月后的你自己</strong></font>）理解这段代码。</p>
 <p>一个良好的 API 设计，应该从函数签名就清晰的理解函数的逻辑。如果我们将上面的接口改为：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func IsAdminUser(ctx context.Context, userID string, authenticator auth.Service) bool</span><br></pre></td></tr></table></figure>
 
@@ -597,7 +607,7 @@
 </ul>
 <h4 id="回避依赖注入-github-com-golang-oauth2"><a href="#回避依赖注入-github-com-golang-oauth2" class="headerlink" title="回避依赖注入 - github.com/golang/oauth2"></a>回避依赖注入 - github.com/golang/oauth2</h4><ul>
 <li>这里比较诡异，使用 ctx.Value 来定位依赖</li>
-<li><font color="DeepPink">不推荐这样做</font><ul>
+<li><font color="DeepPink"><strong>不推荐这样做</strong></font><ul>
 <li>这里这样做基本上只是为了满足测试需求<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line">import &quot;github.com/golang/oauth2&quot;</span><br><span class="line">func oauth() &#123;</span><br><span class="line">  c := &amp;http.Client&#123;Transport: &amp;mockTransport&#123;&#125;&#125;</span><br><span class="line">  ctx := context.WithValue(context.Background(), oauth2.HTTPClient, c)</span><br><span class="line">  conf := &amp;oauth2.Config&#123; /* ... */ &#125;</span><br><span class="line">  conf.Exchange(ctx, &quot;code&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 </li>
@@ -622,7 +632,7 @@
 <li>所有的长的、阻塞的操作都需要 Context</li>
 <li>errgroup 是构架于 Context 之上很好的抽象</li>
 <li>当 Request 的结束的时候，Cancel Context</li>
-<li>Context.Value 应该被用于<font color="DeepPink">告知性质</font>的事物，而不是<font color="DeepPink">控制性质</font>的事物</li>
+<li>Context.Value 应该被用于<font color="DeepPink"><strong>告知性质</strong></font>的事物，而不是<font color="DeepPink"><strong>控制性质</strong></font>的事物</li>
 <li>约束 Context.Value 的键空间</li>
 <li>Context 以及 Context.Value 应该是不可变的（immutable），并且应该是线程安全</li>
 <li>Context 应该随 Request 消亡而消亡</li>
@@ -658,14 +668,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
+      <div class="popular-posts-title"><a href="\golang-for-crypto-developers.html" rel="bookmark">Go 密码学应用</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\golang-grpc-from-tutorial-to-production.html" rel="bookmark">gRPC 从学习到生产</a></div>
+      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
       
     </li>
   
@@ -802,7 +812,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1008,7 +1018,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -1081,12 +1093,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>

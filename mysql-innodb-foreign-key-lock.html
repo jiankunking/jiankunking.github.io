@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-24T12:14:41.825Z">
+<meta property="og:updated_time" content="2019-08-30T06:09:42.488Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL InnoDB存储引擎：外键与锁">
 <meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-24 20:14:41" itemprop="dateModified" datetime="2019-08-24T20:14:41+08:00">2019-08-24</time>
+                <time title="修改时间：2019-08-30 14:09:42" itemprop="dateModified" datetime="2019-08-30T14:09:42+08:00">2019-08-30</time>
               </span>
             
           
@@ -368,8 +368,8 @@
         <p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧</p>
 <p>出版时间：2013-05</p>
 <a id="more"></a>
-<p>外键主要用于引用完整性的约束检查<font color="DeepPink">在InnoDB存储引擎中，对于一个外键列，如果没有显式地对这个列加索引，InnoDB存储引擎会自动对其加一个索引，因为这样可以避免表锁。</font> 这比Oracle数据库做得好，Oracle数据库不会自动添加索引，用户必须自己手动添加，这也导致了Oracle数据库中可能产生死锁。</p>
-<p><font color="DeepPink">对于外键值的插入或更新，首先需要检查父表中的记录，既SELECT父表。但是对于父表的SELECT操作，不是使用一致性非锁定读的方式，因为这会发生数据不一致的问题，因此这时使用的是SELECT…LOCK IN SHARE MODE方式，即主动对父表加一个S锁。</font>如果这时父表上已经这样加X锁，子表上的操作会被阻塞，如下：<br><img alt data-src="/images/mysql-innodb-foreign-key-lock/%E5%A4%96%E9%94%AE%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B.png"><br>在上述的例子中，两个会话中的事务都没有进行COMMIT或ROLLBACK操作，而会话B的操作会被阻塞。这是因为 id为3的父表在会话 A中已经加了一个X锁，而此时在会话 B中用户又需要对父表中 id为3的行加一个 S锁，这时 INSERT的操作会被阻塞。设想如果访问父表时，使用的是一致性的非锁定读，这时Session B会读到父表有id=3的记录，可以进行插入操作。但是如果会话A对事务提交了，则父表中就不存在id为3的记录。数据在父、子表就会存在不一致的情况。</p>
+<p>外键主要用于引用完整性的约束检查<font color="DeepPink"><strong>在InnoDB存储引擎中，对于一个外键列，如果没有显式地对这个列加索引，InnoDB存储引擎会自动对其加一个索引，因为这样可以避免表锁。</strong></font> 这比Oracle数据库做得好，Oracle数据库不会自动添加索引，用户必须自己手动添加，这也导致了Oracle数据库中可能产生死锁。</p>
+<p><font color="DeepPink"><strong>对于外键值的插入或更新，首先需要检查父表中的记录，既SELECT父表。但是对于父表的SELECT操作，不是使用一致性非锁定读的方式，因为这会发生数据不一致的问题，因此这时使用的是SELECT…LOCK IN SHARE MODE方式，即主动对父表加一个S锁。</strong></font>如果这时父表上已经这样加X锁，子表上的操作会被阻塞，如下：<br><img alt data-src="/images/mysql-innodb-foreign-key-lock/%E5%A4%96%E9%94%AE%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B.png"><br>在上述的例子中，两个会话中的事务都没有进行COMMIT或ROLLBACK操作，而会话B的操作会被阻塞。这是因为 id为3的父表在会话 A中已经加了一个X锁，而此时在会话 B中用户又需要对父表中 id为3的行加一个 S锁，这时 INSERT的操作会被阻塞。设想如果访问父表时，使用的是一致性的非锁定读，这时Session B会读到父表有id=3的记录，可以进行插入操作。但是如果会话A对事务提交了，则父表中就不存在id为3的记录。数据在父、子表就会存在不一致的情况。</p>
 
     </div>
       
@@ -378,14 +378,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
       
     </li>
   
@@ -534,7 +534,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -740,7 +740,9 @@
         
           
         
-        <span class="site-state-item-count">73</span>
+          
+        
+        <span class="site-state-item-count">74</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -796,12 +798,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">466k</span>
+    <span title="站点总字数">473k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:03</span>
+    <span title="站点阅读时长">7:10</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
