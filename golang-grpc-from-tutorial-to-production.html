@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="generator" content="Hexo 3.9.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="google-site-verification" content="true">
+  <meta name="baidu-site-verification" content="true">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: true,
+    pangu: false,
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    search: {
+      root: '/',
+      path: 'search.xml'
+    },
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    }
+  };
+</script>
+
+  <meta name="description" content="gRPC Practice">
+<meta name="keywords" content="Go,gRPC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gRPC 从学习到生产">
+<meta property="og:url" content="https://jiankunking.com/golang-grpc-from-tutorial-to-production.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="gRPC Practice">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-08-30T00:57:23.222Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="gRPC 从学习到生产">
+<meta name="twitter:description" content="gRPC Practice">
+  <link rel="canonical" href="https://jiankunking.com/golang-grpc-from-tutorial-to-production">
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>gRPC 从学习到生产 | 衣舞晨风</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">衣舞晨风</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+    <ul id="menu" class="menu">
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br/>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br/>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br/>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>归档</a>
+
+  </li>
+    </ul>
+</nav>
+
+</div>
+    </header>
+
+    
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/golang-grpc-from-tutorial-to-production.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+    </span>
+      <header class="post-header">
+
+        
+          <h2 class="post-title" itemprop="name headline">gRPC 从学习到生产
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-08-29 23:06:49" itemprop="dateCreated datePublished" datetime="2019-08-29T23:06:49+08:00">2019-08-29</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-08-30 08:57:23" itemprop="dateModified" datetime="2019-08-30T08:57:23+08:00">2019-08-30</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Go/" itemprop="url" rel="index"><span itemprop="name">Go</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon"
+              >
+                <i class="fa fa-eye"></i>
+                 阅读次数： 
+                <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+              </span>
+            </span>
+          
+            
+  
+  <span class="post-meta-item">
+    
+    <span class="post-meta-item-icon">
+      <i class="fa fa-comment-o"></i>
+    </span>
+    
+      <span class="post-meta-item-text">评论数：</span>
+    
+  
+    <a href="/golang-grpc-from-tutorial-to-production.html#comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/golang-grpc-from-tutorial-to-production.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+          <br/>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span title="本文字数">15k</span>
+            </span>
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span title="阅读时长">14 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>gRPC Practice</p>
+</blockquote>
+<a id="more"></a>
+
+<h1 id="视频信息"><a href="#视频信息" class="headerlink" title="视频信息"></a>视频信息</h1><p>grpc: From Tutorial to Production<br>by Alan Shreve<br>at GopherCon 2017</p>
+<p><a href="https://www.youtube.com/watch?v=7FZ6ZyzGex0" target="_blank" rel="noopener">https://www.youtube.com/watch?v=7FZ6ZyzGex0</a></p>
+<p>博文：<a href="https://about.sourcegraph.com/go/grpc-in-production-alan-shreve/" target="_blank" rel="noopener">https://about.sourcegraph.com/go/grpc-in-production-alan-shreve/</a></p>
+<h1 id="微服务之间应该如何通讯？"><a href="#微服务之间应该如何通讯？" class="headerlink" title="微服务之间应该如何通讯？"></a>微服务之间应该如何通讯？</h1><p>答案就是：<font color="DeepPink">SOAP</font>……好吧，开个玩笑，当然不可能是 SOAP 了。</p>
+<p>现在流行的做法是 <font color="DeepPink">HTTP + JSON (REST API)</font></p>
+<p>Alan 说“如果这辈子再也不写另一个 REST 客户端库的话，那就可以很幸福的死去了……😂”，因为这是最无聊的事情，一遍一遍的在做同样的事情。</p>
+<h1 id="为什么-REST-API-不好用？"><a href="#为什么-REST-API-不好用？" class="headerlink" title="为什么 REST API 不好用？"></a>为什么 REST API 不好用？</h1><ul>
+<li>实现 Stream 太难了</li>
+<li>而双向的流就根本不可能</li>
+<li>很难对操作建立模型</li>
+<li>效率很差，文本表示对于网络来说并不是最好的选择</li>
+<li>而且，其实服务内部根本不是 RESTful 的方式，这只是 HTTP endpoint</li>
+<li>很难在一个请求中取得多个资源数据 （反例看 GraphQL）</li>
+<li>没有正式的（机器可读的）API约束<ul>
+<li>因此写客户端需要人类<ul>
+<li>而且因为👷很贵，而且不喜欢写客户端</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="什么是-gRPC"><a href="#什么是-gRPC" class="headerlink" title="什么是 gRPC"></a>什么是 gRPC</h1><blockquote>
+<p>gPRC 是高性能、开源、通用的 RPC 框架。</p>
+</blockquote>
+<p>与其讲解定义，不如来实际做个东西更清楚。</p>
+<h1 id="建一个缓存服务"><a href="#建一个缓存服务" class="headerlink" title="建一个缓存服务"></a>建一个缓存服务</h1><p>使用 gRPC 这类东西，我们并非开始于写 Go 代码，我们是从撰写 gRPC 的 <a href="https://developers.google.com/protocol-buffers/docs/overview" target="_blank" rel="noopener">IDL</a> 开始的。</p>
+<h2 id="app-proto"><a href="#app-proto" class="headerlink" title="app.proto"></a>app.proto</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">syntax = &quot;proto3&quot;</span><br><span class="line">package rpc;</span><br><span class="line">service Cache &#123;</span><br><span class="line">  rpc Store(StoreReq) returns (StoreResp) &#123;&#125;</span><br><span class="line">  rpc Get(GetReq) returns (GetResp) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message StoreReq &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">&#125;</span><br><span class="line">message StoreResp &#123;</span><br><span class="line">&#125;</span><br><span class="line">message GetReq &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">&#125;</span><br><span class="line">message GetResp &#123;</span><br><span class="line">  bytes val = 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当写了这个文件后，我们立刻拥有了<font color="DeepPink"> 9 </font>种语言的客户端的库。</p>
+<ul>
+<li>C++</li>
+<li>Java(and Android)</li>
+<li>Python</li>
+<li>Go</li>
+<li>Ruby</li>
+<li>C#</li>
+<li>Javascript(node.js)</li>
+<li>Objective-C (iOS!)</li>
+<li>PHP</li>
+</ul>
+<p>同时，我们也拥有了<font color="DeepPink"> 7 </font>种语言的服务端的 API Stub：</p>
+<ul>
+<li>C++</li>
+<li>Java</li>
+<li>Python</li>
+<li>Go</li>
+<li>Ruby</li>
+<li>C#</li>
+<li>Javascript(node.js)</li>
+</ul>
+<h2 id="server-go"><a href="#server-go" class="headerlink" title="server.go"></a>server.go</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">func serverMain() &#123;</span><br><span class="line">  if err := runServer(); err != nil &#123;</span><br><span class="line">    fmt.Fprintf(os.Stderr, &quot;Failed to run cache server: %s\n&quot;, err)</span><br><span class="line">    os.Exit(1)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">func runServer() error &#123;</span><br><span class="line">  srv := grpc.NewServer()</span><br><span class="line">  rpc.RegisterCacheServer(srv, &amp;CacheService&#123;&#125;)</span><br><span class="line">  l, err := net.Listen(&quot;tcp&quot;, &quot;localhost:5051&quot;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br><span class="line">  //  block</span><br><span class="line">  return srv.Serve(l)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>暂时先不实现 CacheService，先放个空的，稍后再实现。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">type CacheService struct &#123;</span><br><span class="line">&#125;</span><br><span class="line">func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) &#123;</span><br><span class="line">  return nil, fmt.Errorf(&quot;unimplemented&quot;)</span><br><span class="line">&#125;</span><br><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  return nil, fmt.Errorf(&quot;unimplemented&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="client-go"><a href="#client-go" class="headerlink" title="client.go"></a>client.go</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">func clientMain() &#123;</span><br><span class="line">  if err != runClient(); err != nil &#123;</span><br><span class="line">    fmt.Fprintf(os.Stderr, &quot;failed: %v\n&quot;, err)</span><br><span class="line">    os.Exit(1)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">func runClient() error &#123;</span><br><span class="line">  //  建立连接</span><br><span class="line">  conn, err := grpc.Dial(&quot;localhost:5053&quot;, grpc.WithInsecure())</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to dial server: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  cache := rpc.NewCacheClient(conn)</span><br><span class="line">  //  调用 grpc 的 store() 方法存储键值对 &#123; &quot;gopher&quot;: &quot;con&quot; &#125;</span><br><span class="line">  _, err = cache.Store(context.Background(), &amp;rpc.StoreReq&#123;Key: &quot;gopher&quot;, Val: []byte(&quot;con&quot;)&#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to store: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  //  调用 grpc 的 get() 方法取回键为 `gopher` 的值</span><br><span class="line">  resp, err := cache.Get(context.Background(), &amp;rpc.GetReq&#123;Key: &quot;gopher&quot;&#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to get: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  //  输出</span><br><span class="line">  fmt.Printf(&quot;Got cached value %s\n&quot;, resp.Val)</span><br><span class="line">  return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="这不就是-WSDL-么？"><a href="#这不就是-WSDL-么？" class="headerlink" title="这不就是 WSDL 么？"></a>这不就是 WSDL 么？</h2><p>或许有些人会认为这和<font color="DeepPink"> WSDL </font>也太像了，这么想没有错，因为 gRPC 在借鉴之前的 SOAP/WSDL 的错误基础上，也吸取了他们优秀的地方。</p>
+<ul>
+<li>和 XML 关系没那么紧(grpc 是可插拔式的，可以换成各种底层表述)</li>
+<li>写过 XML/XSD 的人都知道这些服务定义太繁重了，gRPC 没有这个问题</li>
+<li>WSDL这类有完全不必要的复杂度、和基本不需要的功能（两步 commit）</li>
+<li>WSDL 不灵活、而且无法前向兼容（不像 <a href="https://developers.google.com/protocol-buffers/" target="_blank" rel="noopener">protobuf</a>）</li>
+<li>SOAP/WSDL 性能太差，以及无法使用流</li>
+<li>但是WSDL中的机器可以理解的API定义确实是个好东西</li>
+</ul>
+<h2 id="实现具体的-CacheService"><a href="#实现具体的-CacheService" class="headerlink" title="实现具体的 CacheService"></a>实现具体的 CacheService</h2><p>server.go</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">type CacheService struct &#123;</span><br><span class="line">  store map[string][]byte</span><br><span class="line">&#125;</span><br><span class="line">func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) &#123;</span><br><span class="line">  val := s.store[req.Key]</span><br><span class="line">  return &amp;rpc.GetResp&#123;Val: val&#125;, nil</span><br><span class="line">&#125;</span><br><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  s.store[req.Key] = req.Val</span><br><span class="line">  return &amp;rpc.StoreResp&#123;&#125;, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意这里没有锁，你可以想想他们中有，因为将来他们会被并发的调用的。</p>
+<h2 id="错误处理"><a href="#错误处理" class="headerlink" title="错误处理"></a>错误处理</h2><p>当然，gRPC 支持错误处理。假设改写上面的 Get()，对不存在的键进行报错：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) &#123;</span><br><span class="line">  val, ok := s.store[req.Key]</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return nil, status.Errorf(code.NotFound, &quot;Key not found %s&quot;, req.Key)</span><br><span class="line">  &#125;</span><br><span class="line">  return &amp;rpc.GetResp&#123;Val: val&#125;, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="加密传输"><a href="#加密传输" class="headerlink" title="加密传输"></a>加密传输</h2><p>如果这样的代码打算去部署的话，一定会被 <a href="https://en.wikipedia.org/wiki/Site_reliability_engineering" target="_blank" rel="noopener">SRE</a> 拦截下来，因为所有通讯必须加密传输。</p>
+<p>在 gRPC 中添加 TLS 加密传输很容易。比如我们修改 runServer() 添加 TLS 加密传输。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">func runServer() error &#123;</span><br><span class="line">  tlsCreds, err := credentials.NewServerTLSFromFile(&quot;tls.crt&quot;, &quot;tls.key&quot;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br><span class="line">  srv := grpc.NewServer(grpc.Creds(tlsCreds))</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同样，我们也需要修改一下 runClient()。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  tlsCreds := credentials.NewTLS(&amp;tls.Config(InsecureSkipVerify: true))</span><br><span class="line">  conn, err := grpc.Dial(&quot;localhost:5051&quot;, grpc.WithTransportCredentials(tlsCreds))</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="生产环境如何使用-gRPC"><a href="#生产环境如何使用-gRPC" class="headerlink" title="生产环境如何使用 gRPC"></a>生产环境如何使用 gRPC</h1><ul>
+<li>HTTP/2</li>
+<li>protobuf serialization (pluggable)</li>
+<li>客户端会和 grpc 服务器打开一个长连接<ul>
+<li>对于每一个 RPC 调用都将是一个新的 HTTP/2 stream</li>
+<li>允许模拟飞行模式的 RPC 调用</li>
+</ul>
+</li>
+<li>允许客户端<font color="DeepPink"> 和 </font>服务端 Streaming</li>
+</ul>
+<h2 id="gRPC-的实现"><a href="#gRPC-的实现" class="headerlink" title="gRPC 的实现"></a>gRPC 的实现</h2><p>现在有3个高性能的、事件驱动的实现</p>
+<ul>
+<li>C<ul>
+<li>Ruby, Python, Node.js, PHP, C#, Objective-C, C++ 都是对这个 C core 实现的绑定</li>
+<li>PHP 则是通过 PECL 和这个实现的绑定</li>
+</ul>
+</li>
+<li>Java<ul>
+<li>Netty + BoringSSL 通过 JNI</li>
+</ul>
+</li>
+<li>Go<ul>
+<li>纯 Go 实现，使用了 Go 标准库的 crypto/tls</li>
+</ul>
+</li>
+</ul>
+<h2 id="gRPC-从哪来的"><a href="#gRPC-从哪来的" class="headerlink" title="gRPC 从哪来的"></a>gRPC 从哪来的</h2><ul>
+<li>最初是 Google 的一个团队创建的</li>
+<li>更早期的是 Google 一个内部项目叫做 stubby</li>
+<li>这个 gRPC 是其下一代开源项目，并且现在不仅仅是 Google 在使用，很多公司都在贡献代码<ul>
+<li>当然，Google 还是主要代码贡献者</li>
+</ul>
+</li>
+</ul>
+<h2 id="生产环境案例：多租户"><a href="#生产环境案例：多租户" class="headerlink" title="生产环境案例：多租户"></a>生产环境案例：多租户</h2><p>上线生产后，发现有一部分客户产生了大量的键值，询问得知，有的客户希望对所有东西都缓存，这显然不是对我们这个缓存服务很好的事情。</p>
+<p>我们希望限制这种行为，但对于当前系统而言，无法满足这种需求，因此我们需要修改实现，对每个客户发放客户 token，那么我们就可以约束特定客户最多可以建立多少键值，避免系统滥用。这就成为了多租户的缓存服务。</p>
+<p>和之前一样，我们还是从 IDL 开始，我们需要修改接口，增加 account_token 项。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">message StoreReq &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">  string account_token = 3;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同样，我们需要有独立的服务针对账户服务，来获取账户所允许的缓存键数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">service Accounts &#123;</span><br><span class="line">  rpc GetByToken(GetByTokenReq) return (GetByTokenResp) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message GetByTokenReq &#123;</span><br><span class="line">  string token = 1;</span><br><span class="line">&#125;</span><br><span class="line">message GetByTokenResp &#123;</span><br><span class="line">  Account account = 1;</span><br><span class="line">&#125;</span><br><span class="line">message Account &#123;</span><br><span class="line">  int64 max_cache_keys = 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里建立了一个新的 Accounts 服务，并且有一个 GetByToken() 方法，给入 token，返回一个 Account 类型的结果，而 Account 内有 max_cache_keys 键对应最大可缓存的键值数。</p>
+<p>现在我们进一步修改 <font color="DeepPink">client.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  cache := rpc.NewCacheClient(conn)</span><br><span class="line">  _, err = cache.Store(context.Background(), &amp;rpc.StoreReq&#123;</span><br><span class="line">    AccountToken: &quot;inconshreveable&quot;,</span><br><span class="line">    Key:          &quot;gopher&quot;,</span><br><span class="line">    Val:          []byte(&quot;con&quot;),</span><br><span class="line">  &#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to store: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>服务端的改变要稍微大一些，但不过分。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">type CacheService struct &#123;</span><br><span class="line">  accounts      rpc.AccountsClient</span><br><span class="line">  store         map[string][]byte</span><br><span class="line">  keysByAccount map[string]int64</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意这里的 accounts 是一个 grpc 的客户端，因为我们这个服务，同时也是另一个 grpc 服务的客户端。所以在接下来的 Store() 实现中，我们需要先通过 accounts 调用另一个服务取得账户信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  //  调用另一个服务取得账户信息，包含其键值限制</span><br><span class="line">  resp, err := s.accounts.GetByToken(context.Background(), &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return nil, err</span><br><span class="line">  &#125;</span><br><span class="line">  //  检查是否超量使用</span><br><span class="line">  if s.keysByAccount[req.AccountToken] &gt;= resp.Account.MaxCacheKeys &#123;</span><br><span class="line">    return nil, status.Errorf(codes.FailedPrecondition, &quot;Account %s exceeds max key limit %d&quot;, req.AccountToken, resp.Account.MaxCacheKeys)</span><br><span class="line">  &#125;</span><br><span class="line">  //  如果键不存在，需要新加键值，那么我们就对计数器加一</span><br><span class="line">  if _, ok := s.store[req.Key]; !ok &#123;</span><br><span class="line">    s.keysByAccount[req.AccountToken] += 1</span><br><span class="line">  &#125;</span><br><span class="line">  //  保存键值</span><br><span class="line">  s.store[req.Key] = req.Val</span><br><span class="line">  return &amp;rpc.StoreResp&#123;&#125;, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="生产环境案例：性能"><a href="#生产环境案例：性能" class="headerlink" title="生产环境案例：性能"></a>生产环境案例：性能</h2><p>上面的问题解决了，我们服务又恢复了正常，不会有用户建立过多的键值了。但是很快，我们就又收到了其他用户发来的新的 issue，很多人反应说新系统变慢了，没有达到 <a href="https://en.wikipedia.org/wiki/Service-level_agreement" target="_blank" rel="noopener">SLA</a> 的要求。</p>
+<p>可是我们根本不知道到底发生了什么，于是意识到了，我们的程序没有任何可观察性（Observability），换句话说，我们的程序没有任何计量系统来统计性能相关的数据。</p>
+<p>我们先从最简单的做起，添加日志。</p>
+<p>我们先从<font color="DeepPink"> client.go </font>开始，增加一些测量和计数以及日志输出。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">//  开始计时</span><br><span class="line">start := time.Now()</span><br><span class="line">_, err = cache.Store(context.Background(), &amp;rpc.StoreReq&#123;</span><br><span class="line">  AccountToken: &quot;inconshreveable&quot;,</span><br><span class="line">  Key:          &quot;gopher&quot;,</span><br><span class="line">  Val:          []byte(&quot;con&quot;),</span><br><span class="line">&#125;)</span><br><span class="line">//  计算 cache.Store() 调用时间</span><br><span class="line">log.Printf(&quot;cache.Store duration %s&quot;, time.Since(start))</span><br><span class="line">if err != nil &#123;</span><br><span class="line">  return fmt.Errorf(&quot;failed to store: %v&quot;, err)</span><br><span class="line">&#125;</span><br><span class="line">//  再次开始计时</span><br><span class="line">start = time.Now()</span><br><span class="line">//  调用 grpc 的 get() 方法取回键为 `gopher` 的值</span><br><span class="line">resp, err := cache.Get(context.Background(), &amp;rpc.GetReq&#123;Key: &quot;gopher&quot;&#125;)</span><br><span class="line">//  计算 cache.Get() 调用时间</span><br><span class="line">log.Printf(&quot;cache.Get duration %s&quot;, time.Since(start))</span><br><span class="line">if err != nil &#123;</span><br><span class="line">  return fmt.Errorf(&quot;failed to get: %v&quot;, err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同样，在服务端也这么处理。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  //  开始计时</span><br><span class="line">  start := time.Now()</span><br><span class="line">  //  调用另一个服务取得账户信息，包含其键值限制</span><br><span class="line">  resp, err := s.accounts.GetByToken(context.Background(), &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  //  输出 account.GetByToken() 的调用时间</span><br><span class="line">  log.Printf(&quot;accounts.GetByToken duration %s&quot;, time.Since(start))</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>经过这些修改后，我们发现一样的事情在反反复复的做，那么有什么办法可以改变这种无聊的做法么？查阅 grpc 文档后，看到有一个叫做<font color="DeepPink"> Client Interceptor </font>的东西。</p>
+<p>这相当于是一个中间件，但是是在客户端。当客户端进行 rpc 调用的时候，这个中间件先会被调用，因此这个中间件可以对调用进行一层包装，然后再进行调用。</p>
+<p>为了实现这个功能，我们创建一个新的文件，叫做 interceptor.go：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">func WithClientInterceptor() grpc.DialOption &#123;</span><br><span class="line">  return grpc.WithUnaryInterceptor(clientInterceptor)</span><br><span class="line">&#125;</span><br><span class="line">func clientInterceptor(</span><br><span class="line">  ctx context.Context,</span><br><span class="line">  method string,</span><br><span class="line">  req interface&#123;&#125;,</span><br><span class="line">  reply interface&#123;&#125;,</span><br><span class="line">  cc *grpc.ClientConn,</span><br><span class="line">  invoker grpc.UnaryInvoker,</span><br><span class="line">  opts ...grpc.CallOption,</span><br><span class="line">) error &#123;</span><br><span class="line">  start := time.Now()</span><br><span class="line">  err := invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">  log.Printf(&quot;invoke remote method=%s duration=%s error=%v&quot;, method, time.Since(start), err)</span><br><span class="line">  return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们有了这个 WithClientInterceptor() 之后，可以在 grpc.Dial() 的时候注册进去。<br><font color="DeepPink">client.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  conn, err := grpc.Dial(&quot;localhost:5051&quot;,</span><br><span class="line">    grpc.WithTransportCredentials(tlsCreds),</span><br><span class="line">    WithClientInterceptor())</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注册之后，所有的 grpc 调用都会经过我们注册的 clientInterceptor()，因此所有的时间就都有统计了，而不用每个函数内部反反复复的添加时间、计量、输出。</p>
+<p>添加了客户端的这个计量后，自然而然就联想到服务端是不是也可以做同样的事情？经过查看文档，可以，有个叫做 <font color="DeepPink">Server Interceptor</font> 的东西。</p>
+<p>同样的做法，我们在服务端添加 interceptor.go，并且添加 ServerInterceptor() 函数。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">func ServerInterceptor() grpc.ServerOption &#123;</span><br><span class="line">  return grpc.UnaryInterceptor(serverInterceptor)</span><br><span class="line">&#125;</span><br><span class="line">func serverInterceptor(</span><br><span class="line">  ctx context.Context,</span><br><span class="line">  req interface&#123;&#125;,</span><br><span class="line">  info *grpc.UnaryServerInfo,</span><br><span class="line">  handler grpc.UnaryHandler,</span><br><span class="line">) (interface&#123;&#125;, error) &#123;</span><br><span class="line">  start := time.Now()</span><br><span class="line">  resp, err := handler(ctx, req)</span><br><span class="line">  log.Printf(&quot;invoke server method=%s duration=%s error=%v&quot;,</span><br><span class="line">    info.FullMethod,</span><br><span class="line">    time.Since(start),</span><br><span class="line">    err)</span><br><span class="line">  return resp, err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>和客户端一样，需要在 runServer() 的时候注册我们定义的这个中间件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">func runServer() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  srv := grpc.NewServer(grpc.Creds(tlsCreds), ServerInterceptor())</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="生产环境案例：超时"><a href="#生产环境案例：超时" class="headerlink" title="生产环境案例：超时"></a>生产环境案例：超时</h2><p>添加了日志后，我们终于在日志中发现，/rpc.Accounts/GetByToken/ 花了好长的时间。我们需要对这个操作设置超时。<br><font color="DeepPink">server.go</font> </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  accountsCtx, _ := context.WithTimeout(context.Background(), 2 * time.Second)</span><br><span class="line">  resp, err := s.accounts.GetByToken(accountsCtx, &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里操作很简单，直接使用标准库中 context.WithTimeout() 就可以了。</p>
+<h2 id="生产环境案例：上下文传递"><a href="#生产环境案例：上下文传递" class="headerlink" title="生产环境案例：上下文传递"></a>生产环境案例：上下文传递</h2><p>经过上面修改后，客户依旧抱怨说没有满足 SLA，仔细一想也对。就算这里约束了 2 秒钟，客户端调用还需要时间，别的代码在中间也有时间开销。而且有的客户说，我们这里需要1秒钟，而不是2秒钟。</p>
+<p>好吧，让我们把这个时间设定推向调用方。</p>
+<p>首先我们要求在客户端进行调用时间约束的设定：<br><font color="DeepPink">client.go</font></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  ctx, _ := context.WithTimeout(context.Background(), time.Second)</span><br><span class="line">  _, err = cache.Store(ctx, &amp;rpc.StoreReq&#123;Key: &quot;gopher&quot;, Val: []byte(&quot;con&quot;)&#125;)</span><br><span class="line">  ...</span><br><span class="line">  ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)</span><br><span class="line">  resp, err := cache.Get(ctx, &amp;rpc.GetReq&#123;Key: &quot;gopher&quot;&#125;)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后在服务端，我们将上下文传递。直接取调用方的 ctx。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  resp, err := s.accounts.GetByToken(ctx, &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="生产环境案例：GRPC-Metadata"><a href="#生产环境案例：GRPC-Metadata" class="headerlink" title="生产环境案例：GRPC Metadata"></a>生产环境案例：GRPC Metadata</h2><p>上面的问题都解决了，终于可以松一口气了。可是客户又提新的需求了……😅，说我们能不能增加一个 Dry Run 的标志，就是说我希望你做所有需要做的事情，除了真的修改键值库。</p>
+<p>GRPC metadata，也称为 GRPC 的 Header。就像 HTTP 头一样，可以有一些 Metadata 信息传递过来。使用 metadata，可以让我们的 Dry Run 的实现变得更简洁，不必每个 RPC 方法内都实现一遍检查 Dry Run 标志的逻辑，我们可以独立出来。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  resp, err := s.accounts.GetByToken(ctx, &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  if !dryRun(ctx) &#123;</span><br><span class="line">    if _, ok := s.store[req.Key]; !ok &#123;</span><br><span class="line">      s.keysByAccount[req.AccountToke] += 1</span><br><span class="line">    &#125;</span><br><span class="line">    s.store[req.Key] = req.Val</span><br><span class="line">  &#125;</span><br><span class="line">  return &amp;rpc.StoreResp&#123;&#125;, nil</span><br><span class="line">&#125;</span><br><span class="line">func dryRun(ctx context.Context) bool &#123;</span><br><span class="line">  md, ok := metadata.FromContext(ctx)</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return false</span><br><span class="line">  &#125;</span><br><span class="line">  val, ok := md[&quot;dry-run&quot;]</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return false</span><br><span class="line">  &#125;</span><br><span class="line">  if len(val) &lt; 1 &#123;</span><br><span class="line">    return false</span><br><span class="line">  &#125;</span><br><span class="line">  return val[0] == &quot;1&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当然，这么做是有妥协的，因为通用化后就失去了类型检查的能力。</p>
+<p>在客户端调用的时候，则需要根据情况添加 dry-run 参数给 metadata。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  ctx, _ := context.WithTimeout(context.Background(), time.Second)</span><br><span class="line">  ctx = metadata.NewContext(ctx, metadata.Pairs(&quot;dry-run&quot;, &quot;1&quot;))</span><br><span class="line">  _, err = cache.Store(ctx, &amp;rpc.StoreReq&#123;Key: &quot;gopher&quot;, Val: []byte(&quot;con&quot;)&#125;)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="生产环境案例：Retry"><a href="#生产环境案例：Retry" class="headerlink" title="生产环境案例：Retry"></a>生产环境案例：Retry</h2><p>实现了 Dry Run 以为可以休息了，之前抱怨慢的客户又来抱怨了，虽然有超时控制，满足 SLA，但是服务那边还是慢，总超时不成功。检查了一下，发现是网络上的事情，我们没有太多可以做的事情。为了解决客户的问题，我们来添加一个重试的机制。</p>
+<p>我们可以对每一个 gRPC 调用添加一个 Retry 机制，我们也可以像之前计时统计那样，使用 Interceptor 吧？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">func clientInterceptor(...) error &#123;</span><br><span class="line">  var (</span><br><span class="line">    start     = time.Now()</span><br><span class="line">    attempts  = 0</span><br><span class="line">    err       error</span><br><span class="line">    backoff   retryBackOff</span><br><span class="line">  )</span><br><span class="line">  for &#123;</span><br><span class="line">    attempts += 1</span><br><span class="line">    select &#123;</span><br><span class="line">    case &lt;-ctx.Done():</span><br><span class="line">      err = status.Errorf(codes.DeadlineExceeded, &quot;timeout reached before next retry attempt&quot;)</span><br><span class="line">    case &lt;-backoff.Next():</span><br><span class="line">      startAttempt := time.Now()</span><br><span class="line">      err = invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">      if err != nil &#123;</span><br><span class="line">        log.Printf(...)</span><br><span class="line">        continue</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    break</span><br><span class="line">  &#125;</span><br><span class="line">  log.Printf(...)</span><br><span class="line">  return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看起来还不错，然后就打算发布这个代码了。结果提交审核的时候被打回来了，说这个代码不合理，因为如果是<font color="DeepPink">非幂等（non-idempotent）</font> 的操作，这样就会导致多次执行，改变期望结果了。</p>
+<p>看来我们得针对幂等和非幂等操作区别对待了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">silo.FireZeMissiles(NotIdempotent(ctx), req)</span><br></pre></td></tr></table></figure>
+
+<p>嗯，当然，没这个东西。所以我们需要自己来创造一个标记，通过 context，来标明操作是否幂等。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">func NotIdempotent(ctx context.Context) context.Context &#123;</span><br><span class="line">  return context.WithValue(ctx, &quot;idempotent&quot;, false)</span><br><span class="line">&#125;</span><br><span class="line">func isIdempotent(ctx context.Context) bool &#123;</span><br><span class="line">  val, ok := ctx.Value(&quot;idempotent&quot;).(bool)</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return true</span><br><span class="line">  &#125;</span><br><span class="line">  return val</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后在我们的 clientInterceptor() 实现中加入 isIdempotent() 判断：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">func clientInterceptor(...) error &#123;</span><br><span class="line">  var (</span><br><span class="line">    start     = time.Now()</span><br><span class="line">    attempts  = 0</span><br><span class="line">    err       error</span><br><span class="line">    backoff   retryBackOff</span><br><span class="line">  )</span><br><span class="line">  for &#123;</span><br><span class="line">    attempts += 1</span><br><span class="line">    select &#123;</span><br><span class="line">    case &lt;-ctx.Done():</span><br><span class="line">      err = status.Errorf(codes.DeadlineExceeded, &quot;timeout reached before next retry attempt&quot;)</span><br><span class="line">    case &lt;-backoff.Next():</span><br><span class="line">      startAttempt := time.Now()</span><br><span class="line">      err = invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">      if err != nil &amp;&amp; isIdempotent(ctx) &#123;</span><br><span class="line">        log.Printf(...)</span><br><span class="line">        continue</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    break</span><br><span class="line">  &#125;</span><br><span class="line">  log.Printf(...)</span><br><span class="line">  return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+      
+  <div class="popular-posts-header">推荐阅读</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\golang-practice-advice-for-go-library-authors.html" rel="bookmark">给 Go 库作者的建议</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\sofamosn-golang-performance.html" rel="bookmark">SOFAMosn 如何提高 GoLang 的转发性能</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\go-channels.html" rel="bookmark">理解 Go Channels</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\how-to-correctly-use-package-context.html" rel="bookmark">如何正确使用 Context</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+    
+    
+      <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat/wechat.jpg" alt="jiankunking wechat" style="width: 200px; max-width: 100%;">
+  <div>喜欢就关注一下呗</div>
+</div>
+
+    
+      <div>
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信支付">
+        <p>微信支付</p>
+      </div>
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+      </div>
+      <div>
+        
+
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>jiankunking</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://jiankunking.com/golang-grpc-from-tutorial-to-production.html" title="gRPC 从学习到生产">https://jiankunking.com/golang-grpc-from-tutorial-to-production.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+
+      </div>
+
+    <footer class="post-footer">
+          
+        
+        <div class="post-tags">
+            <a href="/tags/Go/" rel="tag"># Go</a>
+          
+            <a href="/tags/gRPC/" rel="tag"># gRPC</a>
+          
+        </div>
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+              <a href="/golang-practice-advice-for-go-library-authors.html" rel="next" title="给 Go 库作者的建议">
+                <i class="fa fa-chevron-left"></i> 给 Go 库作者的建议
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+          </div>
+        </div>
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="comments"></div>
+  
+
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/avatar/avatar.png"
+      alt="jiankunking">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        <span class="site-state-item-count">73</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/jiankunking" title="GitHub &rarr; https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+  </div>
+
+
+  <div class="links-of-blogroll motion-element links-of-blogroll-block">
+    <div class="links-of-blogroll-title">
+      <i class="fa  fa-fw fa-book"></i>
+      推荐阅读
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">个人笔记CSDN</a>
+        </li>
+      
+    </ul>
+  </div>
+
+        </div>
+      </div>
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#视频信息"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#微服务之间应该如何通讯？"><span class="nav-number">2.</span> <span class="nav-text">微服务之间应该如何通讯？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么-REST-API-不好用？"><span class="nav-number">3.</span> <span class="nav-text">为什么 REST API 不好用？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是-gRPC"><span class="nav-number">4.</span> <span class="nav-text">什么是 gRPC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#建一个缓存服务"><span class="nav-number">5.</span> <span class="nav-text">建一个缓存服务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#app-proto"><span class="nav-number">5.1.</span> <span class="nav-text">app.proto</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#server-go"><span class="nav-number">5.2.</span> <span class="nav-text">server.go</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#client-go"><span class="nav-number">5.3.</span> <span class="nav-text">client.go</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#这不就是-WSDL-么？"><span class="nav-number">5.4.</span> <span class="nav-text">这不就是 WSDL 么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现具体的-CacheService"><span class="nav-number">5.5.</span> <span class="nav-text">实现具体的 CacheService</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#错误处理"><span class="nav-number">5.6.</span> <span class="nav-text">错误处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#加密传输"><span class="nav-number">5.7.</span> <span class="nav-text">加密传输</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#生产环境如何使用-gRPC"><span class="nav-number">6.</span> <span class="nav-text">生产环境如何使用 gRPC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#gRPC-的实现"><span class="nav-number">6.1.</span> <span class="nav-text">gRPC 的实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gRPC-从哪来的"><span class="nav-number">6.2.</span> <span class="nav-text">gRPC 从哪来的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：多租户"><span class="nav-number">6.3.</span> <span class="nav-text">生产环境案例：多租户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：性能"><span class="nav-number">6.4.</span> <span class="nav-text">生产环境案例：性能</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：超时"><span class="nav-number">6.5.</span> <span class="nav-text">生产环境案例：超时</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：上下文传递"><span class="nav-number">6.6.</span> <span class="nav-text">生产环境案例：上下文传递</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：GRPC-Metadata"><span class="nav-number">6.7.</span> <span class="nav-text">生产环境案例：GRPC Metadata</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#生产环境案例：Retry"><span class="nav-number">6.8.</span> <span class="nav-text">生产环境案例：Retry</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">459k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:57</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.2.0</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+      </div>
+
+    
+
+  </div>
+
+  
+  <script src="/lib/jquery/index.js?v=3.4.1"></script>
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+  <script src="/lib/lazyload/lozad.min.js?v=1.10.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  <script src="/js/utils.js?v=7.2.0"></script>
+  <script src="/js/motion.js?v=7.2.0"></script>
+
+  
+  <script src="/js/affix.js?v=7.2.0"></script>
+  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
+
+
+  
+  <script src="/js/scrollspy.js?v=7.2.0"></script>
+<script src="/js/post-details.js?v=7.2.0"></script>
+
+
+
+  <script src="/js/next-boot.js?v=7.2.0"></script>
+
+  
+
+  
+
+  
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+<script>
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#comments',
+    verify: true,
+    notify: false,
+    appId: '6Qd847qBRIzFk0sECwvtfgI2-9Nh9j0Va',
+    appKey: 'a2veKRXyF7edg7bijbnArVof',
+    placeholder: '有啥疑问、心得，交流一下呗',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false,
+    lang: 'zh-cn' || 'zh-cn'
+  });
+</script>
+
+
+</body>
+</html>
