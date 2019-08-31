@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-30T15:42:53.394Z">
+<meta property="og:updated_time" content="2019-08-31T03:56:13.925Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Web性能权威指南 笔记">
 <meta name="twitter:description" content="本文整理自：《Web性能权威指南》 作者：Ilya Grigorik 出版时间：2014-04">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-30 23:42:53" itemprop="dateModified" datetime="2019-08-30T23:42:53+08:00">2019-08-30</time>
+                <time title="修改时间：2019-08-31 11:56:13" itemprop="dateModified" datetime="2019-08-31T11:56:13+08:00">2019-08-31</time>
               </span>
             
           
@@ -342,7 +342,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">12k</span>
+              <span title="本文字数">19k</span>
             </span>
           
             <span class="post-meta-item">
@@ -352,7 +352,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">11 分钟</span>
+              <span title="阅读时长">17 分钟</span>
             </span>
           
 
@@ -371,7 +371,8 @@
 
 <h1 id="网络技术概览"><a href="#网络技术概览" class="headerlink" title="网络技术概览"></a>网络技术概览</h1><h2 id="带宽与延迟"><a href="#带宽与延迟" class="headerlink" title="带宽与延迟"></a>带宽与延迟</h2><h3 id="延迟的最后一公里"><a href="#延迟的最后一公里" class="headerlink" title="延迟的最后一公里"></a>延迟的最后一公里</h3><p>traceroute (Windows 系统下是tracert) 命令利用ICMP协议定位您的计算机和目标计算机之间的所有路由器。</p>
 <h2 id="TCP的构成"><a href="#TCP的构成" class="headerlink" title="TCP的构成"></a>TCP的构成</h2><p>因特网有两个核心协议：IP和TCP。IP，即 Internet Protocol（因特网协议），负责联网主机之间的路由选择和寻址；TCP，即 Transmission Control Protocol（传输控制协议），负责在不可靠的传输信道之上提供可靠的抽象层。</p>
-<h3 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h3><p>所有TCP连接一开始都要经过三次握手（见图 2-1）。客户端与服务器在交换应用数据之前，必须就起始分组序列号，以及其他一些连接相关的细节达成一致。出于安全考虑，序列号由两端随机生成。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE21%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.png"></p>
+<h3 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h3><p>所有TCP连接一开始都要经过三次握手（见图 2-1）。客户端与服务器在交换应用数据之前，必须就起始分组序列号，以及其他一些连接相关的细节达成一致。出于安全考虑，序列号由两端随机生成。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE21%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.png"></p>
 <ul>
 <li>SYN<br>客户端选择一个随机序列号x，并发送一个SYN分组，其中可能还包括其他TCP标志和选项。</li>
 <li>SYN ACK<br>服务器给x加1，并选择自己的一个随机序列号y，追加自己的标志和选项，然后返回响应。</li>
@@ -398,7 +399,11 @@
 </blockquote>
 <h2 id="UDP的构成"><a href="#UDP的构成" class="headerlink" title="UDP的构成"></a>UDP的构成</h2><p>关于UDP的应用，最广为人知同时也是所有浏览器和因特网应用都赖以运作的，就是DNS（Domain Name System，域名系统）。</p>
 <p>IETF和W3C工作组共同制定了一套新API WebRTC（Web Real-Time Communication，Web 实时通信）。WebRTC着眼于在浏览器中通过UDP实现原生的语音和视频实时通信，以及其他形式的 P2P（Peer-to-Peer，端到端）通信。</p>
-<h3 id="无协议服务"><a href="#无协议服务" class="headerlink" title="无协议服务"></a>无协议服务</h3><p>要理解为什么UDP被人称作“无协议”，必须从作为TCP和UDP下一层的IP协议说起。<font color="DeepPink"><strong>IP层的主要任务就是按照地址从源主机向目标主机发送数据报</strong></font>。为此，消息会被封装在一个IP分组内（图3-1），其中载明了源地址和目标地址，以及其他一些路由参数。注意，数据报这个词暗示了一个重要的信息：<font color="DeepPink"><strong>IP层不保证消息可靠的交付，也不发送失败通知，实际上是把底层网络的不可靠性直接暴露给了上一层</strong></font>。如果某个路由节点因为网络拥塞、负载过高或其他原因而删除了IP分组，那么在必要的情况下，IP 的上一层协议要负责检测、恢复和重发数据。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE31IPv4%E9%A6%96%E9%83%A8.png"><br>UDP协议会用自己的分组结构（图3-2）封装用户消息，它只增加 4个字段：<font color="DeepPink"><strong>源端口、目标端口、分组长度和校验和</strong></font>。这样，当IP把分组送达目标主机时，该主机能够拆开UDP分组，根据目标端口找到目标应用程序，然后再把消息发送过去。仅此而已。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE32UDP%E9%A6%96%E9%83%A8.png"><br>事实上，UDP数据报中的源端口和校验和字段都是可选的。IP分组的首部也有校验和，应用程序可以忽略UDP校验和。也就是说，所有错误检测和错误纠正工作都可以委托给上层的应用程序。说到底，<font color="DeepPink"><strong>UDP仅仅是在IP层之上通过嵌入应用程序的源端口和目标端口</strong></font>，提供了一个“应用程序多路复用”机制。明白了这一点，就可以总结一下UDP的无服务是怎么回事了。</p>
+<h3 id="无协议服务"><a href="#无协议服务" class="headerlink" title="无协议服务"></a>无协议服务</h3><p>要理解为什么UDP被人称作“无协议”，必须从作为TCP和UDP下一层的IP协议说起。<font color="DeepPink"><strong>IP层的主要任务就是按照地址从源主机向目标主机发送数据报</strong></font>。为此，消息会被封装在一个IP分组内（图3-1），其中载明了源地址和目标地址，以及其他一些路由参数。注意，数据报这个词暗示了一个重要的信息：<font color="DeepPink"><strong>IP层不保证消息可靠的交付，也不发送失败通知，实际上是把底层网络的不可靠性直接暴露给了上一层</strong></font>。如果某个路由节点因为网络拥塞、负载过高或其他原因而删除了IP分组，那么在必要的情况下，IP 的上一层协议要负责检测、恢复和重发数据。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE31IPv4%E9%A6%96%E9%83%A8.png"></p>
+<p>UDP协议会用自己的分组结构（图3-2）封装用户消息，它只增加 4个字段：<font color="DeepPink"><strong>源端口、目标端口、分组长度和校验和</strong></font>。这样，当IP把分组送达目标主机时，该主机能够拆开UDP分组，根据目标端口找到目标应用程序，然后再把消息发送过去。仅此而已。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE32UDP%E9%A6%96%E9%83%A8.png"></p>
+<p>事实上，UDP数据报中的源端口和校验和字段都是可选的。IP分组的首部也有校验和，应用程序可以忽略UDP校验和。也就是说，所有错误检测和错误纠正工作都可以委托给上层的应用程序。说到底，<font color="DeepPink"><strong>UDP仅仅是在IP层之上通过嵌入应用程序的源端口和目标端口</strong></font>，提供了一个“应用程序多路复用”机制。明白了这一点，就可以总结一下UDP的无服务是怎么回事了。</p>
 <ul>
 <li>不保证消息交付<br>不确认，不重传，无超时。</li>
 <li>不保证交付顺序<br>不设置包序号，不重排，不会发生队首阻塞。</li>
@@ -431,14 +436,18 @@
 <blockquote>
 <p>为防止路由错误和引起不必要的麻烦，不允许给外网计算机分配这些保留的私有IP地址。</p>
 </blockquote>
-<h2 id="传输层安全（TLS）"><a href="#传输层安全（TLS）" class="headerlink" title="传输层安全（TLS）"></a>传输层安全（TLS）</h2><p>SSL（Secure Sockets Layer，安全套接字层）协议最初是网景公司为了保障网上交易安全而开发的，该协议通过加密来保护客户个人资料，通过认证和完整性检查来确保交易安全。为达到这个目标，SSL协议在直接位于TCP上一层的应用层被实现（图 4-1）。SSL不会影响上层协议（如HTTP、电子邮件、即时通讯），但能够保证上层协议的网络通信安全。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE41%E4%BC%A0%E8%BE%93%E5%B1%82%E5%AE%89%E5%85%A8.png"><br>在正确使用SSL的情况下，第三方监听者只能推断出连接的端点、加密类型，以及发送数据的频率和大致数量，不能实际读取或修改任何数据。</p>
+<h2 id="传输层安全（TLS）"><a href="#传输层安全（TLS）" class="headerlink" title="传输层安全（TLS）"></a>传输层安全（TLS）</h2><p>SSL（Secure Sockets Layer，安全套接字层）协议最初是网景公司为了保障网上交易安全而开发的，该协议通过加密来保护客户个人资料，通过认证和完整性检查来确保交易安全。为达到这个目标，SSL协议在直接位于TCP上一层的应用层被实现（图 4-1）。SSL不会影响上层协议（如HTTP、电子邮件、即时通讯），但能够保证上层协议的网络通信安全。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE41%E4%BC%A0%E8%BE%93%E5%B1%82%E5%AE%89%E5%85%A8.png"></p>
+<p>在正确使用SSL的情况下，第三方监听者只能推断出连接的端点、加密类型，以及发送数据的频率和大致数量，不能实际读取或修改任何数据。</p>
 <h3 id="信任链与证书颁发机构"><a href="#信任链与证书颁发机构" class="headerlink" title="信任链与证书颁发机构"></a>信任链与证书颁发机构</h3><p>Web以及浏览器中的身份验证需要回答以下几个问题：我的浏览器信任谁？我在使用浏览器的时候信任谁？这个问题至少有三个答案。</p>
 <ul>
 <li>手工指定证书<br>所有浏览器和操作系统都提供了一种手工导入信任证书的机制。至于如何获得证书和验证完整性则完全由你自己来定。</li>
 <li>证书颁发机构<br>CA（Certificate Authority，证书颁发机构）是被证书接受者（拥有者）和依赖证书的一方共同信任的第三方。</li>
 <li>浏览器和操作系统<br>每个操作系统和大多数浏览器都会内置一个知名证书颁发机构的名单。因此，你也会信任操作系统及浏览器提供商提供和维护的可信任机构。</li>
 </ul>
-<p>实践中，保存并手工验证每个网站的密钥是不可行的（当然，如果你愿意，也可以）。现实中最常见的方案就是让证书颁发机构替我们做这件事（图 4-5）：浏览器指定可信任的证书颁发机构（根CA），然后验证他们签署的每个站点的责任就转移到了他们头上，他们会审计和验证这些站点的证书没有被滥用或冒充。持有CA证书的站点的安全性如果遭到破坏，那撤销该证书也是证书颁发机构的责任。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE45%E8%AF%81%E4%B9%A6%E9%A2%81%E5%8F%91%E6%9C%BA%E6%9E%84%E7%AD%BE%E7%BD%B2%E6%95%B0%E5%AD%97%E8%AF%81%E4%B9%A6.png"><br>所有浏览器都允许用户检视自己安全连接的信任链，常见的访问入口就是地址栏头儿上的锁图标，点击即可查看。</p>
+<p>实践中，保存并手工验证每个网站的密钥是不可行的（当然，如果你愿意，也可以）。现实中最常见的方案就是让证书颁发机构替我们做这件事（图 4-5）：浏览器指定可信任的证书颁发机构（根CA），然后验证他们签署的每个站点的责任就转移到了他们头上，他们会审计和验证这些站点的证书没有被滥用或冒充。持有CA证书的站点的安全性如果遭到破坏，那撤销该证书也是证书颁发机构的责任。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE45%E8%AF%81%E4%B9%A6%E9%A2%81%E5%8F%91%E6%9C%BA%E6%9E%84%E7%AD%BE%E7%BD%B2%E6%95%B0%E5%AD%97%E8%AF%81%E4%B9%A6.png"></p>
+<p>所有浏览器都允许用户检视自己安全连接的信任链，常见的访问入口就是地址栏头儿上的锁图标，点击即可查看。</p>
 <h3 id="证书撤销"><a href="#证书撤销" class="headerlink" title="证书撤销"></a>证书撤销</h3><h4 id="证书撤销名单（CRL）"><a href="#证书撤销名单（CRL）" class="headerlink" title="证书撤销名单（CRL）"></a>证书撤销名单（CRL）</h4><p>CRL（Certificate Revocation List，证书撤销名单）是RFC 5280规定的一种检查所有证书状态的简单机制：每个证书颁发机构维护并定期发布已撤销证书的序列号名<br>单。这样，任何想验证证书的人都可以下载撤销名单，检查相应证书是否榜上有名。如果有，说明证书已经被撤销了。</p>
 <p>CRL文件本身可以定期发布、每次更新时发布，或通过HTTP或其他文件传输协议来提供访问。这个名单同样由证书颁发机构签名，通常允许被缓存一定时间。实践中，这种机制效果很好，但也存在一些问题：</p>
 <ul>
@@ -479,7 +488,8 @@
 <h1 id="无线网络性能"><a href="#无线网络性能" class="headerlink" title="无线网络性能"></a>无线网络性能</h1><h2 id="移动网络的优化建议"><a href="#移动网络的优化建议" class="headerlink" title="移动网络的优化建议"></a>移动网络的优化建议</h2><h3 id="消除周期性及无效的数据传输"><a href="#消除周期性及无效的数据传输" class="headerlink" title="消除周期性及无效的数据传输"></a>消除周期性及无效的数据传输</h3><p>对推送而言，原生应用可以访问平台专有的推送服务，因此应该尽可能使用。对 Web 应用来说，可以使用SSE（Server Sent Events，服务器发送事件）和WebSocket以降低延迟时间和协议消耗，尽可能不使用轮询和更耗资源的XHR技术。</p>
 <h3 id="消除不必要的长连接"><a href="#消除不必要的长连接" class="headerlink" title="消除不必要的长连接"></a>消除不必要的长连接</h3><p>TCP或UDP连接的连接状态及生命期与设备的无线状态是相互独立的。换句话说，即便与运营商网络仍维持着（两端间）连接不中断，无线模块也可以处于低耗电状态。外部网络的分组到来时，运营商无线网络会通知设备，使其无线模块切换到连接状态，从而恢复数据传输。</p>
 <p>明白了吗，应用不必让无线模块“活动”也可以保持连接不被断开。但不必要的长连接也有可能极大地消耗电量，而且由于人们对移动网络无线通信的误解，这种情况经常发生。</p>
-<h3 id="预测网络延迟上限"><a href="#预测网络延迟上限" class="headerlink" title="预测网络延迟上限"></a>预测网络延迟上限</h3><p>在移动网络中，一个HTTP请求很可能会导致一连串长达几百甚至上几千ms的网络延迟。这一方面是因为有往返延迟，另一方面也不能忘记DNS、TCP、TLS及控制面的延迟（图8-2）。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE82%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84HTTP%E8%AF%B7%E6%B1%82%E7%9A%84%E6%9E%84%E6%88%90.png"></p>
+<h3 id="预测网络延迟上限"><a href="#预测网络延迟上限" class="headerlink" title="预测网络延迟上限"></a>预测网络延迟上限</h3><p>在移动网络中，一个HTTP请求很可能会导致一连串长达几百甚至上几千ms的网络延迟。这一方面是因为有往返延迟，另一方面也不能忘记DNS、TCP、TLS及控制面的延迟（图8-2）。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE82%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84HTTP%E8%AF%B7%E6%B1%82%E7%9A%84%E6%9E%84%E6%88%90.png"></p>
 <h1 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h1><h2 id="HTTP-简史"><a href="#HTTP-简史" class="headerlink" title="HTTP 简史"></a>HTTP 简史</h2><h3 id="HTTP-1-0：迅速发展及参考性RFC"><a href="#HTTP-1-0：迅速发展及参考性RFC" class="headerlink" title="HTTP 1.0：迅速发展及参考性RFC"></a>HTTP 1.0：迅速发展及参考性RFC</h3><p>今天，几乎所有Web服务器都支持，而且以后还会继续支持HTTP 1.0。除此之外，剩下的你都知道了。但HTTP 1.0对每个请求都打开一个新TCP连接严重影响性能。</p>
 <h3 id="HTTP-1-1：互联网标准"><a href="#HTTP-1-1：互联网标准" class="headerlink" title="HTTP 1.1：互联网标准"></a>HTTP 1.1：互联网标准</h3><p>HTTP 1.1 标准厘清了之前版本中很多有歧义的地方，而且还加入了很多重要的性能优化：<font color="DeepPink"><strong>持久连接、分块编码传输、字节范围请求、增强的缓存机制、传输编码及请求管道</strong></font>。</p>
 <p>HTTP 1.1 改变了HTTP协议的语义，默认使用持久连接。换句话说，除非明确告知（通过Connection: close 首部），否则服务器默认会保持连接打开。</p>
@@ -533,7 +543,9 @@
 <li>字节服务以支持基于范围的资源请求；　 </li>
 <li>改进的更好的缓存机制。 </li>
 </ul>
-<h3 id="HTTP管道"><a href="#HTTP管道" class="headerlink" title="HTTP管道"></a>HTTP管道</h3><p>HTTP 1.x 只能严格串行地返回响应。特别是，HTTP 1.x 不允许一个连接上的多个响应数据交错到达（多路复用），因而一个响应必须完全返回后，下一个响应才会开始传输。为说明这一点，我们可以看看服务器并行处理请求的情况（图 11-4）。<br><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE114%E4%BD%BF%E7%94%A8HTTP%E7%AE%A1%E9%81%93%E5%8F%91%E9%80%81%E8%AF%B7%E6%B1%82%E4%B8%94%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%AB%AF%E5%B9%B6%E8%A1%8C%E5%A4%84%E7%90%86.png"><br>图 11-4 演示了如下几个方面：</p>
+<h3 id="HTTP管道"><a href="#HTTP管道" class="headerlink" title="HTTP管道"></a>HTTP管道</h3><p>HTTP 1.x 只能严格串行地返回响应。特别是，HTTP 1.x 不允许一个连接上的多个响应数据交错到达（多路复用），因而一个响应必须完全返回后，下一个响应才会开始传输。为说明这一点，我们可以看看服务器并行处理请求的情况（图 11-4）。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE114%E4%BD%BF%E7%94%A8HTTP%E7%AE%A1%E9%81%93%E5%8F%91%E9%80%81%E8%AF%B7%E6%B1%82%E4%B8%94%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%AB%AF%E5%B9%B6%E8%A1%8C%E5%A4%84%E7%90%86.png"></p>
+<p>图 11-4 演示了如下几个方面：</p>
 <ul>
 <li>HTML 和 CSS 请求同时到达，但先处理的是 HTML 请求；</li>
 <li>服务器并行处理两个请求，其中处理 HTML 用时 40 ms，处理 CSS 用时 20 ms；</li>
@@ -638,6 +650,125 @@
 <li>帧是最小的通信单位，承载着特定类型的数据，如 HTTP 首部、负荷，等等。</li>
 </ul>
 <p>简言之，HTTP 2.0 把 HTTP 协议通信的基本单位缩小为一个一个的帧，这些帧对应着逻辑流中的消息。相应地，很多流可以并行地在同一个 TCP 连接上交换消息。</p>
+<h4 id="多向请求与响应"><a href="#多向请求与响应" class="headerlink" title="多向请求与响应"></a>多向请求与响应</h4><p>在 HTTP 1.x 中，如果客户端想发送多个并行的请求以及改进性能，那么必须使用多个 TCP 连接。这是 HTTP 1.x 交付模型的直接结果，该模型会保证每个连接每次只交付一个响应（多个响应必须排队）。更糟糕的是，这种模型也会导致队首阻塞，从而造成底层 TCP 连接的效率低下。</p>
+<p>HTTP 2.0 中新的二进制分帧层突破了这些限制，实现了多向请求和响应：客户端和服务器可以把 HTTP 消息分解为互不依赖的帧（图 12-3），然后乱序发送，最后再在另一端把它们重新组合起来。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE123HTTP2.0%E5%9C%A8%E5%85%B1%E4%BA%AB%E7%9A%84%E8%BF%9E%E6%8E%A5%E4%B8%8A%E5%90%8C%E6%97%B6%E5%8F%91%E9%80%81%E8%AF%B7%E6%B1%82%E5%92%8C%E5%93%8D%E5%BA%94.png"></p>
+<p>图 12-3 中包含了同一个连接上多个传输中的数据流：客户端正在向服务器传输一个DATA 帧（stream 5），与此同时，服务器正向客户端乱序发送 stream 1 和 stream 3的一系列帧。此时，一个连接上有 3 个请求/响应并行交换！</p>
+<p>总之，<font color="DeepPink"><strong>HTTP 2.0 的二进制分帧机制解决了 HTTP 1.x 中存在的队首阻塞问题，也消除了并行处理和发送请求及响应时对多个连接的依赖。</strong></font></p>
+<blockquote>
+<p>支持多向请求与响应，可以省掉针对 HTTP 1.x 限制所费的那些脑筋和工作，比如拼接文件、图片精灵、域名分区。类似地，通过减少 TCP 连接的数量，HTTP 2.0 也会减少客户端和服务器的 CPU 及内存占用。</p>
+</blockquote>
+<h4 id="请求优先级"><a href="#请求优先级" class="headerlink" title="请求优先级"></a>请求优先级</h4><p>把 HTTP 消息分解为很多独立的帧之后，就可以通过优化这些帧的交错和传输顺序，进一步提升性能。为了做到这一点，每个流都可以带有一个 31 比特的优先值：</p>
+<ul>
+<li>0 表示最高优先级；</li>
+<li>2^31 -1 表示最低优先级。</li>
+</ul>
+<p>有了这个优先值，客户端和服务器就可以在处理不同的流时采取不同的策略，以最优的方式发送流、消息和帧。具体来讲，服务器可以根据流的优先级，控制资源分配（CPU、内存、带宽），而在响应数据准备好之后，优先将最高优先级的帧发送给客户端。</p>
+<blockquote>
+<p>浏览器请求优先级与 HTTP 2.0<br>浏览器在渲染页面时，并非所有资源都具有相同的优先级：HTML 文档本身对构建 DOM 不可或缺，CSS 对构建 CSSOM 不可或缺，而 DOM 和 CSSOM 的构建都可能受到 JavaScript 资源的阻塞，其他资源（如图片）的优先级都可以降低。<br>为加快页面加载速度，所有现代浏览器都会基于资源的类型以及它在页面中的位置排定请求的优先次序，甚至通过之前的访问来学习优先级模式——比如，之前的渲染如果被某些资源阻塞了，那么同样的资源在下一次访问时可能就会被赋予更高的优先级。<br>在 HTTP 1.x 中，浏览器极少能利用上述优先级信息，因为协议本身并不支持多路复用，也没有办法向服务器通告请求的优先级。此时，浏览器只能依赖并行连接，且最多只能同时向一个域名发送 6 个请求。于是，在等连接可用期间，请求只能<br>在客户端排队，从而增加了不必要的网络延迟。理论上，HTTP 管道可以解决这个问题，只是由于缺乏支持而无法付诸实践。<br>HTTP 2.0 一举解决了所有这些低效的问题：浏览器可以在发现资源时立即分派请求，指定每个流的优先级，让服务器决定最优的响应次序。这样请求就不必排队了，既节省了时间，也最大限度地利用了每个连接。</p>
+</blockquote>
+<p>HTTP 2.0 没有规定处理优先级的具体算法，只是提供了一种赋予数据优先级的机制，而且要求客户端与服务器必须能够交换这些数据。这样一来，<font color="DeepPink"><strong>优先值作为提示信息，对应的次序排定策略可能因客户端或服务器的实现而不同：客户端应该明确指定优先值，服务器应该根据该值处理和交付数据。</strong></font></p>
+<p>在这个规定之下，尽管你可能无法控制客户端发送的优先值，但或许你可以控制服务器。因此，在选择 HTTP 2.0 服务器时，可以多留点心！为说明这一点，考虑下面几个问题。</p>
+<ul>
+<li>如果服务器对所有优先值视而不见怎么办？</li>
+<li>高优先值的流一定优先处理吗？</li>
+<li>是否存在不同优先级的流应该交错的情况？<br>如果服务器不理睬所有优先值，那么可能会导致应用响应变慢：浏览器明明在等关键的 CSS 和 JavaScript，服务器却在发送图片，从而造成渲染阻塞。不过，规定严格的优先级次序也可能带来次优的结果，因为这可能又会引入队首阻塞问题，即某<br>个高优先级的慢请求会不必要地阻塞其他资源的交付。</li>
+</ul>
+<p>服务器可以而且应该交错发送不同优先级别的帧。只要可能，高优先级流都应该优先，包括分配处理资源和客户端与服务器间的带宽。不过，为了最高效地利用底层连接，不同优先级的混合也是必需的。</p>
+<h4 id="每个来源一个连接"><a href="#每个来源一个连接" class="headerlink" title="每个来源一个连接"></a>每个来源一个连接</h4><p>有了新的分帧机制后，HTTP 2.0 不再依赖多个 TCP 连接去实现多流并行了。现在，每个数据流都拆分成很多帧，而这些帧可以交错，还可以分别优先级。于是，<font color="DeepPink"><strong>所有HTTP 2.0 连接都是持久化的，而且客户端与服务器之间也只需要一个连接即可。</strong></font></p>
+<blockquote>
+<p>实验表明，客户端使用更少的连接肯定可以降低延迟时间。HTTP 2.0 发送的总分组数量比 HTTP 差不多要少 40%。而服务器处理大量并发连接的情况也变成了可伸缩性问题，因为 HTTP 2.0 减轻了这个负担。<br>——HTTP/2.0 Draft 2</p>
+</blockquote>
+<p>每个来源一个连接显著减少了相关的资源占用：连接路径上的套接字管理工作量少了，内存占用少了，连接吞吐量大了。此外，从上到下所有层面上也都获得了相应的好处：</p>
+<ul>
+<li>所有数据流的优先次序始终如一；</li>
+<li>压缩上下文单一使得压缩效果更好；</li>
+<li>由于 TCP 连接减少而使网络拥塞状况得以改观；</li>
+<li>慢启动时间减少，拥塞和丢包恢复速度更快。</li>
+</ul>
+<blockquote>
+<p><font color="DeepPink"><strong>大多数 HTTP 连接的时间都很短，而且是突发性的，但 TCP 只在长时间连接传输大块数据时效率才最高。HTTP 2.0 通过让所有数据流共用同一个连接，可以更有效地使用 TCP 连接。</strong></font></p>
+</blockquote>
+<blockquote>
+<p>丢包、高 RTT 连接和 HTTP 2.0 性能<br>等一等，我听你说了一大堆每个来源一个 TCP 连接的好处，难道它就一点坏处都<br>没有吗？有，当然有。；</p>
+<ul>
+<li>虽然消除了 HTTP 队首阻塞现象，但 TCP 层次上仍然存在队首阻塞;</li>
+<li>如果 TCP 窗口缩放被禁用，那带宽延迟积效应可能会限制连接的吞吐量；</li>
+<li>丢包时，TCP 拥塞窗口会缩小。<br>上述每一点都可能对 HTTP 2.0 连接的吞吐量和延迟性能造成不利影响。然而，除了这些局限性之外，实验表明一个 TCP 连接仍然是 HTTP 2.0 基础上的最佳部署策略。</li>
+</ul>
+</blockquote>
+<p><font color="DeepPink"><strong>总之，一定要知道 HTTP 2.0 与之前的版本一样，并不强制使用 TCP。UDP 等其他传输协议也并非不可以。</strong></font></p>
+<h4 id="流量控制"><a href="#流量控制" class="headerlink" title="流量控制"></a>流量控制</h4><p>在同一个 TCP 连接上传输多个数据流，就意味着要共享带宽。标定数据流的优先级有助于按序交付，但只有优先级还不足以确定多个数据流或多个连接间的资源分配。为解决这个问题，HTTP 2.0 为数据流和连接的流量控制提供了一个简单的机制：</p>
+<ul>
+<li>流量控制基于每一跳进行，而非端到端的控制；</li>
+<li>流量控制基于窗口更新帧进行，即接收方广播自己准备接收某个数据流的多少字节，以及对整个连接要接收多少字节；</li>
+<li>流量控制窗口大小通过WINDOW_UPDATE 帧更新，这个字段指定了流 ID 和窗口大小递增值；</li>
+<li>流量控制有方向性，即接收方可能根据自己的情况为每个流乃至整个连接设置任意窗口大小；</li>
+<li>流量控制可以由接收方禁用，包括针对个别的流和针对整个连接。</li>
+</ul>
+<blockquote>
+<p>HTTP 2.0 连接建立之后，客户端与服务器交换 SETTINGS 帧，目的是设置双向的流量控制窗口大小。除此之外，任何一端都可以选择禁用个别流或整个连接的流量控制。</p>
+</blockquote>
+<blockquote>
+<p>优先级可以决定交付次序，而流量控制则可以控制 HTTP 2.0 连接中每个流占用的资源：接收方可以针对特定的流广播较低的窗口大小，以限制它的传输速度。</p>
+</blockquote>
+<h4 id="服务器推送"><a href="#服务器推送" class="headerlink" title="服务器推送"></a>服务器推送</h4><p>HTTP 2.0 新增的一个强大的新功能，就是服务器可以对一个客户端请求发送多个响应。换句话说，除了对最初请求的响应外，服务器还可以额外向客户端推送资源，而无需客户端明确地请求。</p>
+<blockquote>
+<p>建立 HTTP 2.0 连接后，客户端与服务器交换 SETTINGS 帧，借此可以限定双向并发的流的最大数量。因此，客户端可以限定推送流的数量，或者通过把这个值设置为 0 而完全禁用服务器推送。</p>
+</blockquote>
+<p>为什么需要这样一个机制呢？通常的 Web 应用都由几十个资源组成，客户端需要分析服务器提供的文档才能逐个找到它们。那为什么不让服务器提前就把这些资源推送给客户端，从而减少额外的时间延迟呢？服务器已经知道客户端下一步要请求什么资源了，这时候服务器推送即可派上用场。事实上，如果你在网页里嵌入过 CSS、JavaScript，或者通过数据 URI 嵌入过其他资源，那你就已经亲身体验过服务器推送了。</p>
+<blockquote>
+<p>所有推送的资源都遵守同源策略。换句话说，服务器不能随便将第三方资源推送给客户端，而必须是经过双方确认才行。</p>
+</blockquote>
+<h4 id="首部压缩"><a href="#首部压缩" class="headerlink" title="首部压缩"></a>首部压缩</h4><p>HTTP 的每一次通信都会携带一组首部，用于描述传输的资源及其属性。在 HTTP 1.x 中，这些元数据都是以纯文本形式发送的，通常会给每个请求增加 500~800 字节的负荷。如果算上 HTTP cookie，增加的负荷通常会达到上千字节。为减少这些开销并提升性能，HTTP 2.0 会压缩首部元数据：</p>
+<ul>
+<li><font color="DeepPink"><strong>HTTP 2.0 在客户端和服务器端使用“首部表”来跟踪和存储之前发送的键－值对，对于相同的数据，不再通过每次请求和响应发送；</strong></font></li>
+<li><font color="DeepPink"><strong>首部表在HTTP 2.0的连接存续期内始终存在，由客户端和服务器共同渐进地更新</strong></font>; </li>
+<li><font color="DeepPink"><strong>每个新的首部键－值对要么被追加到当前表的末尾，要么替换表中之前的值</strong></font>。 </li>
+</ul>
+<p>于是，HTTP 2.0 连接的两端都知道已经发送了哪些首部，这些首部的值是什么，从而可以针对之前的数据只编码发送差异数据（图 12-5）。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE125HTTP2.0%E9%A6%96%E9%83%A8%E7%9A%84%E5%B7%AE%E5%BC%82%E5%8C%96%E7%BC%96%E7%A0%81.png"></p>
+<blockquote>
+<p>请求与响应首部的定义在 HTTP 2.0 中基本没有改变，只是所有首部键必须全部小写，而且请求行要独立为 :method 、 :scheme 、 :host 和 :path 这些键－值对。</p>
+</blockquote>
+<p>在前面的例子中，第二个请求只需要发送变化了的路径首部（:path），其他首部没有变化，不用再发送了。这样就可以避免传输冗余的首部，从而显著减少每个请求的开销。通信期间几乎不会改变的通用键－值对（用户代理、可接受的媒体类型，等等）只需发送一次。事实上，如果请求中不包含首部（例如对同一资源的轮询请求），那么首部开销就是零字节。此时所有首部都自动使用之前请求发送的首部！</p>
+<h4 id="有效的HTTP-2-0升级与发现"><a href="#有效的HTTP-2-0升级与发现" class="headerlink" title="有效的HTTP 2.0升级与发现"></a>有效的HTTP 2.0升级与发现</h4><p>通过常规非加密信道建立 HTTP 2.0 连接需要多做一点工作。因为 HTTP 1.0 和HTTP 2.0 都使用同一个端口（80），又没有服务器是否支持 HTTP 2.0 的其他任何信息，此时客户端只能使用 <font color="DeepPink"><strong>HTTP  Upgrade 机制</strong></font>通过协调确定适当的协议：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">GET /page HTTP/1.1</span><br><span class="line">Host: server.example.com</span><br><span class="line">Connection: Upgrade, HTTP2-Settings</span><br><span class="line">Upgrade: HTTP/2.0 ➊</span><br><span class="line">HTTP2-Settings: (SETTINGS payload) ➋</span><br><span class="line">HTTP/1.1 200 OK ➌</span><br><span class="line">Content-length: 243</span><br><span class="line">Content-type: text/html</span><br><span class="line">(... HTTP 1.1 response ...)</span><br><span class="line">(or)</span><br><span class="line">HTTP/1.1 101 Switching Protocols ➍</span><br><span class="line">Connection: Upgrade</span><br><span class="line">Upgrade: HTTP/2.0</span><br><span class="line">(... HTTP 2.0 response ...)</span><br></pre></td></tr></table></figure>
+
+<p>➊ 发起带有 HTTP 2.0 Upgrade 首部的 HTTP 1.1 请求<br>➋ HTTP/2.0  SETTINGS 净荷的 Base64 URL 编码<br>➌ 服务器拒绝升级，通过 HTTP 1.1 返回响应<br>➍ 服务器接受 HTTP 2.0 升级，切换到新分帧</p>
+<p>使用这种 Upgrade 流，如果服务器不支持 HTTP 2.0，就立即返回 HTTP 1.1 响应。否则，服务器就会以 HTTP 1.1 格式返回 101 Switching Protocols 响应，然后立即切换到 HTTP 2.0 并使用新的二进制分帧协议返回响应。无论哪种情况，都不需要额外往返。</p>
+<blockquote>
+<p>为确定服务器和客户端都有意使用 HTTP 2.0 对话，双方还必须发送“连接首部”，也就是一串标准的字节。这种信息交换本质上是一种“尽早失败”（fail-fast）的机制，可以避免客户端、服务器，以及中间设备偶尔接受请<br>求的升级却不理解新协议。而且，这种信息交换也不会带来额外的往返，只是在连接开始时要多传一些字节。</p>
+</blockquote>
+<p>最后，如果客户端因为自己保存有或通过其他手段（如 DNS 记录、手工配置等）获得了关于 HTTP 2.0 的支持信息，它也可以直接发送 HTTP 2.0 分帧，而不必依赖Upgrade 机制。有了这些信息，客户端可以一上来就通过非加密信道发送 HTTP 2.0 分帧，其他就不管了。最坏的情况，就是无法建立连接，客户端再回退一步，重新使用 Upgrade 首部，或者切换到带 ALPN 协商的 TLS 信道。</p>
+<p><font color="DeepPink"><strong>服务器之前的 HTTP 2.0 支持信息并不能保证下一次就能可靠地建立连接。以这种方式通信的前提，就是各端都必须支持 HTTP 2.0。如果任何中间设备不支持，连接都不会成功。</strong></font></p>
+<h3 id="二进制分帧简介"><a href="#二进制分帧简介" class="headerlink" title="二进制分帧简介"></a>二进制分帧简介</h3><p>HTTP 2.0 的根本改进还是新增的长度前置的二进制分帧层。</p>
+<p>建立了 HTTP 2.0 连接后，客户端与服务器会通过交换帧来通信，帧是基于这个新协议通信的最小单位。所有帧都共享一个 8 字节的首部（图 12-6），其中包含帧的长度、类型、标志，还有一个保留位和一个 31 位的流标识符。</p>
+<p><img alt data-src="/images/high-performance-browser-networking-note/%E5%9B%BE126%E5%85%B1%E6%9C%89%E7%9A%848%E5%AD%97%E8%8A%82%E5%B8%A7%E9%A6%96%E9%83%A8.png"></p>
+<ul>
+<li>16 位的长度前缀意味着一帧大约可以携带 64 KB 数据，不包括 8 字节首部。</li>
+<li>8 位的类型字段决定如何解释帧其余部分的内容。</li>
+<li>8 位的标志字段允许不同的帧类型定义特定于帧的消息标志。</li>
+<li>1 位的保留字段始终置为 0。</li>
+<li>31 位的流标识符唯一标识 HTTP 2.0 的流。</li>
+</ul>
+<blockquote>
+<p>在调试 HTTP 2.0 通信时，有人会使用自己喜欢的十六进制查看器。其实，Wireshark 及其他类似的工具也有相应的插件，使用很简单，也很人性化。比如，谷歌 Chrome 就支持 chrome://internals#spdy ，通过它可以查看通信细节。</p>
+</blockquote>
+<p>知道了 HTTP 2.0 规定的这个共享的帧首部，就可以自己编写一个简单的解析器，通过分析 HTTP 2.0 字节流，根据每个帧的前 8 字节找到帧的类型、标志和长度。而且，由于每个帧的长度都是预先定义好的，解析器可以迅速而准确地跳到下一帧的开始，这也是相对于 HTTP 1.x 的一个很大的性能提升。</p>
+<p>知道了帧类型，解析器就知道该如何解释帧的其余内容了。HTTP 2.0 规定了如下帧类型。</p>
+<ul>
+<li>DATA：用于传输 HTTP 消息体。</li>
+<li>HEADERS：用于传输关于流的额外的首部字段。</li>
+<li>PRIORITY：用于指定或重新指定引用资源的优先级。</li>
+<li>RST_STREAM：用于通知流的非正常终止。</li>
+<li>SETTINGS：用于通知两端通信方式的配置数据。</li>
+<li>PUSH_PROMISE：用于发出创建流和服务器引用资源的要约。</li>
+<li>PING：用于计算往返时间，执行“活性”检查。</li>
+<li>GOAWAY：用于通知对端停止在当前连接中创建流。</li>
+<li>WINDOW_UPDATE：用于针对个别流或个别连接实现流量控制。</li>
+<li>CONTINUATION：用于继续一系列首部块片段。</li>
+</ul>
 
     </div>
       
@@ -1073,7 +1204,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#网络技术概览"><span class="nav-number">1.</span> <span class="nav-text">网络技术概览</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#带宽与延迟"><span class="nav-number">1.1.</span> <span class="nav-text">带宽与延迟</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#延迟的最后一公里"><span class="nav-number">1.1.1.</span> <span class="nav-text">延迟的最后一公里</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的构成"><span class="nav-number">1.2.</span> <span class="nav-text">TCP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次握手"><span class="nav-number">1.2.1.</span> <span class="nav-text">三次握手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队首阻塞"><span class="nav-number">1.2.2.</span> <span class="nav-text">队首阻塞</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#针对TCP的优化建议"><span class="nav-number">1.3.</span> <span class="nav-text">针对TCP的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#服务器配置调优"><span class="nav-number">1.3.1.</span> <span class="nav-text">服务器配置调优</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP的构成"><span class="nav-number">1.4.</span> <span class="nav-text">UDP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#无协议服务"><span class="nav-number">1.4.1.</span> <span class="nav-text">无协议服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP与网络地址转换器"><span class="nav-number">1.4.2.</span> <span class="nav-text">UDP与网络地址转换器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传输层安全（TLS）"><span class="nav-number">1.5.</span> <span class="nav-text">传输层安全（TLS）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#信任链与证书颁发机构"><span class="nav-number">1.5.1.</span> <span class="nav-text">信任链与证书颁发机构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#证书撤销"><span class="nav-number">1.5.2.</span> <span class="nav-text">证书撤销</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#证书撤销名单（CRL）"><span class="nav-number">1.5.2.1.</span> <span class="nav-text">证书撤销名单（CRL）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#在线证书状态协议（OCSP）"><span class="nav-number">1.5.2.2.</span> <span class="nav-text">在线证书状态协议（OCSP）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对TLS的优化建议"><span class="nav-number">1.5.3.</span> <span class="nav-text">针对TLS的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS记录大小"><span class="nav-number">1.5.3.1.</span> <span class="nav-text">TLS记录大小</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS压缩"><span class="nav-number">1.5.3.2.</span> <span class="nav-text">TLS压缩</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#无线网络性能"><span class="nav-number">2.</span> <span class="nav-text">无线网络性能</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#移动网络的优化建议"><span class="nav-number">2.1.</span> <span class="nav-text">移动网络的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#消除周期性及无效的数据传输"><span class="nav-number">2.1.1.</span> <span class="nav-text">消除周期性及无效的数据传输</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消除不必要的长连接"><span class="nav-number">2.1.2.</span> <span class="nav-text">消除不必要的长连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#预测网络延迟上限"><span class="nav-number">2.1.3.</span> <span class="nav-text">预测网络延迟上限</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP"><span class="nav-number">3.</span> <span class="nav-text">HTTP</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP-简史"><span class="nav-number">3.1.</span> <span class="nav-text">HTTP 简史</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-1-0：迅速发展及参考性RFC"><span class="nav-number">3.1.1.</span> <span class="nav-text">HTTP 1.0：迅速发展及参考性RFC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-1-1：互联网标准"><span class="nav-number">3.1.2.</span> <span class="nav-text">HTTP 1.1：互联网标准</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-2-0：改进传输性能"><span class="nav-number">3.1.3.</span> <span class="nav-text">HTTP 2.0：改进传输性能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Web性能要点"><span class="nav-number">3.2.</span> <span class="nav-text">Web性能要点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#剖析现代Web应用"><span class="nav-number">3.2.1.</span> <span class="nav-text">剖析现代Web应用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#速度、性能与用户期望"><span class="nav-number">3.2.1.1.</span> <span class="nav-text">速度、性能与用户期望</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP-1-x"><span class="nav-number">3.3.</span> <span class="nav-text">HTTP 1.x</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP管道"><span class="nav-number">3.3.1.</span> <span class="nav-text">HTTP管道</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用多个TCP连接"><span class="nav-number">3.3.2.</span> <span class="nav-text">使用多个TCP连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#域名分区"><span class="nav-number">3.3.3.</span> <span class="nav-text">域名分区</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#嵌入资源"><span class="nav-number">3.3.4.</span> <span class="nav-text">嵌入资源</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP-2-0"><span class="nav-number">3.4.</span> <span class="nav-text">HTTP 2.0</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#走向HTTP-2-0"><span class="nav-number">3.4.1.</span> <span class="nav-text">走向HTTP 2.0</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设计和技术目标"><span class="nav-number">3.4.2.</span> <span class="nav-text">设计和技术目标</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#二进制分帧层"><span class="nav-number">3.4.2.1.</span> <span class="nav-text">二进制分帧层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#流、消息和帧"><span class="nav-number">3.4.2.2.</span> <span class="nav-text">流、消息和帧</span></a></li></ol></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#网络技术概览"><span class="nav-number">1.</span> <span class="nav-text">网络技术概览</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#带宽与延迟"><span class="nav-number">1.1.</span> <span class="nav-text">带宽与延迟</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#延迟的最后一公里"><span class="nav-number">1.1.1.</span> <span class="nav-text">延迟的最后一公里</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的构成"><span class="nav-number">1.2.</span> <span class="nav-text">TCP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次握手"><span class="nav-number">1.2.1.</span> <span class="nav-text">三次握手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队首阻塞"><span class="nav-number">1.2.2.</span> <span class="nav-text">队首阻塞</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#针对TCP的优化建议"><span class="nav-number">1.3.</span> <span class="nav-text">针对TCP的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#服务器配置调优"><span class="nav-number">1.3.1.</span> <span class="nav-text">服务器配置调优</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP的构成"><span class="nav-number">1.4.</span> <span class="nav-text">UDP的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#无协议服务"><span class="nav-number">1.4.1.</span> <span class="nav-text">无协议服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP与网络地址转换器"><span class="nav-number">1.4.2.</span> <span class="nav-text">UDP与网络地址转换器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传输层安全（TLS）"><span class="nav-number">1.5.</span> <span class="nav-text">传输层安全（TLS）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#信任链与证书颁发机构"><span class="nav-number">1.5.1.</span> <span class="nav-text">信任链与证书颁发机构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#证书撤销"><span class="nav-number">1.5.2.</span> <span class="nav-text">证书撤销</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#证书撤销名单（CRL）"><span class="nav-number">1.5.2.1.</span> <span class="nav-text">证书撤销名单（CRL）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#在线证书状态协议（OCSP）"><span class="nav-number">1.5.2.2.</span> <span class="nav-text">在线证书状态协议（OCSP）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对TLS的优化建议"><span class="nav-number">1.5.3.</span> <span class="nav-text">针对TLS的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS记录大小"><span class="nav-number">1.5.3.1.</span> <span class="nav-text">TLS记录大小</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TLS压缩"><span class="nav-number">1.5.3.2.</span> <span class="nav-text">TLS压缩</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#无线网络性能"><span class="nav-number">2.</span> <span class="nav-text">无线网络性能</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#移动网络的优化建议"><span class="nav-number">2.1.</span> <span class="nav-text">移动网络的优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#消除周期性及无效的数据传输"><span class="nav-number">2.1.1.</span> <span class="nav-text">消除周期性及无效的数据传输</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消除不必要的长连接"><span class="nav-number">2.1.2.</span> <span class="nav-text">消除不必要的长连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#预测网络延迟上限"><span class="nav-number">2.1.3.</span> <span class="nav-text">预测网络延迟上限</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP"><span class="nav-number">3.</span> <span class="nav-text">HTTP</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP-简史"><span class="nav-number">3.1.</span> <span class="nav-text">HTTP 简史</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-1-0：迅速发展及参考性RFC"><span class="nav-number">3.1.1.</span> <span class="nav-text">HTTP 1.0：迅速发展及参考性RFC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-1-1：互联网标准"><span class="nav-number">3.1.2.</span> <span class="nav-text">HTTP 1.1：互联网标准</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-2-0：改进传输性能"><span class="nav-number">3.1.3.</span> <span class="nav-text">HTTP 2.0：改进传输性能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Web性能要点"><span class="nav-number">3.2.</span> <span class="nav-text">Web性能要点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#剖析现代Web应用"><span class="nav-number">3.2.1.</span> <span class="nav-text">剖析现代Web应用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#速度、性能与用户期望"><span class="nav-number">3.2.1.1.</span> <span class="nav-text">速度、性能与用户期望</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP-1-x"><span class="nav-number">3.3.</span> <span class="nav-text">HTTP 1.x</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP管道"><span class="nav-number">3.3.1.</span> <span class="nav-text">HTTP管道</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用多个TCP连接"><span class="nav-number">3.3.2.</span> <span class="nav-text">使用多个TCP连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#域名分区"><span class="nav-number">3.3.3.</span> <span class="nav-text">域名分区</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#嵌入资源"><span class="nav-number">3.3.4.</span> <span class="nav-text">嵌入资源</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP-2-0"><span class="nav-number">3.4.</span> <span class="nav-text">HTTP 2.0</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#走向HTTP-2-0"><span class="nav-number">3.4.1.</span> <span class="nav-text">走向HTTP 2.0</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设计和技术目标"><span class="nav-number">3.4.2.</span> <span class="nav-text">设计和技术目标</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#二进制分帧层"><span class="nav-number">3.4.2.1.</span> <span class="nav-text">二进制分帧层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#流、消息和帧"><span class="nav-number">3.4.2.2.</span> <span class="nav-text">流、消息和帧</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#多向请求与响应"><span class="nav-number">3.4.2.3.</span> <span class="nav-text">多向请求与响应</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#请求优先级"><span class="nav-number">3.4.2.4.</span> <span class="nav-text">请求优先级</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#每个来源一个连接"><span class="nav-number">3.4.2.5.</span> <span class="nav-text">每个来源一个连接</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#流量控制"><span class="nav-number">3.4.2.6.</span> <span class="nav-text">流量控制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#服务器推送"><span class="nav-number">3.4.2.7.</span> <span class="nav-text">服务器推送</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#首部压缩"><span class="nav-number">3.4.2.8.</span> <span class="nav-text">首部压缩</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#有效的HTTP-2-0升级与发现"><span class="nav-number">3.4.2.9.</span> <span class="nav-text">有效的HTTP 2.0升级与发现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二进制分帧简介"><span class="nav-number">3.4.3.</span> <span class="nav-text">二进制分帧简介</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
@@ -1100,12 +1231,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">478k</span>
+    <span title="站点总字数">484k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:14</span>
+    <span title="站点阅读时长">7:20</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
