@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《图解TCP/IP 第5版》作者：[日] 竹下隆史，[日] 村山公保，[日] 荒井透，[日] 苅田幸雄 著译者：乌尼日其其格出版时间：2013-07">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-02T15:17:42.097Z">
+<meta property="og:updated_time" content="2019-09-03T00:57:15.501Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP与UDP 笔记">
 <meta name="twitter:description" content="本文整理自：《图解TCP/IP 第5版》作者：[日] 竹下隆史，[日] 村山公保，[日] 荒井透，[日] 苅田幸雄 著译者：乌尼日其其格出版时间：2013-07">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-02 23:17:42" itemprop="dateModified" datetime="2019-09-02T23:17:42+08:00">2019-09-02</time>
+                <time title="修改时间：2019-09-03 08:57:15" itemprop="dateModified" datetime="2019-09-03T08:57:15+08:00">2019-09-03</time>
               </span>
             
           
@@ -342,7 +342,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">6.1k</span>
+              <span title="本文字数">8.5k</span>
             </span>
           
             <span class="post-meta-item">
@@ -352,7 +352,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">6 分钟</span>
+              <span title="阅读时长">8 分钟</span>
             </span>
           
 
@@ -452,7 +452,41 @@
 <p>而由重复确认应答进行高速重发控制时，慢启动阈值的大小被设置为当时窗口大小的一半（严格来说，是设置为“实际已发送但未收到确认应答的数据量”的一半）。然后将窗口的大小设置为该慢启动阈值+3个数据段的大小。</p>
 <p>有了这样一种控制，TCP的拥塞窗口如上图所示发生变化。由于窗口的大小会直接影响数据被转发的吞吐量，所以一般情况下，窗口越大，越会形成高吞吐量的通信。</p>
 <p>当TCP通信开始以后,网络吞吐量会逐渐上升,但是随着网络拥堵的发生吞吐量也会急剧下降。于是会再次进入吞吐量慢慢上升的过程。因此所谓TCP的吞吐量的特点就好像是在逐步占领网络带宽的感觉。</p>
-<h1 id="UDP首部的格式"><a href="#UDP首部的格式" class="headerlink" title="UDP首部的格式"></a>UDP首部的格式</h1><p>下图展示了UDP首部的格式。除去数据的部分正式UDP的首部。UDP首部由源端口号，目标端口号，包长和校验和组成。<br><img alt data-src="/images/tcp-and-udp-note/UDP%E6%95%B0%E6%8D%AE%E6%8A%A5%E6%A0%BC%E5%BC%8F.png"></p>
+<h1 id="UDP首部的格式"><a href="#UDP首部的格式" class="headerlink" title="UDP首部的格式"></a>UDP首部的格式</h1><p>下图展示了UDP首部的格式。除去数据的部分正式UDP的首部。UDP首部由源端口号，目标端口号，包长和校验和组成。</p>
+<p><img alt data-src="/images/tcp-and-udp-note/UDP%E6%95%B0%E6%8D%AE%E6%8A%A5%E6%A0%BC%E5%BC%8F.png"></p>
+<h2 id="源端口号（Source-Port）"><a href="#源端口号（Source-Port）" class="headerlink" title="源端口号（Source Port）"></a>源端口号（Source Port）</h2><p>表示发送端端口号，字段长16位。该字段是可选项，有时可能不会设置源端口号。没有源端口号的时候该字段的值设置为0。可用于不需要返回的通信中。</p>
+<h2 id="目标端口号（Destination-Port）"><a href="#目标端口号（Destination-Port）" class="headerlink" title="目标端口号（Destination Port）"></a>目标端口号（Destination Port）</h2><p>表示接收端端口，字段长度16位。</p>
+<h2 id="包长度（Length）"><a href="#包长度（Length）" class="headerlink" title="包长度（Length）"></a>包长度（Length）</h2><p>该字段保存了UDP首部的长度跟数据的长度之和。单位为字节（8位字节）。</p>
+<h2 id="校验和（Checksum）"><a href="#校验和（Checksum）" class="headerlink" title="校验和（Checksum）"></a>校验和（Checksum）</h2><p>校验和是为了提供可靠的UDP首部和数据而设计。在计算校验和时，附加在UDP伪首部与UDP数据报之前。通过在最后一位增加一个“0”将全长增加16倍。此时将UDP首部的校验和字段设置为“0”。然后以16比特为单位进行1的补码和，并将所得到的1的补码和写入校验和字段。</p>
+<p><img alt data-src="/images/tcp-and-udp-note/%E6%A0%A1%E9%AA%8C%E5%92%8C%E8%AE%A1%E7%AE%97%E4%B8%AD%E4%BD%BF%E7%94%A8%E7%9A%84UDP%E4%BC%AA%E9%A6%96%E9%83%A8.png"></p>
+<p>接收主机在收到UDP数据报以后，从IP首部获知IP地址信息构造UDP伪首部，再进行校验和计算。校验和制度按的值是校验和字段以外余下部分的1的补码和。因此，包括校验和字段在内的所有数据之和结果为“16位全部为1”时，才会被认为所收到的数据时正确的。</p>
+<p>另外，UDP也可有可能不用校验和。此时，校验和字段中填入0。这种情况下，由于不进行校验和计算，协议处理的开销（在处理实际数据之外，为了进行通信控制的处理而不得不付出的必要的消耗部分）就会降低，从而提高数据转发的速度。然而，如果UDP首部的端口号或是IP首部的IP地址遇到损坏，那么可能会对其他通信造成不好的影响。因此，在互联网中比较推荐使用校验和检查。</p>
+<blockquote>
+<p>校验和计算中计算UDP伪首部的理由<br>TCP/IP中识别一个通信的应用需要5大要素，它们分别是“源IP地址”、“目标IP地址”、“源端口”、“目标端口”、“协议号”。然而，在UDP的首部中只包含它们当中的两项（源端口和目标端口），余下的3项都包含在IP首部里。<br>假定其他3项都被破坏？显然，这极有可能会导致应该收包的应用收不到包，不该收到包的应用却收到了包。<br>为了避免这类问题，有必要验证一个通信中必要的5项识别码是否正确。为此，在校验和的计算中就引入和伪首部的概念。<br>此外，IPv6中的IP首部没有检验和字段。TCP和UDP通过伪首部，得以对5项数字进行校验，从而实现即使在IP首部并不可靠的情况下仍然能够提供可靠的通信传输。</p>
+</blockquote>
+<h1 id="TCP首部格式"><a href="#TCP首部格式" class="headerlink" title="TCP首部格式"></a>TCP首部格式</h1><p><img alt data-src="/images/tcp-and-udp-note/TCP%E6%95%B0%E6%8D%AE%E6%AE%B5%E6%A0%BC%E5%BC%8F.png"></p>
+<p>TCP中没有表示包长度和数据长度的字段。可由IP层获知TCP的包长，由TCO的包长可知数据的长度。</p>
+<h2 id="源端口号（Source-Port）-1"><a href="#源端口号（Source-Port）-1" class="headerlink" title="源端口号（Source Port）"></a>源端口号（Source Port）</h2><p>表示发送端端口号，字段长16位。</p>
+<h2 id="目标端口号（Destination-Port）-1"><a href="#目标端口号（Destination-Port）-1" class="headerlink" title="目标端口号（Destination Port）"></a>目标端口号（Destination Port）</h2><p>表示接收端端口号，字段长度16位。</p>
+<h2 id="序列号（Sequence-Number）"><a href="#序列号（Sequence-Number）" class="headerlink" title="序列号（Sequence Number）"></a>序列号（Sequence Number）</h2><p>字段长32位。序列号（序号）是指发送数据的位置，每发送一次数据，就累加一次该数据字节数的大小。</p>
+<p><font color="DeepPink"><strong>序列号不会从0或1开始，而是建立连接时由计算机生成的随机数作为其初始值，通过SYN包传给接收端主机。</strong></font>然后再将每转发过去的字节数累加到初始值上表示数据的位置。此外，在建立连接和断开连接时发送的SYN包和FIN包虽然并不携带数据，但是也会作为一个字节增加对应的序列号。</p>
+<h2 id="确认应答号（Acknowledgement-Number）"><a href="#确认应答号（Acknowledgement-Number）" class="headerlink" title="确认应答号（Acknowledgement Number）"></a>确认应答号（Acknowledgement Number）</h2><p>确认应答号字段长度32位。是指下一次应该受到的数据的序列号。实际上，它是指已收到确认应答号减一为止的数据。发送端收到这个确认应答以后可以认为在这个序号以前的数据都已经被正常接收。</p>
+<h2 id="数据偏移（Data-Offset）"><a href="#数据偏移（Data-Offset）" class="headerlink" title="数据偏移（Data Offset）"></a>数据偏移（Data Offset）</h2><p>该字段表示TCP所传输的数据部分应该从TCP包的哪个位开始计算，当然也可以把它看做TCP首部的长度。该字段长4位，单位为4字节（即32位）。</p>
+<h2 id="保留（Reserved）"><a href="#保留（Reserved）" class="headerlink" title="保留（Reserved）"></a>保留（Reserved）</h2><p>该字段主要是为了以后扩展时使用，其长度为4位。一般设置为0，但即使收到的包在该字段不为0，此包也不会被丢弃。</p>
+<h2 id="控制位（Control-Flag）"><a href="#控制位（Control-Flag）" class="headerlink" title="控制位（Control Flag）"></a>控制位（Control Flag）</h2><p>字段长为8位，每一位从左至右分别为CWR、ECE、URG、ACK、PSH、RST、SYN、FIN。这些控制标志也叫作控制位。</p>
+<p><img alt data-src="/images/tcp-and-udp-note/%E6%8E%A7%E5%88%B6%E4%BD%8D.png"></p>
+<h3 id="CWR（Congestion-Window-Reduced）"><a href="#CWR（Congestion-Window-Reduced）" class="headerlink" title="CWR（Congestion Window Reduced）"></a>CWR（Congestion Window Reduced）</h3><p>CWR标志与后面的ECE标志都用于IP首部的ECN字段。ECE标志为1时，则通知对方已将拥塞窗口缩小。</p>
+<h3 id="ECE（ECN-Echo）"><a href="#ECE（ECN-Echo）" class="headerlink" title="ECE（ECN-Echo）"></a>ECE（ECN-Echo）</h3><p>ECE标志表示ECN-Echo。置为1会通知通信对方，从对方到这边的网络有拥塞。在收到数据包的IP首部中ECN为1时将TCP首部中的ECE设置为1。</p>
+<h3 id="URG（Urgent-Flag）"><a href="#URG（Urgent-Flag）" class="headerlink" title="URG（Urgent Flag）"></a>URG（Urgent Flag）</h3><p>该位为1时，确认应答的字段变为有效。TCP规定除了最初建立连接时的SYN包之外该位必须设置为1。</p>
+<h3 id="PSH（Push-Flag）"><a href="#PSH（Push-Flag）" class="headerlink" title="PSH（Push Flag）"></a>PSH（Push Flag）</h3><p>该位为1时，表示需要将受到的数据立即传给上层应用协议。PSH为0时，则不需要立即传而是先进性缓存。</p>
+<h3 id="RST（Reset-Flag）"><a href="#RST（Reset-Flag）" class="headerlink" title="RST（Reset Flag）"></a>RST（Reset Flag）</h3><p>该位为1时表示TCP连接中出现异常必须强制断开连接。</p>
+<h3 id="SYN（Synchronize-Flag）"><a href="#SYN（Synchronize-Flag）" class="headerlink" title="SYN（Synchronize Flag）"></a>SYN（Synchronize Flag）</h3><p>用于建立连接。SYN为1 表示希望建立连接，并在其序列号的字段进行序列号初始值的设定。</p>
+<h3 id="FIN（Fin-Flag）"><a href="#FIN（Fin-Flag）" class="headerlink" title="FIN（Fin Flag）"></a>FIN（Fin Flag）</h3><p>该位为1时，表示今后不会再有数据发送，希望断开连接。<br>窗口大小（Window Size）</p>
+<h2 id="窗口大小（Window-Size）"><a href="#窗口大小（Window-Size）" class="headerlink" title="窗口大小（Window Size）"></a>窗口大小（Window Size）</h2><p>该字段长为16位。用于通知从相同TCP首部的确认应答号所指位置开始能够接收的数据大小（8位字节）。TCP不允许发送超过此处所示大小的数据。不过，如果窗口为0，则表示可以发送窗口探测，以了解最新的窗口大小。但这个数据必须是1个字节。</p>
+<h2 id="校验和（Checksum）-1"><a href="#校验和（Checksum）-1" class="headerlink" title="校验和（Checksum）"></a>校验和（Checksum）</h2><p>TCP的校验和与UDP相似，区别在于TCP的校验和无法关闭。<br>TCP和UDP一样在计算校验和的时候使用TCP伪首部。</p>
+<p>接收端在收到TCP数据段以后，从IP首部获取IP地址信息构造TCP伪首部，再进行校验和计算。由于校验和字段里保存着除本字段以外洽谈部分的和的补码值，一次如果计算校验和字段在内的所有数据的16位和以后，得出的结果是“16位全部为1”说明所收到数据是正确的。</p>
+<h2 id="紧急指针（Urgent-Pointer）"><a href="#紧急指针（Urgent-Pointer）" class="headerlink" title="紧急指针（Urgent Pointer）"></a>紧急指针（Urgent Pointer）</h2><p>略</p>
+<h2 id="选项（Options）"><a href="#选项（Options）" class="headerlink" title="选项（Options）"></a>选项（Options）</h2><p>略</p>
 
     </div>
       
@@ -869,7 +903,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#传输层的作用"><span class="nav-number">1.</span> <span class="nav-text">传输层的作用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#两种传输层协议TCP和UDP"><span class="nav-number">1.1.</span> <span class="nav-text">两种传输层协议TCP和UDP</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP"><span class="nav-number">1.1.1.</span> <span class="nav-text">TCP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP"><span class="nav-number">1.1.2.</span> <span class="nav-text">UDP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP与UDP区分"><span class="nav-number">1.2.</span> <span class="nav-text">TCP与UDP区分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#端口号"><span class="nav-number">2.</span> <span class="nav-text">端口号</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#端口号定义"><span class="nav-number">2.1.</span> <span class="nav-text">端口号定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过IP地址、端口号、协议号进行通信识别"><span class="nav-number">2.2.</span> <span class="nav-text">通过IP地址、端口号、协议号进行通信识别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#端口号与协议"><span class="nav-number">2.3.</span> <span class="nav-text">端口号与协议</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#UDP-1"><span class="nav-number">3.</span> <span class="nav-text">UDP</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#TCP-1"><span class="nav-number">4.</span> <span class="nav-text">TCP</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的特点及其目的"><span class="nav-number">4.1.</span> <span class="nav-text">TCP的特点及其目的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过序列号与确认应答提高可靠性"><span class="nav-number">4.2.</span> <span class="nav-text">通过序列号与确认应答提高可靠性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重发超时如何确定"><span class="nav-number">4.3.</span> <span class="nav-text">重发超时如何确定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#连接管理"><span class="nav-number">4.4.</span> <span class="nav-text">连接管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP以段为单位发送数据"><span class="nav-number">4.5.</span> <span class="nav-text">TCP以段为单位发送数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#利用窗口控制提高速度"><span class="nav-number">4.6.</span> <span class="nav-text">利用窗口控制提高速度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#窗口控制与重发控制"><span class="nav-number">4.7.</span> <span class="nav-text">窗口控制与重发控制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流控制"><span class="nav-number">4.8.</span> <span class="nav-text">流控制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拥塞控制"><span class="nav-number">4.9.</span> <span class="nav-text">拥塞控制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#UDP首部的格式"><span class="nav-number">5.</span> <span class="nav-text">UDP首部的格式</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#传输层的作用"><span class="nav-number">1.</span> <span class="nav-text">传输层的作用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#两种传输层协议TCP和UDP"><span class="nav-number">1.1.</span> <span class="nav-text">两种传输层协议TCP和UDP</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP"><span class="nav-number">1.1.1.</span> <span class="nav-text">TCP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP"><span class="nav-number">1.1.2.</span> <span class="nav-text">UDP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP与UDP区分"><span class="nav-number">1.2.</span> <span class="nav-text">TCP与UDP区分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#端口号"><span class="nav-number">2.</span> <span class="nav-text">端口号</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#端口号定义"><span class="nav-number">2.1.</span> <span class="nav-text">端口号定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过IP地址、端口号、协议号进行通信识别"><span class="nav-number">2.2.</span> <span class="nav-text">通过IP地址、端口号、协议号进行通信识别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#端口号与协议"><span class="nav-number">2.3.</span> <span class="nav-text">端口号与协议</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#UDP-1"><span class="nav-number">3.</span> <span class="nav-text">UDP</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#TCP-1"><span class="nav-number">4.</span> <span class="nav-text">TCP</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的特点及其目的"><span class="nav-number">4.1.</span> <span class="nav-text">TCP的特点及其目的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过序列号与确认应答提高可靠性"><span class="nav-number">4.2.</span> <span class="nav-text">通过序列号与确认应答提高可靠性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重发超时如何确定"><span class="nav-number">4.3.</span> <span class="nav-text">重发超时如何确定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#连接管理"><span class="nav-number">4.4.</span> <span class="nav-text">连接管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP以段为单位发送数据"><span class="nav-number">4.5.</span> <span class="nav-text">TCP以段为单位发送数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#利用窗口控制提高速度"><span class="nav-number">4.6.</span> <span class="nav-text">利用窗口控制提高速度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#窗口控制与重发控制"><span class="nav-number">4.7.</span> <span class="nav-text">窗口控制与重发控制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流控制"><span class="nav-number">4.8.</span> <span class="nav-text">流控制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拥塞控制"><span class="nav-number">4.9.</span> <span class="nav-text">拥塞控制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#UDP首部的格式"><span class="nav-number">5.</span> <span class="nav-text">UDP首部的格式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#源端口号（Source-Port）"><span class="nav-number">5.1.</span> <span class="nav-text">源端口号（Source Port）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#目标端口号（Destination-Port）"><span class="nav-number">5.2.</span> <span class="nav-text">目标端口号（Destination Port）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#包长度（Length）"><span class="nav-number">5.3.</span> <span class="nav-text">包长度（Length）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#校验和（Checksum）"><span class="nav-number">5.4.</span> <span class="nav-text">校验和（Checksum）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#TCP首部格式"><span class="nav-number">6.</span> <span class="nav-text">TCP首部格式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#源端口号（Source-Port）-1"><span class="nav-number">6.1.</span> <span class="nav-text">源端口号（Source Port）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#目标端口号（Destination-Port）-1"><span class="nav-number">6.2.</span> <span class="nav-text">目标端口号（Destination Port）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#序列号（Sequence-Number）"><span class="nav-number">6.3.</span> <span class="nav-text">序列号（Sequence Number）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#确认应答号（Acknowledgement-Number）"><span class="nav-number">6.4.</span> <span class="nav-text">确认应答号（Acknowledgement Number）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据偏移（Data-Offset）"><span class="nav-number">6.5.</span> <span class="nav-text">数据偏移（Data Offset）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#保留（Reserved）"><span class="nav-number">6.6.</span> <span class="nav-text">保留（Reserved）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#控制位（Control-Flag）"><span class="nav-number">6.7.</span> <span class="nav-text">控制位（Control Flag）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CWR（Congestion-Window-Reduced）"><span class="nav-number">6.7.1.</span> <span class="nav-text">CWR（Congestion Window Reduced）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ECE（ECN-Echo）"><span class="nav-number">6.7.2.</span> <span class="nav-text">ECE（ECN-Echo）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#URG（Urgent-Flag）"><span class="nav-number">6.7.3.</span> <span class="nav-text">URG（Urgent Flag）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PSH（Push-Flag）"><span class="nav-number">6.7.4.</span> <span class="nav-text">PSH（Push Flag）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RST（Reset-Flag）"><span class="nav-number">6.7.5.</span> <span class="nav-text">RST（Reset Flag）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SYN（Synchronize-Flag）"><span class="nav-number">6.7.6.</span> <span class="nav-text">SYN（Synchronize Flag）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FIN（Fin-Flag）"><span class="nav-number">6.7.7.</span> <span class="nav-text">FIN（Fin Flag）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#窗口大小（Window-Size）"><span class="nav-number">6.8.</span> <span class="nav-text">窗口大小（Window Size）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#校验和（Checksum）-1"><span class="nav-number">6.9.</span> <span class="nav-text">校验和（Checksum）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#紧急指针（Urgent-Pointer）"><span class="nav-number">6.10.</span> <span class="nav-text">紧急指针（Urgent Pointer）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#选项（Options）"><span class="nav-number">6.11.</span> <span class="nav-text">选项（Options）</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -896,12 +930,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">518k</span>
+    <span title="站点总字数">520k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:51</span>
+    <span title="站点阅读时长">7:53</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
