@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《TCP/IP详解 卷1:协议》作者：W. Richard Stevens">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-07T05:27:40.282Z">
+<meta property="og:updated_time" content="2019-09-07T05:53:05.641Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP&#x2F;IP详解 卷1：协议 笔记">
 <meta name="twitter:description" content="本文整理自：《TCP/IP详解 卷1:协议》作者：W. Richard Stevens">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-07 13:27:40" itemprop="dateModified" datetime="2019-09-07T13:27:40+08:00">2019-09-07</time>
+                <time title="修改时间：2019-09-07 13:53:05" itemprop="dateModified" datetime="2019-09-07T13:53:05+08:00">2019-09-07</time>
               </span>
             
           
@@ -342,7 +342,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">13k</span>
+              <span title="本文字数">15k</span>
             </span>
           
             <span class="post-meta-item">
@@ -352,7 +352,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">12 分钟</span>
+              <span title="阅读时长">13 分钟</span>
             </span>
           
 
@@ -515,6 +515,22 @@
 <p>网络上的每个系统都具有唯一的硬件地址，它是由网络接口生产厂家配置的。无盘系统的RARP实现过程是从接口卡上读取唯一的硬件地址，然后发送一份RARP请求（一帧在网络上广播的数据），请求某个主机响应该无盘系统的IP地址（在RARP应答中）。</p>
 <h2 id="RARP的分组格式"><a href="#RARP的分组格式" class="headerlink" title="RARP的分组格式"></a>RARP的分组格式</h2><p>RARP分组的格式与ARP分组基本一致（见图4-3）。它们之间主要的差别是RARP请求或应答的帧类型代码为0x8035，而且RARP请求的操作代码为3，应答操作代码为4。</p>
 <p>对应于ARP，RARP请求以广播方式传送，而RARP应答一般是单播(unicast)传送的。</p>
+<h2 id="RARP服务器的设计"><a href="#RARP服务器的设计" class="headerlink" title="RARP服务器的设计"></a>RARP服务器的设计</h2><p>虽然RARP在概念上很简单，但是一个RARP服务器的设计与系统相关而且比较复杂。相反，提供一个ARP服务器很简单，通常是TCP/IP在内核中实现的一部分。由于内核知道IP地址和硬件地址，因此当它收到一个询问IP地址的ARP请求时，只需用相应的硬件地址来提供应答就可以了。</p>
+<h3 id="作为用户进程的RARP服务器"><a href="#作为用户进程的RARP服务器" class="headerlink" title="作为用户进程的RARP服务器"></a>作为用户进程的RARP服务器</h3><p>RARP服务器的复杂性在于，服务器一般要为多个主机（网络上所有的无盘系统）提供硬件地址到IP地址的映射。该映射包含在一个磁盘文件中（在Unix系统中一般位于/etc/ethers目录中）。由于内核一般不读取和分析磁盘文件，因此RARP服务器的功能就由用户进程来提供，而不是作为内核的TCP/IP实现的一部分。</p>
+<p>更为复杂的是，RARP请求是作为一个特殊类型的以太网数据帧来传送的（帧类型字段值为0x8035）。这说明RARP服务器必须能够发送和接收这种类型的以太网数据帧。在附录A中，我们描述了BSD分组过滤器、Sun的网络接口栓以及SVR4数据链路提供者接口都可用来接收这些数据帧。由于发送和接收这些数据帧与系统有关，因此RARP服务器的实现是与系统捆绑在一起的。</p>
+<h3 id="每个网络有多个RARP服务器"><a href="#每个网络有多个RARP服务器" class="headerlink" title="每个网络有多个RARP服务器"></a>每个网络有多个RARP服务器</h3><p>RARP服务器实现的一个复杂因素是RARP请求是在硬件层上进行广播的。这意味着它们不经过路由器进行转发。为了让无盘系统在RARP服务器关机的状态下也能引导，<br>通常在一个网络上（例如一根电缆）要提供多个RARP服务器。</p>
+<p>当服务器的数目增加时（以提供冗余备份），网络流量也随之增加，因为每个服务器对每个RARP请求都要发送RARP应答。发送RARP请求的无盘系统一般采用最先收到的RARP应答（对于ARP，我们从来没有遇到这种情况，因为只有一台主机发送ARP应答）。另外，还有一种可能发生的情况是每个RARP服务器同时应答，这样会增加以太网发生冲突的概率。</p>
+<h2 id="小结-2"><a href="#小结-2" class="headerlink" title="小结"></a>小结</h2><p>RARP协议是许多无盘系统在引导时用来获取IP地址的。RARP分组格式基本上与ARP分组一致。一个RARP请求在网络上进行广播，它在分组中标明发送端的硬件地址，以请求相应IP地址的响应。应答通常是单播传送的。</p>
+<p>RARP带来的问题包括使用链路层广播，这样就阻止大多数路由器转发RARP请求，只返回很少信息：只是系统的IP地址。</p>
+<p>虽然RARP在概念上很简单，但是RARP服务器的实现却与系统相关。因此，并不是所有的TCP/IP实现都提供RARP服务器。</p>
+<h1 id="ICMP：Internet控制报文协议"><a href="#ICMP：Internet控制报文协议" class="headerlink" title="ICMP：Internet控制报文协议"></a>ICMP：Internet控制报文协议</h1><h2 id="引言-3"><a href="#引言-3" class="headerlink" title="引言"></a>引言</h2><p>ICMP经常被认为是IP层的一个组成部分。它传递差错报文以及其他需要注意的信息。ICMP报文通常被IP层或更高层协议（TCP或UDP）使用。一些ICMP报文把差错报文返回给用户进程。</p>
+<p>ICMP报文是在IP数据报内部被传输的，如图6-1所示。</p>
+<p><img alt data-src="/images/tcp-ip-illustrated-volume-1-the-protocols-note/ICMP%E5%B0%81%E8%A3%85%E5%9C%A8IP%E6%95%B0%E6%8D%AE%E6%8A%A5%E5%86%85%E9%83%A8.png"></p>
+<p>ICMP报文的格式如图6-2所示。所有报文的前4个字节都是一样的，但是剩下的其他字节则互不相同。下面我们将逐个介绍各种报文格式。</p>
+<p>类型字段可以有15个不同的值，以描述特定类型的ICMP报文。某些ICMP报文还使用代码字段的值来进一步描述不同的条件。</p>
+<p>检验和字段覆盖整个ICMP报文。ICMP的检验和是必需的。</p>
+<p><img alt data-src="/images/tcp-ip-illustrated-volume-1-the-protocols-note/ICMP%E6%8A%A5%E6%96%87.png"></p>
+<h2 id="ICMP报文的类型"><a href="#ICMP报文的类型" class="headerlink" title="ICMP报文的类型"></a>ICMP报文的类型</h2><p>各种类型的ICMP报文如图6-3所示，不同类型由报文中的类型字段和代码字段来共同决定。</p>
 
     </div>
       
@@ -960,7 +976,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层"><span class="nav-number">1.1.</span> <span class="nav-text">分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP的分层"><span class="nav-number">1.2.</span> <span class="nav-text">TCP/IP的分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#互联网地址"><span class="nav-number">1.3.</span> <span class="nav-text">互联网地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#封装"><span class="nav-number">1.4.</span> <span class="nav-text">封装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分用"><span class="nav-number">1.5.</span> <span class="nav-text">分用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#链路层"><span class="nav-number">2.</span> <span class="nav-text">链路层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环回接口"><span class="nav-number">2.1.</span> <span class="nav-text">环回接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP：网际协议"><span class="nav-number">3.</span> <span class="nav-text">IP：网际协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">3.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP首部"><span class="nav-number">3.2.</span> <span class="nav-text">IP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP路由选择"><span class="nav-number">3.3.</span> <span class="nav-text">IP路由选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网寻址"><span class="nav-number">3.4.</span> <span class="nav-text">子网寻址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网掩码"><span class="nav-number">3.5.</span> <span class="nav-text">子网掩码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ifconfig命令"><span class="nav-number">3.6.</span> <span class="nav-text">ifconfig命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.7.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ARP：地址解析协议"><span class="nav-number">4.</span> <span class="nav-text">ARP：地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-1"><span class="nav-number">4.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个例子"><span class="nav-number">4.2.</span> <span class="nav-text">一个例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP高速缓存"><span class="nav-number">4.3.</span> <span class="nav-text">ARP高速缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP的分组格式"><span class="nav-number">4.4.</span> <span class="nav-text">ARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP代理"><span class="nav-number">4.5.</span> <span class="nav-text">ARP代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#免费ARP"><span class="nav-number">4.6.</span> <span class="nav-text">免费ARP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arp命令"><span class="nav-number">4.7.</span> <span class="nav-text">arp命令</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RARP：逆地址解析协议"><span class="nav-number">5.</span> <span class="nav-text">RARP：逆地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-2"><span class="nav-number">5.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP的分组格式"><span class="nav-number">5.2.</span> <span class="nav-text">RARP的分组格式</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层"><span class="nav-number">1.1.</span> <span class="nav-text">分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP的分层"><span class="nav-number">1.2.</span> <span class="nav-text">TCP/IP的分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#互联网地址"><span class="nav-number">1.3.</span> <span class="nav-text">互联网地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#封装"><span class="nav-number">1.4.</span> <span class="nav-text">封装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分用"><span class="nav-number">1.5.</span> <span class="nav-text">分用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#链路层"><span class="nav-number">2.</span> <span class="nav-text">链路层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环回接口"><span class="nav-number">2.1.</span> <span class="nav-text">环回接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP：网际协议"><span class="nav-number">3.</span> <span class="nav-text">IP：网际协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">3.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP首部"><span class="nav-number">3.2.</span> <span class="nav-text">IP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP路由选择"><span class="nav-number">3.3.</span> <span class="nav-text">IP路由选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网寻址"><span class="nav-number">3.4.</span> <span class="nav-text">子网寻址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网掩码"><span class="nav-number">3.5.</span> <span class="nav-text">子网掩码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ifconfig命令"><span class="nav-number">3.6.</span> <span class="nav-text">ifconfig命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.7.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ARP：地址解析协议"><span class="nav-number">4.</span> <span class="nav-text">ARP：地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-1"><span class="nav-number">4.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个例子"><span class="nav-number">4.2.</span> <span class="nav-text">一个例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP高速缓存"><span class="nav-number">4.3.</span> <span class="nav-text">ARP高速缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP的分组格式"><span class="nav-number">4.4.</span> <span class="nav-text">ARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP代理"><span class="nav-number">4.5.</span> <span class="nav-text">ARP代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#免费ARP"><span class="nav-number">4.6.</span> <span class="nav-text">免费ARP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arp命令"><span class="nav-number">4.7.</span> <span class="nav-text">arp命令</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RARP：逆地址解析协议"><span class="nav-number">5.</span> <span class="nav-text">RARP：逆地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-2"><span class="nav-number">5.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP的分组格式"><span class="nav-number">5.2.</span> <span class="nav-text">RARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP服务器的设计"><span class="nav-number">5.3.</span> <span class="nav-text">RARP服务器的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#作为用户进程的RARP服务器"><span class="nav-number">5.3.1.</span> <span class="nav-text">作为用户进程的RARP服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#每个网络有多个RARP服务器"><span class="nav-number">5.3.2.</span> <span class="nav-text">每个网络有多个RARP服务器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-2"><span class="nav-number">5.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ICMP：Internet控制报文协议"><span class="nav-number">6.</span> <span class="nav-text">ICMP：Internet控制报文协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-3"><span class="nav-number">6.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP报文的类型"><span class="nav-number">6.2.</span> <span class="nav-text">ICMP报文的类型</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -987,12 +1003,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">542k</span>
+    <span title="站点总字数">543k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">8:13</span>
+    <span title="站点阅读时长">8:14</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
