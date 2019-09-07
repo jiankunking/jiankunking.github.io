@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《TCP/IP详解 卷1:协议》作者：W. Richard Stevens">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-07T02:30:57.234Z">
+<meta property="og:updated_time" content="2019-09-07T05:27:40.282Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP&#x2F;IP详解 卷1：协议 笔记">
 <meta name="twitter:description" content="本文整理自：《TCP/IP详解 卷1:协议》作者：W. Richard Stevens">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-07 10:30:57" itemprop="dateModified" datetime="2019-09-07T10:30:57+08:00">2019-09-07</time>
+                <time title="修改时间：2019-09-07 13:27:40" itemprop="dateModified" datetime="2019-09-07T13:27:40+08:00">2019-09-07</time>
               </span>
             
           
@@ -342,7 +342,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">7k</span>
+              <span title="本文字数">13k</span>
             </span>
           
             <span class="post-meta-item">
@@ -352,7 +352,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">6 分钟</span>
+              <span title="阅读时长">12 分钟</span>
             </span>
           
 
@@ -451,6 +451,70 @@
 <p>给定IP地址和子网掩码以后，主机就可以确定IP数据报的目的是：(1)本子网上的主机；(2)本网络中其他子网中的主机；(3)其他网络上的主机。如果知道本机的IP地址，那么就知道它是否为A类、B类或C类地址(从IP地址的高位可以得知)，也就知道网络号和子网号之间的分界线。而根据子网掩码就可知道子网号与主机号之间的分界线。</p>
 <p>将来或许会有更多的主机和网络，但是为了不让主机跨越不同的网络就得使用不同的子网号。我们的解决方法是把子网号从8 bit扩充到11 bit，把主机号从8 bit减为5 bit。这就叫作变长子网，因为140.252网络中的大多数子网都采用8 bit子网掩码，而我们的子网却采用11 bit的子网掩码。</p>
 <p>作者子网中的IP地址结构如图3-11所示，11位子网号中的前8bit始终是13。在剩下的3 bit中，我们用二进制001表示以太网，010表示点对点SLIP链路。这个变长子网掩码在140.252网络中不会给其他主机和路由器带来问题—只要目的是子网140.252.13的所有数据报都传给路由器sun（IP地址是140.252.1.29），如图3-11所示。如果sun知道子网13中的主机有11bit子网号，那么一切都好办了。</p>
+<p><img alt data-src="/images/tcp-ip-illustrated-volume-1-the-protocols-note/%E5%8F%98%E9%95%BF%E5%AD%90%E7%BD%91.png"></p>
+<p>140.252.13子网中的所有接口的子网掩码是255.255.255.224，或0xffffffe0。这表明最右边的5bit留给主机号，左边的27bit留给网络号和子网号。</p>
+<h2 id="ifconfig命令"><a href="#ifconfig命令" class="headerlink" title="ifconfig命令"></a>ifconfig命令</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# ifconfig -a</span><br><span class="line">docker0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255</span><br><span class="line">        ether 02:42:a5:fc:a8:b0  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 1803610  bytes 751152220 (716.3 MiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 1715508  bytes 1981302829 (1.8 GiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">eth0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 172.21.0.3  netmask 255.255.240.0  broadcast 172.21.15.255</span><br><span class="line">        ether 52:54:00:9f:9a:52  txqueuelen 1000  (Ethernet)</span><br><span class="line">        RX packets 25626090  bytes 6434619435 (5.9 GiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 27765770  bytes 6026731597 (5.6 GiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536</span><br><span class="line">        inet 127.0.0.1  netmask 255.0.0.0</span><br><span class="line">        loop  txqueuelen 1000  (Local Loopback)</span><br><span class="line">        RX packets 2  bytes 272 (272.0 B)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 2  bytes 272 (272.0 B)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">veth7423cb0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        ether 0a:19:63:74:aa:32  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 1939  bytes 158399 (154.6 KiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 1810  bytes 2114402 (2.0 MiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br></pre></td></tr></table></figure>
+
+<p>环回接口被认为是一个网络接口。它是一个 A类地址，没有进行子网划分。</p>
+<h2 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h2><p>在进行路由选择决策时，主机和路由器都使用路由表。在表中有三种类型的路由：特定主机型、特定网络型和默认路由型。路由表中的表目具有一定的优先级。在选择路由时，主机路由优先于网络路由，最后在没有其他可选路由存在时才选择默认路由。</p>
+<p>IP路由选择是通过逐跳来实现的。数据报在各站的传输过程中目的 IP地址始终不变，但是封装和目的链路层地址在每一站都可以改变。大多数的主机和许多路由器对于非本地网络的数据报都使用默认的下一站路由器。</p>
+<h1 id="ARP：地址解析协议"><a href="#ARP：地址解析协议" class="headerlink" title="ARP：地址解析协议"></a>ARP：地址解析协议</h1><h2 id="引言-1"><a href="#引言-1" class="headerlink" title="引言"></a>引言</h2><p>当一台主机把以太网数据帧发送到位于同一局域网上的另一台主机时，是根据 48 bit的以太网地址来确定目的接口的。设备驱动程序从不检查 IP数据报中的目的IP地址。</p>
+<p>地址解析为这两种不同的地址形式提供映射： 32 bit的IP地址和数据链路层使用的任何类型的地址。</p>
+<p>ARP为IP地址到对应的硬件地址之间提供动态映射。我们之所以用动态这个词是因为这个过程是自动完成的，一般应用程序用户或系统管理员不必关心。</p>
+<p>RARP是被那些没有磁盘驱动器的系统使用（一般是无盘工作站或X终端），它需要系统管理员进行手工设置。</p>
+<p><img alt data-src="/images/tcp-ip-illustrated-volume-1-the-protocols-note/%E5%9C%B0%E5%9D%80%E8%A7%A3%E6%9E%90%E5%8D%8F%E8%AE%AEARP%E5%92%8CRARP.png"></p>
+<h2 id="一个例子"><a href="#一个例子" class="headerlink" title="一个例子"></a>一个例子</h2><p>任何时候我们敲入下面这个形式的命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">%ftp bsdi</span><br></pre></td></tr></table></figure>
+
+<p>都会进行以下这些步骤。这些步骤的序号如图4-2所示。</p>
+<ol>
+<li>应用程序FTP客户端调用函数gethostbyname(3)把主机名（bsdi）转换成32bit的IP地址。这个函数在DNS（域名系统）中称作解析器，我们将在第14章对它进行介绍。这个转换过程或者使用DNS，或者在较小网络中使用一个静态的主机文件（/etc/hosts）。</li>
+<li>FTP客户端请求TCP用得到的IP地址建立连接。</li>
+<li>TCP发送一个连接请求分段到远端的主机，即用上述IP地址发送一份IP数据报。</li>
+<li>如果目的主机在本地网络上（如以太网、令牌环网或点对点链接的另一端），那么IP数据报可以直接送到目的主机上。如果目的主机在一个远程网络上，那么就通过IP选路函数来确定位于本地网络上的下一站路由器地址，并让它转发IP数据报。在这两种情况下，IP数据报都是被送到位于本地网络上的一台主机或路由器。</li>
+<li>假定是一个以太网，那么发送端主机必须把32bit的IP地址变换成48bit的以太网地址。从逻辑Internet地址到对应的物理硬件地址需要进行翻译。这就是ARP的功能。ARP本来是用于广播网络的，有许多主机或路由器连在同一个网络上。</li>
+<li>ARP发送一份称作ARP请求的以太网数据帧给以太网上的每个主机。这个过程称作广播，如图4-2中的虚线所示。ARP请求数据帧中包含目的主机的IP地址（主机名为bsdi），其意思是“如果你是这个IP地址的拥有者，请回答你的硬件地址。”</li>
+</ol>
+<p><img alt data-src="/images/tcp-ip-illustrated-volume-1-the-protocols-note/%E5%BD%93%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E5%91%BD%E4%BB%A4ftp%E4%B8%BB%E6%9C%BA%E5%90%8D%E6%97%B6ARP%E7%9A%84%E6%93%8D%E4%BD%9C.png"></p>
+<ol start="7">
+<li>目的主机的ARP层收到这份广播报文后，识别出这是发送端在寻问它的IP地址，于是发送一个ARP应答。这个ARP应答包含IP地址及对应的硬件地址。</li>
+<li>收到ARP应答后，使ARP进行请求—应答交换的IP数据报现在就可以传送了。</li>
+<li>发送IP数据报到目的主机。</li>
+</ol>
+<p><font color="DeepPink"><strong>在ARP背后有一个基本概念，那就是网络接口有一个硬件地址（一个48bit的值，标识不同的以太网或令牌环网络接口）。在硬件层次上进行的数据帧交换必须有正确的接口地址。但是，TCP/IP有自己的地址：32bit的IP地址。知道主机的IP地址并不能让内核发送一帧数据给主机。内核（如以太网驱动程序）必须知道目的端的硬件地址才能发送数据。ARP的功能是在32bit的IP地址和采用不同网络技术的硬件地址之间提供动态映射。</strong></font></p>
+<h2 id="ARP高速缓存"><a href="#ARP高速缓存" class="headerlink" title="ARP高速缓存"></a>ARP高速缓存</h2><p>ARP高效运行的关键是由于每个主机上都有一个ARP高速缓存。这个高速缓存存放了最近Internet地址到硬件地址之间的映射记录。高速缓存中每一项的生存时间一般为20分钟，起始时间从被创建时开始算起。</p>
+<p>我们可以用arp命令来检查ARP高速缓存。参数-a的意思是显示高速缓存中所有的内容。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# arp -a</span><br><span class="line">? (169.254.0.15) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (169.254.0.3) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (172.17.0.4) at 02:42:ac:11:00:04 [ether] on docker0</span><br><span class="line">? (169.254.0.2) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (169.254.0.4) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (172.17.0.3) at 02:42:ac:11:00:03 [ether] on docker0</span><br><span class="line">? (172.17.0.2) at 02:42:ac:11:00:02 [ether] on docker0</span><br><span class="line">? (169.254.0.23) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (169.254.128.3) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (169.254.128.5) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">gateway (172.21.0.1) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">[jiankunking@VM_0_3_centos ~]#</span><br></pre></td></tr></table></figure>
+
+<p>48 bit的以太网地址用6个十六进制的数来表示，中间以冒号隔开。</p>
+<h2 id="ARP的分组格式"><a href="#ARP的分组格式" class="headerlink" title="ARP的分组格式"></a>ARP的分组格式</h2><p>在以太网上解析IP地址时，ARP请求和应答分组的格式如图4-3所示（ARP可以用于其他类型的网络，可以解析IP地址以外的地址。紧跟着帧类型字段的前四个字段指定了最后四个字段的类型和长度）。</p>
+<p><img alt data-src="/images/tcp-ip-illustrated-volume-1-the-protocols-note/%E7%94%A8%E4%BA%8E%E4%BB%A5%E5%A4%AA%E7%BD%91%E7%9A%84ARP%E8%AF%B7%E6%B1%82%E6%88%96%E5%BA%94%E7%AD%94%E5%88%86%E7%BB%84%E6%A0%BC%E5%BC%8F.png"></p>
+<p>以太网报头中的前两个字段是以太网的源地址和目的地址。目的地址为全 1的特殊地址是广播地址。电缆上的所有以太网接口都要接收广播的数据帧。</p>
+<p>两个字节长的以太网帧类型表示后面数据的类型。对于ARP请求或应答来说，该字段的值为0x0806。</p>
+<p>形容词hardware(硬件)和protocol(协议)用来描述ARP分组中的各个字段。例如，一个ARP请求分组询问协议地址（这里是IP地址）对应的硬件地址（这里是以太网地址）。</p>
+<p>硬件类型字段表示硬件地址的类型。它的值为1即表示以太网地址。协议类型字段表示要映射的协议地址类型。它的值为0x0800即表示IP地址。它的值与包含IP数据报的以太网数据帧中的类型字段的值相同，这是有意设计的。</p>
+<p>接下来的两个1字节的字段，硬件地址长度和协议地址长度分别指出硬件地址和协议地址的长度，以字节为单位。对于以太网上IP地址的ARP请求或应答来说，它们的值分别为6和4。</p>
+<p>操作字段指出四种操作类型，它们是ARP请求（值为1）、ARP应答（值为2）、RARP请求（值为3）和RARP应答（值为4）（我们在第5章讨论RARP）。这个字段必需的，因为ARP请求和ARP应答的帧类型字段值是相同的。</p>
+<p>接下来的四个字段是发送端的硬件地址（在本例中是以太网地址）、发送端的协议地址（IP地址）、目的端的硬件地址和目的端的协议地址。注意，这里有一些重复信息：在以太网的数据帧报头中和ARP请求数据帧中都有发送端的硬件地址。</p>
+<p>对于一个ARP请求来说，除目的端硬件地址外的所有其他的字段都有填充值。当系统收到一份目的端为本机的ARP请求报文后，它就把硬件地址填进去，然后用两个目的端地址分别替换两个发送端地址，并把操作字段置为2，最后把它发送回去。</p>
+<h2 id="ARP代理"><a href="#ARP代理" class="headerlink" title="ARP代理"></a>ARP代理</h2><p>如果ARP请求是从一个网络的主机发往另一个网络上的主机，那么连接这两个网络的路由器就可以回答该请求，这个过程称作委托ARP或ARP代理(Proxy ARP)。这样可以欺骗发起ARP请求的发送端，使它误以为路由器就是目的主机，而事实上目的主机是在路由器的“另一边”。路由器的功能相当于目的主机的代理，把分组从其他主机转发给它。</p>
+<p>ARP代理也称作混合ARP（promiscuousARP）或ARP出租(ARPhack)。这些名字来自于ARP代理的其他用途：通过两个物理网络之间的路由器可以互相隐藏物理网络。在这种情况下，两个物理网络可以使用相同的网络号，只要把中间的路由器设置成一个ARP代理，以响应一个网络到另一个网络主机的ARP请求。这种技术在过去用来隐藏一组在不同物理电缆上运行旧版TCP/IP的主机。分开这些旧主机有两个共同的理由，其一是它们不能处理子网划分，其二是它们使用旧的广播地址（所有比特值为0的主机号，而不是目前使用的所有比特值为1的主机号）。</p>
+<h2 id="免费ARP"><a href="#免费ARP" class="headerlink" title="免费ARP"></a>免费ARP</h2><p>我们可以看到的另一个ARP特性称作免费ARP(gratuitous ARP)。它是指主机发送ARP查找自己的IP地址。通常，它发生在系统引导期间进行接口配置的时候。</p>
+<p>免费ARP可以有两个方面的作用：</p>
+<ol>
+<li>一个主机可以通过它来确定另一个主机是否设置了相同的IP地址。主机bsdi并不希望对此请求有一个回答。但是，如果收到一个回答，那么就会在终端日志上产生一个错误消息“以太网地址：a:b:c:d:e:f发送来重复的IP地址”。这样就可以警告系统管理员，某个系统有不正确的设置。</li>
+<li>如果发送免费ARP的主机正好改变了硬件地址（很可能是主机关机了，并换了一块接口卡，然后重新启动），那么这个分组就可以使其他主机高速缓存中旧的硬件地址进行相应的更新。一个比较著名的ARP协议事实[Plummer1982]是，如果主机收到某个IP地址的ARP请求，而且它已经在接收者的高速缓存中，那么就要用ARP请求中的发送端硬件地址（如以太网地址）对高速缓存中相应的内容进行更新。主机接收到任何ARP请求都要完成这个操作（ARP请求是在网上广播的，因此每次发送ARP请求时网络上的所有主机都要这样做）。</li>
+</ol>
+<h2 id="arp命令"><a href="#arp命令" class="headerlink" title="arp命令"></a>arp命令</h2><ul>
+<li>参数-a来显示ARP高速缓存中的所有内容</li>
+<li>超级用户可以用选项-d来删除ARP高速缓存中的某一项内容</li>
+<li>可以通过选项-s来增加高速缓存中的内容。这个参数需要主机名和以太网地址：对应于主机名的IP地址和以太网地址被增加到高速缓存中。新增加的内容是永久性的（比如，它没有超时值），除非在命令行的末尾附上关键字temp。</li>
+<li>位于命令行末尾的关键字pub和-s选项一起，可以使系统起着主机ARP代理的作用。系统将回答与主机名对应的IP地址的ARP请求，并以指定的以太网地址作为应答。如果广播的地址是系统本身，那么系统就为指定的主机名起着委托ARP代理的作用。</li>
+</ul>
+<h1 id="RARP：逆地址解析协议"><a href="#RARP：逆地址解析协议" class="headerlink" title="RARP：逆地址解析协议"></a>RARP：逆地址解析协议</h1><h2 id="引言-2"><a href="#引言-2" class="headerlink" title="引言"></a>引言</h2><p>具有本地磁盘的系统引导时，一般是从磁盘上的配置文件中读取IP地址。但是无盘机，如X终端或无盘工作站，则需要采用其他方法来获得IP地址。</p>
+<p>网络上的每个系统都具有唯一的硬件地址，它是由网络接口生产厂家配置的。无盘系统的RARP实现过程是从接口卡上读取唯一的硬件地址，然后发送一份RARP请求（一帧在网络上广播的数据），请求某个主机响应该无盘系统的IP地址（在RARP应答中）。</p>
+<h2 id="RARP的分组格式"><a href="#RARP的分组格式" class="headerlink" title="RARP的分组格式"></a>RARP的分组格式</h2><p>RARP分组的格式与ARP分组基本一致（见图4-3）。它们之间主要的差别是RARP请求或应答的帧类型代码为0x8035，而且RARP请求的操作代码为3，应答操作代码为4。</p>
+<p>对应于ARP，RARP请求以广播方式传送，而RARP应答一般是单播(unicast)传送的。</p>
 
     </div>
       
@@ -896,7 +960,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层"><span class="nav-number">1.1.</span> <span class="nav-text">分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP的分层"><span class="nav-number">1.2.</span> <span class="nav-text">TCP/IP的分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#互联网地址"><span class="nav-number">1.3.</span> <span class="nav-text">互联网地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#封装"><span class="nav-number">1.4.</span> <span class="nav-text">封装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分用"><span class="nav-number">1.5.</span> <span class="nav-text">分用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#链路层"><span class="nav-number">2.</span> <span class="nav-text">链路层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环回接口"><span class="nav-number">2.1.</span> <span class="nav-text">环回接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP：网际协议"><span class="nav-number">3.</span> <span class="nav-text">IP：网际协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">3.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP首部"><span class="nav-number">3.2.</span> <span class="nav-text">IP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP路由选择"><span class="nav-number">3.3.</span> <span class="nav-text">IP路由选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网寻址"><span class="nav-number">3.4.</span> <span class="nav-text">子网寻址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网掩码"><span class="nav-number">3.5.</span> <span class="nav-text">子网掩码</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层"><span class="nav-number">1.1.</span> <span class="nav-text">分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP的分层"><span class="nav-number">1.2.</span> <span class="nav-text">TCP/IP的分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#互联网地址"><span class="nav-number">1.3.</span> <span class="nav-text">互联网地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#封装"><span class="nav-number">1.4.</span> <span class="nav-text">封装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分用"><span class="nav-number">1.5.</span> <span class="nav-text">分用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#链路层"><span class="nav-number">2.</span> <span class="nav-text">链路层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环回接口"><span class="nav-number">2.1.</span> <span class="nav-text">环回接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP：网际协议"><span class="nav-number">3.</span> <span class="nav-text">IP：网际协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">3.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP首部"><span class="nav-number">3.2.</span> <span class="nav-text">IP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP路由选择"><span class="nav-number">3.3.</span> <span class="nav-text">IP路由选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网寻址"><span class="nav-number">3.4.</span> <span class="nav-text">子网寻址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网掩码"><span class="nav-number">3.5.</span> <span class="nav-text">子网掩码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ifconfig命令"><span class="nav-number">3.6.</span> <span class="nav-text">ifconfig命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.7.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ARP：地址解析协议"><span class="nav-number">4.</span> <span class="nav-text">ARP：地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-1"><span class="nav-number">4.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个例子"><span class="nav-number">4.2.</span> <span class="nav-text">一个例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP高速缓存"><span class="nav-number">4.3.</span> <span class="nav-text">ARP高速缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP的分组格式"><span class="nav-number">4.4.</span> <span class="nav-text">ARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP代理"><span class="nav-number">4.5.</span> <span class="nav-text">ARP代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#免费ARP"><span class="nav-number">4.6.</span> <span class="nav-text">免费ARP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arp命令"><span class="nav-number">4.7.</span> <span class="nav-text">arp命令</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RARP：逆地址解析协议"><span class="nav-number">5.</span> <span class="nav-text">RARP：逆地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-2"><span class="nav-number">5.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP的分组格式"><span class="nav-number">5.2.</span> <span class="nav-text">RARP的分组格式</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -923,12 +987,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">535k</span>
+    <span title="站点总字数">542k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">8:07</span>
+    <span title="站点阅读时长">8:13</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
