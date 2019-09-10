@@ -68,7 +68,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《TCP/IP详解 卷1:协议》作者：W. Richard Stevens">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-10T05:21:46.070Z">
+<meta property="og:updated_time" content="2019-09-10T10:13:47.347Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP&#x2F;IP详解 卷1：协议 笔记">
 <meta name="twitter:description" content="本文整理自：《TCP/IP详解 卷1:协议》作者：W. Richard Stevens">
@@ -287,7 +287,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-10 13:21:46" itemprop="dateModified" datetime="2019-09-10T13:21:46+08:00">2019-09-10</time>
+                <time title="修改时间：2019-09-10 18:13:47" itemprop="dateModified" datetime="2019-09-10T18:13:47+08:00">2019-09-10</time>
               </span>
             
           
@@ -342,7 +342,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">25k</span>
+              <span title="本文字数">28k</span>
             </span>
           
             <span class="post-meta-item">
@@ -352,7 +352,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">23 分钟</span>
+              <span title="阅读时长">26 分钟</span>
             </span>
           
 
@@ -671,6 +671,40 @@
 </tbody></table>
 <p>标志G是非常重要的，因为由它区分了间接路由和直接路由（对于直接路由来说是不设置标志G的）。其区别在于，发往直接路由的分组中不但具有指明目的端的IP地址，还具有其链路层地址。当分组被发往一个间接路由时，IP地址指明的是最终的目的地，但是链路层地址指明的是网关（即下一站路由器）。</p>
 <p>理解G和H标志之间的区别是很重要的。G标志区分了直接路由和间接路由，如上所述。但是H标志表明，目的地址（netstat命令输出第一行）是一个完整的主机地址。没有设置H标志说明目的地址是一个网络地址（主机号部分为0）。当为某个目的IP地址搜索路由表时，主机地址项必须与目的地址完全匹配，而网络地址项只需要匹配目的地址的网络号和子网号就可以了。另外，大多数版本的netstat命令首先打印出所有的主机路由表项，然后才是网络路由表项。</p>
+<h2 id="ICMP主机与网络不可达差错"><a href="#ICMP主机与网络不可达差错" class="headerlink" title="ICMP主机与网络不可达差错"></a>ICMP主机与网络不可达差错</h2><p>当路由器收到一份IP数据报但又不能转发时，就要发送一份ICMP“主机不可达”差错报文。</p>
+<h2 id="ICMP重定向差错"><a href="#ICMP重定向差错" class="headerlink" title="ICMP重定向差错"></a>ICMP重定向差错</h2><p>当IP数据报应该被发送到另一个路由器时，收到数据报的路由器就要发送ICMP重定向差错报文给IP数据报的发送端。这在概念上是很简单的，正如图9-3所示的那样。只有当主机可以选择路由器发送分组的情况下，我们才可能看到ICMP重定向报文。</p>
+<ol>
+<li>我们假定主机发送一份IP数据报给R1。这种选路决策经常发生，因为R1是该主机的默认路由。</li>
+<li>R1收到数据报并且检查它的路由表，发现R2是发送该数据报的下一站。当它把数据报发送给R2时，R1检测到它正在发送的接口与数据报到达接口是相同的（即主机和两个路由器所在的LAN）。这样就给路由器发送重定向报文给原始发送端提供了线索。</li>
+<li>R1发送一份ICMP重定向报文给主机，告诉它以后把数据报发送给R2而不是R1。</li>
+</ol>
+<p><img alt data-src="/images/tcp-ip-illustrated-volume-1-the-protocols-note/ICMP%E9%87%8D%E5%AE%9A%E5%90%91%E7%9A%84%E4%BE%8B%E5%AD%90.png"></p>
+<p>重定向一般用来让具有很少选路信息的主机逐渐建立更完善的路由表。主机启动时路由表中可以只有一个默认表项（在图9-3所示的例子中，为R1或R2）。一旦默认路由发生差错，默认路由器将通知它进行重定向，并允许主机对路由表作相应的改动。ICMP重定向允许TCP/IP主机在进行选路时不需要具备智能特性，而把所有的智能特性放在路由器端。</p>
+<h2 id="小结-4"><a href="#小结-4" class="headerlink" title="小结"></a>小结</h2><p>系统产生的或转发的每份IP数据报都要搜索路由表，它可以被路由守护程序或ICMP重定向报文修改。系统在默认情况下不转发数据报，除非进行特殊的配置。用route命令可以进入静态路由，可以利用新ICMP路由器发现报文来初始化默认表项，并进行动态修改。主机在启动时只有一个简单的路由表，它可以被来自默认路由器的ICMP重定向报文动态修改。</p>
+<h1 id="动态选路协议"><a href="#动态选路协议" class="headerlink" title="动态选路协议"></a>动态选路协议</h1><p>在前面各章中，我们讨论了静态选路。在配置接口时，以默认方式生成路由表项（对于直接连接的接口），并通过route命令增加表项（通常从系统自引导程序文件），或是通过ICMP重定向生成表项（通常是在默认方式出错的情况下）。</p>
+<p>在网络很小，且与其他网络只有单个连接点且没有多余路由时（若主路由失败，可以使用备用路由），采用这种方法是可行的。如果上述三种情况不能全部满足，通常使用动态选路。</p>
+<h2 id="动态选路"><a href="#动态选路" class="headerlink" title="动态选路"></a>动态选路</h2><p>当相邻路由器之间进行通信，以告知对方每个路由器当前所连接的网络，这时就出现了动态选路。路由器之间必须采用选路协议进行通信，这样的选路协议有很多种。路由器上有一个进程称为路由守护程序（ routing daemon），它运行选路协议，并与其相邻的一些路由器进行通信。</p>
+<p>路由守护程序将选路策略（routing policy）加入到系统中，选择路由并加入到内核的路由表中。如果守护程序发现前往同一信宿存在多条路由，那么它（以某种方法）将选择最佳路由并加入内核路由表中。如果路由守护程序发现一条链路已经断开（可能是路由器崩溃或电话线路不好），它可以删除受影响的路由或增加另一条路由以绕过该问题。</p>
+<p>在像Internet这样的系统中，目前采用了许多不同的选路协议。Internet是以一组自治系统(AS，Autonomous System)的方式组织的，每个自治系统通常由单个实体管理。常常将一个公司或大学校园定义为一个自治系统。NSFNET的Internet骨干网形成一个自治系统，这是因为骨干网中的所有路由器都在单个的管理控制之下。</p>
+<p>每个自治系统可以选择该自治系统中各个路由器之间的选路协议。这种协议我们称之为内部网关协议IGP（Interior Gateway Protocol）或域内选路协议（intradomain routing protocol）。最常用的IGP是选路信息协议RIP。一种新的IGP是开放最短路径优先OSPF（Open Shortest PathFirst）协议。它意在取代RIP。</p>
+<blockquote>
+<p>新的RFC[Almquist 1993]规定，实现任何动态选路协议的路由器必须同时支持OSPF和RIP，还可以支持其他IGP协议。</p>
+</blockquote>
+<h2 id="RIP：选路信息协议"><a href="#RIP：选路信息协议" class="headerlink" title="RIP：选路信息协议"></a>RIP：选路信息协议</h2><h3 id="正常运行"><a href="#正常运行" class="headerlink" title="正常运行"></a>正常运行</h3><p>让我们来看一下采用RIP协议的routed程序正常运行的结果。RIP常用的UDP端口号是520。</p>
+<ul>
+<li>初始化：在启动一个路由守护程序时，它先判断启动了哪些接口，并在每个接口上发送一个请求报文，要求其他路由器发送完整路由表。在点对点链路中，该请求是发送给其他终点的。如果网络支持广播的话，这种请求是以广播形式发送的。目的UDP端口号是520（这是其他路由器的路由守护程序端口号）。这种请求报文的命令字段为1，但地址系列字段设置为0，而度量字段设置为16。这是一种要求另一端完整路由表的特殊请求报文。</li>
+<li>接收到请求。如果这个请求是刚才提到的特殊请求，那么路由器就将完整的路由表发送给请求者。否则，就处理请求中的每一个表项：如果有连接到指明地址的路由，则将度量设置成我们的值，否则将度量置为16（度量为16是一种称为“无穷大”的特殊值，它意味着没有到达目的的路由）。然后发回响应。</li>
+<li>接收到响应。使响应生效，可能会更新路由表。可能会增加新表项，对已有的表项进行修改，或是将已有表项删除。</li>
+<li>定期选路更新。每过30秒，所有或部分路由器会将其完整路由表发送给相邻路由器。发送路由表可以是广播形式的（如在以太网上），或是发送给点对点链路的其他终点的。</li>
+<li>触发更新。每当一条路由的度量发生变化时，就对它进行更新。不需要发送完整路由表，而只需要发送那些发生变化的表项。</li>
+</ul>
+<p><font color="DeepPink"><strong>每条路由都有与之相关的定时器。如果运行RIP的系统发现一条路由在3分钟内未更新，就将该路由的度量设置成无穷大（16），并标注为删除。这意味着已经在6个30秒更新时间里没收到通告该路由的路由器的更新了。再过60秒，将从本地路由表中删除该路由，以保证该路由的失效已被传播开。</strong></font></p>
+<h3 id="度量"><a href="#度量" class="headerlink" title="度量"></a>度量</h3><p>RIP所使用的度量是以跳(hop)计算的。所有直接连接接口的跳数为1。考虑图10-4所示的路由器和网络。画出的4条虚线是广播RIP报文。</p>
+<p><img alt data-src="/images/tcp-ip-illustrated-volume-1-the-protocols-note/%E8%B7%AF%E7%94%B1%E5%99%A8%E5%92%8C%E7%BD%91%E7%BB%9C%E7%A4%BA%E4%BE%8B.png"></p>
+<p>路由器R1通过发送广播到N1通告它与N2之间的跳数是1（发送给N1的广播中通告它与N1之间的路由是无用的）。同时也通过发送广播给N2通告它与N1之间的跳数为1。同样，R2通告它与N2的度量为1，与N3的度量为1。</p>
+<p>如果相邻路由器通告它与其他网络路由的跳数为1，那么我们与那个网络的度量就是2，这是因为为了发送报文到该网络，我们必须经过那个路由器。在我们的例子中，R2到N1的度量是2，与R1到N3的度量一样。</p>
+<p>由于每个路由器都发送其路由表给邻站，因此，可以判断在同一个自治系统AS内到每个网络的路由。如果在该AS内从一个路由器到一个网络有多条路由，那么路由器将选择跳数最小的路由，而忽略其他路由。</p>
+<p>跳数的最大值是15，这意味着RIP只能用在主机间最大跳数值为15的AS内。度量为16表示到无路由到达该IP地址。</p>
 
     </div>
       
@@ -789,6 +823,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+              <a href="/alibaba-p3c.html" rel="prev" title="码出高效：Java 开发手册">
+                码出高效：Java 开发手册 <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
     </footer>
@@ -846,7 +884,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">50</span>
+          <span class="site-state-item-count">51</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -891,7 +929,9 @@
         
           
         
-        <span class="site-state-item-count">15</span>
+          
+        
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">分类</span>
         </a>
       </div>
@@ -1070,7 +1110,9 @@
         
           
         
-        <span class="site-state-item-count">82</span>
+          
+        
+        <span class="site-state-item-count">83</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -1116,7 +1158,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层"><span class="nav-number">1.1.</span> <span class="nav-text">分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP的分层"><span class="nav-number">1.2.</span> <span class="nav-text">TCP/IP的分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#互联网地址"><span class="nav-number">1.3.</span> <span class="nav-text">互联网地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#封装"><span class="nav-number">1.4.</span> <span class="nav-text">封装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分用"><span class="nav-number">1.5.</span> <span class="nav-text">分用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#链路层"><span class="nav-number">2.</span> <span class="nav-text">链路层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环回接口"><span class="nav-number">2.1.</span> <span class="nav-text">环回接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP：网际协议"><span class="nav-number">3.</span> <span class="nav-text">IP：网际协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">3.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP首部"><span class="nav-number">3.2.</span> <span class="nav-text">IP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP路由选择"><span class="nav-number">3.3.</span> <span class="nav-text">IP路由选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网寻址"><span class="nav-number">3.4.</span> <span class="nav-text">子网寻址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网掩码"><span class="nav-number">3.5.</span> <span class="nav-text">子网掩码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ifconfig命令"><span class="nav-number">3.6.</span> <span class="nav-text">ifconfig命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.7.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ARP：地址解析协议"><span class="nav-number">4.</span> <span class="nav-text">ARP：地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-1"><span class="nav-number">4.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个例子"><span class="nav-number">4.2.</span> <span class="nav-text">一个例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP高速缓存"><span class="nav-number">4.3.</span> <span class="nav-text">ARP高速缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP的分组格式"><span class="nav-number">4.4.</span> <span class="nav-text">ARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP代理"><span class="nav-number">4.5.</span> <span class="nav-text">ARP代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#免费ARP"><span class="nav-number">4.6.</span> <span class="nav-text">免费ARP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arp命令"><span class="nav-number">4.7.</span> <span class="nav-text">arp命令</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RARP：逆地址解析协议"><span class="nav-number">5.</span> <span class="nav-text">RARP：逆地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-2"><span class="nav-number">5.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP的分组格式"><span class="nav-number">5.2.</span> <span class="nav-text">RARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP服务器的设计"><span class="nav-number">5.3.</span> <span class="nav-text">RARP服务器的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#作为用户进程的RARP服务器"><span class="nav-number">5.3.1.</span> <span class="nav-text">作为用户进程的RARP服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#每个网络有多个RARP服务器"><span class="nav-number">5.3.2.</span> <span class="nav-text">每个网络有多个RARP服务器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-2"><span class="nav-number">5.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ICMP：Internet控制报文协议"><span class="nav-number">6.</span> <span class="nav-text">ICMP：Internet控制报文协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-3"><span class="nav-number">6.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP报文的类型"><span class="nav-number">6.2.</span> <span class="nav-text">ICMP报文的类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP地址掩码请求与应答"><span class="nav-number">6.3.</span> <span class="nav-text">ICMP地址掩码请求与应答</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Ping程序"><span class="nav-number">7.</span> <span class="nav-text">Ping程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-4"><span class="nav-number">7.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Ping程序-1"><span class="nav-number">7.2.</span> <span class="nav-text">Ping程序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LAN-WAN-输出"><span class="nav-number">7.2.1.</span> <span class="nav-text">LAN/WAN 输出</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP记录路由选项"><span class="nav-number">7.3.</span> <span class="nav-text">IP记录路由选项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-3"><span class="nav-number">7.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Traceroute程序"><span class="nav-number">8.</span> <span class="nav-text">Traceroute程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-5"><span class="nav-number">8.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Traceroute程序的操作"><span class="nav-number">8.2.</span> <span class="nav-text">Traceroute程序的操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP源站选路选项"><span class="nav-number">8.3.</span> <span class="nav-text">IP源站选路选项</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP选路"><span class="nav-number">9.</span> <span class="nav-text">IP选路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-6"><span class="nav-number">9.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#选路的原理"><span class="nav-number">9.2.</span> <span class="nav-text">选路的原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#简单路由表"><span class="nav-number">9.2.1.</span> <span class="nav-text">简单路由表</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层"><span class="nav-number">1.1.</span> <span class="nav-text">分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP的分层"><span class="nav-number">1.2.</span> <span class="nav-text">TCP/IP的分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#互联网地址"><span class="nav-number">1.3.</span> <span class="nav-text">互联网地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#封装"><span class="nav-number">1.4.</span> <span class="nav-text">封装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分用"><span class="nav-number">1.5.</span> <span class="nav-text">分用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#链路层"><span class="nav-number">2.</span> <span class="nav-text">链路层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环回接口"><span class="nav-number">2.1.</span> <span class="nav-text">环回接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP：网际协议"><span class="nav-number">3.</span> <span class="nav-text">IP：网际协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">3.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP首部"><span class="nav-number">3.2.</span> <span class="nav-text">IP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP路由选择"><span class="nav-number">3.3.</span> <span class="nav-text">IP路由选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网寻址"><span class="nav-number">3.4.</span> <span class="nav-text">子网寻址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网掩码"><span class="nav-number">3.5.</span> <span class="nav-text">子网掩码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ifconfig命令"><span class="nav-number">3.6.</span> <span class="nav-text">ifconfig命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.7.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ARP：地址解析协议"><span class="nav-number">4.</span> <span class="nav-text">ARP：地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-1"><span class="nav-number">4.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个例子"><span class="nav-number">4.2.</span> <span class="nav-text">一个例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP高速缓存"><span class="nav-number">4.3.</span> <span class="nav-text">ARP高速缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP的分组格式"><span class="nav-number">4.4.</span> <span class="nav-text">ARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP代理"><span class="nav-number">4.5.</span> <span class="nav-text">ARP代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#免费ARP"><span class="nav-number">4.6.</span> <span class="nav-text">免费ARP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arp命令"><span class="nav-number">4.7.</span> <span class="nav-text">arp命令</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RARP：逆地址解析协议"><span class="nav-number">5.</span> <span class="nav-text">RARP：逆地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-2"><span class="nav-number">5.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP的分组格式"><span class="nav-number">5.2.</span> <span class="nav-text">RARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP服务器的设计"><span class="nav-number">5.3.</span> <span class="nav-text">RARP服务器的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#作为用户进程的RARP服务器"><span class="nav-number">5.3.1.</span> <span class="nav-text">作为用户进程的RARP服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#每个网络有多个RARP服务器"><span class="nav-number">5.3.2.</span> <span class="nav-text">每个网络有多个RARP服务器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-2"><span class="nav-number">5.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ICMP：Internet控制报文协议"><span class="nav-number">6.</span> <span class="nav-text">ICMP：Internet控制报文协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-3"><span class="nav-number">6.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP报文的类型"><span class="nav-number">6.2.</span> <span class="nav-text">ICMP报文的类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP地址掩码请求与应答"><span class="nav-number">6.3.</span> <span class="nav-text">ICMP地址掩码请求与应答</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Ping程序"><span class="nav-number">7.</span> <span class="nav-text">Ping程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-4"><span class="nav-number">7.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Ping程序-1"><span class="nav-number">7.2.</span> <span class="nav-text">Ping程序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LAN-WAN-输出"><span class="nav-number">7.2.1.</span> <span class="nav-text">LAN/WAN 输出</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP记录路由选项"><span class="nav-number">7.3.</span> <span class="nav-text">IP记录路由选项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-3"><span class="nav-number">7.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Traceroute程序"><span class="nav-number">8.</span> <span class="nav-text">Traceroute程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-5"><span class="nav-number">8.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Traceroute程序的操作"><span class="nav-number">8.2.</span> <span class="nav-text">Traceroute程序的操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP源站选路选项"><span class="nav-number">8.3.</span> <span class="nav-text">IP源站选路选项</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP选路"><span class="nav-number">9.</span> <span class="nav-text">IP选路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-6"><span class="nav-number">9.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#选路的原理"><span class="nav-number">9.2.</span> <span class="nav-text">选路的原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#简单路由表"><span class="nav-number">9.2.1.</span> <span class="nav-text">简单路由表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP主机与网络不可达差错"><span class="nav-number">9.3.</span> <span class="nav-text">ICMP主机与网络不可达差错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP重定向差错"><span class="nav-number">9.4.</span> <span class="nav-text">ICMP重定向差错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-4"><span class="nav-number">9.5.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#动态选路协议"><span class="nav-number">10.</span> <span class="nav-text">动态选路协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#动态选路"><span class="nav-number">10.1.</span> <span class="nav-text">动态选路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RIP：选路信息协议"><span class="nav-number">10.2.</span> <span class="nav-text">RIP：选路信息协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#正常运行"><span class="nav-number">10.2.1.</span> <span class="nav-text">正常运行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#度量"><span class="nav-number">10.2.2.</span> <span class="nav-text">度量</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
@@ -1143,12 +1185,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">555k</span>
+    <span title="站点总字数">558k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">8:25</span>
+    <span title="站点阅读时长">8:28</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
