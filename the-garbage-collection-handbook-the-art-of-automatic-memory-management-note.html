@@ -69,7 +69,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-16T12:59:33.505Z">
+<meta property="og:updated_time" content="2019-09-17T14:03:23.608Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="垃圾回收算法手册：自动内存管理的艺术 笔记">
 <meta name="twitter:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
@@ -275,11 +275,21 @@
                 
               
 
-              <time title="创建时间：2019-09-16 16:44:57 / 修改时间：20:59:33" itemprop="dateCreated datePublished" datetime="2019-09-16T16:44:57+08:00">2019-09-16</time>
+              <time title="创建时间：2019-09-16 16:44:57" itemprop="dateCreated datePublished" datetime="2019-09-16T16:44:57+08:00">2019-09-16</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-09-17 22:03:23" itemprop="dateModified" datetime="2019-09-17T22:03:23+08:00">2019-09-17</time>
+              </span>
             
           
             <span class="post-meta-item">
@@ -333,7 +343,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">1.7k</span>
+              <span title="本文字数">4.5k</span>
             </span>
           
             <span class="post-meta-item">
@@ -343,7 +353,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">2 分钟</span>
+              <span title="阅读时长">4 分钟</span>
             </span>
           
 
@@ -376,7 +386,19 @@
 <h3 id="吞吐量"><a href="#吞吐量" class="headerlink" title="吞吐量"></a>吞吐量</h3><p>对程序的最终用户而言,程序当然是运行得越快越好,但这是由几方面因素决定的。其中的一方面便是花费在垃圾回收上的时间应当越少越好,文献中通常用标记/构造率(mark/cons ratio)衡量这一指标。这一概念是在早期的Lisp语言中最先提出的,它表示回收器(对存活对象进行标记)与赋值器(mutator)(创建或者构造新的链表单元)活跃度的比值。然而<font color="DeepPink"><strong>在大多数设计良好的架构中,赋值器会比回收器占用更多的CPU时间,因此在适当牺牲回收器效率的基础上提升赋值器的吞吐量,并进一步提升整个程序(赋值器+回收器)的执行速度,一般来说是值得的。</strong></font>例如,使用标记一清扫回收的系统偶尔会执行存活对象整理以减少内存碎片,虽然这一操作开销较大,但它可以提升赋值器的分配性能。</p>
 <h3 id="完整性与及时性"><a href="#完整性与及时性" class="headerlink" title="完整性与及时性"></a>完整性与及时性</h3><p>理想情况下,垃圾回收过程应当是完整的,即堆中的所有垃圾最终都应当得到回收,但这通常是不现实的,甚至是不可取的,例如纯粹的引用计数回收器便无法回收环状引用垃圾(自引用结构)。从性能方面考虑,在一次回收过程(collection cycle)中只处理堆中部分对象或许更加合理,例如分代回收器会依照堆中对象的年龄将其划分为两代或者更多代,并把回收的主要精力集中在年轻代,这样不仅可以提高回收效率,而且可以减少单次回收的平均停顿时间(pause time)。</p>
 <p><font color="DeepPink"><strong>在并发垃圾回收器中,赋值器与回收器同时工作,其目的在于避免或者尽量减少用户程序的停顿。此类回收器会遇到浮动垃圾(floating garbage)问题,即如果某个对象在回收过程启动之后才变成垃圾,那么该对象只能在下一个回收周期内得到回收。因此在并发回收器中,衡量完整性更好的方法是统计所有垃圾的最终回收情况,而不是单个回收周期的回收情况。不同的回收算法在回收及时性(promptness)方面存在较大差异,进而需要在时间和空间上进行权衡。</strong></font></p>
-<h3 id="停顿时间"><a href="#停顿时间" class="headerlink" title="停顿时间"></a>停顿时间</h3>
+<h3 id="停顿时间"><a href="#停顿时间" class="headerlink" title="停顿时间"></a>停顿时间</h3><p>许多回收器在进行垃圾回收时需要中断赋值器线程,因此会导致在程序执行过程中出现停顿。回收器应当尽量减少对程序主要执行过程的影响,因此要求停顿时间越短越好,这点对于交互式程序或者事务处理服务器(超时将引发事务的重试,进而导致事务的积压)尤为重要。但正如我们在后面章节中将要看到的,限制停顿时间会带来一些副作用。例如,分代式回收器通过频繁且快速地回收较小的、较为年轻的对象来缩短停顿时间,而对较大的、较为年老对象的回收则只是偶尔进行。<font color="DeepPink"><strong>显然,在对分代回收器进行调优时,需要平衡不同分代的大小,进而才能平衡不同分代之间的停顿时间与回收频率。</strong></font>但由于分代回收器必须记录些分代间指针的来源,因此赋值器的指针写操作会存在少量的额外开销。</p>
+<p>并行回收器(parallel collector)虽然也需要停顿整个程序,但它可以通过多线程回收的策略缩短停顿时间。为进一步减少停顿时间,<font color="DeepPink"><strong>并发回收器与增量回收器(incremental collector)偶尔会将部分回收工作与赋值器动作交替进行或者同时进行,但这一过程需要确保赋值器与回收器之间的同步,因而增大了赋值器的额外开销。</strong></font>回收机制的选择会影响程序在空间和时间两个方面的开销,也会影响垃圾回收周期的结束。<font color="DeepPink"><strong>赋值器在时间方面的额外开销取决于需要记录的赋值器操作类型(读或者写)及其如何记录。回收器在空间方面的开销以及回收周期的结束取决于系统可以容忍的浮动垃圾数量。</strong></font>多线程赋值器与回收器会增大设计复杂度。不论如何,缩短停顿时间的措施通常会增大整体处理时间(即降低整体处理速度)。</p>
+<p>仅对最大或者平均停顿时间进行度量是不够的,必须要同时考虑赋值器的性能,因此停顿时间的分布也值得关注。</p>
+<h3 id="空间开销"><a href="#空间开销" class="headerlink" title="空间开销"></a>空间开销</h3><p>内存管理的目的是安全且高效地使用内存空间。不论是显式内存管理还是自动内存管理,不同的管理策略均会产生不同程度的空间开销(space overhead)。某些垃圾回收器需要在每个对象内部占用一定的空间(例如保存引用计数),还有一些回收器会复用对象现有布局上已经存在的域(例如将标记位放在对象头部的某个字中,或者将转发指针(forwarding pointer)记录在用户数据上)。回收器也可能会引入堆级别的空间开销,例如复制式回收器需要将堆分为两个半区,任何时候赋值器只能使用一个半区,另一个半区会被回收器保留,并在回收过程中将存活对象复制到其中。<font color="DeepPink"><strong>回收器也可能需要一些辅助的数据结构,例如追踪式回收器需要通过标记栈来引导堆中指针图表的遍历,回收器在标记对象时也可以使用额外的位图(bitmap)而非对象中的域;对于并发回收器或者其他需要将堆划分为数个独立区域的回收器,其需要额外的记忆集(remembered set)来保存赋值器所修改的指针值或者跨区域指针的位置。</strong></font></p>
+<h3 id="针对特定语言的优化"><a href="#针对特定语言的优化" class="headerlink" title="针对特定语言的优化"></a>针对特定语言的优化</h3><p>垃圾回收算法可以根据它们所服务的不同语言范式来归类。在函数式语言中,内存管理有着很大的优化空间。某些语言(例如ML)将可变数据与不可变数据进行区分,纯函数式语言(例如Haskell)则更为极端,它不允许用户改变任何数据,即程序是透明引用(referentially transparent)的。然而,在函数式语言内部,数据结构的更新一般不超过一次,即从待计算值(thunk)到一个弱头部范式(weak head normal form,WHNF),分代垃圾回收器可以据此尽快提升已经完成计算的数据结构。研究者们还提出了基于引用计数来处理环状数据结构的完整机制。声明式语言(declarative language)或许还可以使用其他策略来提升堆空间管理的效率,即如果某一对象创建于一个“选择点”(choice point)之后,那么当程序再次回到该选择点时,该对象将不可达,如果对象在堆中的布局是按照其分配时间排布的,那么某个选择点之后分配的内存可以在一个固定的时间内全部回收。不同种类的语言可能对回收器具有不同的要求,最显著的差异是语言中指针功能的不同,以及回收器调用对象终结的需求不同。</p>
+<blockquote>
+<p>所谓透明引用,即以相同的参数调用同一个函数两次,所得到的结果总是相同的,也可理解为函数没有副作用。<br>thunk和WHNF均为函数式语言中的与懒情计算相关的概念。</p>
+</blockquote>
+<h3 id="可扩展性与可移植性"><a href="#可扩展性与可移植性" class="headerlink" title="可扩展性与可移植性"></a>可扩展性与可移植性</h3><p>可扩展性(scalability)与可移植性(portability)是我们定义的最后两个指标。随着PC,甚至笔记本计算机中(且不说大型服务器)多核硬件的普及,借助硬件的并行优势来提升垃圾回收的性能将变得越来越重要。我们期待并行硬件在规模上(内核与套接字数量上)能有进一步发展,也希望异构处理器(heterogeneous processer)越来越普遍。在服务器方面,堆的大小可以达到数十甚至数百吉字节,事务型负载也越来越多,这些都给垃圾回收带来更多的要求。很多垃圾回收算法需要操作系统或者硬件的支持(例如需要依赖页保护机制,需要对虚拟内存空间进行二次映射,或者要求处理器能够提供特定的原子操作),但这些技术并不需要很强的可移植性。</p>
+<h2 id="性能上的劣势"><a href="#性能上的劣势" class="headerlink" title="性能上的劣势"></a>性能上的劣势</h2><p>与显式内存管理相比,自动内存管理是否存在性能上的劣势?我们将通过对这一问题的分析,来对两者的优劣进行总结。一般来说,自动内存管理的运行开销很大程度上取决于程序的行为,甚至硬件条件,因而很难对其进行简单评估。一个长期以来的观点是,垃圾回收通常会在总内存吞吐量以及垃圾回收停顿时间方面引人一些不可接受的开销,从而导致应用程序的执行速度慢于显式内存管理策略。自动内存管理确实会牺牲程序的部分性能,但是远不如想象中那样严重。诸如ma1loc和free等显式内存操作也会带来一些显著开销。Herts, Feng, Herger[2005测量了多种Java基准测试程序和回收算法花费在垃圾回收上的真正开销。他们构建了一个Java虚拟机并用其精确地观察到对象何时不可达,同时使用可达追踪的方法驱动模拟器来测量回收周期与高速缓存不命中(cache miss)的情况。他们将许多不同种类的垃圾回收器配置与各种不同的ma1lo/free实现进行比较,比较的方法是:如果追踪发现某一对象变成垃圾,则调用free将其释放。 Herts等人发现,尽管用这两种方式的测量结果差异较大,但是<font color="DeepPink"><strong>如果堆足够大(达到所需最小空间的5倍),那么垃圾回收器的执行时间性能将可以与显式分配相匹敌,但对于一般大小的堆,垃圾回收的开销会平均增大17%。</strong></font></p>
+<h2 id="实验方法"><a href="#实验方法" class="headerlink" title="实验方法"></a>实验方法</h2><p>内存管理涉及时间和空间两方面的权衡。<font color="DeepPink"><strong>大多数环境下,降低回收停顿时间的一种方法是增大堆的空间(增大到一定程度后将达到最优,但如果再增大,则由于局部性原理,执行时间将会变长)。</strong></font></p>
+<h2 id="术语和符号"><a href="#术语和符号" class="headerlink" title="术语和符号"></a>术语和符号</h2><p>首先需要说明的是存储的单位。我们遵循一个字节包含八个位这一惯例。我们简单地使用KB(kilobyte)、MB(megabyte)、GB(gigabyte)、TB(terabyte)来描述对应的2的整数次幂内存单元(分别是20、20、20、20),而不使用SI数字前缀的标准定义。</p>
+
     </div>
       
   <div class="popular-posts-header">推荐阅读</div>
@@ -825,7 +847,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -852,12 +874,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">568k</span>
+    <span title="站点总字数">571k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">8:36</span>
+    <span title="站点阅读时长">8:39</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
