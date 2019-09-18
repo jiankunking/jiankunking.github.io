@@ -69,7 +69,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-17T14:03:23.608Z">
+<meta property="og:updated_time" content="2019-09-18T05:26:10.331Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="垃圾回收算法手册：自动内存管理的艺术 笔记">
 <meta name="twitter:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
@@ -288,7 +288,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-17 22:03:23" itemprop="dateModified" datetime="2019-09-17T22:03:23+08:00">2019-09-17</time>
+                <time title="修改时间：2019-09-18 13:26:10" itemprop="dateModified" datetime="2019-09-18T13:26:10+08:00">2019-09-18</time>
               </span>
             
           
@@ -343,7 +343,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">4.5k</span>
+              <span title="本文字数">6.3k</span>
             </span>
           
             <span class="post-meta-item">
@@ -353,7 +353,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">4 分钟</span>
+              <span title="阅读时长">6 分钟</span>
             </span>
           
 
@@ -398,7 +398,18 @@
 <h2 id="性能上的劣势"><a href="#性能上的劣势" class="headerlink" title="性能上的劣势"></a>性能上的劣势</h2><p>与显式内存管理相比,自动内存管理是否存在性能上的劣势?我们将通过对这一问题的分析,来对两者的优劣进行总结。一般来说,自动内存管理的运行开销很大程度上取决于程序的行为,甚至硬件条件,因而很难对其进行简单评估。一个长期以来的观点是,垃圾回收通常会在总内存吞吐量以及垃圾回收停顿时间方面引人一些不可接受的开销,从而导致应用程序的执行速度慢于显式内存管理策略。自动内存管理确实会牺牲程序的部分性能,但是远不如想象中那样严重。诸如ma1loc和free等显式内存操作也会带来一些显著开销。Herts, Feng, Herger[2005测量了多种Java基准测试程序和回收算法花费在垃圾回收上的真正开销。他们构建了一个Java虚拟机并用其精确地观察到对象何时不可达,同时使用可达追踪的方法驱动模拟器来测量回收周期与高速缓存不命中(cache miss)的情况。他们将许多不同种类的垃圾回收器配置与各种不同的ma1lo/free实现进行比较,比较的方法是:如果追踪发现某一对象变成垃圾,则调用free将其释放。 Herts等人发现,尽管用这两种方式的测量结果差异较大,但是<font color="DeepPink"><strong>如果堆足够大(达到所需最小空间的5倍),那么垃圾回收器的执行时间性能将可以与显式分配相匹敌,但对于一般大小的堆,垃圾回收的开销会平均增大17%。</strong></font></p>
 <h2 id="实验方法"><a href="#实验方法" class="headerlink" title="实验方法"></a>实验方法</h2><p>内存管理涉及时间和空间两方面的权衡。<font color="DeepPink"><strong>大多数环境下,降低回收停顿时间的一种方法是增大堆的空间(增大到一定程度后将达到最优,但如果再增大,则由于局部性原理,执行时间将会变长)。</strong></font></p>
 <h2 id="术语和符号"><a href="#术语和符号" class="headerlink" title="术语和符号"></a>术语和符号</h2><p>首先需要说明的是存储的单位。我们遵循一个字节包含八个位这一惯例。我们简单地使用KB(kilobyte)、MB(megabyte)、GB(gigabyte)、TB(terabyte)来描述对应的2的整数次幂内存单元(分别是20、20、20、20),而不使用SI数字前缀的标准定义。</p>
-
+<h3 id="赋值器与回收器"><a href="#赋值器与回收器" class="headerlink" title="赋值器与回收器"></a>赋值器与回收器</h3><p>对于使用垃圾回收的程序, Dijkstra等[1976、1978]将其执行过程划分为两个半独立的部分:</p>
+<ul>
+<li>赋值器执行应用代码。这一过程会分配新的对象,并且修改对象之间的引用关系,进而改变堆中对象图的拓扑结构,引用域可能是堆中对象,也可能是根,例如静态变量、线程栈等。随着引用关系的不断变更,部分对象会失去与根的联系,即从根出发沿着对象图的任何一条边进行遍历都无法到达该对象。</li>
+<li>回收器(collector)执行垃圾回收代码,即找到不可达对象并将其回收。</li>
+</ul>
+<p>一个程序可能拥有多个赋值器线程,但是它们共用同一个堆。相应的,也可能存在多个回收器线程。</p>
+<h3 id="分配器"><a href="#分配器" class="headerlink" title="分配器"></a>分配器</h3><p>分配器(allocator)与回收器在功能上是正交关系。分配器支持两种操作:分配(allocate)和释放(free)。分配是为某一对象保留底层的内存存储,释放是将内存归还给分配器以便复用。分配存储空间的大小是由一个可选参数来控制的,如果我们在伪代码中忽略这一参数,意味着分配器将返回一个固定大小的对象,或者对象大小对于算法的理解并非必要。分配操作也可能支持更多参数,例如将数组的分配与单个对象的分配进行区分,或者将指针数组的分配和不包含指针的数组进行区分,或者包含其他一些必要信息以便初始化对象头部。</p>
+<h1 id="标记-清扫回收"><a href="#标记-清扫回收" class="headerlink" title="标记-清扫回收"></a>标记-清扫回收</h1><p>标记一清扫算法是一种间接回收(indirect collection)算法,它并非直接检测垃圾本身而是先确定所有存活对象,然后反过来判定其他对象都是垃圾。需要注意的是,该算法的每次调用都需要重新计算存活对象集合,但并非所有的垃圾回收算法都需要如此。</p>
+<h2 id="三色抽象"><a href="#三色抽象" class="headerlink" title="三色抽象"></a>三色抽象</h2><p>三色抽象(tricolour abstraction)[Dijkstra等,1976,1978]可以简洁地描述回收过程中对象状态的变化(是否已被标记、是否在工作列表中等)。三色抽象是描述追踪式回收器的种十分有用的方法,利用它可以推演回收器的正确性,这正是回收器必须保证的。<font color="DeepPink"><strong>在三色抽象中,回收器将对象图划分为黑色对象(确定存活)和白色对象(可能死亡)。任意对象在初始状态下均为白色,当回收器初次扫描到某一对象时将其着为灰色,当完成该对象的扫描并找到其所有子节点之后,回收器会将其着为黑色。从概念上讲,黑色意味着已经被回收器处理过,灰色意味着已经被回收器遍历但尚未完成处理(或者需要再次进行处理)。</strong></font>三色抽象也可以推广到对象的域中:灰色表示正在处理的域,黑色表示已经处理过的域。如果把赋值器也当作一个对象,则三色抽象也可用于推演赋值器根集合的状态变化[Pirinen,1998]灰色赋值器表示回收器尚未完成对其根集合的扫描,黑色赋值器表示回收器已经完成对其根集合的扫描(并且不需要再次扫描)。一次堆遍历过程可以形象地看作是回收器以灰色对象作为“波面”(wavefront),将黑色对象和白色对象分离,不断向前推进波面,直到所有可达对象都变成黑色的过程。</p>
+<p>上述算法中存在一个重要的不变式:<font color="DeepPink"><strong>在标记过程完成后,对象图中将不可能存在从黑色对象指向白色对象的引用,因此在标记过程中,所有白色可达对象都只能是从灰色对象可达。如果这一不变式被打破,那么回收器将不会进一步处理黑色对象,从而可能导致某个黑色对象的后代可达但未被标记(进而被错误地释放)。</strong></font></p>
+<h2 id="改进的标记-清扫算法"><a href="#改进的标记-清扫算法" class="headerlink" title="改进的标记-清扫算法"></a>改进的标记-清扫算法</h2><p>程序的性能通常与其高速缓存的相关行为有很大关系。从内存中加载一个值可能要花费上百个时钟周期,但从L1高速缓存(L1 cache)中加载可能只需要花费三到四个时钟周期。高速缓存之所以能够提升程序的性能,主要是因为程序在运行时表现出了良好的时间局部性」(temporal locality),即一旦程序访问了某个内存地址,则很可能在不久之后再次访问该地址,因此值得将它的值缓存。程序也可能表现出良好的空间局部性(space locality),即一旦程序访问了某个内存地址,则很有可能在不久之后访问该地址附近的数据。<font color="DeepPink"><strong>现代硬件可以从两个方面利用程序的局部性特征:一方面,高速缓存与更低级别内存之间不会进行单个字节的数据传输,而是以一个固定的字节数为最小传输单元(即高速缓存行或者高速缓存块的大小),通常是32~128字节;另一方面,处理器可能会使用硬件预取(prefetch)技术,例如Intel Core微处理器架构可以探测到有规律的步进内存访问操作,进而提前读取数据流。</strong></font>开发者也可以利用显式预取指令引导预取过程。</p>
+<h2 id="位图标记"><a href="#位图标记" class="headerlink" title="位图标记"></a>位图标记</h2>
     </div>
       
   <div class="popular-posts-header">推荐阅读</div>
@@ -427,14 +438,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
+      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-gc-g1.html" rel="bookmark">Java 垃圾回收算法之G1</a></div>
+      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
       
     </li>
   
@@ -510,6 +521,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+              <a href="/how-to-work-with-network-from-linux-terminal.html" rel="prev" title="如何用Linux命令行管理网络：11个你必须知道的命令">
+                如何用Linux命令行管理网络：11个你必须知道的命令 <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
     </footer>
@@ -567,7 +582,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-count">55</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -847,7 +862,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -874,12 +889,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">571k</span>
+    <span title="站点总字数">576k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">8:39</span>
+    <span title="站点阅读时长">8:44</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
