@@ -69,7 +69,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-20T12:06:13.277Z">
+<meta property="og:updated_time" content="2019-09-20T14:17:32.759Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="垃圾回收算法手册：自动内存管理的艺术 笔记">
 <meta name="twitter:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
@@ -288,7 +288,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-20 20:06:13" itemprop="dateModified" datetime="2019-09-20T20:06:13+08:00">2019-09-20</time>
+                <time title="修改时间：2019-09-20 22:17:32" itemprop="dateModified" datetime="2019-09-20T22:17:32+08:00">2019-09-20</time>
               </span>
             
           
@@ -343,7 +343,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">8.9k</span>
+              <span title="本文字数">11k</span>
             </span>
           
             <span class="post-meta-item">
@@ -353,7 +353,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">8 分钟</span>
+              <span title="阅读时长">10 分钟</span>
             </span>
           
 
@@ -418,7 +418,22 @@
 <p>Garner等[2007]提出了一种<font color="DeepPink"><strong>混合标记策略,即将分区适应分配器(segregated fitsallocator)所管理的每个数据块与字节图中的一个字节相关联,同时依然保留对象头部的标记位。当且仅当内存块中至少存在一个存活对象时,该内存块所对应的标记字节才会被设置。清扫器可以根据字节图快速地判定某一内存块是否完全为空(即不包含存活对象),进而可以将其整体回收。</strong></font>这一策略有两个优点:第一,在并发情况下,无需使用同步操作来设置字节图中的标记字节以及对象头部的标记位;第二,写操作没有数据依赖(这可能导致高速缓存延迟),且对字节图中标记字节的写操作也是无条件的。</p>
 <h2 id="标记过程中的高速缓存不命中问题"><a href="#标记过程中的高速缓存不命中问题" class="headerlink" title="标记过程中的高速缓存不命中问题"></a>标记过程中的高速缓存不命中问题</h2><p>Bohm[2000]发现标记过程的开销决定着回收时间:在 Intel PentiumⅢ系统中,预取对象第一个指针域的开销通常会占到标记该对象总开销的三分之一。为此 Boehm提出一种灰色预取( prefetching on gray)技术,即当对象为灰色时,预取其第一个高速缓存行中的数据,如果被扫描的对象很大,则预取适当数量的高速缓存行。然而,这种技术依赖于预取时间,如果过早地进行高速缓存行预取,则数据很可能在得到使用之前就被换出,而过晚地预取则会导致高速缓存不命中。</p>
 <h2 id="需要考虑的问题"><a href="#需要考虑的问题" class="headerlink" title="需要考虑的问题"></a>需要考虑的问题</h2><h3 id="空间利用率"><a href="#空间利用率" class="headerlink" title="空间利用率"></a>空间利用率</h3><p>将标记位放在对象头部基本不会产生额外的空间开销,而如果使用位图来保存标记位,则额外空间开销的大小取决于对象的字节对齐要求,但其总大小不会超过堆的字节对齐要求的倒数(即堆空间的1/64或1/32,具体的值取决于堆的组织架构)。</p>
-<h1 id="标记-整理回收"><a href="#标记-整理回收" class="headerlink" title="标记-整理回收"></a>标记-整理回收</h1>
+<h1 id="引用计数"><a href="#引用计数" class="headerlink" title="引用计数"></a>引用计数</h1><h2 id="环状引用计数"><a href="#环状引用计数" class="headerlink" title="环状引用计数"></a>环状引用计数</h2><p>对于环状数据结构而言,其内部对象的引用计数至少为1,因此仅靠引用计数本身无法回收环状垃圾。不论是在应用程序还是在运行时系统中,环状数据结构都十分普遍,如双向链表或者环状缓冲区。对象一关系映射(object-relations mapping)系统可能要求数据库和其中的表互相引用对方的一些信息。真实世界中的某些结构天然就是环状的,例如地理信息系统中的道路。懒惰函数式语言(lazy functional language)通常使用环来表示递归[urner 1979,Y组合子(Combinator)]。研究者们提出了多种解决环状引用计数问题的策略,我们介绍其中的几种。</p>
+<p>最简单的策略是在引用计数之外偶尔使用追踪式回收作为补充。该方法假定大多数对象不会被环状数据结构所引用,因此可以通过引用计数方法实现快速回收,而追踪式回收则负责处理剩余的环状数据结构。这一方案简单地减少了追踪式回收的发起频率。在语言层面上, Friedman和wise[1979]发现,纯函数式语言中只有递归定义才会产生环,因此只要遵从一定的规则便可对这种情况下的环状引用计数进行特殊处理。在 Bobrow1980]的方法中,开发者可以把一组对象作为整体进行引用计数操作,当整体引用计数为零时便可将其集体回收。</p>
+<p>许多学者建议将导致闭环出现的指针与其他指针进行区分[Friedman and Wise,1979;Brownbridge,1985; Salkeld,1987; Repels等,1988; Axford,19901。他们将普通引用称为强引用(strong reference),将导致闭环出现的引用称为弱引用(weak reference)。如果不允许强引用组成环,则强引用图可以使用标准引用计数算法处理。Brownbridge的算法得到了广泛应用,简而言之,每个对象需要包含一个强引用计数以及一个弱引用计数,在进行写操作时,写屏障会检测指针以及目标对象的强弱,并将所有可能产生环的引用设置为弱引用。为维护“所有可达对象均为强可达,且强引用不产生环”这一不变式,赋值器在删除引用时可能需要改变指针的强弱属性。但是,这一算法并不安全,且可能导致对象提前被回收,具体可以参见Salkeld的引用计数示例[Jones,1996,6.5节]。Salkeld[1987]对该算法进行修正并提升了它的安全性,但代价是在某些情况下算法将无法结束。Repels等[1988]提出了一种非常复杂的解决方案,但该算法在空间以及性能方面的开销却更加明显:与普通的引用计数相比,其所需的空间开销翻倍,在大多数情况下,其性能开销是标准引用计数的两倍,在极端情况下,甚至会呈现指数级增长。</p>
+<p>在所有能够处理环状数据结构的引用计数算法中,得到了最广泛认可的是试验删除(trial deletion)算法。该算法无须使用后备的追踪式回收器来进行整个存活对象图的扫描,相反,它将注意力集中在可能会因删除引用而产生环状垃圾的局部对象图上。在引用计数算法中:</p>
+<ul>
+<li>在环状垃圾指针结构内部,所有对象的引用计数均由其内部对象之间的指针产生。</li>
+<li>只有在删除某一对象的某个引用后该对象的引用计数仍大于零时,才有可能出现环状垃圾。</li>
+</ul>
+<p>部分追踪(partial tracing)算法充分利用上述两个结论,该算法从一个可能是垃圾的对象开始进行子图追踪。对于遍历到的每个引用,算法将对其目标对象进行试验删除,即临时性地减少目标对象的引用计数,从而移除由内部指针产生的引用计数。追踪完成后,如果某个对象的引用计数仍然不是零,则必然是因为子图之外的其他对象引用了该对象,进而可以判定该对象及其传递闭包都不是垃圾。</p>
+<p>Recycler算法[Bacon等,2001; Bacon and Rajan,2001;Paz等,2007]支持环状引用计数的并发回收。环状数据结构的回收分为3个阶段:</p>
+<ul>
+<li>首先,回收器从某个可能是环状垃圾成员的对象出发进行子图追踪,同时减少由内部指针产生的引用计数。算法将遍历到的对象着为灰色。</li>
+<li>其次,对子图中的所有对象进行检测,如果某一对象的引用计数不是零,则该对象必然被子图外的其他对象引用。此时需要对第一阶段的试验删除操作进行修正,算法将存活的灰色对象重新着为黑色,同时将其他灰色对象着为白色。</li>
+<li>最后,子图中所有依然为白色的对象必然是垃圾,算法可以将其回收。</li>
+</ul>
+<h1 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h1>
     </div>
       
   <div class="popular-posts-header">推荐阅读</div>
@@ -871,7 +886,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#标记过程中的高速缓存不命中问题"><span class="nav-number">2.4.</span> <span class="nav-text">标记过程中的高速缓存不命中问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题"><span class="nav-number">2.5.</span> <span class="nav-text">需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间利用率"><span class="nav-number">2.5.1.</span> <span class="nav-text">空间利用率</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-整理回收"><span class="nav-number">3.</span> <span class="nav-text">标记-整理回收</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#标记过程中的高速缓存不命中问题"><span class="nav-number">2.4.</span> <span class="nav-text">标记过程中的高速缓存不命中问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题"><span class="nav-number">2.5.</span> <span class="nav-text">需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间利用率"><span class="nav-number">2.5.1.</span> <span class="nav-text">空间利用率</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#引用计数"><span class="nav-number">3.</span> <span class="nav-text">引用计数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环状引用计数"><span class="nav-number">3.1.</span> <span class="nav-text">环状引用计数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存分配"><span class="nav-number">4.</span> <span class="nav-text">内存分配</span></a></li></ol></div>
             
 
           </div>
@@ -898,12 +913,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">579k</span>
+    <span title="站点总字数">580k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">8:46</span>
+    <span title="站点阅读时长">8:48</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
