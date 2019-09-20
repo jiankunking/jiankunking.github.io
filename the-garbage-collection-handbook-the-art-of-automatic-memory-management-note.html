@@ -69,7 +69,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-18T05:26:10.331Z">
+<meta property="og:updated_time" content="2019-09-20T12:06:13.277Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="垃圾回收算法手册：自动内存管理的艺术 笔记">
 <meta name="twitter:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
@@ -288,7 +288,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-18 13:26:10" itemprop="dateModified" datetime="2019-09-18T13:26:10+08:00">2019-09-18</time>
+                <time title="修改时间：2019-09-20 20:06:13" itemprop="dateModified" datetime="2019-09-20T20:06:13+08:00">2019-09-20</time>
               </span>
             
           
@@ -343,7 +343,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">6.3k</span>
+              <span title="本文字数">8.9k</span>
             </span>
           
             <span class="post-meta-item">
@@ -353,7 +353,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">6 分钟</span>
+              <span title="阅读时长">8 分钟</span>
             </span>
           
 
@@ -409,7 +409,16 @@
 <h2 id="三色抽象"><a href="#三色抽象" class="headerlink" title="三色抽象"></a>三色抽象</h2><p>三色抽象(tricolour abstraction)[Dijkstra等,1976,1978]可以简洁地描述回收过程中对象状态的变化(是否已被标记、是否在工作列表中等)。三色抽象是描述追踪式回收器的种十分有用的方法,利用它可以推演回收器的正确性,这正是回收器必须保证的。<font color="DeepPink"><strong>在三色抽象中,回收器将对象图划分为黑色对象(确定存活)和白色对象(可能死亡)。任意对象在初始状态下均为白色,当回收器初次扫描到某一对象时将其着为灰色,当完成该对象的扫描并找到其所有子节点之后,回收器会将其着为黑色。从概念上讲,黑色意味着已经被回收器处理过,灰色意味着已经被回收器遍历但尚未完成处理(或者需要再次进行处理)。</strong></font>三色抽象也可以推广到对象的域中:灰色表示正在处理的域,黑色表示已经处理过的域。如果把赋值器也当作一个对象,则三色抽象也可用于推演赋值器根集合的状态变化[Pirinen,1998]灰色赋值器表示回收器尚未完成对其根集合的扫描,黑色赋值器表示回收器已经完成对其根集合的扫描(并且不需要再次扫描)。一次堆遍历过程可以形象地看作是回收器以灰色对象作为“波面”(wavefront),将黑色对象和白色对象分离,不断向前推进波面,直到所有可达对象都变成黑色的过程。</p>
 <p>上述算法中存在一个重要的不变式:<font color="DeepPink"><strong>在标记过程完成后,对象图中将不可能存在从黑色对象指向白色对象的引用,因此在标记过程中,所有白色可达对象都只能是从灰色对象可达。如果这一不变式被打破,那么回收器将不会进一步处理黑色对象,从而可能导致某个黑色对象的后代可达但未被标记(进而被错误地释放)。</strong></font></p>
 <h2 id="改进的标记-清扫算法"><a href="#改进的标记-清扫算法" class="headerlink" title="改进的标记-清扫算法"></a>改进的标记-清扫算法</h2><p>程序的性能通常与其高速缓存的相关行为有很大关系。从内存中加载一个值可能要花费上百个时钟周期,但从L1高速缓存(L1 cache)中加载可能只需要花费三到四个时钟周期。高速缓存之所以能够提升程序的性能,主要是因为程序在运行时表现出了良好的时间局部性」(temporal locality),即一旦程序访问了某个内存地址,则很可能在不久之后再次访问该地址,因此值得将它的值缓存。程序也可能表现出良好的空间局部性(space locality),即一旦程序访问了某个内存地址,则很有可能在不久之后访问该地址附近的数据。<font color="DeepPink"><strong>现代硬件可以从两个方面利用程序的局部性特征:一方面,高速缓存与更低级别内存之间不会进行单个字节的数据传输,而是以一个固定的字节数为最小传输单元(即高速缓存行或者高速缓存块的大小),通常是32~128字节;另一方面,处理器可能会使用硬件预取(prefetch)技术,例如Intel Core微处理器架构可以探测到有规律的步进内存访问操作,进而提前读取数据流。</strong></font>开发者也可以利用显式预取指令引导预取过程。</p>
-<h2 id="位图标记"><a href="#位图标记" class="headerlink" title="位图标记"></a>位图标记</h2>
+<h2 id="位图标记"><a href="#位图标记" class="headerlink" title="位图标记"></a>位图标记</h2><p><font color="DeepPink"><strong>回收器可以将对象的标记位保存在其头部的某个字中,除此之外也可以使用一个独立的位图来维护标记位,即:位图中的每个位关联堆中每个可能分配对象的地址。位图所需的空间取决于虚拟机的字节对齐要求。</strong></font>位图可以只有一个,也可以存在多个,例如在块结构的堆中,回收器可以为每个内存块维护独立的位图,这一方式可以避免由于堆不连续导致的内存浪费。回收器可以将每个内存块的位图置于其自身内部,但如果所有内存块中位图的相对位置全部相同,则可能导致性能的下降,因为不同内存块的位图之间可能会争用相同的组相关高速缓存(set- associative cache)。对位图的访问同时也意味着对位图所在页的访问(即可能导致缺页异常——译者注),因此基于换页和高速缓存相关性的考虑,在访问位图时花费更多的指令以保持程序的局部性通常来说是值得的。为避免高速缓存的相关问题,可以将内存块中位图的位置增加一个简单偏移量,例如内存块地址的简单哈希值。还可以将位图存放在个额外的区域[Boehm and Weiser,1988年]中,并以其所对应内存块的哈希值等作为索引,这样既避免了换页问题,也避免了高速缓存冲突。</p>
+<p>位图标记通常仅适用于单线程环境,因为多线程同时修改位图可能存在较大的写冲突风险。设置对象头部中的标记位通常是安全的,因为该操作是幂等的,即最多只会将标记位设置多次。相对于位图,实践中更常用的是字节图(byte-map),虽然它占用的空间是前者的8倍,但却解决了写冲突问题。另外还可以使用同步操作来设置位图中的位。<font color="DeepPink"><strong>在实际应用中,如果将标记位保存在对象头部通常会带来额外的复杂度,因为头部通常会存放一些赋值器共享数据,例如锁或者哈希值,那么当标记线程与赋值器线程并发执行时可能会产生冲突。</strong></font>因此,为了确保安全,标记位通常会占用头部中一个额外的字,以便与赋值器共享数据区分,当然也可以使用原子操作来设置头部中的标记位。</p>
+<p>相对于将标记位放置在对象头部这一策略,位图可以使得标记位更加密集;对于使用位图的标记一清扫回收器,标记过程只需读取存活对象的指针域而不会修改任何对象;对于不包含引用的对象,回收器只需要读取其类型信息描述域;清扫器不会对存活对象进行任何读写操作,它只会在释放垃圾对象的过程中覆盖其某些域(例如将它们链接到空闲链表上)。因此,位图标记不仅可以减少内存中需要修改的字节数,而且减少了对高速缓存行的写入,进而减少需要写回内存的数据量。</p>
+<p>位图标记最初应用在保守式回收器(conservative collector)中。保守式回收器的设计初衷是为C和C++等“不合作”的语言提供自动内存管理功能[Boehm and Weiser,1988]型精确(type-accurate)系统可以精确地识别每一个包含指针的槽,不论其位于对象中,是位于线程栈或者其他根集合中,而<font color="DeepPink"><strong>保守式回收器则无法得到编译器和运行时系统的支持因而其在识别指针时必须采用保守的判定方式,即:如果槽中某个值看起来像是指针引用,那么就必须假定它是一个指针。</strong></font>保守式回收器可能错误地将一个槽当作指针,这带来了两个安全上的要求:第一,回收器不能修改任何赋值器可能访问到的内存地址的值(包括对象和根集合)。这一要求导致保守式回收器不能使F任何可能移动对象的算法,因为对象被移动之后需要更新指向该对象的所有引用。这同时导致在头域中保存标记位的方案不可行,因为错误的指针会指向一个实际并不存在的象”,因此设置或者清理标记位可能会破坏用户数据。第二,应当尽可能减少赋值器破坏回收器数据的可能性。与将标记位等回收器元数据存放在一个单独区域的方案相比,为每个对象增加一个回收器专用头部数据会存在更高的风险。</p>
+<p><font color="DeepPink"><strong>使用位图标记的另一个重要目的是减少回收过程中的换页次数</strong></font>[Boehm,2000在现代系统中,任何由回收器导致的换页行为通常都是不可接受的,因此位图标记是否可以提升高速缓存性能便成为一个值得关注的问题。许多证据表明,对象往往成簇诞生并成批死亡[Hayes,1991; Jones, Ryder,2008],而许多分配器往往也会将这些对象分配在相邻的空间。使用位图来引导清扫可以带来两个好处:第一,在位图/字节图中,一个字内部的每个位/字节全部都被设置/清空的情况会经常出现,因此回收器可以批量读取/清空一批对象的标记位;第二,通过位图标记可以更简单地判定某一内存块中的所有对象是否都是垃圾,进而可能一次性回收整个内存块。</p>
+<p>许多内存管理器都使用块结构堆(如Boehm and Weiser[1988])。最直接的位图标记实现策略可能是在每个内存块的前端保留一块内存以用作位图。但正如我们前面所提到的,这策略可能会导致不必要的高速缓存冲突或者换页,因此回收器通常将位图与用户数据块分开并单独存放。</p>
+<p>Garner等[2007]提出了一种<font color="DeepPink"><strong>混合标记策略,即将分区适应分配器(segregated fitsallocator)所管理的每个数据块与字节图中的一个字节相关联,同时依然保留对象头部的标记位。当且仅当内存块中至少存在一个存活对象时,该内存块所对应的标记字节才会被设置。清扫器可以根据字节图快速地判定某一内存块是否完全为空(即不包含存活对象),进而可以将其整体回收。</strong></font>这一策略有两个优点:第一,在并发情况下,无需使用同步操作来设置字节图中的标记字节以及对象头部的标记位;第二,写操作没有数据依赖(这可能导致高速缓存延迟),且对字节图中标记字节的写操作也是无条件的。</p>
+<h2 id="标记过程中的高速缓存不命中问题"><a href="#标记过程中的高速缓存不命中问题" class="headerlink" title="标记过程中的高速缓存不命中问题"></a>标记过程中的高速缓存不命中问题</h2><p>Bohm[2000]发现标记过程的开销决定着回收时间:在 Intel PentiumⅢ系统中,预取对象第一个指针域的开销通常会占到标记该对象总开销的三分之一。为此 Boehm提出一种灰色预取( prefetching on gray)技术,即当对象为灰色时,预取其第一个高速缓存行中的数据,如果被扫描的对象很大,则预取适当数量的高速缓存行。然而,这种技术依赖于预取时间,如果过早地进行高速缓存行预取,则数据很可能在得到使用之前就被换出,而过晚地预取则会导致高速缓存不命中。</p>
+<h2 id="需要考虑的问题"><a href="#需要考虑的问题" class="headerlink" title="需要考虑的问题"></a>需要考虑的问题</h2><h3 id="空间利用率"><a href="#空间利用率" class="headerlink" title="空间利用率"></a>空间利用率</h3><p>将标记位放在对象头部基本不会产生额外的空间开销,而如果使用位图来保存标记位,则额外空间开销的大小取决于对象的字节对齐要求,但其总大小不会超过堆的字节对齐要求的倒数(即堆空间的1/64或1/32,具体的值取决于堆的组织架构)。</p>
+<h1 id="标记-整理回收"><a href="#标记-整理回收" class="headerlink" title="标记-整理回收"></a>标记-整理回收</h1>
     </div>
       
   <div class="popular-posts-header">推荐阅读</div>
@@ -862,7 +871,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#标记过程中的高速缓存不命中问题"><span class="nav-number">2.4.</span> <span class="nav-text">标记过程中的高速缓存不命中问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题"><span class="nav-number">2.5.</span> <span class="nav-text">需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间利用率"><span class="nav-number">2.5.1.</span> <span class="nav-text">空间利用率</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-整理回收"><span class="nav-number">3.</span> <span class="nav-text">标记-整理回收</span></a></li></ol></div>
             
 
           </div>
@@ -889,12 +898,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">576k</span>
+    <span title="站点总字数">579k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">8:44</span>
+    <span title="站点阅读时长">8:46</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
