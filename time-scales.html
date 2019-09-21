@@ -61,19 +61,19 @@
   };
 </script>
 
-  <meta name="description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)高并发的场景还是NIO比较适合">
-<meta name="keywords" content="Go,SOFAMosn,Performance">
+  <meta name="description" content="本文整理自：《性能之巅》作者：【美】 Brendan Gregg">
+<meta name="keywords" content="Performance,读书笔记">
 <meta property="og:type" content="article">
-<meta property="og:title" content="SOFAMosn 如何提高 GoLang 的转发性能">
-<meta property="og:url" content="https://jiankunking.com/sofamosn-golang-performance.html">
+<meta property="og:title" content="时间量级">
+<meta property="og:url" content="https://jiankunking.com/time-scales.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)高并发的场景还是NIO比较适合">
+<meta property="og:description" content="本文整理自：《性能之巅》作者：【美】 Brendan Gregg">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-08-25T01:08:08.879Z">
+<meta property="og:updated_time" content="2019-09-21T07:12:30.606Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="SOFAMosn 如何提高 GoLang 的转发性能">
-<meta name="twitter:description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)高并发的场景还是NIO比较适合">
-  <link rel="canonical" href="https://jiankunking.com/sofamosn-golang-performance">
+<meta name="twitter:title" content="时间量级">
+<meta name="twitter:description" content="本文整理自：《性能之巅》作者：【美】 Brendan Gregg">
+  <link rel="canonical" href="https://jiankunking.com/time-scales">
 
 
 <script id="page.configurations">
@@ -82,7 +82,7 @@
   };
 </script>
 
-  <title>SOFAMosn 如何提高 GoLang 的转发性能 | 衣舞晨风</title>
+  <title>时间量级 | 衣舞晨风</title>
   
 
 
@@ -241,7 +241,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/sofamosn-golang-performance.html">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/time-scales.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="jiankunking">
@@ -255,7 +255,7 @@
       <header class="post-header">
 
         
-          <h2 class="post-title" itemprop="name headline">SOFAMosn 如何提高 GoLang 的转发性能
+          <h2 class="post-title" itemprop="name headline">时间量级
 
               
             
@@ -275,21 +275,11 @@
                 
               
 
-              <time title="创建时间：2018-11-22 21:54:31" itemprop="dateCreated datePublished" datetime="2018-11-22T21:54:31+08:00">2018-11-22</time>
+              <time title="创建时间：2019-09-21 14:57:04 / 修改时间：15:12:30" itemprop="dateCreated datePublished" datetime="2019-09-21T14:57:04+08:00">2019-09-21</time>
             </span>
           
             
 
-            
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-08-25 09:08:08" itemprop="dateModified" datetime="2019-08-25T09:08:08+08:00">2019-08-25</time>
-              </span>
             
           
             <span class="post-meta-item">
@@ -300,7 +290,7 @@
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Go/" itemprop="url" rel="index"><span itemprop="name">Go</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Network/" itemprop="url" rel="index"><span itemprop="name">Network</span></a></span>
 
                 
                 
@@ -329,8 +319,8 @@
       <span class="post-meta-item-text">评论数：</span>
     
   
-    <a href="/sofamosn-golang-performance.html#comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/sofamosn-golang-performance.html" itemprop="commentCount"></span>
+    <a href="/time-scales.html#comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/time-scales.html" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -343,7 +333,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">760</span>
+              <span title="本文字数">492</span>
             </span>
           
             <span class="post-meta-item">
@@ -366,30 +356,97 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <blockquote>
-<p>通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)<br>高并发的场景还是NIO比较适合</p>
-</blockquote>
+        <p>本文整理自：《性能之巅》<br>作者：【美】 Brendan Gregg</p>
 <a id="more"></a>
 
-<p>GoLang 的转发性能比起 C++ 肯定是稍有逊色的，为了尽可能的提高 MOSN 的转发性能，我们在线程模型上进行优化，当前 MOSN 支持两种线程模型，用户可根据场景选择开启适用的模型。</p>
-<h1 id="模型一"><a href="#模型一" class="headerlink" title="模型一"></a>模型一</h1><p>如下图所示，使用 GoLang 默认的 epoll 机制，对每个连接分配独立的读写协程进行阻塞读写操作，proxy 层做转发时，使用常驻 worker 协程池负责处理 Stream Event</p>
-<p><img alt data-src="/images/sofamosn-golang-performance/MOSNThreadModelStage1.png"></p>
-<ul>
-<li>此模型在 IO 上使用 GoLang 的调度机制，适用于连接数较少的场景，例如：mosn 作为 sidecar、与 client 同机部署的场景</li>
-</ul>
-<h1 id="模型二"><a href="#模型二" class="headerlink" title="模型二"></a>模型二</h1><p>如下图所示，基于 <a href="https://godoc.org/github.com/mailru/easygo/netpoll" target="_blank" rel="noopener">Netpoll</a> 重写 epoll 机制，将 IO 和 PROXY 均进行池化，downstream connection 将自身的读写事件注册到 netpoll 的 epoll/kqueue wait 协程，epoll/kqueue wait 协程接受到可读事件，触发回调，从协程池中挑选一个执行读操作。</p>
-<p><img alt data-src="/images/sofamosn-golang-performance/MOSNThreadModelStage2.png"></p>
-<ul>
-<li>使用自定义 Netpoll IO 池化操作带来的好处是：<ul>
-<li>当可读事件触发时，从协程池中获取一个 goroutine 来执行读处理，而不是新分配一个 goroutine，以此来控制高并发下的协程数量</li>
-<li>当收到链接可读事件时，才真正为其分配 read buffer 以及相应的执行协程。这样 GetBytes() 可以降低因为大量空闲链接场景导致的额外协程和 read buffer 开销</li>
-</ul>
-</li>
-<li>此模型适用于连接数较多、可读连接数量受限的情况，例如：mosn 作为 api gateway 的场景</li>
-</ul>
-<blockquote>
-<p>本文整理自SOFAMosn官方文档</p>
-</blockquote>
+
+<p>我们可以用数字来作为时间的比较方法,同时可以用时间的长短经验来判断延时的源头。系统各组件的操作所处的时间量级差别巨大,大到了难以体会的地步。表2.2提供的延时示例,从访问3.3GHz的CPU寄存器的延时开始,阐释了我们所打交道的时间量级的差别,表中是发生单次操作的时间均值,等比放大成为想象的系统,一次寄存器访问0.3ns(十亿分之一秒的三分之一)相当于现实生活中的1秒。</p>
+<center>表2.2 系统的各种延时</center>
+
+<table>
+<thead>
+<tr>
+<th>事件</th>
+<th>延时</th>
+<th>相对时间比例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1个CPU周期</td>
+<td>0.3ns</td>
+<td>1s</td>
+</tr>
+<tr>
+<td>L1缓存访问</td>
+<td>0.9ns</td>
+<td>3s</td>
+</tr>
+<tr>
+<td>L2缓存访问</td>
+<td>2.8ns</td>
+<td>9s</td>
+</tr>
+<tr>
+<td>L3缓存访问</td>
+<td>12.9ns</td>
+<td>43s</td>
+</tr>
+<tr>
+<td>主存访问(从CPU访问DRAM)</td>
+<td>120ns</td>
+<td>6分钟</td>
+</tr>
+<tr>
+<td>固态硬盘I/O(闪存)</td>
+<td>50-150us</td>
+<td>2-6天</td>
+</tr>
+<tr>
+<td>旋转磁盘I/O</td>
+<td>1-10 ms</td>
+<td>1-12月</td>
+</tr>
+<tr>
+<td>互联网:从旧金山到纽约</td>
+<td>40 ms</td>
+<td>4年</td>
+</tr>
+<tr>
+<td>互联网:从旧金山到英国</td>
+<td>81 ms</td>
+<td>8年</td>
+</tr>
+<tr>
+<td>互联网:从旧金山到澳大利亚</td>
+<td>183ms</td>
+<td>19年</td>
+</tr>
+<tr>
+<td>TCP包重传</td>
+<td>1-3s</td>
+<td>105-317年</td>
+</tr>
+<tr>
+<td>OS虚拟化系统重启</td>
+<td>4s</td>
+<td>423年</td>
+</tr>
+<tr>
+<td>SCSI命令超时</td>
+<td>30s</td>
+<td>3千年</td>
+</tr>
+<tr>
+<td>硬件虚拟化系统重启</td>
+<td>40s</td>
+<td>4千年</td>
+</tr>
+<tr>
+<td>物理系统重启</td>
+<td>5m</td>
+<td>32千年</td>
+</tr>
+</tbody></table>
 
     </div>
       
@@ -398,35 +455,35 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
+      <div class="popular-posts-title"><a href="\java-performance-note.html" rel="bookmark">Java性能优化权威指南 笔记</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\golang-practice-advice-for-go-library-authors.html" rel="bookmark">给 Go 库作者的建议</a></div>
+      <div class="popular-posts-title"><a href="\sofamosn-golang-performance.html" rel="bookmark">SOFAMosn 如何提高 GoLang 的转发性能</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\goroutine-and-system-threads.html" rel="bookmark">Goroutine和系统线程</a></div>
+      <div class="popular-posts-title"><a href="\tcp-and-udp-note.html" rel="bookmark">TCP与UDP 笔记</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\go-channels.html" rel="bookmark">理解 Go Channels</a></div>
+      <div class="popular-posts-title"><a href="\the-garbage-collection-handbook-the-art-of-automatic-memory-management-note.html" rel="bookmark">垃圾回收算法手册：自动内存管理的艺术 笔记</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\go-solid-design.html" rel="bookmark">Go 设计模式</a></div>
+      <div class="popular-posts-title"><a href="\relational-database-index-design-and-the-optimizers-note.html" rel="bookmark">数据库索引设计与优化 笔记</a></div>
       
     </li>
   
@@ -474,7 +531,7 @@
     <strong>本文作者： </strong>jiankunking</li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://jiankunking.com/sofamosn-golang-performance.html" title="SOFAMosn 如何提高 GoLang 的转发性能">https://jiankunking.com/sofamosn-golang-performance.html</a>
+    <a href="https://jiankunking.com/time-scales.html" title="时间量级">https://jiankunking.com/time-scales.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
@@ -486,17 +543,15 @@
           
         
         <div class="post-tags">
-            <a href="/tags/Go/" rel="tag"># Go</a>
-          
-            <a href="/tags/SOFAMosn/" rel="tag"># SOFAMosn</a>
-          
             <a href="/tags/Performance/" rel="tag"># Performance</a>
+          
+            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
           
         </div>
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
-              <a href="/java-reentrantreadwritelock.html" rel="next" title="ReentrantReadWriteLock原理解析">
-                <i class="fa fa-chevron-left"></i> ReentrantReadWriteLock原理解析
+              <a href="/zgc-uncommit-unused-memory.html" rel="next" title="[译]ZGC: 未使用堆内存归还操作系统">
+                <i class="fa fa-chevron-left"></i> [译]ZGC: 未使用堆内存归还操作系统
               </a>
             
           </div>
@@ -504,10 +559,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-              <a href="/java-gc-g1.html" rel="prev" title="Java 垃圾回收算法之G1">
-                Java 垃圾回收算法之G1 <i class="fa fa-chevron-right"></i>
-              </a>
-            
           </div>
         </div>
     </footer>
@@ -540,17 +591,8 @@
 
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-inner">
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
-      
 
-      <div class="site-overview-wrap sidebar-panel">
+      <div class="site-overview-wrap sidebar-panel sidebar-panel-active">
         <div class="site-overview">
 
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -835,23 +877,6 @@
 
         </div>
       </div>
-      <!--noindex-->
-        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-            
-            
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#模型一"><span class="nav-number">1.</span> <span class="nav-text">模型一</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#模型二"><span class="nav-number">2.</span> <span class="nav-text">模型二</span></a></li></ol></div>
-            
-
-          </div>
-        </div>
-      <!--/noindex-->
-      
 
     </div>
   </aside>
