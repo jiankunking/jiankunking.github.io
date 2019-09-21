@@ -69,7 +69,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-20T14:17:32.759Z">
+<meta property="og:updated_time" content="2019-09-21T01:07:22.497Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="垃圾回收算法手册：自动内存管理的艺术 笔记">
 <meta name="twitter:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
@@ -288,7 +288,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-20 22:17:32" itemprop="dateModified" datetime="2019-09-20T22:17:32+08:00">2019-09-20</time>
+                <time title="修改时间：2019-09-21 09:07:22" itemprop="dateModified" datetime="2019-09-21T09:07:22+08:00">2019-09-21</time>
               </span>
             
           
@@ -343,7 +343,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">11k</span>
+              <span title="本文字数">15k</span>
             </span>
           
             <span class="post-meta-item">
@@ -353,7 +353,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">10 分钟</span>
+              <span title="阅读时长">14 分钟</span>
             </span>
           
 
@@ -433,7 +433,29 @@
 <li>其次,对子图中的所有对象进行检测,如果某一对象的引用计数不是零,则该对象必然被子图外的其他对象引用。此时需要对第一阶段的试验删除操作进行修正,算法将存活的灰色对象重新着为黑色,同时将其他灰色对象着为白色。</li>
 <li>最后,子图中所有依然为白色的对象必然是垃圾,算法可以将其回收。</li>
 </ul>
-<h1 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h1>
+<h1 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h1><p>对于首次适应或循环首次适应分配而言,将空闲内存单元依照地址进行排序的另一种有效策略是位图适应分配(bitmapped- fits allocation)。该算法使用额外的位图来记录堆中每个可分配内存颗粒的状态,因此在进行内存分配时,分配器可以基于位图而非堆本身进行搜索。借助一张预先计算好的映射表,分配器仅需要对位图中一个字节进行计算,便可得知其所对应的8个连续内存颗粒所能组成的最长连续可用空间。也可以使用额外的长度信息记录较大的空闲内存单元或者已分配内存单元,从而快速将其跳过以提升分配性能。位图适应分配具有如下一些优点:</p>
+<ul>
+<li>位图本身与对象相互隔离,因此不容易遭到破坏。这一特性不仅对于诸如C和C++等安全性稍低的语言十分重要,而且对于安全性更高的语言也十分有用,因为这可以提升回收器的可靠性以及可调试性。</li>
+<li>引入位图之后,无论是对于空闲内存单元还是已分配内存单元,回收器都不需要占据其中的任何空间来记录回收相关信息,从而最大限度地降低了对内存单元大小的要求。如果以一个32位的字作为最小内存分配单元,该策略会引入大约3%的空间开销,但其所带来收益却远大于这一开销。不过,基于其他一些方面的考虑,对象可能依然需要一个头部,因而这一优点并非始终能够得到体现。</li>
+<li>相对于堆中的内存单元,位图更加紧凑,因此基于位图进行扫描可以提升高速缓存命中率,从而提升分配器的局部性。</li>
+</ul>
+<h2 id="分区适应分配"><a href="#分区适应分配" class="headerlink" title="分区适应分配"></a>分区适应分配</h2><h3 id="空间大小分级的填充"><a href="#空间大小分级的填充" class="headerlink" title="空间大小分级的填充"></a>空间大小分级的填充</h3><p>伙伴系统(buddy system)其空间大小分级均为2的整数次幂[Knowlton,1965; Peterson and Norman,1977]。我们可以将一个大小为2^(i+1)的空闲内存单元分裂为两个大小为2^i的空闲内存单元,同时也可以将两个相邻的大小为2^i的空闲内存单元合并成大小为2^(i+1)的一个,但进行合并的前提是两个相邻空闲内存单元原本就是由同一个较大的空闲内存单元分裂得到的。在该算法中,大小为2^i的空闲内存单元两两成对,因而称之为伙伴。<font color="DeepPink"><strong>由于伙伴系统的内部碎片通常较为严重(对于任意的内存分配需求,其平均空间浪费率会达到25%),因此该算法基本已经成为历史,在实践中较少使用。</strong></font></p>
+<p>斐波那契伙伴系统(Fibonacci buddy system)[Hirschberg,1973; Burton,1976; Peterson and<br>Norman,1977是伙伴系统的一个变种,其空间大小分级符合斐波那契序列,即s<sub>i+2</sub> = s<sub>i+1</sub> + s<sub>i</sub>,同时需要选定合适的s0和s1。与传统的伙伴系统相比,该算法相邻空闲内存单元的大小比值更小,因而在一定程度上缓解了内部碎片问题。但该算法的问题在于,在回收完成后将相邻空闲内存单元合并的操作会更加复杂,因为回收器需要判定某一空闲内存单元究竟应当与相邻两个空闲内存单元中的哪一个进行合并。</p>
+<h2 id="其它需要考虑的问题"><a href="#其它需要考虑的问题" class="headerlink" title="其它需要考虑的问题"></a>其它需要考虑的问题</h2><h3 id="字节对齐"><a href="#字节对齐" class="headerlink" title="字节对齐"></a>字节对齐</h3><p>将对象按照特定的边界要求进行对齐,一方面是底层硬件或者机器指令集的要求,另方面这样做有助于提升各层次存储器的性能(包括高速缓存、转译后备缓冲区、内存页以Java语言的 double数组为例,某些机器可能要求double这一双字浮点数必须以双字为边<br>界进行对齐,即其地址必须是8的整数倍(地址的后三位为零)。一种简单但稍显浪费的解决方案是将双字作为内存分配的颗粒,即所有已分配或未分配内存单元的大小均为8的整数倍,且均按照8字节边界对齐。但即便如此,当分配一个doub1e类型的数组时,分配器仍需要进行一些额外工作。假设Java语言中纯对象(即非数组对象)头部都必须保留两个字,一个指向对象的类型信息(用于虚函数调用、类型判定等),另一个用于记录对象的哈希值以及同步操作所需的锁(这也是一种典型的设计方式)。数组对象则需要第三个字来记录其中元素的个数。如果将这三个头部字保存在已分配内存单元的起始位置,则数组元素就不得不以奇数字为单位进行对齐。如果使用双字作为内存颗粒,则可以简单地用四个字(即两个双字)来保存这三个头部字,然后浪费掉一个。</p>
+<p>但如果内存颗粒是一个字,我们则希望尽量减少上述的内存浪费。此时,如果某个空闲内存单元按照奇数字对齐(即其地址模8余4),则我们可以简单地将三个头部字放在内存单字对齐,则我们必须浪费一个字以满足对齐要求。这一方案增加了分配过程的复杂度,因为某一空闲内存单元是否满足分配需求不仅取决于所需空间的大小,还取决于字节对齐要求。</p>
+<blockquote>
+<p>字：16个位为一个字，它代表计算机处理指令或数据的二进制数位数，是计算机进行数据存储和数据处理的运算的单位。通常称16位是一个字，而32位呢，则是一个双字，64位是两个双字。</p>
+</blockquote>
+<h3 id="空间大小限制"><a href="#空间大小限制" class="headerlink" title="空间大小限制"></a>空间大小限制</h3><p>某些回收器要求对象(内存单元)的大小必须大于某一下界。例如,基本的整理式回收要求对象内部至少可以容纳一个指针,还有一些回收器可能需要用两个字来保存锁或状态以及转发指针,这就意味着即使开发者仅需要分配一个字,分配器也必须多分配两个字。如果开发者需要分配不包含任何数据、仅用作唯一标识的对象,原则上编译器无需分配任何空间,但在实际情况下这通常不可行:对象必须要有唯一的地址,因此对象的大小至少应为一个字节。</p>
+<h3 id="边界标签"><a href="#边界标签" class="headerlink" title="边界标签"></a>边界标签</h3><p>为了确保在释放内存时可以将相邻空闲内存单元合并,许多内存分配系统为每个内存单元增加了额外的头部或者边界标签,它们通常不属于可用内存的范畴[Knuth,1973]。边界标签保存了内存单元的大小及其状态(即空闲或已分配),还可以在其中记录上一个内存单元的大小,从而可以快速读取上一个内存单元的状态并判断其是否为空。当内存单元空闲时,边界标签也可用于保存构建空闲链表的指针。基于这些原因,边界标签可能达到两个字或者更大,但如果使用一些额外的方法,并允许在分配和释放的过程中引入一定的额外开销,则仍有可能将边界标签压缩到一个字。</p>
+<p>如果使用额外的位图来标记堆中每个内存颗粒的状态,则不仅无需使用边界标签,而且可以增加程序的鲁棒性。这一方法是否会减少空间开销,取决于对象的平均大小以及内存颗粒的大小。</p>
+<p>我们进一步注意到,垃圾回收通常会一次性释放大量对象,因此某些特定的算法可能不再需要边界标签,或者其边界标签中需要包含的信息较少。另外,托管语言中对象的大小通常可以通过其类型得出,因而无需使用额外的边界标签来单独记录相关信息。</p>
+<h3 id="局部性"><a href="#局部性" class="headerlink" title="局部性"></a>局部性</h3><p>事实证明,同一时刻分配的对象通常也会在同一时刻成为垃圾,因此非移动式回收器所面临的内存碎片问题比人们预想的要小[Hayes,1991; Dimpsey等,2000; Blackburn and McKinley,2008],这同时也说明,将连续两次分配的对象连续排列或者尽可能靠近排列的启发式方法是有价值的。</p>
+<h3 id="并发系统中的内存分配"><a href="#并发系统中的内存分配" class="headerlink" title="并发系统中的内存分配"></a>并发系统中的内存分配</h3><p>在多线程环境下,分配过程的许多操作都需要原子化以确保分配数据结构的完整性,这些操作都必须使用原子操作或者锁,但这样一来,内存分配就可能成为性能瓶颈。最基本的解决方案是为每个线程开辟独立的内存分配空间,如果某个线程的可分配空间耗尽,则从全局内存池中为其分配一个新的空闲块,此时只有与全局内存池的交互才需要原子化。不同线程的内存分配频度可能不同,因此如果在为线程分配内存块时使用自适应算法(即:为分配速度较慢的线程分配较小的内存块,而为分配速度较快的线程分配较大的内存块),则程序的时间和空间性能均可获得提升。Dimpsey等[20001声称,在多处理器Java系统中,为每个线程配备一个合适的本地分配缓冲区(local allocation buffer,LAB)可以大幅提升性能。他们进一步指出,由于几乎所有的小对象都是从本地分配缓冲区分配的,因而我们有理由对全局(基于空闲链表的)分配器进行调整,以使其能够更加高效地分配用于线程本地分配缓冲区的内存块。</p>
+<p>Garthwaite等[2005]讨论了如何对本地分配缓冲区的大小进行自适应调整,他们同时发现,将本地分配缓冲区与处理器而非线程相关联效果更佳。该算法通过如下方式对本地分配缓冲区的大小进行调整:线程初次申请本地分配缓冲区时将获得24个字的内存块,之后每次新申请的内存块均为上一次的1.5倍,同时每经历一次垃圾回收过程,回收器都会将线程的本地分配缓冲区的大小折半。该算法同时也会根据不同线程的分配次数调整年轻代的空间大小。每处理器(per-processor)本地分配缓冲区的实现依赖于多处理器的可重启临界区(restartable critical section),Garthwaite等人对此做了介绍。其基本原理是,线程可以判断自身是否被抢占(preempt)或者被重新调度(reschedule),然后可以据此判断自身是否被切换到其他处理器上运行。当线程抢占发生时,处理器会对某个本地寄存器进行修改,该操作会为抢占完成后的写入操作设置一个陷阱,而陷阱处理函数则会重启被中断的分配过程。尽管每处理器本地分配缓冲区需要更多的指令支持,但与每线程本地分配缓冲区相比,其分配时延相同,且不需要复杂的缓冲区调整机制。 Garthwaite同时发现,当线程数量较少时(特别是当线程数量小于处理器数量时),每线程(per-thread)本地分配缓冲区的性能较好,而在线程数量较多的情况下,每处理器本地分配缓冲区的表现更佳,因此他们将系统设计成可在两种方案之间进行动态切换。</p>
+<p>本地分配缓冲区通常使用顺序分配策略。每个线程(或处理器)也可以独立维护自身对应的分区适应空闲链表,同时使用增量清扫策略。线程在内存分配过程中会执行增量清扫,并将清扫所得的空闲内存单元添加到自身空闲链表中,但Berger等[2000]指出,如果将该算法用于显式内存管理会存在一些问题。例如,在某一使用生产者一消费者模型的程序中消息对象通常由生产者创建并由消费者释放,因此两个线程之间将会产生单方向的内存转移。在垃圾回收环境下通常不会存在这一问题,因为回收器可以将空闲内存释放到全局内存池中。如果使用增量清扫,空闲内存单元将被执行清扫的线程所获取,从而自然地将回收所得的内存返还给分配最频繁的线程。</p>
+<h2 id="需要考虑的问题-1"><a href="#需要考虑的问题-1" class="headerlink" title="需要考虑的问题"></a>需要考虑的问题</h2><p><font color="DeepPink"><strong>使用额外的位图表来标记内存颗粒的状态(空闲/已分配)以及内存单元/对象的起始地址,不仅能提升程序的鲁棒性,而且可以简化对象头部的设计。该策略同时可以加速回收器的操作,并可以在存储器层次结构方面提升回收器的性能。基于位图的分配策略空间开销不大,但其分配过程通常会存在额外的时间开销。</strong></font></p>
+
     </div>
       
   <div class="popular-posts-header">推荐阅读</div>
@@ -462,14 +484,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
+      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
+      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
       
     </li>
   
@@ -886,7 +908,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#标记过程中的高速缓存不命中问题"><span class="nav-number">2.4.</span> <span class="nav-text">标记过程中的高速缓存不命中问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题"><span class="nav-number">2.5.</span> <span class="nav-text">需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间利用率"><span class="nav-number">2.5.1.</span> <span class="nav-text">空间利用率</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#引用计数"><span class="nav-number">3.</span> <span class="nav-text">引用计数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环状引用计数"><span class="nav-number">3.1.</span> <span class="nav-text">环状引用计数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存分配"><span class="nav-number">4.</span> <span class="nav-text">内存分配</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#标记过程中的高速缓存不命中问题"><span class="nav-number">2.4.</span> <span class="nav-text">标记过程中的高速缓存不命中问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题"><span class="nav-number">2.5.</span> <span class="nav-text">需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间利用率"><span class="nav-number">2.5.1.</span> <span class="nav-text">空间利用率</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#引用计数"><span class="nav-number">3.</span> <span class="nav-text">引用计数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环状引用计数"><span class="nav-number">3.1.</span> <span class="nav-text">环状引用计数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存分配"><span class="nav-number">4.</span> <span class="nav-text">内存分配</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分区适应分配"><span class="nav-number">4.1.</span> <span class="nav-text">分区适应分配</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间大小分级的填充"><span class="nav-number">4.1.1.</span> <span class="nav-text">空间大小分级的填充</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它需要考虑的问题"><span class="nav-number">4.2.</span> <span class="nav-text">其它需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#字节对齐"><span class="nav-number">4.2.1.</span> <span class="nav-text">字节对齐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间大小限制"><span class="nav-number">4.2.2.</span> <span class="nav-text">空间大小限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#边界标签"><span class="nav-number">4.2.3.</span> <span class="nav-text">边界标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#局部性"><span class="nav-number">4.2.4.</span> <span class="nav-text">局部性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#并发系统中的内存分配"><span class="nav-number">4.2.5.</span> <span class="nav-text">并发系统中的内存分配</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题-1"><span class="nav-number">4.3.</span> <span class="nav-text">需要考虑的问题</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -913,12 +935,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">580k</span>
+    <span title="站点总字数">585k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">8:48</span>
+    <span title="站点阅读时长">8:51</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
   <span class="post-meta-divider">|</span>
