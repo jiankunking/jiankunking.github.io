@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[SQL union vs or 性能]]></title>
+    <url>%2Fsql-performance-union-vs-or.html</url>
+    <content type="text"><![CDATA[本文整理自：stackoverflow 地址：https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or 翻译自Bill Karwin回答： 要么你读的那篇文章用了一个不好的例子，要么你误解了他们的观点。 1select username from users where company = &apos;bbc&apos; or company = &apos;itv&apos;; 等价于： 1select username from users where company IN (&apos;bbc&apos;, &apos;itv&apos;); 在这个查询中MySQL会使用company上的索引。不需要改成UNION。 更棘手的情况是，OR条件涉及两个不同的列。 1select username from users where company = &apos;bbc&apos; or city = &apos;London&apos;; 假设company列和city列都有一个独立的索引。MySQL通常在一个给定的查询中每个表只使用一个索引，那么应该使用哪个索引呢?如果它使用company上的索引，它仍然必须执行表扫描，以找到伦敦所在的行。如果它使用city上的索引，则必须对company为bbc的行进行表扫描。 UNION 解决方案适用于这种情况。 123select username from users where company = &apos;bbc&apos; unionselect username from users where city = &apos;London&apos;; 这样的话每个子查询都可以使用索引进行搜索,然后再将子查询的结果合并在一起。 union ? union all ? 取决于需求及where过滤后的数据量对于索引列来最好使用union all，因复杂的查询【包含运算等】将使or、in放弃索引而全表扫描，除非你能确定or、in会使用索引。对于只有非索引字段来说你就老老实实的用or或者in，因为 非索引字段本来要全表扫描而union all 只成倍增加表扫描的次数。]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>UNION</tag>
+        <tag>OR</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[时间量级]]></title>
     <url>%2Ftime-scales.html</url>
     <content type="text"><![CDATA[本文整理自：《性能之巅》作者：【美】 Brendan Gregg英文版出版时间：2014年 我们可以用数字来作为时间的比较方法,同时可以用时间的长短经验来判断延时的源头。系统各组件的操作所处的时间量级差别巨大,大到了难以体会的地步。表2.2提供的延时示例,从访问3.3GHz的CPU寄存器的延时开始,阐释了我们所打交道的时间量级的差别,表中是发生单次操作的时间均值,等比放大成为想象的系统,一次寄存器访问0.3ns(十亿分之一秒的三分之一)相当于现实生活中的1秒。 表2.2 系统的各种延时 事件 延时 相对时间比例 1个CPU周期 0.3ns 1s L1缓存访问 0.9ns 3s L2缓存访问 2.8ns 9s L3缓存访问 12.9ns 43s 主存访问(从CPU访问DRAM) 120ns 6分钟 固态硬盘I/O(闪存) 50-150us 2-6天 旋转磁盘I/O 1-10 ms 1-12月 互联网:从旧金山到纽约 40 ms 4年 互联网:从旧金山到英国 81 ms 8年 互联网:从旧金山到澳大利亚 183ms 19年 TCP包重传 1-3s 105-317年 OS虚拟化系统重启 4s 423年 SCSI命令超时 30s 3千年 硬件虚拟化系统重启 40s 4千年 物理系统重启 5m 32千年 这个表需要时刻记在心中。]]></content>
@@ -481,8 +494,8 @@
       </categories>
       <tags>
         <tag>Go</tag>
-        <tag>Performance</tag>
         <tag>SOFAMosn</tag>
+        <tag>Performance</tag>
       </tags>
   </entry>
   <entry>
