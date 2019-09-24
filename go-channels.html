@@ -69,7 +69,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Golang Channel">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-05T10:35:11.414Z">
+<meta property="og:updated_time" content="2019-09-24T06:00:23.536Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="理解 Go Channels">
 <meta name="twitter:description" content="Golang Channel">
@@ -288,7 +288,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-05 18:35:11" itemprop="dateModified" datetime="2019-09-05T18:35:11+08:00">2019-09-05</time>
+                <time title="修改时间：2019-09-24 14:00:23" itemprop="dateModified" datetime="2019-09-24T14:00:23+08:00">2019-09-24</time>
               </span>
             
           
@@ -384,7 +384,7 @@
 <p>将其转换为 Go 的并发模式很容易，使用典型的 Task Queue 的模式：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">func main() &#123;</span><br><span class="line">  //  创建带缓冲的 channel</span><br><span class="line">  ch := make(chan Task, 3)</span><br><span class="line">  //  运行固定数量的 workers</span><br><span class="line">  for i := 0; i &lt; numWorkers; i++ &#123;</span><br><span class="line">    go worker(ch)</span><br><span class="line">  &#125;</span><br><span class="line">  //  发送任务到 workers</span><br><span class="line">  hellaTasks := getTasks()</span><br><span class="line">  for _, task := range hellaTasks &#123;</span><br><span class="line">    ch &lt;- task</span><br><span class="line">  &#125;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br><span class="line">func worker(ch chan Task) &#123;</span><br><span class="line">  for &#123;</span><br><span class="line">    //  接收任务</span><br><span class="line">    task := &lt;-ch</span><br><span class="line">    process(task)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h1 id="2、channels-的特性"><a href="#2、channels-的特性" class="headerlink" title="2、channels 的特性"></a>2、channels 的特性</h1><ul>
+<h2 id="2、channels-的特性"><a href="#2、channels-的特性" class="headerlink" title="2、channels 的特性"></a>2、channels 的特性</h2><ul>
 <li>goroutine-safe，多个 goroutine 可以同时访问一个 channel。</li>
 <li>可以用于在 goroutine 之间存储和传递值</li>
 <li>其语义是先入先出（FIFO）</li>
@@ -420,11 +420,11 @@
 <p>内存复制指的是：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">// typedmemmove copies a value of type t to dst from src.</span><br><span class="line">// Must be nosplit, see #16026.</span><br><span class="line">//go:nosplit</span><br><span class="line">func typedmemmove(typ *_type, dst, src unsafe.Pointer) &#123;</span><br><span class="line">    if typ.kind&amp;kindNoPointers == 0 &#123;</span><br><span class="line">        bulkBarrierPreWrite(uintptr(dst), uintptr(src), typ.size)</span><br><span class="line">    &#125;</span><br><span class="line">    // There&apos;s a race here: if some other goroutine can write to</span><br><span class="line">    // src, it may change some pointer in src after we&apos;ve</span><br><span class="line">    // performed the write barrier but before we perform the</span><br><span class="line">    // memory copy. This safe because the write performed by that</span><br><span class="line">    // other goroutine must also be accompanied by a write</span><br><span class="line">    // barrier, so at worst we&apos;ve unnecessarily greyed the old</span><br><span class="line">    // pointer that was in src.</span><br><span class="line">    memmove(dst, src, typ.size)</span><br><span class="line">    if writeBarrier.cgo &#123;</span><br><span class="line">        cgoCheckMemmove(typ, dst, src, 0, typ.size)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h1 id="3、阻塞和恢复"><a href="#3、阻塞和恢复" class="headerlink" title="3、阻塞和恢复"></a>3、阻塞和恢复</h1><h2 id="3-1-发送方被阻塞"><a href="#3-1-发送方被阻塞" class="headerlink" title="3.1 发送方被阻塞"></a>3.1 发送方被阻塞</h2><p>假设 G2 需要很长时间的处理，在此期间，G1 不断的发送任务：</p>
+<h2 id="3、阻塞和恢复"><a href="#3、阻塞和恢复" class="headerlink" title="3、阻塞和恢复"></a>3、阻塞和恢复</h2><h3 id="3-1-发送方被阻塞"><a href="#3-1-发送方被阻塞" class="headerlink" title="3.1 发送方被阻塞"></a>3.1 发送方被阻塞</h3><p>假设 G2 需要很长时间的处理，在此期间，G1 不断的发送任务：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ch &lt;- task1</span><br><span class="line">ch &lt;- task2</span><br><span class="line">ch &lt;- task3</span><br></pre></td></tr></table></figure>
 
 <p>但是当再一次 ch &lt;- task4 的时候，由于 ch 的缓冲只有 3 个，所以没有地方放了，于是 G1 被 block 了，当有人从队列中取走一个 Task 的时候，G1 才会被恢复。这是我们都知道的，不过我们今天关心的不是发生了什么，而是如何做到的？</p>
-<h2 id="3-2-goroutine-的运行时调度"><a href="#3-2-goroutine-的运行时调度" class="headerlink" title="3.2 goroutine 的运行时调度"></a>3.2 goroutine 的运行时调度</h2><p>首先，goroutine <font color="DeepPink"><strong>不是操作系统线程</strong></font>，而是 <font color="DeepPink"><strong>用户空间线程</strong></font>。因此 goroutine 是由 Go runtime 来创建并管理的，而不是 OS，所以要比操作系统线程轻量级。</p>
+<h3 id="3-2-goroutine-的运行时调度"><a href="#3-2-goroutine-的运行时调度" class="headerlink" title="3.2 goroutine 的运行时调度"></a>3.2 goroutine 的运行时调度</h3><p>首先，goroutine <font color="DeepPink"><strong>不是操作系统线程</strong></font>，而是 <font color="DeepPink"><strong>用户空间线程</strong></font>。因此 goroutine 是由 Go runtime 来创建并管理的，而不是 OS，所以要比操作系统线程轻量级。</p>
 <p>当然，goroutine 最终还是要运行于某个线程中的，控制 goroutine 如何运行于线程中的是 Go runtime 中的 scheduler （调度器）。</p>
 <p>Go 的运行时调度器是 M:N 调度模型，既 N 个 goroutine，会运行于 M 个 OS 线程中。换句话说，一个 OS 线程中，可能会运行多个 goroutine。</p>
 <p>Go 的 M:N 调度中使用了3个结构：</p>
@@ -436,7 +436,7 @@
 </ul>
 </li>
 </ul>
-<h2 id="3-3-goroutine-被阻塞的具体过程"><a href="#3-3-goroutine-被阻塞的具体过程" class="headerlink" title="3.3 goroutine 被阻塞的具体过程"></a>3.3 goroutine 被阻塞的具体过程</h2><p>那么当 ch &lt;- task4 执行的时候，channel 中已经满了，需要 <font color="DeepPink"><strong>pause</strong></font> G1。这个时候：</p>
+<h3 id="3-3-goroutine-被阻塞的具体过程"><a href="#3-3-goroutine-被阻塞的具体过程" class="headerlink" title="3.3 goroutine 被阻塞的具体过程"></a>3.3 goroutine 被阻塞的具体过程</h3><p>那么当 ch &lt;- task4 执行的时候，channel 中已经满了，需要 <font color="DeepPink"><strong>pause</strong></font> G1。这个时候：</p>
 <ol>
 <li>G1 会调用运行时的 gopark</li>
 <li>然后 Go 的运行时调度器就会接管</li>
@@ -448,7 +448,7 @@
 </ol>
 <p>从上面的流程中可以看到，<font color="DeepPink"><strong>对于 goroutine 来说，G1 被阻塞了，新的 G 开始运行了；而对于操作系统线程 M 来说，则根本没有被阻塞。</strong></font></p>
 <p>我们知道 OS 线程要比 goroutine 要沉重的多，因此这里尽量避免 OS 线程阻塞，可以提高性能。</p>
-<h2 id="3-4-goroutine-恢复执行的具体过程"><a href="#3-4-goroutine-恢复执行的具体过程" class="headerlink" title="3.4 goroutine 恢复执行的具体过程"></a>3.4 goroutine 恢复执行的具体过程</h2><p>前面理解了阻塞，那么接下来理解一下如何恢复运行。不过，在继续了解如何恢复之前，我们需要先进一步理解 hchan 这个结构。因为，当 channel 不在满的时候，调度器是如何知道该让哪个 goroutine 继续运行呢？而且 goroutine 又是如何知道该从哪取数据呢？</p>
+<h3 id="3-4-goroutine-恢复执行的具体过程"><a href="#3-4-goroutine-恢复执行的具体过程" class="headerlink" title="3.4 goroutine 恢复执行的具体过程"></a>3.4 goroutine 恢复执行的具体过程</h3><p>前面理解了阻塞，那么接下来理解一下如何恢复运行。不过，在继续了解如何恢复之前，我们需要先进一步理解 hchan 这个结构。因为，当 channel 不在满的时候，调度器是如何知道该让哪个 goroutine 继续运行呢？而且 goroutine 又是如何知道该从哪取数据呢？</p>
 <p>在 hchan 中，除了之前提到的内容外，还定义有 sendq 和 recvq 两个队列，分别表示等待发送、接收的 goroutine，及其相关信息。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">type hchan struct &#123;</span><br><span class="line">  ...</span><br><span class="line">  buf      unsafe.Pointer // 指向一个环形队列</span><br><span class="line">  ...</span><br><span class="line">  sendq    waitq  // 等待发送的队列</span><br><span class="line">  recvq    waitq  // 等待接收的队列</span><br><span class="line">  ...</span><br><span class="line">  lock     mutex  //  互斥量</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -479,7 +479,7 @@
 </ol>
 </li>
 </ol>
-<h3 id="3-5-如果接收方先阻塞呢？"><a href="#3-5-如果接收方先阻塞呢？" class="headerlink" title="3.5 如果接收方先阻塞呢？"></a>3.5 如果接收方先阻塞呢？</h3><p>更酷的地方是接收方先阻塞的流程。</p>
+<h2 id="3-5-如果接收方先阻塞呢？"><a href="#3-5-如果接收方先阻塞呢？" class="headerlink" title="3.5 如果接收方先阻塞呢？"></a>3.5 如果接收方先阻塞呢？</h2><p>更酷的地方是接收方先阻塞的流程。</p>
 <p>如果 G2 先执行了 t := &lt;- ch，此时 buf 是空的，因此 G2 会被阻塞，他的流程是这样：</p>
 <ol>
 <li>G2 给自己创建一个 sudog 结构变量。其中 g 是自己，也就是 G2，而 elem 则指向 t</li>
@@ -498,26 +498,24 @@
 <p>我们根据 hchan 结构的状态，已经知道 task 进入 buf 后，G2 恢复运行后，会读取其值，复制到 t 中。那么 G1 可以根本不走 buf，<font color="DeepPink"><strong>G1 可以直接把数据给 G2</strong></font>。</p>
 <p>Goroutine 通常都有自己的栈，互相之间不会访问对方的栈内数据，<font color="DeepPink"><strong>除了 channel</strong></font>。这里，由于我们已经知道了 t 的地址（通过 elem指针），而且由于 G2 不在运行，所以我们可以很安全的直接赋值。当 G2 恢复运行的时候，既不需要再次获取锁，也不需要对 buf 进行操作。从而节约了内存复制、以及锁操作的开销。</p>
 <h2 id="4、总结"><a href="#4、总结" class="headerlink" title="4、总结"></a>4、总结</h2><ul>
-<li><p>goroutine-safe</p>
-<ul>
+<li>goroutine-safe<ul>
 <li>hchan 中的 lock mutex</li>
 </ul>
 </li>
-<li><p>存储、传递值，FIFO</p>
-<ul>
+<li>存储、传递值，FIFO<ul>
 <li>通过 hchan 中的环形缓冲区来实现</li>
 </ul>
 </li>
-<li><p>导致 goroutine 的阻塞和恢复</p>
-<ul>
+<li>导致 goroutine 的阻塞和恢复<ul>
 <li>hchan 中的 sendq和recvq，也就是 sudog 结构的链表队列</li>
-<li>调用运行时调度器 (gopark(), goready())<h1 id="四、其它-channel-的操作"><a href="#四、其它-channel-的操作" class="headerlink" title="四、其它 channel 的操作"></a>四、其它 channel 的操作</h1><h2 id="1、无缓冲-channel"><a href="#1、无缓冲-channel" class="headerlink" title="1、无缓冲 channel"></a>1、无缓冲 channel</h2>无缓冲的 channel 行为就和前面说的<font color="DeepPink"><strong>直接发送</strong></font>的例子一样：</li>
+<li>调用运行时调度器 (gopark(), goready())</li>
 </ul>
 </li>
-<li><p>接收方阻塞 → 发送方<font color="DeepPink"><strong>直接写入接收方的栈</strong></font></p>
-</li>
-<li><p>发送方阻塞 → 接受法<font color="DeepPink"><strong>直接从发送方的 sudog 中读取</strong></font></p>
-</li>
+</ul>
+<h1 id="四、其它-channel-的操作"><a href="#四、其它-channel-的操作" class="headerlink" title="四、其它 channel 的操作"></a>四、其它 channel 的操作</h1><h2 id="1、无缓冲-channel"><a href="#1、无缓冲-channel" class="headerlink" title="1、无缓冲 channel"></a>1、无缓冲 channel</h2><p>无缓冲的 channel 行为就和前面说的<font color="DeepPink"><strong>直接发送</strong></font>的例子一样：</p>
+<ul>
+<li>接收方阻塞 → 发送方<font color="DeepPink"><strong>直接写入接收方的栈</strong></font></li>
+<li>发送方阻塞 → 接受法<font color="DeepPink"><strong>直接从发送方的 sudog 中读取</strong></font></li>
 </ul>
 <h2 id="2、select"><a href="#2、select" class="headerlink" title="2、select"></a>2、select</h2><p><a href="https://golang.org/src/runtime/select.go" target="_blank" rel="noopener">https://golang.org/src/runtime/select.go</a></p>
 <ol>
@@ -527,7 +525,7 @@
 <li>然后当有任意一个 channel 可用时，select 的这个 goroutine 就会被调度执行。</li>
 <li>resuming mirrors the pause sequence</li>
 </ol>
-<p>五、为什么 Go 会这样设计？<br>1、Simplicity<br>更倾向于带锁的队列，而不是无锁的实现。</p>
+<h1 id="五、为什么-Go-会这样设计？"><a href="#五、为什么-Go-会这样设计？" class="headerlink" title="五、为什么 Go 会这样设计？"></a>五、为什么 Go 会这样设计？</h1><h2 id="1、Simplicity"><a href="#1、Simplicity" class="headerlink" title="1、Simplicity"></a>1、Simplicity</h2><p>更倾向于带锁的队列，而不是无锁的实现。</p>
 <p>性能提升不是凭空而来的，是随着复杂度增加而增加的。</p>
 <p>dvyokov<br>后者虽然性能可能会更好，但是这个优势，并不一定能够战胜随之而来的实现代码的复杂度所带来的劣势。</p>
 <h2 id="2、Performance"><a href="#2、Performance" class="headerlink" title="2、Performance"></a>2、Performance</h2><ul>
@@ -549,14 +547,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\golang-practice-advice-for-go-library-authors.html" rel="bookmark">给 Go 库作者的建议</a></div>
+      <div class="popular-posts-title"><a href="\golang-package-init-order.html" rel="bookmark">Golang 初始化顺序</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\golang-package-init-order.html" rel="bookmark">Golang 初始化顺序</a></div>
+      <div class="popular-posts-title"><a href="\golang-practice-advice-for-go-library-authors.html" rel="bookmark">给 Go 库作者的建议</a></div>
       
     </li>
   
@@ -998,7 +996,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、视频信息"><span class="nav-number">1.</span> <span class="nav-text">一、视频信息</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、视频观看地址"><span class="nav-number">1.1.</span> <span class="nav-text">1、视频观看地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、PPT下载地址"><span class="nav-number">1.2.</span> <span class="nav-text">2、PPT下载地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、博文"><span class="nav-number">1.3.</span> <span class="nav-text">3、博文</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、Go-的并发特性"><span class="nav-number">2.</span> <span class="nav-text">二、Go 的并发特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、一个简单的事务处理的例子"><span class="nav-number">2.1.</span> <span class="nav-text">1、一个简单的事务处理的例子</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、channels-的特性"><span class="nav-number">3.</span> <span class="nav-text">2、channels 的特性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、解析"><span class="nav-number">4.</span> <span class="nav-text">三、解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、构造-channel"><span class="nav-number">4.1.</span> <span class="nav-text">1、构造 channel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、发送、接收"><span class="nav-number">4.2.</span> <span class="nav-text">2、发送、接收</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-简单的发送、接收"><span class="nav-number">4.2.1.</span> <span class="nav-text">2.1 简单的发送、接收</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、阻塞和恢复"><span class="nav-number">5.</span> <span class="nav-text">3、阻塞和恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-发送方被阻塞"><span class="nav-number">5.1.</span> <span class="nav-text">3.1 发送方被阻塞</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-goroutine-的运行时调度"><span class="nav-number">5.2.</span> <span class="nav-text">3.2 goroutine 的运行时调度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-goroutine-被阻塞的具体过程"><span class="nav-number">5.3.</span> <span class="nav-text">3.3 goroutine 被阻塞的具体过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-goroutine-恢复执行的具体过程"><span class="nav-number">5.4.</span> <span class="nav-text">3.4 goroutine 恢复执行的具体过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-如果接收方先阻塞呢？"><span class="nav-number">5.4.1.</span> <span class="nav-text">3.5 如果接收方先阻塞呢？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4、总结"><span class="nav-number">5.5.</span> <span class="nav-text">4、总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、其它-channel-的操作"><span class="nav-number">6.</span> <span class="nav-text">四、其它 channel 的操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、无缓冲-channel"><span class="nav-number">6.1.</span> <span class="nav-text">1、无缓冲 channel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、select"><span class="nav-number">6.2.</span> <span class="nav-text">2、select</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、Performance"><span class="nav-number">6.3.</span> <span class="nav-text">2、Performance</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、视频信息"><span class="nav-number">1.</span> <span class="nav-text">一、视频信息</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、视频观看地址"><span class="nav-number">1.1.</span> <span class="nav-text">1、视频观看地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、PPT下载地址"><span class="nav-number">1.2.</span> <span class="nav-text">2、PPT下载地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、博文"><span class="nav-number">1.3.</span> <span class="nav-text">3、博文</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、Go-的并发特性"><span class="nav-number">2.</span> <span class="nav-text">二、Go 的并发特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、一个简单的事务处理的例子"><span class="nav-number">2.1.</span> <span class="nav-text">1、一个简单的事务处理的例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、channels-的特性"><span class="nav-number">2.2.</span> <span class="nav-text">2、channels 的特性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、解析"><span class="nav-number">3.</span> <span class="nav-text">三、解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、构造-channel"><span class="nav-number">3.1.</span> <span class="nav-text">1、构造 channel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、发送、接收"><span class="nav-number">3.2.</span> <span class="nav-text">2、发送、接收</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-简单的发送、接收"><span class="nav-number">3.2.1.</span> <span class="nav-text">2.1 简单的发送、接收</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、阻塞和恢复"><span class="nav-number">3.3.</span> <span class="nav-text">3、阻塞和恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-发送方被阻塞"><span class="nav-number">3.3.1.</span> <span class="nav-text">3.1 发送方被阻塞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-goroutine-的运行时调度"><span class="nav-number">3.3.2.</span> <span class="nav-text">3.2 goroutine 的运行时调度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-goroutine-被阻塞的具体过程"><span class="nav-number">3.3.3.</span> <span class="nav-text">3.3 goroutine 被阻塞的具体过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-goroutine-恢复执行的具体过程"><span class="nav-number">3.3.4.</span> <span class="nav-text">3.4 goroutine 恢复执行的具体过程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-5-如果接收方先阻塞呢？"><span class="nav-number">3.4.</span> <span class="nav-text">3.5 如果接收方先阻塞呢？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4、总结"><span class="nav-number">3.5.</span> <span class="nav-text">4、总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、其它-channel-的操作"><span class="nav-number">4.</span> <span class="nav-text">四、其它 channel 的操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、无缓冲-channel"><span class="nav-number">4.1.</span> <span class="nav-text">1、无缓冲 channel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、select"><span class="nav-number">4.2.</span> <span class="nav-text">2、select</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#五、为什么-Go-会这样设计？"><span class="nav-number">5.</span> <span class="nav-text">五、为什么 Go 会这样设计？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、Simplicity"><span class="nav-number">5.1.</span> <span class="nav-text">1、Simplicity</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、Performance"><span class="nav-number">5.2.</span> <span class="nav-text">2、Performance</span></a></li></ol></li></ol></div>
             
 
           </div>
