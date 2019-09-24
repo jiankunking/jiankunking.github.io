@@ -69,7 +69,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="基于Go 1.9 解析Sync Map">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-07T02:24:39.869Z">
+<meta property="og:updated_time" content="2019-09-24T03:23:16.384Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Go 1.9 Sync Map">
 <meta name="twitter:description" content="基于Go 1.9 解析Sync Map">
@@ -288,7 +288,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-07 10:24:39" itemprop="dateModified" datetime="2019-09-07T10:24:39+08:00">2019-09-07</time>
+                <time title="修改时间：2019-09-24 11:23:16" itemprop="dateModified" datetime="2019-09-24T11:23:16+08:00">2019-09-24</time>
               </span>
             
           
@@ -390,7 +390,7 @@
 
 <h2 id="Value"><a href="#Value" class="headerlink" title="Value"></a>Value</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// A Value provides an atomic load and store of a consistently typed value.</span><br><span class="line">// Values can be created as part of other data structures.</span><br><span class="line">// The zero value for a Value returns nil from Load.</span><br><span class="line">// Once Store has been called, a Value must not be copied.</span><br><span class="line">//</span><br><span class="line">// A Value must not be copied after first use.</span><br><span class="line">type Value struct &#123;</span><br><span class="line">	noCopy noCopy</span><br><span class="line"></span><br><span class="line">	v interface&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img alt data-src="/images/go-sync-map/map%E7%BB%93%E6%9E%84%E5%85%B3%E7%B3%BB%E7%A4%BA%E6%84%8F%E5%9B%BE"></p>
+<p><img alt data-src="/images/go-sync-map/map%E7%BB%93%E6%9E%84%E5%85%B3%E7%B3%BB%E7%A4%BA%E6%84%8F%E5%9B%BE.png"></p>
 <h1 id="Load"><a href="#Load" class="headerlink" title="Load"></a>Load</h1><p>据指定的key,查找对应的值value,如果不存在，通过ok反映。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">func (m *Map) Load(key interface&#123;&#125;) (value interface&#123;&#125;, ok bool) &#123;</span><br><span class="line">	read, _ := m.read.Load().(readOnly)</span><br><span class="line">	e, ok := read.m[key]</span><br><span class="line">	// 如果没找到，并且m.dirty中有新数据，需要从m.dirty查找，这个时候需要加锁</span><br><span class="line">	if !ok &amp;&amp; read.amended &#123;</span><br><span class="line">		m.mu.Lock()</span><br><span class="line">		// Avoid reporting a spurious miss if m.dirty got promoted while we were</span><br><span class="line">		// blocked on m.mu. (If further loads of the same key will not miss, it&apos;s</span><br><span class="line">		// not worth copying the dirty map for this key.)</span><br><span class="line">		//double check,避免加锁的时候m.dirty提升为m.read,这个时候m.read可能被替换了。</span><br><span class="line">		read, _ = m.read.Load().(readOnly)</span><br><span class="line">		e, ok = read.m[key]</span><br><span class="line">		if !ok &amp;&amp; read.amended &#123;</span><br><span class="line">			e, ok = m.dirty[key]</span><br><span class="line">			// Regardless of whether the entry was present, record a miss: this key</span><br><span class="line">			// will take the slow path until the dirty map is promoted to the read</span><br><span class="line">			// map.</span><br><span class="line">			m.missLocked()</span><br><span class="line">		&#125;</span><br><span class="line">		m.mu.Unlock()</span><br><span class="line">	&#125;</span><br><span class="line">	if !ok &#123;</span><br><span class="line">		return nil, false</span><br><span class="line">	&#125;</span><br><span class="line">	return e.load()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (m *Map) missLocked() &#123;</span><br><span class="line">	m.misses++</span><br><span class="line">	if m.misses &lt; len(m.dirty) &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	m.read.Store(readOnly&#123;m: m.dirty&#125;)</span><br><span class="line">	m.dirty = nil</span><br><span class="line">	m.misses = 0</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -415,7 +415,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-gc-g1.html" rel="bookmark">Java 垃圾回收算法之G1</a></div>
+      <div class="popular-posts-title"><a href="\java-juc-atomic-longadder.html" rel="bookmark">Java JUC Atomic LongAdder</a></div>
       
     </li>
   
@@ -436,14 +436,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\spring-aop-ioc-think.html" rel="bookmark">关于Spring AOP与IOC的个人思考</a></div>
+      <div class="popular-posts-title"><a href="\java-juc-atomic-atomiclong.html" rel="bookmark">Java JUC Atomic AtomicLong</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-juc-atomic-atomiclong.html" rel="bookmark">Java JUC Atomic AtomicLong</a></div>
+      <div class="popular-posts-title"><a href="\spring-aop-ioc-think.html" rel="bookmark">关于Spring AOP与IOC的个人思考</a></div>
       
     </li>
   
