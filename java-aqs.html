@@ -62,14 +62,14 @@
 </script>
 
   <meta name="description" content="AQS：AbstractQueuedSynchronizer 1、AQS设计简介 AQS的实现是基于一个FIFO的等待队列。 使用单个原子变量来表示获取、释放锁状态（final int）改变该int值使用的是CAS。（思考：为什么一个int值可以保证内存可见性？） 子类应该定义一个非公开的内部类继承AQS，并实现其中方法。 AQS支持exclusive与shared两种模式。 内部类Conditi">
-<meta name="keywords" content="原创,Java,JUC,JDK,AQS">
+<meta name="keywords" content="原创,Java,JUC,AQS,JDK">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java AQS 实现原理（图文）分析">
 <meta property="og:url" content="https://jiankunking.com/java-aqs.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="AQS：AbstractQueuedSynchronizer 1、AQS设计简介 AQS的实现是基于一个FIFO的等待队列。 使用单个原子变量来表示获取、释放锁状态（final int）改变该int值使用的是CAS。（思考：为什么一个int值可以保证内存可见性？） 子类应该定义一个非公开的内部类继承AQS，并实现其中方法。 AQS支持exclusive与shared两种模式。 内部类Conditi">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-07T02:25:00.580Z">
+<meta property="og:updated_time" content="2019-09-25T01:38:46.233Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java AQS 实现原理（图文）分析">
 <meta name="twitter:description" content="AQS：AbstractQueuedSynchronizer 1、AQS设计简介 AQS的实现是基于一个FIFO的等待队列。 使用单个原子变量来表示获取、释放锁状态（final int）改变该int值使用的是CAS。（思考：为什么一个int值可以保证内存可见性？） 子类应该定义一个非公开的内部类继承AQS，并实现其中方法。 AQS支持exclusive与shared两种模式。 内部类Conditi">
@@ -288,7 +288,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-07 10:25:00" itemprop="dateModified" datetime="2019-09-07T10:25:00+08:00">2019-09-07</time>
+                <time title="修改时间：2019-09-25 09:38:46" itemprop="dateModified" datetime="2019-09-25T09:38:46+08:00">2019-09-25</time>
               </span>
             
           
@@ -416,9 +416,16 @@
 </ul>
 <p>以ReentrantLock为例，state初始化为0，表示未锁定状态。A线程lock()时，会调用tryAcquire()独占该锁并将state+1。此后，其他线程再tryAcquire()时就会失败，直到A线程unlock()到state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A线程自己是可以重复获取此锁的（state会累加），这就是可重入的概念。但要注意，<font color="DeepPink"><strong>获取多少次就要释放多么次，这样才能保证state是能回到零态的。</strong></font></p>
 <p>再以CountDownLatch以例，任务分为N个子线程去执行，state也初始化为N（注意N要与线程个数一致）。这N个子线程是并行执行的，每个子线程执行完后countDown()一次，state会CAS减1。等到所有子线程都执行完后(即state=0)，会unpark()主调用线程，然后主调用线程就会从await()函数返回，继续后续动作。</p>
-<p>一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现：<br>tryAcquire-tryRelease<br>tryAcquireShared-tryReleaseShared<br>中的一种即可。</p>
+<p>一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现：</p>
+<ul>
+<li>tryAcquire-tryRelease</li>
+<li>tryAcquireShared-tryReleaseShared</li>
+</ul>
+<p>中的一种即可。</p>
 <p>当然AQS也支持自定义同步器同时实现独占和共享两种方式，如ReentrantReadWriteLock。</p>
+<blockquote>
 <p>以下部分来自源码注释：</p>
+</blockquote>
 <p>每次进入CLH队列时，需要对尾节点进入队列过程，是一个原子性操作。在出队列时，我们只需要更新head节点即可。在节点确定它的后继节点时， 需要花一些功夫，用于处理那些，由于等待超时时间结束或中断等原因， 而取消等待锁的线程。</p>
 <p>节点的前驱指针，主要用于处理，取消等待锁的线程。如果一个节点取消等待锁，则此节点的前驱节点的后继指针，要指向，此节点后继节点中，非取消等待锁的线程（有效等待锁的线程节点）。</p>
 <p>我们用next指针连接实现阻塞机制。每个节点均持有自己线程，节点通过节点的后继连接唤醒其后继节点。</p>
@@ -505,14 +512,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
+      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
+      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
       
     </li>
   
@@ -533,7 +540,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-juc-atomic-atomiclong.html" rel="bookmark">Java JUC Atomic AtomicLong</a></div>
+      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
       
     </li>
   
@@ -599,9 +606,9 @@
           
             <a href="/tags/JUC/" rel="tag"># JUC</a>
           
-            <a href="/tags/JDK/" rel="tag"># JDK</a>
-          
             <a href="/tags/AQS/" rel="tag"># AQS</a>
+          
+            <a href="/tags/JDK/" rel="tag"># JDK</a>
           
         </div>
         <div class="post-nav">
