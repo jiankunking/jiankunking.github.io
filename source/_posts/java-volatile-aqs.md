@@ -86,6 +86,7 @@ JMM属于语言级的内存模型，它确保在不同的编译器和不同的�
 <font color=DeepPink>**从内存语义的角度来说，volatile的写-读与锁的释放-获取有相同的内存效果**</font>：
 * volatile写和锁的释放有相同的内存语义；
 * volatile读与锁的获取有相同的内存语义。
+
 >volatile仅仅保证对单个volatile变量的读/写具有原子性，而锁的互斥执行的特性可以确保对整个临界区代码的执行具有原子性。在功能上，锁比volatile更强大；在可伸缩性和执行性能上，volatile更有优势。
 
 volatile变量自身具有下列特性：
@@ -110,6 +111,7 @@ JMM针对编译器制定的volatile重排序规则表
 * 在每个volatile写操作的后面插入一个StoreLoad屏障。
 * 在每个volatile读操作的后面插入一个LoadLoad屏障。
 * 在每个volatile读操作的后面插入一个LoadStore屏障。
+
 >LoadLoad屏障：对于这样的语句Load1; LoadLoad; Load2，在Load2及后续读取操作要读取的数据被访问前，保证Load1要读取的数据被读取完毕。
 
 >StoreStore屏障：对于这样的语句Store1; StoreStore; Store2，在Store2及后续写入操作执行前，保证Store1的写入操作对其它处理器可见。  LoadStore屏障：对于这样的语句Load1; LoadStore; Store2，在Store2及后续写入操作被刷出前，保证Load1要读取的数据被读取完毕。
@@ -138,7 +140,7 @@ JMM针对编译器制定的volatile重排序规则表
 * 获取不到锁的线程会进入AQS的队列等待。 
 * 子类需要重写tryAcquire、tryRelease等方法。
 
-AQS 详解参见：[面试必备：Java AQS 实现原理（图文）分析](https://juejin.im/post/5d37019a51882564c966add6) 
+AQS 详解参见：[面试必备：Java AQS 实现原理（图文）分析](https://www.jiankunking.com/java-aqs.html) 
 
 # 7、ReentrantLock
 以公平锁为例，看看 ReentrantLock 获取锁 & 释放锁的关键代码：
@@ -189,7 +191,7 @@ protected final boolean tryRelease(int releases) {
 ```
 <font color=DeepPink>**公平锁在释放锁的最后写volatile变量state，在获取锁时首先读这个volatile变量。根据volatile的happens-before规则，释放锁的线程在写volatile变量之前可见的共享变量，在获取锁的线程读取同一个volatile变量后将立即变得对获取锁的线程可见。从而保证了代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性。**</font>
 
-8、小结
+# 8、小结
 
 如果我们仔细分析concurrent包的源代码实现，会发现一个通用化的实现模式。 
 * 首先，<font color=DeepPink>**声明共享变量为volatile。**</font>

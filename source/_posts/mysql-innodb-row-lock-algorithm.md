@@ -5,6 +5,7 @@ categories:
 tags:
   - MySQL
   - InnoDB
+  - 读书笔记
 abbrlink: 7999
 date: 2018-10-17 08:17:32
 ---

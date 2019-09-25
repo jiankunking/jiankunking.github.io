@@ -10,8 +10,7 @@ date: 2019-07-29 19:26:20
 ---
 
 
-最近在参与一个基于Elasticsearch作为底层数据框架提供大数据量(亿级)的实时统计查询的方案设计工作，花了些时间学习Elasticsearch的基础理论知识，整理了一下，希望能对Elasticsearch感兴趣/想了解的同学有所帮助。
-同时也希望有发现内容不正确或者有疑问的地方，望指明，一起探讨，学习，进步。
+最近在参与一个基于Elasticsearch作为底层数据框架提供大数据量(亿级)的实时统计查询的方案设计工作，花了些时间学习Elasticsearch的基础理论知识，整理了一下，希望能对Elasticsearch感兴趣/想了解的同学有所帮助。同时也希望有发现内容不正确或者有疑问的地方，望指明，一起探讨，学习，进步。
 
 
 ## 介绍
@@ -75,7 +74,9 @@ Elasticsearch索引的精髓：
 
 另一层意思：为了提高搜索的性能，难免会牺牲某些其他方面，比如插入/更新，否则其他数据库不用混了:)
 
-前面看到往Elasticsearch里插入一条记录，其实就是直接PUT一个json的对象，这个对象有多个fields，比如上面例子中的*name, sex, age, about, interests*，那么在插入这些数据到Elasticsearch的同时，Elasticsearch还默默[^1]的为这些字段建立索引--倒排索引，因为Elasticsearch最核心功能是搜索。
+前面看到往Elasticsearch里插入一条记录，其实就是直接PUT一个json的对象，这个对象有多个fields，比如上面例子中的*name, sex, age, about, interests*，那么在插入这些数据到Elasticsearch的同时，Elasticsearch还默默的为这些字段建立索引--倒排索引，因为Elasticsearch最核心功能是搜索。
+
+> Elasticsearch默认会为每个字段根据value的类型分别建立索引，如果不想为某些字段建立索引或者不做分词分析的话，需要通过FieldMapping注明。
 
 ### Elasticsearch是如何做到快速索引的
 
@@ -190,7 +191,7 @@ Elasticsearch是如何有效的对这些文档id压缩的呢？
 
 如果数学不是体育老师教的话，还是比较容易看出来这种压缩技巧的。
 
-原理就是通过增量，将原来的大数变成小数仅存储增量值，再精打细算按bit排好队，最后通过字节存储，而不是大大咧咧的尽管是2也是用int(4个字节)来存储。
+<font color=DeepPink>**原理就是通过增量，将原来的大数变成小数仅存储增量值，再精打细算按bit排好队，最后通过字节存储**</font>，而不是大大咧咧的尽管是2也是用int(4个字节)来存储。
 
 ##### Roaring bitmaps
 
@@ -259,6 +260,9 @@ Elasticsearch的索引思路:
 * 同样的道理，对于String类型的字段，不需要analysis的也需要明确定义出来，因为默认也是会analysis的
 * 选择有规律的ID很重要，随机性太大的ID(比如java的UUID)不利于查询
 
+看一下filebeat收集日志后，elasticsearch自动生成的id，如图：
+![](/images/elasticsearch-query-secret/filebeat_log_id.png)
+
 关于最后一点，个人认为有多个因素:
 
 其中一个(也许不是最重要的)因素: 上面看到的压缩算法，都是对Posting list里的大量ID进行压缩的，那如果ID是顺序的，或者是有公共前缀等具有一定规律性的ID，压缩比会比较高；
@@ -272,5 +276,3 @@ Elasticsearch的索引思路:
 ## 原文
 
 [Elasticsearch 学习笔记](https://neway6655.github.io/elasticsearch/2015/09/11/elasticsearch-study-notes.html)
-
-[^1]: Elasticsearch默认会为每个字段根据value的类型分别建立索引，如果不想为某些字段建立索引或者不做分词分析的话，需要通过FieldMapping注明

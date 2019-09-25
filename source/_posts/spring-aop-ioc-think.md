@@ -31,7 +31,7 @@ Spring的AOP为动态AOP，实现的技术为：JDK提供的动态代理技术 �
 
 ## 1、JDK动态代理
 JDK部分解析参考：
-[Java JDK 动态代理（AOP）使用及实现原理分析](https://juejin.im/post/5d31c1b7f265da1b9421845d)
+[Java JDK 动态代理（AOP）使用及实现原理分析](https://www.jiankunking.com/java-jdk-aop.html)
 
 ## 2、CGLIB（code generate libary）
 字节码生成技术实现AOP，其实就是继承被代理对象，然后Override需要被代理的方法，在覆盖该方法时，自然是可以插入我们自己的代码的。

@@ -79,13 +79,14 @@ AQS定义两种资源共享方式：Exclusive（独占，只有一个线程能�
 
 
 一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现：
-tryAcquire-tryRelease
-tryAcquireShared-tryReleaseShared
+* tryAcquire-tryRelease
+* tryAcquireShared-tryReleaseShared
+
 中的一种即可。
 
 当然AQS也支持自定义同步器同时实现独占和共享两种方式，如ReentrantReadWriteLock。
 
-以下部分来自源码注释：
+> 以下部分来自源码注释：
 
 每次进入CLH队列时，需要对尾节点进入队列过程，是一个原子性操作。在出队列时，我们只需要更新head节点即可。在节点确定它的后继节点时， 需要花一些功夫，用于处理那些，由于等待超时时间结束或中断等原因， 而取消等待锁的线程。
 
@@ -161,7 +162,7 @@ public final void acquire(int arg) {
             selfInterrupt();
     }
 ```
-该方法首先尝试获取锁( tryAcquire(arg)的具体实现定义在了子类中),如果获取到,则执行完毕,否则通过addWaiter(Node.EXCLUSIVE), arg)方法把当前节点添加到等待队列末尾,并设置为独占模式。
+该方法首先尝试获取锁(tryAcquire(arg)的具体实现定义在了子类中),如果获取到,则执行完毕,否则通过addWaiter(Node.EXCLUSIVE), arg)方法把当前节点添加到等待队列末尾,并设置为独占模式。
 ```
 private Node addWaiter(Node mode) {
         //把当前线程包装为node,设为独占模式

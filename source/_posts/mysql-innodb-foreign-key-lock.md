@@ -7,6 +7,7 @@ categories:
 tags:
   - MySQL
   - InnoDB
+  - 读书笔记
 ---
 本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧
 

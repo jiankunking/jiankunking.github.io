@@ -153,7 +153,7 @@ type Value struct {
 	v interface{}
 }
 ```
-![](/images/go-sync-map/map结构关系示意图)
+![](/images/go-sync-map/map结构关系示意图.png)
 
 # Load
 据指定的key,查找对应的值value,如果不存在，通过ok反映。

@@ -62,7 +62,7 @@ func worker(ch chan Task) {
   }
 }
 ```
-# 2、channels 的特性
+## 2、channels 的特性
 * goroutine-safe，多个 goroutine 可以同时访问一个 channel。
 * 可以用于在 goroutine 之间存储和传递值
 * 其语义是先入先出（FIFO）
@@ -150,8 +150,9 @@ func typedmemmove(typ *_type, dst, src unsafe.Pointer) {
     }
 }
 ```
-# 3、阻塞和恢复
-## 3.1 发送方被阻塞
+
+## 3、阻塞和恢复
+### 3.1 发送方被阻塞
 假设 G2 需要很长时间的处理，在此期间，G1 不断的发送任务：
 ```
 ch <- task1
@@ -160,7 +161,7 @@ ch <- task3
 ```
 但是当再一次 ch <- task4 的时候，由于 ch 的缓冲只有 3 个，所以没有地方放了，于是 G1 被 block 了，当有人从队列中取走一个 Task 的时候，G1 才会被恢复。这是我们都知道的，不过我们今天关心的不是发生了什么，而是如何做到的？
 
-## 3.2 goroutine 的运行时调度
+### 3.2 goroutine 的运行时调度
 首先，goroutine <font color=DeepPink>**不是操作系统线程**</font>，而是 <font color=DeepPink>**用户空间线程**</font>。因此 goroutine 是由 Go runtime 来创建并管理的，而不是 OS，所以要比操作系统线程轻量级。
 
 当然，goroutine 最终还是要运行于某个线程中的，控制 goroutine 如何运行于线程中的是 Go runtime 中的 scheduler （调度器）。
@@ -173,7 +174,7 @@ Go 的 M:N 调度中使用了3个结构：
 * P: 调度上下文
     * P 拥有一个运行队列，里面是所有可以运行的 goroutine 及其上下文
 
-## 3.3 goroutine 被阻塞的具体过程
+### 3.3 goroutine 被阻塞的具体过程
 那么当 ch <- task4 执行的时候，channel 中已经满了，需要 <font color=DeepPink>**pause**</font> G1。这个时候：
 1. G1 会调用运行时的 gopark
 2. 然后 Go 的运行时调度器就会接管
@@ -187,7 +188,7 @@ Go 的 M:N 调度中使用了3个结构：
 
 我们知道 OS 线程要比 goroutine 要沉重的多，因此这里尽量避免 OS 线程阻塞，可以提高性能。
 
-## 3.4 goroutine 恢复执行的具体过程
+### 3.4 goroutine 恢复执行的具体过程
 前面理解了阻塞，那么接下来理解一下如何恢复运行。不过，在继续了解如何恢复之前，我们需要先进一步理解 hchan 这个结构。因为，当 channel 不在满的时候，调度器是如何知道该让哪个 goroutine 继续运行呢？而且 goroutine 又是如何知道该从哪取数据呢？
 
 在 hchan 中，除了之前提到的内容外，还定义有 sendq 和 recvq 两个队列，分别表示等待发送、接收的 goroutine，及其相关信息。
@@ -261,6 +262,8 @@ Goroutine 通常都有自己的栈，互相之间不会访问对方的栈内数�
 * 导致 goroutine 的阻塞和恢复
     * hchan 中的 sendq和recvq，也就是 sudog 结构的链表队列
     * 调用运行时调度器 (gopark(), goready())
+
+
 # 四、其它 channel 的操作
 ## 1、无缓冲 channel
 无缓冲的 channel 行为就和前面说的<font color=DeepPink>**直接发送**</font>的例子一样：
@@ -277,8 +280,8 @@ https://golang.org/src/runtime/select.go
 4. 然后当有任意一个 channel 可用时，select 的这个 goroutine 就会被调度执行。
 5. resuming mirrors the pause sequence
 
-五、为什么 Go 会这样设计？
-1、Simplicity
+# 五、为什么 Go 会这样设计？
+## 1、Simplicity
 更倾向于带锁的队列，而不是无锁的实现。
 
 性能提升不是凭空而来的，是随着复杂度增加而增加的。
