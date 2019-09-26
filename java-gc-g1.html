@@ -61,18 +61,18 @@
   };
 </script>
 
-  <meta name="description" content="G1(Garbage-First)回收器是在JDK1.7中正式使用的全新垃圾回收器，G1拥有独特的垃圾回收策略，从分代上看，G1依然属于分代垃圾回收器，它会区分年代和老年代，依然有eden和survivor区，但从堆的结构上看，它并不要求整个eden区、年清代或者老年代都连续。它使用了全新的分区算法。 其特点如下：  并行性：G1在回收期间，可以由多个GC线程同时工作，有效利用多核计算能力。  并">
+  <meta name="description" content="有可能是全网最全的G1总结">
 <meta name="keywords" content="原创,Java,GC,G1">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java 垃圾回收算法之G1">
 <meta property="og:url" content="https://jiankunking.com/java-gc-g1.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="G1(Garbage-First)回收器是在JDK1.7中正式使用的全新垃圾回收器，G1拥有独特的垃圾回收策略，从分代上看，G1依然属于分代垃圾回收器，它会区分年代和老年代，依然有eden和survivor区，但从堆的结构上看，它并不要求整个eden区、年清代或者老年代都连续。它使用了全新的分区算法。 其特点如下：  并行性：G1在回收期间，可以由多个GC线程同时工作，有效利用多核计算能力。  并">
+<meta property="og:description" content="有可能是全网最全的G1总结">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-26T03:10:30.726Z">
+<meta property="og:updated_time" content="2019-09-26T03:26:30.250Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java 垃圾回收算法之G1">
-<meta name="twitter:description" content="G1(Garbage-First)回收器是在JDK1.7中正式使用的全新垃圾回收器，G1拥有独特的垃圾回收策略，从分代上看，G1依然属于分代垃圾回收器，它会区分年代和老年代，依然有eden和survivor区，但从堆的结构上看，它并不要求整个eden区、年清代或者老年代都连续。它使用了全新的分区算法。 其特点如下：  并行性：G1在回收期间，可以由多个GC线程同时工作，有效利用多核计算能力。  并">
+<meta name="twitter:description" content="有可能是全网最全的G1总结">
   <link rel="canonical" href="https://jiankunking.com/java-gc-g1">
 
 
@@ -315,7 +315,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-26 11:10:30" itemprop="dateModified" datetime="2019-09-26T11:10:30+08:00">2019-09-26</time>
+                <time title="修改时间：2019-09-26 11:26:30" itemprop="dateModified" datetime="2019-09-26T11:26:30+08:00">2019-09-26</time>
               </span>
             
           
@@ -393,7 +393,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>G1(Garbage-First)回收器是在JDK1.7中正式使用的全新垃圾回收器，G1拥有独特的垃圾回收策略，从分代上看，G1依然属于分代垃圾回收器，它会区分年代和老年代，依然有eden和survivor区，但从堆的结构上看，它并不要求整个eden区、年清代或者老年代都连续。它使用了全新的分区算法。</p>
+        <blockquote>
+<p>有可能是全网最全的G1总结</p>
+</blockquote>
+<a id="more"></a>
+
+<p>G1(Garbage-First)回收器是在JDK1.7中正式使用的全新垃圾回收器，G1拥有独特的垃圾回收策略，从分代上看，G1依然属于分代垃圾回收器，它会区分年代和老年代，依然有eden和survivor区，但从堆的结构上看，它并不要求整个eden区、年清代或者老年代都连续。它使用了全新的分区算法。</p>
 <p>其特点如下：</p>
 <ul>
 <li><p>并行性：G1在回收期间，可以由多个GC线程同时工作，有效利用多核计算能力。</p>
@@ -521,12 +526,11 @@
 <p>在理解了这些后，我们再设置最大暂停时间就有了方向。首先，我们能容忍的最大暂停时间是有一个限度的，我们需要在这个限度范围内设置。但是应该设置的值是多少呢？我们需要在吞吐量跟MaxGCPauseMillis之间做一个平衡。如果MaxGCPauseMillis设置的过小，那么GC就会频繁，吞吐量就会下降。如果MaxGCPauseMillis设置的过大，应用程序暂停时间就会变长。G1的默认暂停时间是200毫秒，我们可以从这里入手，调整合适的时间。</p>
 <h2 id="2、-XX-G1HeapRegionSize-n"><a href="#2、-XX-G1HeapRegionSize-n" class="headerlink" title="2、-XX:G1HeapRegionSize=n"></a>2、-XX:G1HeapRegionSize=n</h2><p>设置的 G1 区域的大小。值是 2 的幂，范围是 1 MB 到 32 MB 之间。目标是根据最小的 Java 堆大小划分出约 2048 个区域。</p>
 <ul>
-<li>-XX:ParallelGCThreads=n（调整G1垃圾收集的后台线程数）</li>
+<li><p>-XX:ParallelGCThreads=n（调整G1垃圾收集的后台线程数）<br>设置 STW 工作线程数的值。将 n 的值设置为逻辑处理器的数量。n 的值与逻辑处理器的数量相同，最多为 8。<br>如果逻辑处理器不止八个，则将 n 的值设置为逻辑处理器数的 5/8 左右。这适用于大多数情况，除非是较大的 SPARC 系统，其中 n 的值可以是逻辑处理器数的 5/16 左右。</p>
+</li>
+<li><p>-XX:ConcGCThreads=n（调整G1垃圾收集的后台线程数）<br>设置并行标记的线程数。将 n 设置为并行垃圾回收线程数 (ParallelGCThreads) 的 1/4 左右。</p>
+</li>
 </ul>
-<p>设置 STW 工作线程数的值。将 n 的值设置为逻辑处理器的数量。n 的值与逻辑处理器的数量相同，最多为 8。</p>
-<p>如果逻辑处理器不止八个，则将 n 的值设置为逻辑处理器数的 5/8 左右。这适用于大多数情况，除非是较大的 SPARC 系统，其中 n 的值可以是逻辑处理器数的 5/16 左右。</p>
-<p>-XX:ConcGCThreads=n（调整G1垃圾收集的后台线程数）</p>
-<p>设置并行标记的线程数。将 n 设置为并行垃圾回收线程数 (ParallelGCThreads) 的 1/4 左右。</p>
 <h2 id="3、-XX-InitiatingHeapOccupancyPercent-45（调整G1垃圾收集运行频率）"><a href="#3、-XX-InitiatingHeapOccupancyPercent-45（调整G1垃圾收集运行频率）" class="headerlink" title="3、 -XX:InitiatingHeapOccupancyPercent=45（调整G1垃圾收集运行频率）"></a>3、 -XX:InitiatingHeapOccupancyPercent=45（调整G1垃圾收集运行频率）</h2><p>设置触发标记周期的 Java 堆占用率阈值。默认占用率是整个 Java 堆的 45%。</p>
 <p>该值设置太高：会陷入Full GC泥潭之中，因为并发阶段没有足够的时间在剩下的堆空间被填满之前完成垃圾收集。</p>
 <p>如果该值设置太小：应用程序又会以超过实际需要的节奏进行大量的后台处理。</p>
@@ -583,13 +587,6 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
-      
-    </li>
-  
-    <li class="popular-posts-item">
-      
-      
       <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
       
     </li>
@@ -597,14 +594,21 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
+      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-threadlocal.html" rel="bookmark">Java ThreadLocal</a></div>
+      <div class="popular-posts-title"><a href="\java-volatile-aqs.html" rel="bookmark">Java volatile的内存语义与AQS锁内存可见性</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-reentrantreadwritelock.html" rel="bookmark">ReentrantReadWriteLock原理解析</a></div>
       
     </li>
   
