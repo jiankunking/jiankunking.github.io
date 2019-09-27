@@ -4,6 +4,43 @@
   
     
     <entry>
+      <title>网关限流与熔断</title>
+      <link href="/gateway-rate-limit-and-circuit.html"/>
+      <url>/gateway-rate-limit-and-circuit.html</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>网关限流、熔断实现分析</p></blockquote><a id="more"></a><h1 id="一、限流"><a href="#一、限流" class="headerlink" title="一、限流"></a>一、限流</h1><p>常见的限流算法主要有：</p><ul><li>计数器算法</li><li>令牌桶算法</li><li>漏桶算法</li></ul><h2 id="计数器算法"><a href="#计数器算法" class="headerlink" title="计数器算法"></a>计数器算法</h2><p>该算法在实际中使用较少，其实现简单粗暴：<br>一般我们会限制一秒钟的能够通过的请求数，比如限流qps为100，算法的实现思路就是从第一个请求进来开始计时，在接下去的1s内，每来一个请求，就把计数加1，如果累加的数字达到了100，那么后续的请求就会被全部拒绝。等到1s结束后，把计数恢复成0，重新开始计数。</p><h2 id="漏桶算法"><a href="#漏桶算法" class="headerlink" title="漏桶算法"></a>漏桶算法</h2><p>漏桶(Leaky Bucket)算法思路很简单,水(请求)先进入到漏桶里,漏桶以一定的速度出水(接口有响应速率),当水流入速度过大会直接溢出(访问频率超过接口响应速率),然后就拒绝请求,可以看出漏桶算法能强行限制数据的传输速率。</p><p>因为漏桶的漏出速率是固定的参数,所以,即使网络中不存在资源冲突(没有发生拥塞),漏桶算法也不能使流突发(burst)到端口速率.因此,漏桶算法对于存在突发特性的流量来说缺乏效率。</p><h2 id="令牌桶算法"><a href="#令牌桶算法" class="headerlink" title="令牌桶算法"></a>令牌桶算法</h2><p>令牌桶算法是比较常见的限流算法之一，在令牌桶算法中，存在一个桶，用来存放固定数量的令牌。算法中存在一种机制，以一定的速率往桶中放令牌。每次请求调用需要先获取令牌，只有拿到令牌，才有机会继续执行，否则选择选择等待可用的令牌、或者直接拒绝。</p><p>对于令牌桶中令牌的产生一般有两种做法：</p><ul><li>一种解法是，开启一个定时任务，由定时任务持续生成令牌。这样的问题在于会极大的消耗系统资源，如，某接口需要分别对每个用户做访问频率限制，假设系统中存在10W用户，则至多需要开启10W个定时任务来维持每个桶中的令牌数，这样的开销是巨大的。</li><li>另一种解法则是延迟计算，如上resync函数。该函数会在每次获取令牌之前调用，其实现思路为，若当前时间晚于nextFreeTicketMicros，则计算该段时间内可以生成多少令牌，将生成的令牌加入令牌桶中并更新数据。这样一来，只需要在获取令牌时计算一次即可。</li></ul><blockquote><p>Guava RateLimiter与Golang rate.Limiter 都是采用方式二</p></blockquote><h1 id="熔断"><a href="#熔断" class="headerlink" title="熔断"></a>熔断</h1>]]></content>
+      
+      
+      <categories>
+          
+          <category> Architecture </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Architecture </tag>
+            
+            <tag> Gateway </tag>
+            
+            <tag> 原创 </tag>
+            
+            <tag> Rate </tag>
+            
+            <tag> Limit </tag>
+            
+            <tag> Circuit </tag>
+            
+            <tag> Hide </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>MySQL 知识点 概要</title>
       <link href="/mysql-schema.html"/>
       <url>/mysql-schema.html</url>
@@ -802,9 +839,9 @@
             
             <tag> 读书笔记 </tag>
             
-            <tag> GC </tag>
-            
             <tag> Performance </tag>
+            
+            <tag> GC </tag>
             
             <tag> JVM </tag>
             
@@ -1127,9 +1164,9 @@
             
             <tag> Go </tag>
             
-            <tag> Performance </tag>
-            
             <tag> SOFAMosn </tag>
+            
+            <tag> Performance </tag>
             
         </tags>
       
