@@ -62,14 +62,14 @@
 </script>
 
   <meta name="description" content="客户中心梳理">
-<meta name="keywords" content="Architecture,OAuth,Login,原创">
+<meta name="keywords" content="Architecture,原创,OAuth,Login">
 <meta property="og:type" content="article">
 <meta property="og:title" content="客户中心实现分析">
 <meta property="og:url" content="https://jiankunking.com/customer-center-design.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="客户中心梳理">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-29T08:02:15.282Z">
+<meta property="og:updated_time" content="2019-10-01T08:32:20.637Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="客户中心实现分析">
 <meta name="twitter:description" content="客户中心梳理">
@@ -302,11 +302,21 @@
                 
               
 
-              <time title="创建时间：2019-09-29 09:05:32 / 修改时间：16:02:15" itemprop="dateCreated datePublished" datetime="2019-09-29T09:05:32+08:00">2019-09-29</time>
+              <time title="创建时间：2019-09-29 09:05:32" itemprop="dateCreated datePublished" datetime="2019-09-29T09:05:32+08:00">2019-09-29</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-10-01 16:32:20" itemprop="dateModified" datetime="2019-10-01T16:32:20+08:00">2019-10-01</time>
+              </span>
             
           
             <span class="post-meta-item">
@@ -360,7 +370,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">1.4k</span>
+              <span title="本文字数">1.5k</span>
             </span>
           
             <span class="post-meta-item">
@@ -394,12 +404,12 @@
 <p>这里的客户账号主要是公司的经销商、各级门店的员工。</p>
 </blockquote>
 <p>客户与To C用户两者之间最大的区别在于：账号注册、管理的不同。客户账号的注册主要是通过分配，而非自己注册。</p>
-<h1 id="服务层面"><a href="#服务层面" class="headerlink" title="服务层面"></a>服务层面</h1><p>服务主要拆分为一下几部分：</p>
+<h1 id="服务层面"><a href="#服务层面" class="headerlink" title="服务层面"></a>服务层面</h1><p>服务主要拆分为以下几部分：</p>
 <ul>
 <li>OpenApi：客户中心网关、OAuth部分</li>
 <li>账户服务：与账户相关的服务</li>
 <li>短信服务：<ul>
-<li>将集团Web Services短信服务转换成HTTP REST服务，简称SMS服务</li>
+<li>将集团Web Services短信服务转换成HTTP REST服务（下面简称SMS服务）</li>
 <li>Nginx 代理（组内服务发送短信是调用SMS服务，SMS服务再通过Nginx代理调用集团短信服务）</li>
 </ul>
 </li>
@@ -444,13 +454,18 @@
 <li>账户密码通过手机号重置</li>
 <li>发送短信验证码</li>
 </ul>
-<p>看一下这个定义：将一个请求封装为一个对象，使发出请求的责任和执行请求的责任分割开。这样两者之间通过命令对象进行沟通，这样方便将命令对象进行储存、传递、调用、增加与管理。</p>
-<p>通过这种方式，是不是就能很好的解决了代码重复的问题?</p>
-<p>其实就是用命令模式，将统一账户的处理逻辑、CAS账户的处理逻辑分别放置到Receiver中，通过不同的Command来起到隔离而又不会重复代码的作用。</p>
+<p>基本上都是输入一样，但最终处理的时候校验、操作的表都有所不同，这个可以通过命令模式来处理。</p>
+<p>将统一账户的处理逻辑、CAS账户的处理逻辑分别放置到Receiver中，通过不同的Command来起到隔离而又不会重复代码的作用。 </p>
+<blockquote>
+<p>命令模式：将一个请求封装为一个对象，使发出请求的责任和执行请求的责任分割开。这样两者之间通过命令对象进行沟通，这样方便将命令对象进行储存、传递、调用、增加与管理。</p>
+</blockquote>
 <h1 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h1><h2 id="短信发送"><a href="#短信发送" class="headerlink" title="短信发送"></a>短信发送</h2><p>1、线程池发送（以防短信服务不稳，造成OOM,设定BlockingQueue长度）<br>2、抽象短信服务基类BaseVerificationCodeSender，因为有可能对接多个短信服务，但线程池及需要做的事是一样的。</p>
 <p><img alt="具体的实现类" data-src="/images/customer-center-design/CocSmsVerificationCodeSender.png"></p>
-<h2 id="验证码校验"><a href="#验证码校验" class="headerlink" title="验证码校验"></a>验证码校验</h2><p>由于集团短信服务不太稳定，所以缓存了最近的三个未过期的短信验证码。</p>
-<p>##</p>
+<h2 id="验证码校验"><a href="#验证码校验" class="headerlink" title="验证码校验"></a>验证码校验</h2><p>由于集团短信服务不太稳定，所以每类（登陆、忘记密码、修改手机号等）验证码缓存最多三个未过期的短信验证码。</p>
+<blockquote>
+<p>只要验证了一个，该手机号缓存某类的验证码，均失效。</p>
+</blockquote>
+<h2 id="其它-1"><a href="#其它-1" class="headerlink" title="其它"></a>其它</h2><p>略</p>
 
     </div>
       
@@ -549,11 +564,11 @@
         <div class="post-tags">
             <a href="/tags/Architecture/" rel="tag"># Architecture</a>
           
+            <a href="/tags/原创/" rel="tag"># 原创</a>
+          
             <a href="/tags/OAuth/" rel="tag"># OAuth</a>
           
             <a href="/tags/Login/" rel="tag"># Login</a>
-          
-            <a href="/tags/原创/" rel="tag"># 原创</a>
           
         </div>
         <div class="post-nav">
@@ -920,7 +935,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#服务层面"><span class="nav-number">1.</span> <span class="nav-text">服务层面</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">2.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#账户合并"><span class="nav-number">2.1.</span> <span class="nav-text">账户合并</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#切换"><span class="nav-number">2.2.</span> <span class="nav-text">切换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">3.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#短信发送"><span class="nav-number">3.1.</span> <span class="nav-text">短信发送</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证码校验"><span class="nav-number">3.2.</span> <span class="nav-text">验证码校验</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#服务层面"><span class="nav-number">1.</span> <span class="nav-text">服务层面</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">2.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#账户合并"><span class="nav-number">2.1.</span> <span class="nav-text">账户合并</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#切换"><span class="nav-number">2.2.</span> <span class="nav-text">切换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">3.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#短信发送"><span class="nav-number">3.1.</span> <span class="nav-text">短信发送</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证码校验"><span class="nav-number">3.2.</span> <span class="nav-text">验证码校验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它-1"><span class="nav-number">3.3.</span> <span class="nav-text">其它</span></a></li></ol></li></ol></div>
             
 
           </div>
