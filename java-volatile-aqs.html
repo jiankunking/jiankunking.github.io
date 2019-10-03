@@ -4,60 +4,57 @@
 
 
 
-<html class="theme-next pisces use-motion" lang="zh-CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-<meta name="generator" content="Hexo 3.9.0">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
   <meta name="google-site-verification" content="true">
   <meta name="msvalidate.01" content="true">
   <meta name="baidu-site-verification" content="true">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
-  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
 
-<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
 
 
 <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
-  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
 
 
-<script id="hexo.configurations">
+<script id="hexo-configurations">
   var NexT = window.NexT || {};
   var CONFIG = {
     root: '/',
     scheme: 'Pisces',
-    version: '7.2.0',
+    version: '7.4.1',
+    exturl: false,
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
-    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
     copycode: {"enable":false,"show_result":false,"style":null},
-    fancybox: true,
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
     mediumzoom: false,
-    lazyload: true,
+    lazyload: false,
     pangu: false,
     algolia: {
-      applicationID: '',
+      appID: '',
       apiKey: '',
       indexName: '',
       hits: {"per_page":10},
       labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
     },
     localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
-    search: {
-      root: '/',
-      path: 'search.xml'
-    },
-    tabs: true,
+    path: 'search.xml',
     motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     translation: {
       copy_button: '复制',
       copy_success: '复制成功',
       copy_failure: '复制失败'
-    }
+    },
+    sidebarPadding: 40
   };
 </script>
 
@@ -69,16 +66,26 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="提到volatile首先想到就是：  保证此变量对所有线程的可见性，这里的 “可见性”是指当一条线程修改了这个变量的值，新值对于其他线程来说是可以立即得知的。 禁止指令重排序优化。  到这里大家感觉自己对volatile理解了吗？  如果理解了，大家考虑这么一个问题：ReentrantLock（或者其它基于AQS实现的锁）是如何保证代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性？">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://jiankunking.com/images/java-aqs-voliate/%E9%87%8D%E6%8E%92%E5%BA%8F.png">
+<meta property="og:image" content="https://jiankunking.com/images/java-aqs-voliate/JMM%E9%92%88%E5%AF%B9%E7%BC%96%E8%AF%91%E5%99%A8%E5%88%B6%E5%AE%9A%E7%9A%84volatile%E9%87%8D%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99%E8%A1%A8.png">
+<meta property="og:image" content="https://jiankunking.com/images/java-aqs-voliate/volatile%E5%86%99%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E6%8C%87%E4%BB%A4%E5%BA%8F%E5%88%97%E7%A4%BA%E6%84%8F%E5%9B%BE.png">
+<meta property="og:image" content="https://jiankunking.com/images/java-aqs-voliate/volatile%E8%AF%BB%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E6%8C%87%E4%BB%A4%E5%BA%8F%E5%88%97%E7%A4%BA%E6%84%8F%E5%9B%BE.png">
 <meta property="og:updated_time" content="2019-09-25T01:59:33.311Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java volatile的内存语义与AQS锁内存可见性">
 <meta name="twitter:description" content="提到volatile首先想到就是：  保证此变量对所有线程的可见性，这里的 “可见性”是指当一条线程修改了这个变量的值，新值对于其他线程来说是可以立即得知的。 禁止指令重排序优化。  到这里大家感觉自己对volatile理解了吗？  如果理解了，大家考虑这么一个问题：ReentrantLock（或者其它基于AQS实现的锁）是如何保证代码段中变量（变量主要是指共享变量，存在竞争问题的变量）的可见性？">
+<meta name="twitter:image" content="https://jiankunking.com/images/java-aqs-voliate/%E9%87%8D%E6%8E%92%E5%BA%8F.png">
   <link rel="canonical" href="https://jiankunking.com/java-volatile-aqs">
 
 
-<script id="page.configurations">
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
   };
 </script>
 
@@ -103,7 +110,6 @@
 
   <noscript>
   <style>
-  .use-motion .motion-element,
   .use-motion .brand,
   .use-motion .menu-item,
   .sidebar-inner,
@@ -112,7 +118,7 @@
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-title { opacity: initial; }
+  .use-motion .collection-header { opacity: initial; }
 
   .use-motion .logo,
   .use-motion .site-title,
@@ -129,15 +135,14 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
-
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container use-motion">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
+      <div class="header-inner"><div class="site-brand-container">
   <div class="site-meta">
 
-    <div class="custom-logo-site-title">
+    <div>
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">衣舞晨风</span>
@@ -147,107 +152,122 @@
   </div>
 
   <div class="site-nav-toggle">
-    <button aria-label="切换导航栏">
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-    </button>
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
   </div>
 </div>
-
 
 
 <nav class="site-nav">
-    <ul id="menu" class="menu">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-home">
+        <li class="menu-item menu-item-home">
       
     
 
-    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>首页</a>
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-about">
+        <li class="menu-item menu-item-about">
       
     
 
-    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br/>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-tags">
+        <li class="menu-item menu-item-tags">
       
     
 
-    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br/>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-categories">
+        <li class="menu-item menu-item-categories">
       
     
 
-    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br/>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-archives">
+        <li class="menu-item menu-item-archives">
       
     
 
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
 
   </li>
-        <li class="menu-item menu-item-search">
-          <a href="javascript:;" class="popup-trigger">
-          
-            <i class="menu-item-icon fa fa-search fa-fw"></i> <br/>搜索</a>
-        </li>
       
-    </ul>
-    <div class="site-search">
       
-  <div class="popup search-popup local-search-popup">
-  <div class="local-search-header clearfix">
-    <span class="search-icon">
-      <i class="fa fa-search"></i>
-    </span>
-    <span class="popup-btn-close">
-      <i class="fa fa-times-circle"></i>
-    </span>
-    <div class="local-search-input-wrapper">
-      <input autocomplete="off"
-             placeholder="搜索..." spellcheck="false"
-             type="text" id="local-search-input">
-    </div>
-  </div>
-  <div id="local-search-result"></div>
-</div>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+      
+    
 
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
 
-    </div>
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
 </nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
 
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
 </div>
     </header>
 
     
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
 
   <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
 
@@ -261,13 +281,11 @@
             
 
   <div id="posts" class="posts-expand">
-    
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+      <article itemscope itemtype="http://schema.org/Article">
   
   
   
-  <div class="post-block">
+  <div class="post-block post">
     <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-volatile-aqs.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -280,23 +298,17 @@
       <meta itemprop="name" content="衣舞晨风">
     </span>
       <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">Java volatile的内存语义与AQS锁内存可见性
 
-        
-          <h2 class="post-title" itemprop="name headline">Java volatile的内存语义与AQS锁内存可见性
-
-              
-            
-          </h2>
-        
+          
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
+              <span class="post-meta-item-text">发表于</span>
 
               
                 
@@ -312,9 +324,7 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
+                <span class="post-meta-item-text">更新于</span>
                 <time title="修改时间：2019-09-25 09:59:33" itemprop="dateModified" datetime="2019-09-25T09:59:33+08:00">2019-09-25</time>
               </span>
             
@@ -323,9 +333,7 @@
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
+              <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a></span>
 
@@ -336,51 +344,47 @@
           
 
           
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon"
-              >
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
-                 阅读次数： 
-                <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
               </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
             </span>
           
-            
   
   <span class="post-meta-item">
     
-    <span class="post-meta-item-icon">
-      <i class="fa fa-comment-o"></i>
-    </span>
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
     
-      <span class="post-meta-item-text">评论数：</span>
-    
-  
-    <a href="/java-volatile-aqs.html#comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/java-volatile-aqs.html" itemprop="commentCount"></span>
-    </a>
+    <a title="valine" href="/java-volatile-aqs.html#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/java-volatile-aqs.html" itemprop="commentCount"></span></a>
   </span>
   
   
-          <br/>
-            <span class="post-meta-item">
+          <br>
+            <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-file-word-o"></i>
               </span>
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">7k</span>
+              <span>7k</span>
             </span>
           
-            <span class="post-meta-item">
+            <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">6 分钟</span>
+              <span>6 分钟</span>
             </span>
           
 
@@ -421,7 +425,7 @@
 <li>内存系统的重排序。由于处理器使用缓存和读/写缓冲区，这使得加载和存储操作看上去可能是在乱序执行。</li>
 </ul>
 <p>从Java源代码到最终实际执行的指令序列，会分别经历下面3种重排序：</p>
-<p><img alt data-src="/images/java-aqs-voliate/%E9%87%8D%E6%8E%92%E5%BA%8F.png"></p>
+<p><img src="/images/java-aqs-voliate/%E9%87%8D%E6%8E%92%E5%BA%8F.png" alt></p>
 <p>对于编译器，JMM的编译器重排序规则会禁止特定类型的编译器重排序（不是所有的编译器重排序都要禁止）。对于处理器重排序，JMM的处理器重排序规则会要求Java编译器在生成指令序列时，插入特定类型的内存屏障（Memory Barriers，Intel称之为Memory Fence）指令，通过内存屏障指令来禁止特定类型的处理器重排序。 </p>
 <p>JMM属于语言级的内存模型，它确保在不同的编译器和不同的处理器平台之上，通过禁止特定类型的编译器重排序和处理器重排序，为程序员提供一致的内存可见性保证。</p>
 <h1 id="3、happens-before"><a href="#3、happens-before" class="headerlink" title="3、happens-before"></a>3、happens-before</h1><ul>
@@ -464,7 +468,7 @@
 <li><font color="DeepPink"><strong>线程A写一个volatile变量，随后线程B读这个volatile变量，这个过程实质上是线程A通过主内存向线程B发送消息。</strong></font></li>
 </ul>
 <p>JMM针对编译器制定的volatile重排序规则表</p>
-<p><img alt data-src="/images/java-aqs-voliate/JMM%E9%92%88%E5%AF%B9%E7%BC%96%E8%AF%91%E5%99%A8%E5%88%B6%E5%AE%9A%E7%9A%84volatile%E9%87%8D%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99%E8%A1%A8.png"></p>
+<p><img src="/images/java-aqs-voliate/JMM%E9%92%88%E5%AF%B9%E7%BC%96%E8%AF%91%E5%99%A8%E5%88%B6%E5%AE%9A%E7%9A%84volatile%E9%87%8D%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99%E8%A1%A8.png" alt></p>
 <ul>
 <li><font color="DeepPink"><strong>当第二个操作是volatile写时，不管第一个操作是什么，都不能重排序。这个规则确保volatile写之前的操作不会被编译器重排序到volatile写之后。</strong></font></li>
 <li><font color="DeepPink"><strong>当第一个操作是volatile读时，不管第二个操作是什么，都不能重排序。这个规则确保volatile读之后的操作不会被编译器重排序到volatile读之前。</strong></font></li>
@@ -487,10 +491,10 @@
 <p>StoreLoad屏障：对于这样的语句Store1; StoreLoad; Load2，在Load2及后续所有读取操作执行前，保证Store1的写入对所有处理器可见。它的开销是四种屏障中最大的。在大多数处理器的实现中，这个屏障是个万能屏障，兼具其它三种内存屏障的功能。<br>上述内存屏障插入策略非常保守，但它可以保证在任意处理器平台，任意的程序中都能得到正确的volatile内存语义。</p>
 </blockquote>
 <p>下面是保守策略下，volatile写插入内存屏障后生成的指令序列示意图. </p>
-<p><img alt data-src="/images/java-aqs-voliate/volatile%E5%86%99%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E6%8C%87%E4%BB%A4%E5%BA%8F%E5%88%97%E7%A4%BA%E6%84%8F%E5%9B%BE.png"></p>
+<p><img src="/images/java-aqs-voliate/volatile%E5%86%99%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E6%8C%87%E4%BB%A4%E5%BA%8F%E5%88%97%E7%A4%BA%E6%84%8F%E5%9B%BE.png" alt></p>
 <p>图中的StoreStore屏障可以保证在volatile写之前，其前面的所有普通写操作已经对任意处理器可见了。这是因为<strong>StoreStore屏障将保障上面所有的普通写在volatile写之前刷新到主内存。</strong></p>
 <p>这里比较有意思的是，volatile写后面的StoreLoad屏障。此屏障的作用是避免volatile写与后面可能有的volatile读/写操作重排序。因为编译器常常无法准确判断在一个volatile写的后面是否需要插入一个StoreLoad屏障（比如，一个volatile写之后方法立即return）。为了保证能正确实现volatile的内存语义，JMM在采取了保守策略：在每个volatile写的后面，或者在每个volatile读的前面插入一个StoreLoad屏障。从整体执行效率的角度考虑，JMM最终选择了在每个volatile写的后面插入一个StoreLoad屏障。因为volatile写-读内存语义的常见使用模式是：一个写线程写volatile变量，多个读线程读同一个volatile变量。当读线程的数量大大超过写线程时，选择在volatile写之后插入StoreLoad屏障将带来可观的执行效率的提升。从这里可以看到JMM在实现上的一个特点：首先确保正确性，然后再去追求执行效率。</p>
-<p>下面是在保守策略下，volatile读插入内存屏障后生成的指令序列示意图:<br><img alt data-src="/images/java-aqs-voliate/volatile%E8%AF%BB%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E6%8C%87%E4%BB%A4%E5%BA%8F%E5%88%97%E7%A4%BA%E6%84%8F%E5%9B%BE.png"><br>图中的LoadLoad屏障用来禁止处理器把上面的volatile读与下面的普通读重排序。LoadStore屏障用来禁止处理器把上面的volatile读与下面的普通写重排序。 </p>
+<p>下面是在保守策略下，volatile读插入内存屏障后生成的指令序列示意图:<br><img src="/images/java-aqs-voliate/volatile%E8%AF%BB%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E6%8C%87%E4%BB%A4%E5%BA%8F%E5%88%97%E7%A4%BA%E6%84%8F%E5%9B%BE.png" alt><br>图中的LoadLoad屏障用来禁止处理器把上面的volatile读与下面的普通读重排序。LoadStore屏障用来禁止处理器把上面的volatile读与下面的普通写重排序。 </p>
 <p>上述volatile写和volatile读的内存屏障插入策略非常保守。在实际执行时，只要不改变volatile写-读的内存语义，编译器可以根据具体情况省略不必要的屏障。</p>
 <h1 id="6、AQS"><a href="#6、AQS" class="headerlink" title="6、AQS"></a>6、AQS</h1><p>对于AQS需要了解这么几点： </p>
 <ul>
@@ -517,6 +521,10 @@
 <p>2、<a href="https://mp.weixin.qq.com/s?__biz=MzI3ODcxMzQzMw==&mid=2247485795&idx=2&sn=73d5bcd83378f6176f9593d33dc402dc&chksm=eb538c55dc240543df3cd113cb3e586e98d3ccd0a93c6a87829a04e296b990a554596338046e#rd" target="_blank" rel="noopener">Java 可重入锁内存可见性分析</a> </p>
 
     </div>
+
+    
+    
+    
       
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
@@ -557,17 +565,14 @@
   
   </ul>
 
-
-    
-    
-    
-      <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
   <img id="wechat_subscriber_qcode" src="/images/wechat/wechat.jpg" alt="jiankunking wechat" style="width: 200px; max-width: 100%;">
   <div>喜欢就关注一下呗</div>
 </div>
 
-    
-      <div>
+      
+        
+      
         <div id="reward-container">
   <div></div>
   <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
@@ -590,10 +595,10 @@
   </div>
 </div>
 
-      </div>
-      <div>
+      
         
 
+<div>
 <ul class="post-copyright">
   <li class="post-copyright-author">
     <strong>本文作者： </strong>jiankunking</li>
@@ -604,44 +609,55 @@
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
 </ul>
+</div>
 
-      </div>
+      
 
-    <footer class="post-footer">
+      <footer class="post-footer">
           
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/原创/" rel="tag"># 原创</a>
+            
+              <a href="/tags/Java/" rel="tag"># Java</a>
+            
+              <a href="/tags/JUC/" rel="tag"># JUC</a>
+            
+              <a href="/tags/AQS/" rel="tag"># AQS</a>
+            
+              <a href="/tags/JDK/" rel="tag"># JDK</a>
+            
+              <a href="/tags/Volatile/" rel="tag"># Volatile</a>
+            
+          </div>
         
-        <div class="post-tags">
-            <a href="/tags/原创/" rel="tag"># 原创</a>
-          
-            <a href="/tags/Java/" rel="tag"># Java</a>
-          
-            <a href="/tags/JUC/" rel="tag"># JUC</a>
-          
-            <a href="/tags/AQS/" rel="tag"># AQS</a>
-          
-            <a href="/tags/JDK/" rel="tag"># JDK</a>
-          
-            <a href="/tags/Volatile/" rel="tag"># Volatile</a>
-          
-        </div>
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-              <a href="/java-lambda.html" rel="next" title="Java Lambda表达式 实现原理分析">
-                <i class="fa fa-chevron-left"></i> Java Lambda表达式 实现原理分析
-              </a>
-            
-          </div>
 
-          <span class="post-nav-divider"></span>
+        
 
-          <div class="post-nav-prev post-nav-item">
-              <a href="/api-gateway-design.html" rel="prev" title="API网关架构设计">
-                API网关架构设计 <i class="fa fa-chevron-right"></i>
-              </a>
-            
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/java-lambda.html" rel="next" title="Java Lambda表达式 实现原理分析">
+                  <i class="fa fa-chevron-left"></i> Java Lambda表达式 实现原理分析
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/api-gateway-design.html" rel="prev" title="API网关架构设计">
+                  API网关架构设计 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
           </div>
-        </div>
-    </footer>
+        
+      </footer>
+    
   </div>
   
   
@@ -657,41 +673,49 @@
     <div class="comments" id="comments"></div>
   
 
-
         </div>
           
   
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
-    </div>
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
   </div>
 
-  <aside id="sidebar" class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-inner">
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
+        
+        
+        
+        
       
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-overview">
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
 
-          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1、JMM"><span class="nav-number">1.</span> <span class="nav-text">1、JMM</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、重排序"><span class="nav-number">2.</span> <span class="nav-text">2、重排序</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、happens-before"><span class="nav-number">3.</span> <span class="nav-text">3、happens-before</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4、内存屏障"><span class="nav-number">4.</span> <span class="nav-text">4、内存屏障</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5、volatile的内存语义"><span class="nav-number">5.</span> <span class="nav-text">5、volatile的内存语义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6、AQS"><span class="nav-number">6.</span> <span class="nav-text">6、AQS</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7、ReentrantLock"><span class="nav-number">7.</span> <span class="nav-text">7、ReentrantLock</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8、小结"><span class="nav-number">8.</span> <span class="nav-text">8、小结</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image"
       src="/images/avatar/avatar.png"
       alt="jiankunking">
   <p class="site-author-name" itemprop="name">jiankunking</p>
-  <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+  <div class="site-description" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
 </div>
-  <nav class="site-state motion-element">
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
       <div class="site-state-item site-state-posts">
         
           <a href="/archives/">
@@ -709,42 +733,6 @@
             <a href="/categories/">
           
         
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
         <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">分类</span>
         </a>
@@ -758,200 +746,13 @@
             <a href="/tags/">
           
         
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        <span class="site-state-item-count">93</span>
+        <span class="site-state-item-count">94</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
     
   </nav>
+</div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
       
@@ -967,38 +768,20 @@
   </div>
 
 
-  <div class="links-of-blogroll motion-element links-of-blogroll-block">
+  <div class="links-of-blogroll motion-element">
     <div class="links-of-blogroll-title">
-      <i class="fa  fa-fw fa-book"></i>
+      <i class="fa fa-fw fa-book"></i>
       推荐阅读
     </div>
     <ul class="links-of-blogroll-list">
         <li class="links-of-blogroll-item">
-          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">个人笔记CSDN</a>
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
         </li>
       
     </ul>
   </div>
 
-        </div>
       </div>
-      <!--noindex-->
-        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-            
-            
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1、JMM"><span class="nav-number">1.</span> <span class="nav-text">1、JMM</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、重排序"><span class="nav-number">2.</span> <span class="nav-text">2、重排序</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、happens-before"><span class="nav-number">3.</span> <span class="nav-text">3、happens-before</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4、内存屏障"><span class="nav-number">4.</span> <span class="nav-text">4、内存屏障</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5、volatile的内存语义"><span class="nav-number">5.</span> <span class="nav-text">5、volatile的内存语义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6、AQS"><span class="nav-number">6.</span> <span class="nav-text">6、AQS</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7、ReentrantLock"><span class="nav-number">7.</span> <span class="nav-text">7、ReentrantLock</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8、小结"><span class="nav-number">8.</span> <span class="nav-text">8、小结</span></a></li></ol></div>
-            
-
-          </div>
-        </div>
-      <!--/noindex-->
-      
 
     </div>
   </aside>
@@ -1010,7 +793,8 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>&copy; <span itemprop="copyrightYear">2019</span>
+        <div class="copyright"><a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=" rel="noopener" target="_blank"> </a>&copy; <span itemprop="copyrightYear">2019</span>
   <span class="with-love" id="animate">
     <i class="fa fa-user"></i>
   </span>
@@ -1019,37 +803,42 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">596k</span>
+    <span title="站点总字数">599k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">9:02</span>
+    <span title="站点阅读时长">9:05</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
-  <span class="post-meta-divider">|</span>
-  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.2.0</div>
 
         
 <div class="busuanzi-count">
   <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-user"></i>
-    </span>
-    <span class="site-uv" title="总访客量">
-      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
     </span>
   
     <span class="post-meta-divider">|</span>
   
-    <span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-    </span>
-    <span class="site-pv" title="总访问量">
-      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
     </span>
   
 </div>
+
+
+
+
 
 
 
@@ -1061,42 +850,16 @@
         
       </div>
     </footer>
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-      </div>
-
-    
-
   </div>
 
   
-  <script src="/lib/jquery/index.js?v=3.4.1"></script>
-  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
-  <script src="/lib/lazyload/lozad.min.js?v=1.10.0"></script>
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
   <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
   <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/pisces.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
 
-  <script src="/js/utils.js?v=7.2.0"></script>
-  <script src="/js/motion.js?v=7.2.0"></script>
-
-  
-  <script src="/js/affix.js?v=7.2.0"></script>
-  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
-
-
-  
-  <script src="/js/scrollspy.js?v=7.2.0"></script>
-<script src="/js/post-details.js?v=7.2.0"></script>
-
-
-
-  <script src="/js/next-boot.js?v=7.2.0"></script>
-
-  
-
-  
-
-  
 
 
   
@@ -1117,6 +880,7 @@
 
 
 
+  <script src="/js/local-search.js?v=7.4.1"></script>
 
 
 
@@ -1131,29 +895,19 @@
 
 
 
+  
 
-  <script src="/js/local-search.js?v=7.2.0"></script>
+  
 
+  
 
-
-
-
-
-
-
-
-
-
-
-
-    
-<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
 
 <script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
   var GUEST = ['nick', 'mail', 'link'];
   var guest = 'nick,mail,link';
-  guest = guest.split(',').filter(function(item) {
-    return GUEST.indexOf(item) > -1;
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
   });
   new Valine({
     el: '#comments',
@@ -1166,10 +920,13 @@
     meta: guest,
     pageSize: '10' || 10,
     visitor: false,
-    lang: 'zh-cn' || 'zh-cn'
+    lang: 'zh-cn' || 'zh-cn',
+    path: location.pathname,
+    recordIP: false,
+    serverURLs: ''
   });
+}, window.Valine);
 </script>
-
 
 </body>
 </html>

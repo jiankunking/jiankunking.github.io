@@ -4,60 +4,57 @@
 
 
 
-<html class="theme-next pisces use-motion" lang="zh-CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-<meta name="generator" content="Hexo 3.9.0">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
   <meta name="google-site-verification" content="true">
   <meta name="msvalidate.01" content="true">
   <meta name="baidu-site-verification" content="true">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
-  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
 
-<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
 
 
 <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
-  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
 
 
-<script id="hexo.configurations">
+<script id="hexo-configurations">
   var NexT = window.NexT || {};
   var CONFIG = {
     root: '/',
     scheme: 'Pisces',
-    version: '7.2.0',
+    version: '7.4.1',
+    exturl: false,
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
-    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
     copycode: {"enable":false,"show_result":false,"style":null},
-    fancybox: true,
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
     mediumzoom: false,
-    lazyload: true,
+    lazyload: false,
     pangu: false,
     algolia: {
-      applicationID: '',
+      appID: '',
       apiKey: '',
       indexName: '',
       hits: {"per_page":10},
       labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
     },
     localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
-    search: {
-      root: '/',
-      path: 'search.xml'
-    },
-    tabs: true,
+    path: 'search.xml',
     motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     translation: {
       copy_button: '复制',
       copy_success: '复制成功',
       copy_failure: '复制失败'
-    }
+    },
+    sidebarPadding: 40
   };
 </script>
 
@@ -69,16 +66,29 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Golang Context">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://jiankunking.com/images/how-to-correctly-use-package-context/rpc-fails-1.svg">
+<meta property="og:image" content="https://jiankunking.com/images/how-to-correctly-use-package-context/rpc-fails-2.svg">
+<meta property="og:image" content="https://jiankunking.com/images/how-to-correctly-use-package-context/rpc-fails-3.svg">
+<meta property="og:image" content="https://jiankunking.com/images/how-to-correctly-use-package-context/rpc-fails-4.svg">
+<meta property="og:image" content="https://jiankunking.com/images/how-to-correctly-use-package-context/context-chain-1.svg">
+<meta property="og:image" content="https://jiankunking.com/images/how-to-correctly-use-package-context/context-chain-2.svg">
+<meta property="og:image" content="https://jiankunking.com/images/how-to-correctly-use-package-context/context-chain-3.svg">
 <meta property="og:updated_time" content="2019-09-12T01:27:40.264Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Golang 如何正确使用 Context">
 <meta name="twitter:description" content="Golang Context">
+<meta name="twitter:image" content="https://jiankunking.com/images/how-to-correctly-use-package-context/rpc-fails-1.svg">
   <link rel="canonical" href="https://jiankunking.com/how-to-correctly-use-package-context">
 
 
-<script id="page.configurations">
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
   };
 </script>
 
@@ -103,7 +113,6 @@
 
   <noscript>
   <style>
-  .use-motion .motion-element,
   .use-motion .brand,
   .use-motion .menu-item,
   .sidebar-inner,
@@ -112,7 +121,7 @@
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-title { opacity: initial; }
+  .use-motion .collection-header { opacity: initial; }
 
   .use-motion .logo,
   .use-motion .site-title,
@@ -129,15 +138,14 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
-
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container use-motion">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
+      <div class="header-inner"><div class="site-brand-container">
   <div class="site-meta">
 
-    <div class="custom-logo-site-title">
+    <div>
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">衣舞晨风</span>
@@ -147,107 +155,122 @@
   </div>
 
   <div class="site-nav-toggle">
-    <button aria-label="切换导航栏">
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-    </button>
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
   </div>
 </div>
-
 
 
 <nav class="site-nav">
-    <ul id="menu" class="menu">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-home">
+        <li class="menu-item menu-item-home">
       
     
 
-    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>首页</a>
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-about">
+        <li class="menu-item menu-item-about">
       
     
 
-    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br/>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-tags">
+        <li class="menu-item menu-item-tags">
       
     
 
-    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br/>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-categories">
+        <li class="menu-item menu-item-categories">
       
     
 
-    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br/>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-archives">
+        <li class="menu-item menu-item-archives">
       
     
 
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
 
   </li>
-        <li class="menu-item menu-item-search">
-          <a href="javascript:;" class="popup-trigger">
-          
-            <i class="menu-item-icon fa fa-search fa-fw"></i> <br/>搜索</a>
-        </li>
       
-    </ul>
-    <div class="site-search">
       
-  <div class="popup search-popup local-search-popup">
-  <div class="local-search-header clearfix">
-    <span class="search-icon">
-      <i class="fa fa-search"></i>
-    </span>
-    <span class="popup-btn-close">
-      <i class="fa fa-times-circle"></i>
-    </span>
-    <div class="local-search-input-wrapper">
-      <input autocomplete="off"
-             placeholder="搜索..." spellcheck="false"
-             type="text" id="local-search-input">
-    </div>
-  </div>
-  <div id="local-search-result"></div>
-</div>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+      
+    
 
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
 
-    </div>
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
 </nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
 
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
 </div>
     </header>
 
     
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
 
   <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
 
@@ -261,13 +284,11 @@
             
 
   <div id="posts" class="posts-expand">
-    
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+      <article itemscope itemtype="http://schema.org/Article">
   
   
   
-  <div class="post-block">
+  <div class="post-block post">
     <link itemprop="mainEntityOfPage" href="https://jiankunking.com/how-to-correctly-use-package-context.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -280,23 +301,17 @@
       <meta itemprop="name" content="衣舞晨风">
     </span>
       <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">Golang 如何正确使用 Context
 
-        
-          <h2 class="post-title" itemprop="name headline">Golang 如何正确使用 Context
-
-              
-            
-          </h2>
-        
+          
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
+              <span class="post-meta-item-text">发表于</span>
 
               
                 
@@ -312,9 +327,7 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
+                <span class="post-meta-item-text">更新于</span>
                 <time title="修改时间：2019-09-12 09:27:40" itemprop="dateModified" datetime="2019-09-12T09:27:40+08:00">2019-09-12</time>
               </span>
             
@@ -323,9 +336,7 @@
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
+              <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Go/" itemprop="url" rel="index"><span itemprop="name">Go</span></a></span>
 
@@ -336,51 +347,47 @@
           
 
           
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon"
-              >
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
-                 阅读次数： 
-                <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
               </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
             </span>
           
-            
   
   <span class="post-meta-item">
     
-    <span class="post-meta-item-icon">
-      <i class="fa fa-comment-o"></i>
-    </span>
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
     
-      <span class="post-meta-item-text">评论数：</span>
-    
-  
-    <a href="/how-to-correctly-use-package-context.html#comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/how-to-correctly-use-package-context.html" itemprop="commentCount"></span>
-    </a>
+    <a title="valine" href="/how-to-correctly-use-package-context.html#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/how-to-correctly-use-package-context.html" itemprop="commentCount"></span></a>
   </span>
   
   
-          <br/>
-            <span class="post-meta-item">
+          <br>
+            <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-file-word-o"></i>
               </span>
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">11k</span>
+              <span>11k</span>
             </span>
           
-            <span class="post-meta-item">
+            <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">10 分钟</span>
+              <span>10 分钟</span>
             </span>
           
 
@@ -409,10 +416,10 @@
 </ul>
 </li>
 </ul>
-<p>如果进一步考虑。<br><img alt data-src="/images/how-to-correctly-use-package-context/rpc-fails-1.svg"><br>如上图这样的 RPC 调用，开始调用 RPC 1 后，里面分别调用了 RPC 2, RPC 3, RPC 4，等所有 RPC 用成功后，返回结果。</p>
-<p>这是正常的方式，但是如果 RPC 2 调用失败了会发生什么？<br><img alt data-src="/images/how-to-correctly-use-package-context/rpc-fails-2.svg"></p>
+<p>如果进一步考虑。<br><img src="/images/how-to-correctly-use-package-context/rpc-fails-1.svg" alt><br>如上图这样的 RPC 调用，开始调用 RPC 1 后，里面分别调用了 RPC 2, RPC 3, RPC 4，等所有 RPC 用成功后，返回结果。</p>
+<p>这是正常的方式，但是如果 RPC 2 调用失败了会发生什么？<br><img src="/images/how-to-correctly-use-package-context/rpc-fails-2.svg" alt></p>
 <p>RPC 2 失败后，如果没有 Context 的存在，那么我们可能依旧会等所有的 RPC 执行完毕，但是由于 RPC 2 败了，所以其实其它的 RPC 结果意义不大了，我们依旧需要给用户返回错误。因此我们白白的浪费了 10ms，完全没必要去等待其它 RPC 执行完毕。</p>
-<p>那如果我们在 RPC 2 失败后，就直接给用户返回失败呢？<br><img alt data-src="/images/how-to-correctly-use-package-context/rpc-fails-3.svg"><br>用户是在 30ms 的位置收到了错误消息，可是 RPC 3 和 RPC 4 依然在没意义的运行，还在浪费计算和IO资源。<br><img alt data-src="/images/how-to-correctly-use-package-context/rpc-fails-4.svg"></p>
+<p>那如果我们在 RPC 2 失败后，就直接给用户返回失败呢？<br><img src="/images/how-to-correctly-use-package-context/rpc-fails-3.svg" alt><br>用户是在 30ms 的位置收到了错误消息，可是 RPC 3 和 RPC 4 依然在没意义的运行，还在浪费计算和IO资源。<br><img src="/images/how-to-correctly-use-package-context/rpc-fails-4.svg" alt></p>
 <p>所以理想状态应该是如上图，当 RPC 2 出错后，除了返回用户错误信息外，我们也应该有某种方式可以通知 RPC 3 和 RPC 4，让他们也停止运行，不再浪费资源。</p>
 <p>所以解决方案就是：</p>
 <ul>
@@ -438,8 +445,8 @@
 <h2 id="示例-Context-链"><a href="#示例-Context-链" class="headerlink" title="示例 Context 链"></a>示例 Context 链</h2><p>完整代码：<a href="https://play.golang.org/p/ddpofBV1QS" target="_blank" rel="noopener">https://play.golang.org/p/ddpofBV1QS</a></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line">func tree() &#123;</span><br><span class="line">  ctx1 := context.Background()</span><br><span class="line">  ctx2, _ := context.WithCancel(ctx1)</span><br><span class="line">  ctx3, _ := context.WithTimeout(ctx2, time.Second * 5)</span><br><span class="line">  ctx4, _ := context.WithTimeout(ctx3, time.Second * 3)</span><br><span class="line">  ctx5, _ := context.WithTimeout(ctx3, time.Second * 6)</span><br><span class="line">  ctx6 := context.WithValue(ctx5, &quot;userID&quot;, 12)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>如果这样构成的 Context 链，其形如下图：<br><img alt data-src="/images/how-to-correctly-use-package-context/context-chain-1.svg"><br>那么当 3 秒超时到了时候：<br><img alt data-src="/images/how-to-correctly-use-package-context/context-chain-2.svg"><br>可以看到 ctx4 超时退出了。</p>
-<p>当 5秒钟 超时到达时：<br><img alt data-src="/images/how-to-correctly-use-package-context/context-chain-3.svg"><br>可以看到，不仅仅 ctx3 退出了，其所有子节点，比如 ctx5 和 ctx6 也都退出了。</p>
+<p>如果这样构成的 Context 链，其形如下图：<br><img src="/images/how-to-correctly-use-package-context/context-chain-1.svg" alt><br>那么当 3 秒超时到了时候：<br><img src="/images/how-to-correctly-use-package-context/context-chain-2.svg" alt><br>可以看到 ctx4 超时退出了。</p>
+<p>当 5秒钟 超时到达时：<br><img src="/images/how-to-correctly-use-package-context/context-chain-3.svg" alt><br>可以看到，不仅仅 ctx3 退出了，其所有子节点，比如 ctx5 和 ctx6 也都退出了。</p>
 <h2 id="context-Context-API"><a href="#context-Context-API" class="headerlink" title="context.Context API"></a>context.Context API</h2><p>基本上是两类操作：</p>
 <ul>
 <li>3个函数用于<font color="DeepPink"><strong>限定什么时候你的子节点退出</strong></font>；</li>
@@ -669,6 +676,10 @@
 <h1 id="原文"><a href="#原文" class="headerlink" title="原文"></a>原文</h1><p><a href="https://blog.lab99.org/post/golang-2017-10-27-video-how-to-correctly-use-package-context.html" target="_blank" rel="noopener">https://blog.lab99.org/post/golang-2017-10-27-video-how-to-correctly-use-package-context.html</a></p>
 
     </div>
+
+    
+    
+    
       
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
@@ -689,13 +700,6 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\goroutine-and-system-threads.html" rel="bookmark">Goroutine和系统线程</a></div>
-      
-    </li>
-  
-    <li class="popular-posts-item">
-      
-      
       <div class="popular-posts-title"><a href="\sofamosn-golang-performance.html" rel="bookmark">SOFAMosn 如何提高 GoLang 的转发性能</a></div>
       
     </li>
@@ -703,23 +707,27 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\go-solid-design.html" rel="bookmark">Go 设计模式</a></div>
+      <div class="popular-posts-title"><a href="\goroutine-and-system-threads.html" rel="bookmark">Goroutine和系统线程</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
       
     </li>
   
   </ul>
 
-
-    
-    
-    
-      <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
   <img id="wechat_subscriber_qcode" src="/images/wechat/wechat.jpg" alt="jiankunking wechat" style="width: 200px; max-width: 100%;">
   <div>喜欢就关注一下呗</div>
 </div>
 
-    
-      <div>
+      
+        
+      
         <div id="reward-container">
   <div></div>
   <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
@@ -742,10 +750,10 @@
   </div>
 </div>
 
-      </div>
-      <div>
+      
         
 
+<div>
 <ul class="post-copyright">
   <li class="post-copyright-author">
     <strong>本文作者： </strong>jiankunking</li>
@@ -756,36 +764,47 @@
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
 </ul>
+</div>
 
-      </div>
+      
 
-    <footer class="post-footer">
+      <footer class="post-footer">
           
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/Go/" rel="tag"># Go</a>
+            
+              <a href="/tags/Context/" rel="tag"># Context</a>
+            
+          </div>
         
-        <div class="post-tags">
-            <a href="/tags/Go/" rel="tag"># Go</a>
-          
-            <a href="/tags/Context/" rel="tag"># Context</a>
-          
-        </div>
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-              <a href="/encrypted-communication-elasticsearch-java-rest-client.html" rel="next" title="encrypted communication elasticsearch java rest client">
-                <i class="fa fa-chevron-left"></i> encrypted communication elasticsearch java rest client
-              </a>
-            
-          </div>
 
-          <span class="post-nav-divider"></span>
+        
 
-          <div class="post-nav-prev post-nav-item">
-              <a href="/golang-practice-advice-for-go-library-authors.html" rel="prev" title="给 Go 库作者的建议">
-                给 Go 库作者的建议 <i class="fa fa-chevron-right"></i>
-              </a>
-            
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/encrypted-communication-elasticsearch-java-rest-client.html" rel="next" title="encrypted communication elasticsearch java rest client">
+                  <i class="fa fa-chevron-left"></i> encrypted communication elasticsearch java rest client
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/golang-practice-advice-for-go-library-authors.html" rel="prev" title="给 Go 库作者的建议">
+                  给 Go 库作者的建议 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
           </div>
-        </div>
-    </footer>
+        
+      </footer>
+    
   </div>
   
   
@@ -801,41 +820,49 @@
     <div class="comments" id="comments"></div>
   
 
-
         </div>
           
   
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
-    </div>
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
   </div>
 
-  <aside id="sidebar" class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-inner">
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
+        
+        
+        
+        
       
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-overview">
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
 
-          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#视频信息"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么需要-Context"><span class="nav-number">2.</span> <span class="nav-text">为什么需要 Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Context-实现细节"><span class="nav-number">3.</span> <span class="nav-text">Context 实现细节</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#示例-Context-链"><span class="nav-number">3.1.</span> <span class="nav-text">示例 Context 链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#context-Context-API"><span class="nav-number">3.2.</span> <span class="nav-text">context.Context API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么时候应该使用-Context？"><span class="nav-number">3.3.</span> <span class="nav-text">什么时候应该使用 Context？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何创建-Context？"><span class="nav-number">3.4.</span> <span class="nav-text">如何创建 Context？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何集成到-API-里？"><span class="nav-number">3.5.</span> <span class="nav-text">如何集成到 API 里？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-放哪？"><span class="nav-number">3.6.</span> <span class="nav-text">Context 放哪？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-包的注意事项"><span class="nav-number">3.7.</span> <span class="nav-text">Context 包的注意事项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#终止请求-Request-Cancellation"><span class="nav-number">3.8.</span> <span class="nav-text">终止请求 (Request Cancellation)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-Value-Request-范畴的值"><span class="nav-number">3.9.</span> <span class="nav-text">Context.Value - Request 范畴的值</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#context-Value-API-的万金油（duct-tape"><span class="nav-number">3.9.1.</span> <span class="nav-text">context.Value API 的万金油（duct tape)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#约束-key-的空间"><span class="nav-number">3.9.2.</span> <span class="nav-text">约束 key 的空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Context-Value-是-immutable-的"><span class="nav-number">3.9.3.</span> <span class="nav-text">Context.Value 是 immutable 的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应该把什么放到-Context-Value-里？"><span class="nav-number">3.9.4.</span> <span class="nav-text">应该把什么放到 Context.Value 里？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#什么东西不属于-Request-范畴？"><span class="nav-number">3.9.5.</span> <span class="nav-text">什么东西不属于 Request 范畴？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那么用-Context-Value-有什么问题？"><span class="nav-number">3.9.6.</span> <span class="nav-text">那么用 Context.Value 有什么问题？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那什么可以放到-Context-Value-里去？"><span class="nav-number">3.9.7.</span> <span class="nav-text">那什么可以放到 Context.Value 里去？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#什么东西不是控制性质的东西？"><span class="nav-number">3.9.7.1.</span> <span class="nav-text">什么东西不是控制性质的东西？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#什么显然是控制性质的东西？"><span class="nav-number">3.9.7.2.</span> <span class="nav-text">什么显然是控制性质的东西？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#例子"><span class="nav-number">3.9.8.</span> <span class="nav-text">例子</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#调试性质的-Context-Value-net-http-httptrace"><span class="nav-number">3.9.8.1.</span> <span class="nav-text">调试性质的 Context.Value - net/http/httptrace</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#net-http-是怎么使用-httptrace-的？"><span class="nav-number">3.9.8.2.</span> <span class="nav-text">net/http 是怎么使用 httptrace 的？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#回避依赖注入-github-com-golang-oauth2"><span class="nav-number">3.9.8.3.</span> <span class="nav-text">回避依赖注入 - github.com/golang/oauth2</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#人们滥用-Context-Value-的原因"><span class="nav-number">3.9.9.</span> <span class="nav-text">人们滥用 Context.Value 的原因</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结-Context-Value"><span class="nav-number">3.10.</span> <span class="nav-text">总结 Context.Value</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结-Context"><span class="nav-number">4.</span> <span class="nav-text">总结 Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Q-amp-A"><span class="nav-number">5.</span> <span class="nav-text">Q&amp;A</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库的访问也用-Context-么？"><span class="nav-number">5.1.</span> <span class="nav-text">数据库的访问也用 Context 么？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原文"><span class="nav-number">6.</span> <span class="nav-text">原文</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image"
       src="/images/avatar/avatar.png"
       alt="jiankunking">
   <p class="site-author-name" itemprop="name">jiankunking</p>
-  <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+  <div class="site-description" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
 </div>
-  <nav class="site-state motion-element">
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
       <div class="site-state-item site-state-posts">
         
           <a href="/archives/">
@@ -853,42 +880,6 @@
             <a href="/categories/">
           
         
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
         <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">分类</span>
         </a>
@@ -902,200 +893,13 @@
             <a href="/tags/">
           
         
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        <span class="site-state-item-count">93</span>
+        <span class="site-state-item-count">94</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
     
   </nav>
+</div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
       
@@ -1111,38 +915,20 @@
   </div>
 
 
-  <div class="links-of-blogroll motion-element links-of-blogroll-block">
+  <div class="links-of-blogroll motion-element">
     <div class="links-of-blogroll-title">
-      <i class="fa  fa-fw fa-book"></i>
+      <i class="fa fa-fw fa-book"></i>
       推荐阅读
     </div>
     <ul class="links-of-blogroll-list">
         <li class="links-of-blogroll-item">
-          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">个人笔记CSDN</a>
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
         </li>
       
     </ul>
   </div>
 
-        </div>
       </div>
-      <!--noindex-->
-        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-            
-            
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#视频信息"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么需要-Context"><span class="nav-number">2.</span> <span class="nav-text">为什么需要 Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Context-实现细节"><span class="nav-number">3.</span> <span class="nav-text">Context 实现细节</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#示例-Context-链"><span class="nav-number">3.1.</span> <span class="nav-text">示例 Context 链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#context-Context-API"><span class="nav-number">3.2.</span> <span class="nav-text">context.Context API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么时候应该使用-Context？"><span class="nav-number">3.3.</span> <span class="nav-text">什么时候应该使用 Context？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何创建-Context？"><span class="nav-number">3.4.</span> <span class="nav-text">如何创建 Context？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何集成到-API-里？"><span class="nav-number">3.5.</span> <span class="nav-text">如何集成到 API 里？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-放哪？"><span class="nav-number">3.6.</span> <span class="nav-text">Context 放哪？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-包的注意事项"><span class="nav-number">3.7.</span> <span class="nav-text">Context 包的注意事项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#终止请求-Request-Cancellation"><span class="nav-number">3.8.</span> <span class="nav-text">终止请求 (Request Cancellation)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-Value-Request-范畴的值"><span class="nav-number">3.9.</span> <span class="nav-text">Context.Value - Request 范畴的值</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#context-Value-API-的万金油（duct-tape"><span class="nav-number">3.9.1.</span> <span class="nav-text">context.Value API 的万金油（duct tape)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#约束-key-的空间"><span class="nav-number">3.9.2.</span> <span class="nav-text">约束 key 的空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Context-Value-是-immutable-的"><span class="nav-number">3.9.3.</span> <span class="nav-text">Context.Value 是 immutable 的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应该把什么放到-Context-Value-里？"><span class="nav-number">3.9.4.</span> <span class="nav-text">应该把什么放到 Context.Value 里？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#什么东西不属于-Request-范畴？"><span class="nav-number">3.9.5.</span> <span class="nav-text">什么东西不属于 Request 范畴？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那么用-Context-Value-有什么问题？"><span class="nav-number">3.9.6.</span> <span class="nav-text">那么用 Context.Value 有什么问题？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那什么可以放到-Context-Value-里去？"><span class="nav-number">3.9.7.</span> <span class="nav-text">那什么可以放到 Context.Value 里去？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#什么东西不是控制性质的东西？"><span class="nav-number">3.9.7.1.</span> <span class="nav-text">什么东西不是控制性质的东西？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#什么显然是控制性质的东西？"><span class="nav-number">3.9.7.2.</span> <span class="nav-text">什么显然是控制性质的东西？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#例子"><span class="nav-number">3.9.8.</span> <span class="nav-text">例子</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#调试性质的-Context-Value-net-http-httptrace"><span class="nav-number">3.9.8.1.</span> <span class="nav-text">调试性质的 Context.Value - net/http/httptrace</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#net-http-是怎么使用-httptrace-的？"><span class="nav-number">3.9.8.2.</span> <span class="nav-text">net/http 是怎么使用 httptrace 的？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#回避依赖注入-github-com-golang-oauth2"><span class="nav-number">3.9.8.3.</span> <span class="nav-text">回避依赖注入 - github.com/golang/oauth2</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#人们滥用-Context-Value-的原因"><span class="nav-number">3.9.9.</span> <span class="nav-text">人们滥用 Context.Value 的原因</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结-Context-Value"><span class="nav-number">3.10.</span> <span class="nav-text">总结 Context.Value</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结-Context"><span class="nav-number">4.</span> <span class="nav-text">总结 Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Q-amp-A"><span class="nav-number">5.</span> <span class="nav-text">Q&amp;A</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库的访问也用-Context-么？"><span class="nav-number">5.1.</span> <span class="nav-text">数据库的访问也用 Context 么？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原文"><span class="nav-number">6.</span> <span class="nav-text">原文</span></a></li></ol></div>
-            
-
-          </div>
-        </div>
-      <!--/noindex-->
-      
 
     </div>
   </aside>
@@ -1154,7 +940,8 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>&copy; <span itemprop="copyrightYear">2019</span>
+        <div class="copyright"><a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=" rel="noopener" target="_blank"> </a>&copy; <span itemprop="copyrightYear">2019</span>
   <span class="with-love" id="animate">
     <i class="fa fa-user"></i>
   </span>
@@ -1163,37 +950,42 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">596k</span>
+    <span title="站点总字数">599k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">9:02</span>
+    <span title="站点阅读时长">9:05</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
-  <span class="post-meta-divider">|</span>
-  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.2.0</div>
 
         
 <div class="busuanzi-count">
   <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-user"></i>
-    </span>
-    <span class="site-uv" title="总访客量">
-      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
     </span>
   
     <span class="post-meta-divider">|</span>
   
-    <span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-    </span>
-    <span class="site-pv" title="总访问量">
-      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
     </span>
   
 </div>
+
+
+
+
 
 
 
@@ -1205,42 +997,16 @@
         
       </div>
     </footer>
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-      </div>
-
-    
-
   </div>
 
   
-  <script src="/lib/jquery/index.js?v=3.4.1"></script>
-  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
-  <script src="/lib/lazyload/lozad.min.js?v=1.10.0"></script>
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
   <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
   <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/pisces.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
 
-  <script src="/js/utils.js?v=7.2.0"></script>
-  <script src="/js/motion.js?v=7.2.0"></script>
-
-  
-  <script src="/js/affix.js?v=7.2.0"></script>
-  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
-
-
-  
-  <script src="/js/scrollspy.js?v=7.2.0"></script>
-<script src="/js/post-details.js?v=7.2.0"></script>
-
-
-
-  <script src="/js/next-boot.js?v=7.2.0"></script>
-
-  
-
-  
-
-  
 
 
   
@@ -1261,6 +1027,7 @@
 
 
 
+  <script src="/js/local-search.js?v=7.4.1"></script>
 
 
 
@@ -1275,29 +1042,19 @@
 
 
 
+  
 
-  <script src="/js/local-search.js?v=7.2.0"></script>
+  
 
+  
 
-
-
-
-
-
-
-
-
-
-
-
-    
-<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
 
 <script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
   var GUEST = ['nick', 'mail', 'link'];
   var guest = 'nick,mail,link';
-  guest = guest.split(',').filter(function(item) {
-    return GUEST.indexOf(item) > -1;
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
   });
   new Valine({
     el: '#comments',
@@ -1310,10 +1067,13 @@
     meta: guest,
     pageSize: '10' || 10,
     visitor: false,
-    lang: 'zh-cn' || 'zh-cn'
+    lang: 'zh-cn' || 'zh-cn',
+    path: location.pathname,
+    recordIP: false,
+    serverURLs: ''
   });
+}, window.Valine);
 </script>
-
 
 </body>
 </html>

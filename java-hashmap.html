@@ -4,60 +4,57 @@
 
 
 
-<html class="theme-next pisces use-motion" lang="zh-CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-<meta name="generator" content="Hexo 3.9.0">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
   <meta name="google-site-verification" content="true">
   <meta name="msvalidate.01" content="true">
   <meta name="baidu-site-verification" content="true">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
-  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
 
-<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
 
 
 <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
-  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
 
 
-<script id="hexo.configurations">
+<script id="hexo-configurations">
   var NexT = window.NexT || {};
   var CONFIG = {
     root: '/',
     scheme: 'Pisces',
-    version: '7.2.0',
+    version: '7.4.1',
+    exturl: false,
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
-    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
     copycode: {"enable":false,"show_result":false,"style":null},
-    fancybox: true,
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
     mediumzoom: false,
-    lazyload: true,
+    lazyload: false,
     pangu: false,
     algolia: {
-      applicationID: '',
+      appID: '',
       apiKey: '',
       indexName: '',
       hits: {"per_page":10},
       labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
     },
     localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
-    search: {
-      root: '/',
-      path: 'search.xml'
-    },
-    tabs: true,
+    path: 'search.xml',
     motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     translation: {
       copy_button: '复制',
       copy_success: '复制成功',
       copy_failure: '复制失败'
-    }
+    },
+    sidebarPadding: 40
   };
 </script>
 
@@ -69,16 +66,26 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="代码基于 Jdk1.8">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://jiankunking.com/images/java-hashmap/AbstractMap%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="https://jiankunking.com/images/java-hashmap/%E5%BC%82%E6%88%96%E8%BF%90%E7%AE%97.png">
+<meta property="og:image" content="https://jiankunking.com/images/java-hashmap/hashmap%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="https://jiankunking.com/images/java-hashmap/table%E6%95%B0%E7%BB%84.png">
 <meta property="og:updated_time" content="2019-09-07T02:25:24.745Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java HashMap">
 <meta name="twitter:description" content="代码基于 Jdk1.8">
+<meta name="twitter:image" content="https://jiankunking.com/images/java-hashmap/AbstractMap%E7%BB%93%E6%9E%84.png">
   <link rel="canonical" href="https://jiankunking.com/java-hashmap">
 
 
-<script id="page.configurations">
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
   };
 </script>
 
@@ -103,7 +110,6 @@
 
   <noscript>
   <style>
-  .use-motion .motion-element,
   .use-motion .brand,
   .use-motion .menu-item,
   .sidebar-inner,
@@ -112,7 +118,7 @@
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-title { opacity: initial; }
+  .use-motion .collection-header { opacity: initial; }
 
   .use-motion .logo,
   .use-motion .site-title,
@@ -129,15 +135,14 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
-
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container use-motion">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
+      <div class="header-inner"><div class="site-brand-container">
   <div class="site-meta">
 
-    <div class="custom-logo-site-title">
+    <div>
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">衣舞晨风</span>
@@ -147,107 +152,122 @@
   </div>
 
   <div class="site-nav-toggle">
-    <button aria-label="切换导航栏">
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-    </button>
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
   </div>
 </div>
-
 
 
 <nav class="site-nav">
-    <ul id="menu" class="menu">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-home">
+        <li class="menu-item menu-item-home">
       
     
 
-    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>首页</a>
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-about">
+        <li class="menu-item menu-item-about">
       
     
 
-    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br/>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-tags">
+        <li class="menu-item menu-item-tags">
       
     
 
-    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br/>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-categories">
+        <li class="menu-item menu-item-categories">
       
     
 
-    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br/>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-archives">
+        <li class="menu-item menu-item-archives">
       
     
 
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
 
   </li>
-        <li class="menu-item menu-item-search">
-          <a href="javascript:;" class="popup-trigger">
-          
-            <i class="menu-item-icon fa fa-search fa-fw"></i> <br/>搜索</a>
-        </li>
       
-    </ul>
-    <div class="site-search">
       
-  <div class="popup search-popup local-search-popup">
-  <div class="local-search-header clearfix">
-    <span class="search-icon">
-      <i class="fa fa-search"></i>
-    </span>
-    <span class="popup-btn-close">
-      <i class="fa fa-times-circle"></i>
-    </span>
-    <div class="local-search-input-wrapper">
-      <input autocomplete="off"
-             placeholder="搜索..." spellcheck="false"
-             type="text" id="local-search-input">
-    </div>
-  </div>
-  <div id="local-search-result"></div>
-</div>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+      
+    
 
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
 
-    </div>
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
 </nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
 
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
 </div>
     </header>
 
     
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
 
   <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
 
@@ -261,13 +281,11 @@
             
 
   <div id="posts" class="posts-expand">
-    
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+      <article itemscope itemtype="http://schema.org/Article">
   
   
   
-  <div class="post-block">
+  <div class="post-block post">
     <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-hashmap.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -280,23 +298,17 @@
       <meta itemprop="name" content="衣舞晨风">
     </span>
       <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">Java HashMap
 
-        
-          <h2 class="post-title" itemprop="name headline">Java HashMap
-
-              
-            
-          </h2>
-        
+          
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
+              <span class="post-meta-item-text">发表于</span>
 
               
                 
@@ -312,9 +324,7 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
+                <span class="post-meta-item-text">更新于</span>
                 <time title="修改时间：2019-09-07 10:25:24" itemprop="dateModified" datetime="2019-09-07T10:25:24+08:00">2019-09-07</time>
               </span>
             
@@ -323,9 +333,7 @@
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
+              <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a></span>
 
@@ -336,51 +344,47 @@
           
 
           
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon"
-              >
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
-                 阅读次数： 
-                <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
               </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
             </span>
           
-            
   
   <span class="post-meta-item">
     
-    <span class="post-meta-item-icon">
-      <i class="fa fa-comment-o"></i>
-    </span>
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
     
-      <span class="post-meta-item-text">评论数：</span>
-    
-  
-    <a href="/java-hashmap.html#comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/java-hashmap.html" itemprop="commentCount"></span>
-    </a>
+    <a title="valine" href="/java-hashmap.html#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/java-hashmap.html" itemprop="commentCount"></span></a>
   </span>
   
   
-          <br/>
-            <span class="post-meta-item">
+          <br>
+            <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-file-word-o"></i>
               </span>
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">22k</span>
+              <span>22k</span>
             </span>
           
-            <span class="post-meta-item">
+            <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">20 分钟</span>
+              <span>20 分钟</span>
             </span>
           
 
@@ -403,7 +407,7 @@
 
 <h2 id="抽象类AbstractMap"><a href="#抽象类AbstractMap" class="headerlink" title="抽象类AbstractMap"></a>抽象类AbstractMap</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public abstract class AbstractMap&lt;K,V&gt; implements Map&lt;K,V&gt;</span><br></pre></td></tr></table></figure>
 
-<p>该类实现了Map接口，具体结构如下：<br><img alt data-src="/images/java-hashmap/AbstractMap%E7%BB%93%E6%9E%84.png"><br>该类代码很简单，不再赘述。</p>
+<p>该类实现了Map接口，具体结构如下：<br><img src="/images/java-hashmap/AbstractMap%E7%BB%93%E6%9E%84.png" alt><br>该类代码很简单，不再赘述。</p>
 <h2 id="序列化接口：Serializable"><a href="#序列化接口：Serializable" class="headerlink" title="序列化接口：Serializable"></a>序列化接口：Serializable</h2><p>该接口没有什么好说的，但通过该接口，就解释了为什么HashMap总一些字段是用transient来修饰。</p>
 <blockquote>
 <p>一旦变量被transient修饰，变量将不再是对象持久化的一部分，该变量内容在序列化后无法获得访问。</p>
@@ -444,9 +448,9 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">10100101 11000100 00100101</span><br><span class="line">00000000 00000000 00001111</span><br><span class="line">----------------------------------</span><br><span class="line">00000000 00000000 00000101    //高位全部归零，只保留末四位</span><br></pre></td></tr></table></figure>
 
 <p>更详细的步骤如下： </p>
-<p><img alt data-src="/images/java-hashmap/%E5%BC%82%E6%88%96%E8%BF%90%E7%AE%97.png"></p>
+<p><img src="/images/java-hashmap/%E5%BC%82%E6%88%96%E8%BF%90%E7%AE%97.png" alt></p>
 <p>3、存储结构 </p>
-<p><img alt data-src="/images/java-hashmap/hashmap%E7%BB%93%E6%9E%84.png"><br><img alt data-src="/images/java-hashmap/table%E6%95%B0%E7%BB%84.png"></p>
+<p><img src="/images/java-hashmap/hashmap%E7%BB%93%E6%9E%84.png" alt><br><img src="/images/java-hashmap/table%E6%95%B0%E7%BB%84.png" alt></p>
 <h2 id="获取元素"><a href="#获取元素" class="headerlink" title="获取元素"></a>获取元素</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">    * Returns the value to which the specified key is mapped,</span><br><span class="line">    * or &#123;@code null&#125; if this map contains no mapping for the key.</span><br><span class="line">    *</span><br><span class="line">    * &lt;p&gt;More formally, if this map contains a mapping from a key</span><br><span class="line">    * &#123;@code k&#125; to a value &#123;@code v&#125; such that &#123;@code (key==null ? k==null :</span><br><span class="line">    * key.equals(k))&#125;, then this method returns &#123;@code v&#125;; otherwise</span><br><span class="line">    * it returns &#123;@code null&#125;.  (There can be at most one such mapping.)</span><br><span class="line">    *</span><br><span class="line">    * &lt;p&gt;A return value of &#123;@code null&#125; does not &lt;i&gt;necessarily&lt;/i&gt;</span><br><span class="line">    * indicate that the map contains no mapping for the key; it&apos;s also</span><br><span class="line">    * possible that the map explicitly maps the key to &#123;@code null&#125;.</span><br><span class="line">    * The &#123;@link #containsKey containsKey&#125; operation may be used to</span><br><span class="line">    * distinguish these two cases.</span><br><span class="line">    *</span><br><span class="line">    * @see #put(Object, Object)</span><br><span class="line">    */</span><br><span class="line">   public V get(Object key) &#123;</span><br><span class="line">       Node&lt;K,V&gt; e;</span><br><span class="line">       return (e = getNode(hash(key), key)) == null ? null : e.value;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   /**</span><br><span class="line">    * Implements Map.get and related methods</span><br><span class="line">    *</span><br><span class="line">    * @param hash hash for key</span><br><span class="line">    * @param key the key</span><br><span class="line">    * @return the node, or null if none</span><br><span class="line">    */</span><br><span class="line">   final Node&lt;K,V&gt; getNode(int hash, Object key) &#123;</span><br><span class="line">       Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; first, e; int n; K k;</span><br><span class="line">       if ((tab = table) != null &amp;&amp; (n = tab.length) &gt; 0 &amp;&amp;</span><br><span class="line">           //hash &amp; length-1 定位数组下标</span><br><span class="line">           (first = tab[(n - 1) &amp; hash]) != null) &#123;</span><br><span class="line">           if (first.hash == hash &amp;&amp; // always check first node</span><br><span class="line">               ((k = first.key) == key || (key != null &amp;&amp; key.equals(k))))</span><br><span class="line">               return first;</span><br><span class="line">           if ((e = first.next) != null) &#123;</span><br><span class="line">               //第一个节点是TreeNode,则采用位桶+红黑树结构， </span><br><span class="line">               //调用TreeNode.getTreeNode(hash,key), </span><br><span class="line">               //遍历红黑树，得到节点的value  </span><br><span class="line">               if (first instanceof TreeNode)</span><br><span class="line">                   return ((TreeNode&lt;K,V&gt;)first).getTreeNode(hash, key);</span><br><span class="line">               do &#123;</span><br><span class="line">                   if (e.hash == hash &amp;&amp;</span><br><span class="line">                       ((k = e.key) == key || (key != null &amp;&amp; key.equals(k))))</span><br><span class="line">                       return e;</span><br><span class="line">               &#125; while ((e = e.next) != null);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">       return null;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
 
 <p>树节点的查找：</p>
@@ -466,6 +470,10 @@
 </ul>
 
     </div>
+
+    
+    
+    
       
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
@@ -493,30 +501,27 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
+      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
+      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
       
     </li>
   
   </ul>
 
-
-    
-    
-    
-      <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
   <img id="wechat_subscriber_qcode" src="/images/wechat/wechat.jpg" alt="jiankunking wechat" style="width: 200px; max-width: 100%;">
   <div>喜欢就关注一下呗</div>
 </div>
 
-    
-      <div>
+      
+        
+      
         <div id="reward-container">
   <div></div>
   <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
@@ -539,10 +544,10 @@
   </div>
 </div>
 
-      </div>
-      <div>
+      
         
 
+<div>
 <ul class="post-copyright">
   <li class="post-copyright-author">
     <strong>本文作者： </strong>jiankunking</li>
@@ -553,38 +558,49 @@
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
 </ul>
+</div>
 
-      </div>
+      
 
-    <footer class="post-footer">
+      <footer class="post-footer">
           
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/原创/" rel="tag"># 原创</a>
+            
+              <a href="/tags/Java/" rel="tag"># Java</a>
+            
+              <a href="/tags/HashMap/" rel="tag"># HashMap</a>
+            
+          </div>
         
-        <div class="post-tags">
-            <a href="/tags/原创/" rel="tag"># 原创</a>
-          
-            <a href="/tags/Java/" rel="tag"># Java</a>
-          
-            <a href="/tags/HashMap/" rel="tag"># HashMap</a>
-          
-        </div>
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-              <a href="/java-jdk-aop.html" rel="next" title="Java-JDK-动态代理（AOP）使用及实现原理分析">
-                <i class="fa fa-chevron-left"></i> Java-JDK-动态代理（AOP）使用及实现原理分析
-              </a>
-            
-          </div>
 
-          <span class="post-nav-divider"></span>
+        
 
-          <div class="post-nav-prev post-nav-item">
-              <a href="/spring-aop-ioc-think.html" rel="prev" title="关于Spring AOP与IOC的个人思考">
-                关于Spring AOP与IOC的个人思考 <i class="fa fa-chevron-right"></i>
-              </a>
-            
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/java-jdk-aop.html" rel="next" title="Java-JDK-动态代理（AOP）使用及实现原理分析">
+                  <i class="fa fa-chevron-left"></i> Java-JDK-动态代理（AOP）使用及实现原理分析
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/spring-aop-ioc-think.html" rel="prev" title="关于Spring AOP与IOC的个人思考">
+                  关于Spring AOP与IOC的个人思考 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
           </div>
-        </div>
-    </footer>
+        
+      </footer>
+    
   </div>
   
   
@@ -600,41 +616,49 @@
     <div class="comments" id="comments"></div>
   
 
-
         </div>
           
   
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
-    </div>
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
   </div>
 
-  <aside id="sidebar" class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-inner">
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
+        
+        
+        
+        
       
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-overview">
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
 
-          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#结构"><span class="nav-number">1.</span> <span class="nav-text">结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#抽象类AbstractMap"><span class="nav-number">1.1.</span> <span class="nav-text">抽象类AbstractMap</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#序列化接口：Serializable"><span class="nav-number">1.2.</span> <span class="nav-text">序列化接口：Serializable</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#阅读JDK中类注释"><span class="nav-number">2.</span> <span class="nav-text">阅读JDK中类注释</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HashMap是无序的"><span class="nav-number">2.1.</span> <span class="nav-text">HashMap是无序的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#除了非同步和允许使用null之外，HashMap与Hashtable基本一致。"><span class="nav-number">2.2.</span> <span class="nav-text">除了非同步和允许使用null之外，HashMap与Hashtable基本一致。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初始容量与加载因子是影响HashMap的两个重要因素。"><span class="nav-number">2.3.</span> <span class="nav-text">初始容量与加载因子是影响HashMap的两个重要因素。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存储形式"><span class="nav-number">2.4.</span> <span class="nav-text">存储形式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#源码阅读"><span class="nav-number">3.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#添加元素"><span class="nav-number">3.1.</span> <span class="nav-text">添加元素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#获取元素"><span class="nav-number">3.2.</span> <span class="nav-text">获取元素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#元素包含containsKey"><span class="nav-number">3.3.</span> <span class="nav-text">元素包含containsKey</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#移除remove"><span class="nav-number">3.4.</span> <span class="nav-text">移除remove</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image"
       src="/images/avatar/avatar.png"
       alt="jiankunking">
   <p class="site-author-name" itemprop="name">jiankunking</p>
-  <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+  <div class="site-description" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
 </div>
-  <nav class="site-state motion-element">
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
       <div class="site-state-item site-state-posts">
         
           <a href="/archives/">
@@ -652,42 +676,6 @@
             <a href="/categories/">
           
         
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
         <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">分类</span>
         </a>
@@ -701,200 +689,13 @@
             <a href="/tags/">
           
         
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        <span class="site-state-item-count">93</span>
+        <span class="site-state-item-count">94</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
     
   </nav>
+</div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
       
@@ -910,38 +711,20 @@
   </div>
 
 
-  <div class="links-of-blogroll motion-element links-of-blogroll-block">
+  <div class="links-of-blogroll motion-element">
     <div class="links-of-blogroll-title">
-      <i class="fa  fa-fw fa-book"></i>
+      <i class="fa fa-fw fa-book"></i>
       推荐阅读
     </div>
     <ul class="links-of-blogroll-list">
         <li class="links-of-blogroll-item">
-          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">个人笔记CSDN</a>
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
         </li>
       
     </ul>
   </div>
 
-        </div>
       </div>
-      <!--noindex-->
-        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-            
-            
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#结构"><span class="nav-number">1.</span> <span class="nav-text">结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#抽象类AbstractMap"><span class="nav-number">1.1.</span> <span class="nav-text">抽象类AbstractMap</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#序列化接口：Serializable"><span class="nav-number">1.2.</span> <span class="nav-text">序列化接口：Serializable</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#阅读JDK中类注释"><span class="nav-number">2.</span> <span class="nav-text">阅读JDK中类注释</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HashMap是无序的"><span class="nav-number">2.1.</span> <span class="nav-text">HashMap是无序的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#除了非同步和允许使用null之外，HashMap与Hashtable基本一致。"><span class="nav-number">2.2.</span> <span class="nav-text">除了非同步和允许使用null之外，HashMap与Hashtable基本一致。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初始容量与加载因子是影响HashMap的两个重要因素。"><span class="nav-number">2.3.</span> <span class="nav-text">初始容量与加载因子是影响HashMap的两个重要因素。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存储形式"><span class="nav-number">2.4.</span> <span class="nav-text">存储形式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#源码阅读"><span class="nav-number">3.</span> <span class="nav-text">源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#添加元素"><span class="nav-number">3.1.</span> <span class="nav-text">添加元素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#获取元素"><span class="nav-number">3.2.</span> <span class="nav-text">获取元素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#元素包含containsKey"><span class="nav-number">3.3.</span> <span class="nav-text">元素包含containsKey</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#移除remove"><span class="nav-number">3.4.</span> <span class="nav-text">移除remove</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li></ol></div>
-            
-
-          </div>
-        </div>
-      <!--/noindex-->
-      
 
     </div>
   </aside>
@@ -953,7 +736,8 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>&copy; <span itemprop="copyrightYear">2019</span>
+        <div class="copyright"><a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=" rel="noopener" target="_blank"> </a>&copy; <span itemprop="copyrightYear">2019</span>
   <span class="with-love" id="animate">
     <i class="fa fa-user"></i>
   </span>
@@ -962,37 +746,42 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">596k</span>
+    <span title="站点总字数">599k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">9:02</span>
+    <span title="站点阅读时长">9:05</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
-  <span class="post-meta-divider">|</span>
-  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.2.0</div>
 
         
 <div class="busuanzi-count">
   <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-user"></i>
-    </span>
-    <span class="site-uv" title="总访客量">
-      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
     </span>
   
     <span class="post-meta-divider">|</span>
   
-    <span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-    </span>
-    <span class="site-pv" title="总访问量">
-      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
     </span>
   
 </div>
+
+
+
+
 
 
 
@@ -1004,42 +793,16 @@
         
       </div>
     </footer>
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-      </div>
-
-    
-
   </div>
 
   
-  <script src="/lib/jquery/index.js?v=3.4.1"></script>
-  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
-  <script src="/lib/lazyload/lozad.min.js?v=1.10.0"></script>
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
   <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
   <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/pisces.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
 
-  <script src="/js/utils.js?v=7.2.0"></script>
-  <script src="/js/motion.js?v=7.2.0"></script>
-
-  
-  <script src="/js/affix.js?v=7.2.0"></script>
-  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
-
-
-  
-  <script src="/js/scrollspy.js?v=7.2.0"></script>
-<script src="/js/post-details.js?v=7.2.0"></script>
-
-
-
-  <script src="/js/next-boot.js?v=7.2.0"></script>
-
-  
-
-  
-
-  
 
 
   
@@ -1060,6 +823,7 @@
 
 
 
+  <script src="/js/local-search.js?v=7.4.1"></script>
 
 
 
@@ -1074,29 +838,19 @@
 
 
 
+  
 
-  <script src="/js/local-search.js?v=7.2.0"></script>
+  
 
+  
 
-
-
-
-
-
-
-
-
-
-
-
-    
-<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
 
 <script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
   var GUEST = ['nick', 'mail', 'link'];
   var guest = 'nick,mail,link';
-  guest = guest.split(',').filter(function(item) {
-    return GUEST.indexOf(item) > -1;
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
   });
   new Valine({
     el: '#comments',
@@ -1109,10 +863,13 @@
     meta: guest,
     pageSize: '10' || 10,
     visitor: false,
-    lang: 'zh-cn' || 'zh-cn'
+    lang: 'zh-cn' || 'zh-cn',
+    path: location.pathname,
+    recordIP: false,
+    serverURLs: ''
   });
+}, window.Valine);
 </script>
-
 
 </body>
 </html>

@@ -4,60 +4,57 @@
 
 
 
-<html class="theme-next pisces use-motion" lang="zh-CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-<meta name="generator" content="Hexo 3.9.0">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
   <meta name="google-site-verification" content="true">
   <meta name="msvalidate.01" content="true">
   <meta name="baidu-site-verification" content="true">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.2.0">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.2.0">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.2.0">
-  <link rel="mask-icon" href="/images/logo.svg?v=7.2.0" color="#222">
 
-<link rel="stylesheet" href="/css/main.css?v=7.2.0">
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
 
 
 <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
-  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
 
 
-<script id="hexo.configurations">
+<script id="hexo-configurations">
   var NexT = window.NexT || {};
   var CONFIG = {
     root: '/',
     scheme: 'Pisces',
-    version: '7.2.0',
+    version: '7.4.1',
+    exturl: false,
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
-    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
     copycode: {"enable":false,"show_result":false,"style":null},
-    fancybox: true,
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
     mediumzoom: false,
-    lazyload: true,
+    lazyload: false,
     pangu: false,
     algolia: {
-      applicationID: '',
+      appID: '',
       apiKey: '',
       indexName: '',
       hits: {"per_page":10},
       labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
     },
     localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
-    search: {
-      root: '/',
-      path: 'search.xml'
-    },
-    tabs: true,
+    path: 'search.xml',
     motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     translation: {
       copy_button: '复制',
       copy_success: '复制成功',
       copy_failure: '复制失败'
-    }
+    },
+    sidebarPadding: 40
   };
 </script>
 
@@ -69,16 +66,25 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
+<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E5%9B%BE4.2.png">
+<meta property="og:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E6%98%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F.png">
 <meta property="og:updated_time" content="2019-08-30T06:11:10.385Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="数据库索引设计与优化 笔记">
 <meta name="twitter:description" content="本文整理自：《数据库索引设计与优化》 作者：Tapio Lahdenmaki，Michael Leach 出版时间：2015-06-01">
+<meta name="twitter:image" content="https://jiankunking.com/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png">
   <link rel="canonical" href="https://jiankunking.com/relational-database-index-design-and-the-optimizers-note">
 
 
-<script id="page.configurations">
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
   };
 </script>
 
@@ -103,7 +109,6 @@
 
   <noscript>
   <style>
-  .use-motion .motion-element,
   .use-motion .brand,
   .use-motion .menu-item,
   .sidebar-inner,
@@ -112,7 +117,7 @@
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-title { opacity: initial; }
+  .use-motion .collection-header { opacity: initial; }
 
   .use-motion .logo,
   .use-motion .site-title,
@@ -129,15 +134,14 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
-
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container use-motion">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
+      <div class="header-inner"><div class="site-brand-container">
   <div class="site-meta">
 
-    <div class="custom-logo-site-title">
+    <div>
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">衣舞晨风</span>
@@ -147,107 +151,122 @@
   </div>
 
   <div class="site-nav-toggle">
-    <button aria-label="切换导航栏">
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-    </button>
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
   </div>
 </div>
-
 
 
 <nav class="site-nav">
-    <ul id="menu" class="menu">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-home">
+        <li class="menu-item menu-item-home">
       
     
 
-    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>首页</a>
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-about">
+        <li class="menu-item menu-item-about">
       
     
 
-    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br/>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-tags">
+        <li class="menu-item menu-item-tags">
       
     
 
-    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br/>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-categories">
+        <li class="menu-item menu-item-categories">
       
     
 
-    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br/>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
 
   </li>
+      
+      
+      
         
-        
-        
-          
-          <li class="menu-item menu-item-archives">
+        <li class="menu-item menu-item-archives">
       
     
 
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
 
   </li>
-        <li class="menu-item menu-item-search">
-          <a href="javascript:;" class="popup-trigger">
-          
-            <i class="menu-item-icon fa fa-search fa-fw"></i> <br/>搜索</a>
-        </li>
       
-    </ul>
-    <div class="site-search">
       
-  <div class="popup search-popup local-search-popup">
-  <div class="local-search-header clearfix">
-    <span class="search-icon">
-      <i class="fa fa-search"></i>
-    </span>
-    <span class="popup-btn-close">
-      <i class="fa fa-times-circle"></i>
-    </span>
-    <div class="local-search-input-wrapper">
-      <input autocomplete="off"
-             placeholder="搜索..." spellcheck="false"
-             type="text" id="local-search-input">
-    </div>
-  </div>
-  <div id="local-search-result"></div>
-</div>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+      
+    
 
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
 
-    </div>
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
 </nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
 
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
 </div>
     </header>
 
     
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
 
   <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
 
@@ -261,13 +280,11 @@
             
 
   <div id="posts" class="posts-expand">
-    
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+      <article itemscope itemtype="http://schema.org/Article">
   
   
   
-  <div class="post-block">
+  <div class="post-block post">
     <link itemprop="mainEntityOfPage" href="https://jiankunking.com/relational-database-index-design-and-the-optimizers-note.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -280,23 +297,17 @@
       <meta itemprop="name" content="衣舞晨风">
     </span>
       <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">数据库索引设计与优化 笔记
 
-        
-          <h2 class="post-title" itemprop="name headline">数据库索引设计与优化 笔记
-
-              
-            
-          </h2>
-        
+          
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
+              <span class="post-meta-item-text">发表于</span>
 
               
                 
@@ -312,9 +323,7 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
+                <span class="post-meta-item-text">更新于</span>
                 <time title="修改时间：2019-08-30 14:11:10" itemprop="dateModified" datetime="2019-08-30T14:11:10+08:00">2019-08-30</time>
               </span>
             
@@ -323,9 +332,7 @@
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
+              <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a></span>
 
@@ -336,51 +343,47 @@
           
 
           
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon"
-              >
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
-                 阅读次数： 
-                <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
               </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
             </span>
           
-            
   
   <span class="post-meta-item">
     
-    <span class="post-meta-item-icon">
-      <i class="fa fa-comment-o"></i>
-    </span>
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
     
-      <span class="post-meta-item-text">评论数：</span>
-    
-  
-    <a href="/relational-database-index-design-and-the-optimizers-note.html#comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/relational-database-index-design-and-the-optimizers-note.html" itemprop="commentCount"></span>
-    </a>
+    <a title="valine" href="/relational-database-index-design-and-the-optimizers-note.html#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/relational-database-index-design-and-the-optimizers-note.html" itemprop="commentCount"></span></a>
   </span>
   
   
-          <br/>
-            <span class="post-meta-item">
+          <br>
+            <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-file-word-o"></i>
               </span>
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span title="本文字数">15k</span>
+              <span>15k</span>
             </span>
           
-            <span class="post-meta-item">
+            <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span title="阅读时长">13 分钟</span>
+              <span>13 分钟</span>
             </span>
           
 
@@ -426,7 +429,7 @@
 <li>SEX = ‘M’ AND  ( WEIGHT &gt; 90 OR HEIGHT &gt; 190 )</li>
 </ul>
 <p>谓词表达式是索引设计的主要入手点。如果一个索引能够满足SELECT查询语句的所有谓词表达式，那么优化器就很有可能建立起一个高效的访问路径。</p>
-<p>核实确认访问路径（执行计划）<br><img alt data-src="/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png"></p>
+<p>核实确认访问路径（执行计划）<br><img src="/images/database-index-design-optimizers/%E4%BC%98%E5%8C%96%E5%99%A8%E4%BD%95%E6%97%B6%E9%80%89%E6%8B%A9%E8%AE%BF%E9%97%AE%E8%B7%AF%E5%BE%84.png" alt></p>
 <h1 id="为SELETE语句创建理想的索引【重点】"><a href="#为SELETE语句创建理想的索引【重点】" class="headerlink" title="为SELETE语句创建理想的索引【重点】"></a>为SELETE语句创建理想的索引【重点】</h1><blockquote>
 <p>很多调优人员（尽管没经验）认为，如果一个SQL语句使用了索引，那这个 SQL就是被很好地优化过的，我对此感到很惊讶。你应该总是问自己，”这是不是可用的最好的索引？” 或 “再添加另外一个索引能否提升<br>响应性能？”，又或者 “全表扫描会不会更快地返回结果？”</p>
 </blockquote>
@@ -435,7 +438,7 @@
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">DECLARE CURSOR41 CURSOR FOR</span><br><span class="line">SELECT    CNO, FNAME</span><br><span class="line">FROM      CUST</span><br><span class="line">WHERE     LNAME = :LNAME</span><br><span class="line">          AND</span><br><span class="line">          CITY  = :CITY</span><br><span class="line">ORDER BY  FNAME</span><br></pre></td></tr></table></figure>
 
-<p><img alt data-src="/images/database-index-design-optimizers/%E5%9B%BE4.2.png"></p>
+<p><img src="/images/database-index-design-optimizers/%E5%9B%BE4.2.png" alt></p>
 <h2 id="星级是如何给定的"><a href="#星级是如何给定的" class="headerlink" title="星级是如何给定的"></a>星级是如何给定的</h2><p>如果与一个查询相关的索引行是相邻的，或者至少相距足够靠近的话，那这个索引就可以被标记上第一颗星。这<font color="DeepPink"><strong>最小化</strong></font>了必须扫描的索引片的宽度。 </p>
 <p>如果索引行的顺序与查询语句的需求一致，则索引可以被标记上第二颗星。这<font color="DeepPink"><strong>排除了排序操作</strong></font>。 </p>
 <p>如果索引行包含的查询语句中的所有列，那么索引就可以被标记上第三颗星。这避免了访问表的操作：<font color="DeepPink"><strong>仅访问索引就可以了</strong></font>。 </p>
@@ -601,7 +604,7 @@
 <li>如下图所示，位于星型结构中心位置的表称为<strong>事实表</strong>，它的数据量远大于它周围的表—<strong>维度表</strong>。</li>
 <li>最佳的访问路径通常是包含维度表的<strong>笛卡尔积</strong>，这意味着他们<strong>没有相同的冗余列</strong>，满足本地谓词的维度表数据行都会参与连接。</li>
 </ol>
-<p><img alt data-src="/images/database-index-design-optimizers/%E6%98%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F.png"></p>
+<p><img src="/images/database-index-design-optimizers/%E6%98%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F.png" alt></p>
 <p>SALES 销售记录<br>STORE 出售的店铺<br>ITEM  出售的商品<br>DATE  出售的时间<br>CUST  出售的客户</p>
 <p>在星型连接中，事实表的数据量通过都比较大。在这种情况下，至少依据经验法则，事实表应该作为嵌套循环连接方式中最内层的表。一般情况下未读表都没有共同的列，所以这种链接顺序意味着是笛卡尔连接。</p>
 <h2 id="事实表的索引"><a href="#事实表的索引" class="headerlink" title="事实表的索引"></a>事实表的索引</h2><p>事实上，宽索引通常比事实表还大，原因有两个 :</p>
@@ -663,20 +666,24 @@
 <p>PDF书籍下载地址：<a href="https://github.com/jiankunking/books-recommendation/tree/master/Database" target="_blank" rel="noopener">https://github.com/jiankunking/books-recommendation/tree/master/Database</a></p>
 
     </div>
+
+    
+    
+    
       
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
       
     </li>
   
@@ -690,30 +697,27 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-partition-table.html" rel="bookmark">MySQL InnoDB存储引擎：分区表</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-row-lock-algorithm.html" rel="bookmark">MySQL InnoDB存储引擎：行锁的3种算法</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-row-lock-algorithm.html" rel="bookmark">MySQL InnoDB存储引擎：行锁的3种算法</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-partition-table.html" rel="bookmark">MySQL InnoDB存储引擎：分区表</a></div>
       
     </li>
   
   </ul>
 
-
-    
-    
-    
-      <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
   <img id="wechat_subscriber_qcode" src="/images/wechat/wechat.jpg" alt="jiankunking wechat" style="width: 200px; max-width: 100%;">
   <div>喜欢就关注一下呗</div>
 </div>
 
-    
-      <div>
+      
+        
+      
         <div id="reward-container">
   <div></div>
   <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
@@ -736,10 +740,10 @@
   </div>
 </div>
 
-      </div>
-      <div>
+      
         
 
+<div>
 <ul class="post-copyright">
   <li class="post-copyright-author">
     <strong>本文作者： </strong>jiankunking</li>
@@ -750,50 +754,61 @@
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
 </ul>
+</div>
 
-      </div>
+      
 
-    <footer class="post-footer">
+      <footer class="post-footer">
           
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/Design/" rel="tag"># Design</a>
+            
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+            
+              <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
+            
+              <a href="/tags/Database/" rel="tag"># Database</a>
+            
+              <a href="/tags/Oracle/" rel="tag"># Oracle</a>
+            
+              <a href="/tags/SQL-Server/" rel="tag"># SQL Server</a>
+            
+              <a href="/tags/DB2/" rel="tag"># DB2</a>
+            
+              <a href="/tags/Index/" rel="tag"># Index</a>
+            
+              <a href="/tags/Optimizers/" rel="tag"># Optimizers</a>
+            
+          </div>
         
-        <div class="post-tags">
-            <a href="/tags/Design/" rel="tag"># Design</a>
-          
-            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
-          
-            <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
-          
-            <a href="/tags/Database/" rel="tag"># Database</a>
-          
-            <a href="/tags/Oracle/" rel="tag"># Oracle</a>
-          
-            <a href="/tags/SQL-Server/" rel="tag"># SQL Server</a>
-          
-            <a href="/tags/DB2/" rel="tag"># DB2</a>
-          
-            <a href="/tags/Index/" rel="tag"># Index</a>
-          
-            <a href="/tags/Optimizers/" rel="tag"># Optimizers</a>
-          
-        </div>
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-              <a href="/java-performance-note.html" rel="next" title="Java性能优化权威指南 笔记">
-                <i class="fa fa-chevron-left"></i> Java性能优化权威指南 笔记
-              </a>
-            
-          </div>
 
-          <span class="post-nav-divider"></span>
+        
 
-          <div class="post-nav-prev post-nav-item">
-              <a href="/java-jvm-gc-g1-note.html" rel="prev" title="深入理解JVM＆G1GC 笔记">
-                深入理解JVM＆G1GC 笔记 <i class="fa fa-chevron-right"></i>
-              </a>
-            
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/java-performance-note.html" rel="next" title="Java性能优化权威指南 笔记">
+                  <i class="fa fa-chevron-left"></i> Java性能优化权威指南 笔记
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/java-jvm-gc-g1-note.html" rel="prev" title="深入理解JVM＆G1GC 笔记">
+                  深入理解JVM＆G1GC 笔记 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
           </div>
-        </div>
-    </footer>
+        
+      </footer>
+    
   </div>
   
   
@@ -809,41 +824,49 @@
     <div class="comments" id="comments"></div>
   
 
-
         </div>
           
   
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
-    </div>
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
   </div>
 
-  <aside id="sidebar" class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-inner">
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
+        
+        
+        
+        
       
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-overview">
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
 
-          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引误区"><span class="nav-number">1.1.</span> <span class="nav-text">索引误区</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#误区1：索引层级不要超过5层"><span class="nav-number">1.1.1.</span> <span class="nav-text">误区1：索引层级不要超过5层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#误区2：单表的索引数不要超过6个"><span class="nav-number">1.1.2.</span> <span class="nav-text">误区2：单表的索引数不要超过6个</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#误区3：不应该索引不稳定的列"><span class="nav-number">1.1.3.</span> <span class="nav-text">误区3：不应该索引不稳定的列</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统化的索引设计"><span class="nav-number">1.2.</span> <span class="nav-text">系统化的索引设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表和索引结构"><span class="nav-number">2.</span> <span class="nav-text">表和索引结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL处理过程"><span class="nav-number">3.</span> <span class="nav-text">SQL处理过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#谓词"><span class="nav-number">3.1.</span> <span class="nav-text">谓词</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为SELETE语句创建理想的索引【重点】"><span class="nav-number">4.</span> <span class="nav-text">为SELETE语句创建理想的索引【重点】</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三星索引"><span class="nav-number">4.1.</span> <span class="nav-text">三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#星级是如何给定的"><span class="nav-number">4.2.</span> <span class="nav-text">星级是如何给定的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#范围谓词与三星索引"><span class="nav-number">4.3.</span> <span class="nav-text">范围谓词与三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为查询语句设计最佳索引的算法"><span class="nav-number">4.4.</span> <span class="nav-text">为查询语句设计最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为查询语句创建最佳索引的算法"><span class="nav-number">4.4.1.</span> <span class="nav-text">为查询语句创建最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-A"><span class="nav-number">4.4.1.1.</span> <span class="nav-text">候选 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-B"><span class="nav-number">4.4.1.2.</span> <span class="nav-text">候选 B</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#前瞻性的索引设计"><span class="nav-number">5.</span> <span class="nav-text">前瞻性的索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本概念"><span class="nav-number">5.1.</span> <span class="nav-text">基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#访问"><span class="nav-number">5.1.1.</span> <span class="nav-text">访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的索引行"><span class="nav-number">5.1.2.</span> <span class="nav-text">读取一组连续的索引行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的表行"><span class="nav-number">5.1.3.</span> <span class="nav-text">读取一组连续的表行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算访问次数"><span class="nav-number">5.2.</span> <span class="nav-text">计算访问次数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#随机访问"><span class="nav-number">5.2.1.</span> <span class="nav-text">随机访问</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用满足需求的成本最低的索引还是所能达到的最有索引"><span class="nav-number">5.3.</span> <span class="nav-text">使用满足需求的成本最低的索引还是所能达到的最有索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#半宽索引-最大化索引过滤"><span class="nav-number">5.4.</span> <span class="nav-text">半宽索引(最大化索引过滤)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#影响索引设计过程的因素"><span class="nav-number">6.</span> <span class="nav-text">影响索引设计过程的因素</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#困难谓词"><span class="nav-number">6.1.</span> <span class="nav-text">困难谓词</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过滤因子隐患"><span class="nav-number">6.2.</span> <span class="nav-text">过滤因子隐患</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#被动式索引设计"><span class="nav-number">7.</span> <span class="nav-text">被动式索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#对结果集排序"><span class="nav-number">7.1.</span> <span class="nav-text">对结果集排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#成本估算"><span class="nav-number">7.2.</span> <span class="nav-text">成本估算</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为表连接设计索引"><span class="nav-number">8.</span> <span class="nav-text">为表连接设计索引</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#预测表的访问顺序"><span class="nav-number">8.1.</span> <span class="nav-text">预测表的访问顺序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#合并扫描连接和哈希连接"><span class="nav-number">8.2.</span> <span class="nav-text">合并扫描连接和哈希连接</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#合并扫描连接"><span class="nav-number">8.2.1.</span> <span class="nav-text">合并扫描连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#哈希连接"><span class="nav-number">8.2.2.</span> <span class="nav-text">哈希连接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么连接的性能表现较差"><span class="nav-number">8.3.</span> <span class="nav-text">为什么连接的性能表现较差</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#模糊的索引设计"><span class="nav-number">8.3.1.</span> <span class="nav-text">模糊的索引设计</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为子查询设计索引"><span class="nav-number">8.4.</span> <span class="nav-text">为子查询设计索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为UNION语句设计索引"><span class="nav-number">8.5.</span> <span class="nav-text">为UNION语句设计索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对于表设计的思考"><span class="nav-number">8.6.</span> <span class="nav-text">对于表设计的思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#冗余数据"><span class="nav-number">8.6.1.</span> <span class="nav-text">冗余数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#向下反范式化"><span class="nav-number">8.6.2.</span> <span class="nav-text">向下反范式化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#反范式化的成本"><span class="nav-number">8.6.3.</span> <span class="nav-text">反范式化的成本</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#嵌套循环连接和合并扫描连接-哈希连接-VS-反范式化"><span class="nav-number">8.7.</span> <span class="nav-text">嵌套循环连接和合并扫描连接/哈希连接 VS 反范式化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#无意识的表设计"><span class="nav-number">8.8.</span> <span class="nav-text">无意识的表设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#星型连接"><span class="nav-number">9.</span> <span class="nav-text">星型连接</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">9.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#事实表的索引"><span class="nav-number">9.2.</span> <span class="nav-text">事实表的索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#汇总表"><span class="nav-number">9.3.</span> <span class="nav-text">汇总表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#多索引访问"><span class="nav-number">10.</span> <span class="nav-text">多索引访问</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">10.1.</span> <span class="nav-text">简介</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#索引和索引重组"><span class="nav-number">11.</span> <span class="nav-text">索引和索引重组</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#DBMS如何查找索引行"><span class="nav-number">11.1.</span> <span class="nav-text">DBMS如何查找索引行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#插入一行会发生什么？"><span class="nav-number">11.2.</span> <span class="nav-text">插入一行会发生什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#叶子页的分裂严重吗？"><span class="nav-number">11.3.</span> <span class="nav-text">叶子页的分裂严重吗？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么时候应该对索引进行重组？"><span class="nav-number">11.4.</span> <span class="nav-text">什么时候应该对索引进行重组？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#插入模式"><span class="nav-number">11.4.1.</span> <span class="nav-text">插入模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新索引行被添加至索引的尾部-永远递增的键"><span class="nav-number">11.4.2.</span> <span class="nav-text">新索引行被添加至索引的尾部(永远递增的键)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#随机插入模式"><span class="nav-number">11.4.3.</span> <span class="nav-text">随机插入模式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引重组的代价"><span class="nav-number">11.5.</span> <span class="nav-text">索引重组的代价</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据库管理系统相关的索引限制"><span class="nav-number">12.</span> <span class="nav-text">数据库管理系统相关的索引限制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引列的数量"><span class="nav-number">12.1.</span> <span class="nav-text">索引列的数量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引列的总长度"><span class="nav-number">12.2.</span> <span class="nav-text">索引列的总长度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#单表索引数量上限"><span class="nav-number">12.3.</span> <span class="nav-text">单表索引数量上限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引大小上限"><span class="nav-number">12.4.</span> <span class="nav-text">索引大小上限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引锁定"><span class="nav-number">12.5.</span> <span class="nav-text">索引锁定</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据库索引选项"><span class="nav-number">13.</span> <span class="nav-text">数据库索引选项</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其他评估事项"><span class="nav-number">14.</span> <span class="nav-text">其他评估事项</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#宽索引还是理想索引"><span class="nav-number">14.1.</span> <span class="nav-text">宽索引还是理想索引</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#组织索引设计过程"><span class="nav-number">15.</span> <span class="nav-text">组织索引设计过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介-1"><span class="nav-number">15.1.</span> <span class="nav-text">简介</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image"
       src="/images/avatar/avatar.png"
       alt="jiankunking">
   <p class="site-author-name" itemprop="name">jiankunking</p>
-  <div class="site-description motion-element" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+  <div class="site-description" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
 </div>
-  <nav class="site-state motion-element">
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
       <div class="site-state-item site-state-posts">
         
           <a href="/archives/">
@@ -861,42 +884,6 @@
             <a href="/categories/">
           
         
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
         <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">分类</span>
         </a>
@@ -910,200 +897,13 @@
             <a href="/tags/">
           
         
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        <span class="site-state-item-count">93</span>
+        <span class="site-state-item-count">94</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
     
   </nav>
+</div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
       
@@ -1119,38 +919,20 @@
   </div>
 
 
-  <div class="links-of-blogroll motion-element links-of-blogroll-block">
+  <div class="links-of-blogroll motion-element">
     <div class="links-of-blogroll-title">
-      <i class="fa  fa-fw fa-book"></i>
+      <i class="fa fa-fw fa-book"></i>
       推荐阅读
     </div>
     <ul class="links-of-blogroll-list">
         <li class="links-of-blogroll-item">
-          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">个人笔记CSDN</a>
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
         </li>
       
     </ul>
   </div>
 
-        </div>
       </div>
-      <!--noindex-->
-        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-            
-            
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引误区"><span class="nav-number">1.1.</span> <span class="nav-text">索引误区</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#误区1：索引层级不要超过5层"><span class="nav-number">1.1.1.</span> <span class="nav-text">误区1：索引层级不要超过5层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#误区2：单表的索引数不要超过6个"><span class="nav-number">1.1.2.</span> <span class="nav-text">误区2：单表的索引数不要超过6个</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#误区3：不应该索引不稳定的列"><span class="nav-number">1.1.3.</span> <span class="nav-text">误区3：不应该索引不稳定的列</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统化的索引设计"><span class="nav-number">1.2.</span> <span class="nav-text">系统化的索引设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表和索引结构"><span class="nav-number">2.</span> <span class="nav-text">表和索引结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL处理过程"><span class="nav-number">3.</span> <span class="nav-text">SQL处理过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#谓词"><span class="nav-number">3.1.</span> <span class="nav-text">谓词</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为SELETE语句创建理想的索引【重点】"><span class="nav-number">4.</span> <span class="nav-text">为SELETE语句创建理想的索引【重点】</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三星索引"><span class="nav-number">4.1.</span> <span class="nav-text">三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#星级是如何给定的"><span class="nav-number">4.2.</span> <span class="nav-text">星级是如何给定的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#范围谓词与三星索引"><span class="nav-number">4.3.</span> <span class="nav-text">范围谓词与三星索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为查询语句设计最佳索引的算法"><span class="nav-number">4.4.</span> <span class="nav-text">为查询语句设计最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为查询语句创建最佳索引的算法"><span class="nav-number">4.4.1.</span> <span class="nav-text">为查询语句创建最佳索引的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-A"><span class="nav-number">4.4.1.1.</span> <span class="nav-text">候选 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#候选-B"><span class="nav-number">4.4.1.2.</span> <span class="nav-text">候选 B</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#前瞻性的索引设计"><span class="nav-number">5.</span> <span class="nav-text">前瞻性的索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本概念"><span class="nav-number">5.1.</span> <span class="nav-text">基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#访问"><span class="nav-number">5.1.1.</span> <span class="nav-text">访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的索引行"><span class="nav-number">5.1.2.</span> <span class="nav-text">读取一组连续的索引行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取一组连续的表行"><span class="nav-number">5.1.3.</span> <span class="nav-text">读取一组连续的表行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算访问次数"><span class="nav-number">5.2.</span> <span class="nav-text">计算访问次数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#随机访问"><span class="nav-number">5.2.1.</span> <span class="nav-text">随机访问</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用满足需求的成本最低的索引还是所能达到的最有索引"><span class="nav-number">5.3.</span> <span class="nav-text">使用满足需求的成本最低的索引还是所能达到的最有索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#半宽索引-最大化索引过滤"><span class="nav-number">5.4.</span> <span class="nav-text">半宽索引(最大化索引过滤)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#影响索引设计过程的因素"><span class="nav-number">6.</span> <span class="nav-text">影响索引设计过程的因素</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#困难谓词"><span class="nav-number">6.1.</span> <span class="nav-text">困难谓词</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过滤因子隐患"><span class="nav-number">6.2.</span> <span class="nav-text">过滤因子隐患</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#被动式索引设计"><span class="nav-number">7.</span> <span class="nav-text">被动式索引设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#对结果集排序"><span class="nav-number">7.1.</span> <span class="nav-text">对结果集排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#成本估算"><span class="nav-number">7.2.</span> <span class="nav-text">成本估算</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为表连接设计索引"><span class="nav-number">8.</span> <span class="nav-text">为表连接设计索引</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#预测表的访问顺序"><span class="nav-number">8.1.</span> <span class="nav-text">预测表的访问顺序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#合并扫描连接和哈希连接"><span class="nav-number">8.2.</span> <span class="nav-text">合并扫描连接和哈希连接</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#合并扫描连接"><span class="nav-number">8.2.1.</span> <span class="nav-text">合并扫描连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#哈希连接"><span class="nav-number">8.2.2.</span> <span class="nav-text">哈希连接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么连接的性能表现较差"><span class="nav-number">8.3.</span> <span class="nav-text">为什么连接的性能表现较差</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#模糊的索引设计"><span class="nav-number">8.3.1.</span> <span class="nav-text">模糊的索引设计</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为子查询设计索引"><span class="nav-number">8.4.</span> <span class="nav-text">为子查询设计索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为UNION语句设计索引"><span class="nav-number">8.5.</span> <span class="nav-text">为UNION语句设计索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对于表设计的思考"><span class="nav-number">8.6.</span> <span class="nav-text">对于表设计的思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#冗余数据"><span class="nav-number">8.6.1.</span> <span class="nav-text">冗余数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#向下反范式化"><span class="nav-number">8.6.2.</span> <span class="nav-text">向下反范式化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#反范式化的成本"><span class="nav-number">8.6.3.</span> <span class="nav-text">反范式化的成本</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#嵌套循环连接和合并扫描连接-哈希连接-VS-反范式化"><span class="nav-number">8.7.</span> <span class="nav-text">嵌套循环连接和合并扫描连接/哈希连接 VS 反范式化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#无意识的表设计"><span class="nav-number">8.8.</span> <span class="nav-text">无意识的表设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#星型连接"><span class="nav-number">9.</span> <span class="nav-text">星型连接</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">9.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#事实表的索引"><span class="nav-number">9.2.</span> <span class="nav-text">事实表的索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#汇总表"><span class="nav-number">9.3.</span> <span class="nav-text">汇总表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#多索引访问"><span class="nav-number">10.</span> <span class="nav-text">多索引访问</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">10.1.</span> <span class="nav-text">简介</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#索引和索引重组"><span class="nav-number">11.</span> <span class="nav-text">索引和索引重组</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#DBMS如何查找索引行"><span class="nav-number">11.1.</span> <span class="nav-text">DBMS如何查找索引行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#插入一行会发生什么？"><span class="nav-number">11.2.</span> <span class="nav-text">插入一行会发生什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#叶子页的分裂严重吗？"><span class="nav-number">11.3.</span> <span class="nav-text">叶子页的分裂严重吗？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么时候应该对索引进行重组？"><span class="nav-number">11.4.</span> <span class="nav-text">什么时候应该对索引进行重组？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#插入模式"><span class="nav-number">11.4.1.</span> <span class="nav-text">插入模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新索引行被添加至索引的尾部-永远递增的键"><span class="nav-number">11.4.2.</span> <span class="nav-text">新索引行被添加至索引的尾部(永远递增的键)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#随机插入模式"><span class="nav-number">11.4.3.</span> <span class="nav-text">随机插入模式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引重组的代价"><span class="nav-number">11.5.</span> <span class="nav-text">索引重组的代价</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据库管理系统相关的索引限制"><span class="nav-number">12.</span> <span class="nav-text">数据库管理系统相关的索引限制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引列的数量"><span class="nav-number">12.1.</span> <span class="nav-text">索引列的数量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引列的总长度"><span class="nav-number">12.2.</span> <span class="nav-text">索引列的总长度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#单表索引数量上限"><span class="nav-number">12.3.</span> <span class="nav-text">单表索引数量上限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引大小上限"><span class="nav-number">12.4.</span> <span class="nav-text">索引大小上限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引锁定"><span class="nav-number">12.5.</span> <span class="nav-text">索引锁定</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据库索引选项"><span class="nav-number">13.</span> <span class="nav-text">数据库索引选项</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其他评估事项"><span class="nav-number">14.</span> <span class="nav-text">其他评估事项</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#宽索引还是理想索引"><span class="nav-number">14.1.</span> <span class="nav-text">宽索引还是理想索引</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#组织索引设计过程"><span class="nav-number">15.</span> <span class="nav-text">组织索引设计过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介-1"><span class="nav-number">15.1.</span> <span class="nav-text">简介</span></a></li></ol></li></ol></div>
-            
-
-          </div>
-        </div>
-      <!--/noindex-->
-      
 
     </div>
   </aside>
@@ -1162,7 +944,8 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">  <a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>&copy; <span itemprop="copyrightYear">2019</span>
+        <div class="copyright"><a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=" rel="noopener" target="_blank"> </a>&copy; <span itemprop="copyrightYear">2019</span>
   <span class="with-love" id="animate">
     <i class="fa fa-user"></i>
   </span>
@@ -1171,37 +954,42 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">596k</span>
+    <span title="站点总字数">599k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">9:02</span>
+    <span title="站点阅读时长">9:05</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
-  <span class="post-meta-divider">|</span>
-  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.2.0</div>
 
         
 <div class="busuanzi-count">
   <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-user"></i>
-    </span>
-    <span class="site-uv" title="总访客量">
-      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
     </span>
   
     <span class="post-meta-divider">|</span>
   
-    <span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-    </span>
-    <span class="site-pv" title="总访问量">
-      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
     </span>
   
 </div>
+
+
+
+
 
 
 
@@ -1213,42 +1001,16 @@
         
       </div>
     </footer>
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-      </div>
-
-    
-
   </div>
 
   
-  <script src="/lib/jquery/index.js?v=3.4.1"></script>
-  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
-  <script src="/lib/lazyload/lozad.min.js?v=1.10.0"></script>
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
   <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
   <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/pisces.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
 
-  <script src="/js/utils.js?v=7.2.0"></script>
-  <script src="/js/motion.js?v=7.2.0"></script>
-
-  
-  <script src="/js/affix.js?v=7.2.0"></script>
-  <script src="/js/schemes/pisces.js?v=7.2.0"></script>
-
-
-  
-  <script src="/js/scrollspy.js?v=7.2.0"></script>
-<script src="/js/post-details.js?v=7.2.0"></script>
-
-
-
-  <script src="/js/next-boot.js?v=7.2.0"></script>
-
-  
-
-  
-
-  
 
 
   
@@ -1269,6 +1031,7 @@
 
 
 
+  <script src="/js/local-search.js?v=7.4.1"></script>
 
 
 
@@ -1283,29 +1046,19 @@
 
 
 
+  
 
-  <script src="/js/local-search.js?v=7.2.0"></script>
+  
 
+  
 
-
-
-
-
-
-
-
-
-
-
-
-    
-<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
 
 <script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
   var GUEST = ['nick', 'mail', 'link'];
   var guest = 'nick,mail,link';
-  guest = guest.split(',').filter(function(item) {
-    return GUEST.indexOf(item) > -1;
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
   });
   new Valine({
     el: '#comments',
@@ -1318,10 +1071,13 @@
     meta: guest,
     pageSize: '10' || 10,
     visitor: false,
-    lang: 'zh-cn' || 'zh-cn'
+    lang: 'zh-cn' || 'zh-cn',
+    path: location.pathname,
+    recordIP: false,
+    serverURLs: ''
   });
+}, window.Valine);
 </script>
-
 
 </body>
 </html>
