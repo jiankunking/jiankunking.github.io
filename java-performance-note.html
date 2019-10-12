@@ -67,7 +67,7 @@
 <meta property="og:description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/java-performance-note/%E5%9B%BE3-3.png">
-<meta property="og:updated_time" content="2019-08-30T12:41:29.846Z">
+<meta property="og:updated_time" content="2019-10-12T09:06:22.414Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java性能优化权威指南 笔记">
 <meta name="twitter:description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
@@ -322,7 +322,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-08-30 20:41:29" itemprop="dateModified" datetime="2019-08-30T20:41:29+08:00">2019-08-30</time>
+                <time title="修改时间：2019-10-12 17:06:22" itemprop="dateModified" datetime="2019-10-12T17:06:22+08:00">2019-10-12</time>
               </span>
             
           
@@ -407,7 +407,7 @@
 <p>一般性的指导原则是：如果在很长一段时间里，运行队列的长度一直都超过虚拟处理器个数的1倍，就需要关注了，只是暂时还不需要立刻采取行动。<font color="DeepPink"><strong>如果在很长一段时间里，运行队列长度达到虚拟处理器个数的3~4倍或更高，则需要立刻引起注意和采取行动。</strong></font></p>
 <h2 id="内存使用率"><a href="#内存使用率" class="headerlink" title="内存使用率"></a>内存使用率</h2><p>系统在进行页面交换或者使用虚拟内存时，Java应用或JVM会表现出明显的性能问题。当应用运行所需的内存超过可用物理内存时，就会发生页面交换。为了应对这种可能出现的情况，通常要为系统配置swap空间。swap空间一般会在一个独立的磁盘分区上。当应用耗尽内存时，操作系统会将应用的一部分置换到磁盘上的swap空间。通常是应用中最少运行的部分，以免影响整个应用或者应用最忙的那部分。当访问应用中被置换出去的部分时，就必须将它从磁盘置换进内存，而这种置换活动会对应用的响应性和吞吐量造成很大影响。</p>
 <p><font color="DeepPink"><strong>JVM垃圾收集器在系统页面交换时的性能也很差，这是由于垃圾收集器为了回收不可达对象所占用的空间，需要访问大量的内存。如果Java堆得一部分被置换出去，就必须先置换进内存以便垃圾收集器扫描存活对象，这会增加垃圾收集的持续时间。</strong></font>垃圾收集是一种Stop-The-World操作，即停止所有正在运行的应用线程，如果此时系统正在进行页面交换，则会引起JVM长时间的停顿。</p>
-<h3 id="监控抢占式上下文切换"><a href="#监控抢占式上下文切换" class="headerlink" title="监控抢占式上下文切换"></a>监控抢占式上下文切换</h3><p>让步式上下文切换时指执行线程主动释放CPU，抢占式上下文切换时指线程因为分配的时间片用尽而被迫放弃CPU或者被其他优先级更高的线程锁抢占。pidstat的输出结果中cswch/s是每秒的让步式上下文切换，nvccswch/s是抢占式上下文切换。</p>
+<h3 id="监控抢占式上下文切换"><a href="#监控抢占式上下文切换" class="headerlink" title="监控抢占式上下文切换"></a>监控抢占式上下文切换</h3><p>让步式上下文切换时指执行线程主动释放CPU，抢占式上下文切换时指线程因为分配的时间片用尽而被迫放弃CPU或者被其他优先级更高的线程锁抢占。pidstat的输出结果中<font color="DeepPink"><strong>cswch/s</strong></font>是每秒的让步式上下文切换，<font color="DeepPink"><strong>nvccswch/s</strong></font>是抢占式上下文切换。</p>
 <h3 id="监控线程迁移"><a href="#监控线程迁移" class="headerlink" title="监控线程迁移"></a>监控线程迁移</h3><p>我们发现，待运行线程在处理器之前的迁移也会导致性能的下降。大多数操作系统的CPU调度程序会将待运行线程分配给上次运行它的虚拟处理器。如果这个虚拟处理器忙，调度程序就会将待处理线程迁移到其他可用的虚拟处理器。<font color="DeepPink"><strong>线程迁移会对应用性能造成影响，这是因为新的虚拟处理器缓存中可能没有待运行线程所需的数据或状态信息。</strong></font>多核系统上运行Java应用可能会发生大量的线程迁移，减少迁移的策略是创建处理器组并将应用分配给这些处理器组。一般性准则是，<font color="DeepPink"><strong>如果横跨多核或虚拟处理器的Java应用每秒迁移超过500次，将Java应用绑定在处理器组上就有好处。</strong></font></p>
 <h2 id="网络I-O使用率"><a href="#网络I-O使用率" class="headerlink" title="网络I/O使用率"></a>网络I/O使用率</h2><h3 id="应用性能改进的考虑"><a href="#应用性能改进的考虑" class="headerlink" title="应用性能改进的考虑"></a>应用性能改进的考虑</h3><p>单次读写数据量小而网络读写量大的应用会消耗大量的系统态CPU，产生大量的系统调用。对于这类应用，减少系统态CPU的策略是减少网络读写的系统调用。此外，使用非阻塞的Java NIO而不是阻塞的java.net.Socket，减少处理请求和发送相应的线程数，也可以改善应用性能。</p>
 <p>从非阻塞Socket中读取数据的策略是，应用在每次读请求时尽可能多地读取数据。同样，当往Socket中写数据时，每个写调用应该尽可能多地写。</p>
@@ -430,7 +430,7 @@
 <h3 id="VM类加载阶段"><a href="#VM类加载阶段" class="headerlink" title="VM类加载阶段"></a>VM类加载阶段</h3><h4 id="类加载阶段"><a href="#类加载阶段" class="headerlink" title="类加载阶段"></a>类加载阶段</h4><p>对于给定的Java类或接口，类加载时会依据它的名字找到Java类的二进制类文件，定义Java类，然后创建代表这个类或者接口的java.lang.Class对象。如果没有找到Java类或接口的二进制表示就会抛出NoClassDefFound。此外，类加载阶段会对类的格式进行语法检查，如果有错，则会抛出ClassFormatError或UnsupportedClassVersionError。Java类加载前，HotSpot VM必须先加载它的所有超类和超接口，如果类的继承层次有错，例如Java类是它自己的超类或超接口（类层次递归）,HotSpot VM则会抛出ClassCircularityError。如果所引用的直接超接口本身并不是接口，或者直接超类实际上是接口，HotSpot VM则会抛出IncompatibleClassChangeError。</p>
 <p>链接的第一步是验证，检查类文件的语义、常量池符号以及类型。如果检查有错，就会抛出VerifyError。链接的下一步是准备，它会创建静态字段，初始化为标准默认值，以及分配方法表。请注意，此时还没有执行任何Java代码。接下来解析符号引用，这一步是可选的。然后初始化类，运行类构造器。这是迄今为止，类中运行的第一段Java代码。值得注意的是，<font color="DeepPink"><strong>初始化类需要首先初始化超类（不会初始化超接口）</strong></font>。</p>
 <blockquote>
-<p>如：int的标准默认值为0；public static int alue=123，准备阶段将其初始化为0而不是123，value=123的赋值操作在类构造器&lt;clinit&gt;()中。<br>public static final int value=123，编译时会为value在字段属性表中生成ConstantValue，从而在准备阶段就被初始化成123。</p>
+<p>如：int的标准默认值为0；public static int value=123，准备阶段将其初始化为0而不是123，value=123的赋值操作在类构造器&lt;clinit&gt;()中。<br>public static final int value=123，编译时会为value在字段属性表中生成ConstantValue，从而在准备阶段就被初始化成123。</p>
 </blockquote>
 <p>Java Virtual Machine Specification规定首次使用类时进行类初始化，而Java Language Specification则允许在链接阶段符号解析时灵活处理，只要保持语言的语义不变，JVM依次执行加载、链接和初始化，保证及时抛出错误即可。出于性能优化的考虑，通常直到类初始化时HotspotVM才会加载和链接类。<font color="DeepPink"><strong>这意味着，类A引用类B。加载A不一定导致加载B（除非B需要验证）。执行B的第一条指令会导致初始化B，从而加载和链接B。</strong></font></p>
 <h4 id="类加载器委派"><a href="#类加载器委派" class="headerlink" title="类加载器委派"></a>类加载器委派</h4><p>当请求类加载器查找和加载某个类时，该类加载器可以转而请求别的类加载器来加载。这被称为类加载器委派。类的首个类加找器称为初始类加载器（Initiating ClassLoader)，最终定义类的类加载器称为定义类加载器（Defining ClassLoader）。<font color="DeepPink"><strong>就字节码解析而言，某个类的初始类加载器是指对该类进行常量池符号解析的类加载器。</strong></font></p>
@@ -675,13 +675,6 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-jvm-gc-g1-note.html" rel="bookmark">深入理解JVM＆G1GC 笔记</a></div>
-      
-    </li>
-  
-    <li class="popular-posts-item">
-      
-      
       <div class="popular-posts-title"><a href="\java-jrockit-note.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
       
     </li>
@@ -689,7 +682,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
+      <div class="popular-posts-title"><a href="\java-jvm-gc-g1-note.html" rel="bookmark">深入理解JVM＆G1GC 笔记</a></div>
       
     </li>
   
@@ -697,6 +690,13 @@
       
       
       <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
       
     </li>
   
@@ -875,7 +875,7 @@
             <a href="/categories/">
           
         
-        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-count">18</span>
         <span class="site-state-item-name">分类</span>
         </a>
       </div>
