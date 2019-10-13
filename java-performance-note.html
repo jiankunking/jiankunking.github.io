@@ -67,7 +67,7 @@
 <meta property="og:description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/java-performance-note/%E5%9B%BE3-3.png">
-<meta property="og:updated_time" content="2019-10-12T09:06:22.414Z">
+<meta property="og:updated_time" content="2019-10-13T11:23:51.917Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java性能优化权威指南 笔记">
 <meta name="twitter:description" content="本文整理自：《Java性能优化权威指南》 作者：Charlie Hunt / Binu John  出版时间：2014-03">
@@ -322,7 +322,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-10-12 17:06:22" itemprop="dateModified" datetime="2019-10-12T17:06:22+08:00">2019-10-12</time>
+                <time title="修改时间：2019-10-13 19:23:51" itemprop="dateModified" datetime="2019-10-13T19:23:51+08:00">2019-10-13</time>
               </span>
             
           
@@ -452,9 +452,9 @@
 <p><img src="/images/java-performance-note/%E5%9B%BE3-3.png" alt></p>
 <p><font color="DeepPink"><strong>HotSpot VM的字节码解释器和JIT编译器使用写屏障(Write Barrier)维护卡表。</strong></font>写屏障是一小段将卡状态设罝为脏的代码。解释器每次执行更新引用的字节码时，都会执行一段写屏障；JIT 编译器在生成更新引用的代码后，也会生成一段写屏障。虽然写屏障使得应用线程增加了一些性能开销，但Minor GC变快了许多，整天的垃圾收集效率也提高了许多。通常应用的吞吐量也会有所改善。</p>
 <h3 id="新生代"><a href="#新生代" class="headerlink" title="新生代"></a>新生代</h3><p>需要指出的是，<font color="DeepPink"><strong>在Minor GC过程中，Survivor可能不足以容纳Eden和另一个Survivor中的存活对象。如果Survivor 中的存活对象溢出，多余的对象将被移到老年代。这称为过早提升(Premature Promotion)</strong></font>。这会导致老年代中短期存活对象的增长，可能会引发严重的性能问题。再进一步说，在Minor GC过程中，如果老年代满了而无法容纳更多的对象，Minor GC之后通常就会进行Full GC,这将导致遍历整个Java堆。这称为提升失败（Promotion Failure）。</p>
-<h3 id="快速内存分配"><a href="#快速内存分配" class="headerlink" title="快速内存分配"></a>快速内存分配</h3><p>对象内存分配器的操作需要和垃圾收集器紧密配合。垃圾收集器必须记录它冋收的空间，而分配器在重用堆空间之前需要找到可以满足其分配需求的空闲空间。垃圾收集器以复制方式回收HotSpot VM新生代，其好处在于回收以后Eden总为空，在Eden中运用被称为指计碰撞(Bump-the-Pointer)的技术就可以有效地分配空间。这种技术追踪最后一个分配的对象（常称为top),当有新的分配请求时，分配器只需要检查top和eden未端之间的空间是否能容纳。如果能容纳，top则跳到新近分配对象的未端。</p>
-<p><font color="DeepPink"><strong>重要的Java应用大多是多线程的，因此内存分配的操作需要考虑多线程安全。如果只用全局锁，在Eden中的分配操作就会成为瓶颈而降低性能。HotSpot VM没有采用这种方式，而是以一种称为线程本地分配缓冲区（thread-Local Allocation Buffer,TLAB)的技术，为每个线程设设置各自的缓冲区(即Eden的一小块），以此改善多线程分配的吞吐量。因为每个TLAB都只有一个线程从中分配对象，所以可以使用指针碰撞技术快速分配而不需要任何锁。然而当线程的TLAB填满需要获取新的空间时（不常见），它就需要采用多线程安全的方式了。大部分时候，HotSpot VM的new Object()操作只需要大约十条指令。垃圾收集器清空Eden区域，然后就可以支持快速内存分配了。</strong></font></p>
-<h2 id="HotSpot-VM-JIT编译器"><a href="#HotSpot-VM-JIT编译器" class="headerlink" title="HotSpot VM JIT编译器"></a>HotSpot VM JIT编译器</h2><p>经典的寄存器分配策略是图着色算法，通常可以使机器寄存器的使用率达到最高，而且多余的值很少会卸载到栈中。图表示的是同时有哪些变量在使用．以及哪些寄存器可以存放这些变虽。如果同时存活的变量数超过了可用的寄存器数，重要性最低的变量将被移到栈中，使得其他变量可以使用寄存器。指派某个变量给寄存器通常需要来回几次构建图和着色。这也导致了它的不足，图着色算法花费的时间、数据结构所需的空间都比较昂贵。</p>
+<h3 id="快速内存分配"><a href="#快速内存分配" class="headerlink" title="快速内存分配"></a>快速内存分配</h3><p>对象内存分配器的操作需要和垃圾收集器紧密配合。垃圾收集器必须记录它回收的空间，而分配器在重用堆空间之前需要找到可以满足其分配需求的空闲空间。垃圾收集器以复制方式回收HotSpot VM新生代，其好处在于回收以后Eden总为空，在Eden中运用被称为指计碰撞(Bump-the-Pointer)的技术就可以有效地分配空间。这种技术追踪最后一个分配的对象（常称为top),当有新的分配请求时，分配器只需要检查top和eden未端之间的空间是否能容纳。如果能容纳，top则跳到新近分配对象的未端。</p>
+<p><font color="DeepPink"><strong>重要的Java应用大多是多线程的，因此内存分配的操作需要考虑多线程安全。如果只用全局锁，在Eden中的分配操作就会成为瓶颈而降低性能。HotSpot VM没有采用这种方式，而是以一种称为线程本地分配缓冲区（thread-Local Allocation Buffer,TLAB)的技术，为每个线程设置各自的缓冲区(即Eden的一小块），以此改善多线程分配的吞吐量。因为每个TLAB都只有一个线程从中分配对象，所以可以使用指针碰撞技术快速分配而不需要任何锁。然而当线程的TLAB填满需要获取新的空间时（不常见），它就需要采用多线程安全的方式了。大部分时候，HotSpot VM的new Object()操作只需要大约十条指令。垃圾收集器清空Eden区域，然后就可以支持快速内存分配了。</strong></font></p>
+<h2 id="HotSpot-VM-JIT编译器"><a href="#HotSpot-VM-JIT编译器" class="headerlink" title="HotSpot VM JIT编译器"></a>HotSpot VM JIT编译器</h2><p>经典的寄存器分配策略是图着色算法，通常可以使机器寄存器的使用率达到最高，而且多余的值很少会卸载到栈中。图表示的是同时有哪些变量在使用．以及哪些寄存器可以存放这些变量。如果同时存活的变量数超过了可用的寄存器数，重要性最低的变量将被移到栈中，使得其他变量可以使用寄存器。指派某个变量给寄存器通常需要来回几次构建图和着色。这也导致了它的不足，图着色算法花费的时间、数据结构所需的空间都比较昂贵。</p>
 <h1 id="JVM性能监控"><a href="#JVM性能监控" class="headerlink" title="JVM性能监控"></a>JVM性能监控</h1><h2 id="垃圾收集"><a href="#垃圾收集" class="headerlink" title="垃圾收集"></a>垃圾收集</h2><h3 id="重要的垃圾收集数据"><a href="#重要的垃圾收集数据" class="headerlink" title="重要的垃圾收集数据"></a>重要的垃圾收集数据</h3><p>重要的垃圾收集数据包括：</p>
 <ul>
 <li>当前使用的垃圾收集器</li>
@@ -498,7 +498,7 @@
 <li>在这三个性能属性(吞吐量、延迟、内存占用)中任意选择两个进行JVM垃圾收集器调优。我们称之为“<font color="DeepPink"><strong>GC调优的3选2原则</strong></font>”。</li>
 </ul>
 <p>调优JVM垃圾收集的过程中谨记这三条原则能帮助你更轻松地调优垃圾收集,达到应用程序的性能要求。</p>
-<h2 id="确定内存占用"><a href="#确定内存占用" class="headerlink" title="确定内存占用"></a>确定内存占用</h2><h3 id="HotSpot-VM堆布局"><a href="#HotSpot-VM堆布局" class="headerlink" title="HotSpot VM堆布局"></a>HotSpot VM堆布局</h3><p>通过-Xmn可以很方便地设定新生代空间的初始值和最大值。有一点需要特别注意,如果-Xms和-Ⅺmx并没有设定为同一个值,使用-Xmn选项时,Java堆的大小变化不会影响新生代空间,即新生代空间的大小总保持恒定,而不是随着Java堆大小的扩展或缩减做相应的调整。因此,请注意,<font color="DeepPink"><strong>只有在-Xms与-Xmx设定为同一值时才使用-Xmn选项。</strong></font></p>
+<h2 id="确定内存占用"><a href="#确定内存占用" class="headerlink" title="确定内存占用"></a>确定内存占用</h2><h3 id="HotSpot-VM堆布局"><a href="#HotSpot-VM堆布局" class="headerlink" title="HotSpot VM堆布局"></a>HotSpot VM堆布局</h3><p>通过-Xmn可以很方便地设定新生代空间的初始值和最大值。有一点需要特别注意,如果-Xms和-Xmx并没有设定为同一个值,使用-Xmn选项时,Java堆的大小变化不会影响新生代空间,即新生代空间的大小总保持恒定,而不是随着Java堆大小的扩展或缩减做相应的调整。因此,请注意,<font color="DeepPink"><strong>只有在-Xms与-Xmx设定为同一值时才使用-Xmn选项。</strong></font></p>
 <p>老年代空间的大小会根据新生代的大小隐式设定。老年代空间的初始值为-Xmx的值减去XX:    NewSize的值。老年代空间的最小值为-Xmx的值减去-XX:MaxNewSize的值。如果-Xms与Xmx设置为同一值,同时使用了-Xmn,或者-XX:NewSize与-XX:MaxNewsize一样,则老年代的大小为-Xmx(或-Xms)的值减去-Xmn。</p>
 <p>实际上,当HotSpot VM发现当前可用空间不足以容纳下一次Minor GC提升的对象时就会进行Full GC。与因空间问题导致的Minor GC过程中的对象提升失败比较起来,这种方式的代价要小得多。从失败的对象提升中恢复是一个很昂贵的操作。永久代没有足够的空间存储新的VM或类元数据时也会发生Full GC。</p>
 <p>如果Full GC缘于老年代空间已满,即使永久代空间并没有用尽,老年代和永久代都会进行垃圾收集。同样,如果Full GC由永久代空间用尽引起,老年代和永久代也都会进行垃圾收集,无论老年代是否还有空闲空间。开启-XX:+UseParallelGC或-XX:+UseParallelOldGC时,如果关闭-XX:-ScavengeBeforeFullGC, HotSpot VM在Full GC之前不会进行Minor GC,但Full GC过程中依然会收集新生代;如果开启-XX:+ScavengeBeforeFullGC, HotSpot VM在Full GC前会先做一次Minor GC,分担一部分Full GC原本要做的工作。</p>
@@ -570,11 +570,11 @@
 </blockquote>
 <h3 id="调整-Survivor空间的容量"><a href="#调整-Survivor空间的容量" class="headerlink" title="调整 Survivor空间的容量"></a>调整 Survivor空间的容量</h3><p>调整Survivor空间容量一个应该谨记于心的重要原则:<font color="DeepPink"><strong>调整Survivor空间容量时,如果新生代空间大小不变,增大Survivor空间会减少Eden空间;而减少Eden空间会增加Minor GC的频率。</strong></font>因此,为了同时满足应用程序Minor GC频率的要求,就需要增大当前新生代空间的大小;即增大Survivor空间大小时,Eden空间的大小应该保持不变。换句话说,每当 Survivor空间增加时,新生代空间都应该增大。如果可以增大Minor GC的频率,你可以选择用一部分Eden空间来增大Survivor空间,或者直接增大新生代空间大小。如果内存足够,相对于减少Eden空间.增加新生代大小通常是更好的选择。保持Eden空间大小恒定, Minor GC的频率就不会由于Survivor空间增大而发生变化。</p>
 <blockquote>
-<p>如果你观察到垃圾收集中晋升分布极少出现对象年龄为15的情况,并且也没有发生Surviⅳvor空间溢出,那么应该设置最大晋升阈值为其默认值15。这种场景下,对象都不是长期存活对象,在年龄很小的时候就被回收了,根本不会生存到最大晋升年限的年龄15。</p>
+<p>如果你观察到垃圾收集中晋升分布极少出现对象年龄为15的情况,并且也没有发生Survivor空间溢出,那么应该设置最大晋升阈值为其默认值15。这种场景下,对象都不是长期存活对象,在年龄很小的时候就被回收了,根本不会生存到最大晋升年限的年龄15。</p>
 </blockquote>
 <h4 id="调整目标Survivor空间占用"><a href="#调整目标Survivor空间占用" class="headerlink" title="调整目标Survivor空间占用"></a>调整目标Survivor空间占用</h4><p>目标Survivor空间占用是HotSpot VM尝试在Minor GC之后仍然维持的Survivor空间占用。通过 HotSpot VM的命令行选项-XX:TargetSurvivorRatio=&lt;percent&gt;可以对该值进行调整。通过命令行选项指定的参数实际上是Survivor空间占用的百分比而不是一个比率。它的默认值是50。</p>
 <p>HotSpot VM研发团队对不同类型的应用程序进行了大量的负荷测试,结果表明50%的目标Survivor空间占用能适应大多数的应用程序,这是因为它能应对Minor GC时存活对象的急速增加。</p>
-<p>极少发生需要对目标Survivor空间占用进行调优的情况。但是,如果应用程序有一个相对稳定的对象分配速率,可以考虑提高目标Survivor空间占用到80~90。这样可以减少用于老化对象的Survivor空间的数量。将-XX:TargetSurvivorRatio=&lt;percent&gt;设置得大于默认值会带来的冋题是不能很妤的适应迅速上涨的对象分配速率,导致提升对象的时机比预期更早。使用CMS时,如果对象提升过快会导致老年代占用增大,由于提升了一些非长期存活的对象,这些对象在将来的并发垃圾收集周期中一定会被回收,导致出现内存碎片的概率较高。碎片是我们要尽量避免的,因为它最终会导致Stop-The-World压缩式垃圾收集。</p>
+<p>极少发生需要对目标Survivor空间占用进行调优的情况。但是,如果应用程序有一个相对稳定的对象分配速率,可以考虑提高目标Survivor空间占用到80~90。这样可以减少用于老化对象的Survivor空间的数量。将-XX:TargetSurvivorRatio=&lt;percent&gt;设置得大于默认值会带来的问题是不能很好的适应迅速上涨的对象分配速率,导致提升对象的时机比预期更早。使用CMS时,如果对象提升过快会导致老年代占用增大,由于提升了一些非长期存活的对象,这些对象在将来的并发垃圾收集周期中一定会被回收,导致出现内存碎片的概率较高。碎片是我们要尽量避免的,因为它最终会导致Stop-The-World压缩式垃圾收集。</p>
 <p><font color="DeepPink"><strong>成功的CMS收集器调优要能以对象从新生代提升到老年代的同等速度对老年代中的对象进行垃圾收集。达不到这个标准则称之为“失速”(Lost the Race)失速的结果就会发生Stop-The-World压缩式垃圾收集。避免失速的关键是要结合足够大的老年代空间和足够快地初始化CMS垃圾收集周期,让它以比提升速率更快的速度回收空间。</strong></font></p>
 <p><font color="DeepPink"><strong>CMS周期的初始化基于老年代空间的占用情况。如果CMS周期开始得太晚,就会发生失速。如果它无法以足够快的速度回收对象,就无法避免老年代空间用尽。但是CMS周期开始得过早又会引起无用的消耗,影响应用程序的吞吐量。通常,早启动CMS周期要比晚启动CMS好,因为启动太晚的结果比启动过早的结果要恶劣得多。</strong></font></p>
 <p>如果GC日志中发现concurrent mode failures字样,可以通过下面的命令行选项通知HotSpot在更早的时间启动CMS垃圾收集周期。</p>
@@ -595,7 +595,7 @@
 <p>-XX:+ExplicitGCInvokesConcurrent</p>
 <p>或者</p>
 <p>-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses</p>
-<p>前者需要Java6及以上版本。后者需要Java6 Update4及以上版本。如果你的JK版本支持,最好使用-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses选项。</p>
+<p>前者需要Java6及以上版本。后者需要Java6 Update4及以上版本。如果你的JDK版本支持,最好使用-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses选项。</p>
 <p>2、也可以使用下面的命令行通知HotSpot VM忽略显式的 System.gc()调用</p>
 <p>-XX:+DisableExplicitGC</p>
 <p>要留意的是,使用这个命令行选项也会导致其他 HotSpot VM的垃圾收集器忽略显式的System.gc()调用。</p>
@@ -614,12 +614,12 @@
 <p>该命令行选项根据CPU与内存位置的关系在分配线程运行的本地内存中分配对象。这里依据的假设是分配对象的线程是近期最有可能访问该对象的线程。相对于远程的内存而言,在同一线程的本地内存中分配对象用更短的时间即能访问该对象的内容。</p>
 <p>只有当JVM的部署跨CPU、不同CPU访问内存的拓扑有所不同,导致访问时间也有所差别的环境下才选择使用-XX:+UseNUMA选项。例如,虽然JVM部署到NUMA系统的一个处理器集上,但是这个处理器集并不存在跨CPU访问内存的拓扑,没有访问时间的差别,那么就不应该使用-XX:+UseNUMA选项。</p>
 <blockquote>
-<p>简而言之,攴持NUMA的VM会根据NUMA节点划分堆,线程创建新的对象时,只会在该线程运行所在核的NUMA节点上分配对象,后续该线程如果需要使用这个对象,就直接从本地内存中访问。通常情况下,如果没有使用命令,臂如RHEL下使用numactl,设置CPU的亲和性(Affinity),默认就跨多个内存节点,满足-XX:+UseNUMA的使用条件。</p>
+<p>简而言之,支持NUMA的VM会根据NUMA节点划分堆,线程创建新的对象时,只会在该线程运行所在核的NUMA节点上分配对象,后续该线程如果需要使用这个对象,就直接从本地内存中访问。通常情况下,如果没有使用命令,臂如RHEL下使用numactl,设置CPU的亲和性(Affinity),默认就跨多个内存节点,满足-XX:+UseNUMA的使用条件。</p>
 </blockquote>
 <blockquote>
 <p>注：Throughput garbage collector,实际指的是Parallel收集器</p>
 </blockquote>
-<h2 id="其它性能命令行选项"><a href="#其它性能命令行选项" class="headerlink" title="其它性能命令行选项"></a>其它性能命令行选项</h2><h3 id="大页面支持"><a href="#大页面支持" class="headerlink" title="大页面支持"></a>大页面支持</h3><p>计算机系统的内存被划分成称为“页”的固定大小的块。程厅访问内存的过程中会将虚拟内存地址转换成物理内存地址。虚拟地址到物理地址的转换是通过表完成的。为了减少每次内存访问时访问页表的代价,通常的做法是使用一块快速缓存,对虚拟地址到物理地址的转换进行缓存。这块缓存被称为转译快查缓存(TLB)。</p>
+<h2 id="其它性能命令行选项"><a href="#其它性能命令行选项" class="headerlink" title="其它性能命令行选项"></a>其它性能命令行选项</h2><h3 id="大页面支持"><a href="#大页面支持" class="headerlink" title="大页面支持"></a>大页面支持</h3><p>计算机系统的内存被划分成称为“页”的固定大小的块。程序访问内存的过程中会将虚拟内存地址转换成物理内存地址。虚拟地址到物理地址的转换是通过表完成的。为了减少每次内存访问时访问页表的代价,通常的做法是使用一块快速缓存,对虚拟地址到物理地址的转换进行缓存。这块缓存被称为转译快查缓存(TLB)。</p>
 <p>使用TLB完成从虚拟地址到物理地址的映射比遍历整个页表的方式要快得多。TLB通常只能容纳固定数量的条目。TLB中的一条记录就是按页面大小统计的一块内存地址区间的映射。因此系统的页面越大,每个条目能映射的内存地址区间越大,每个TLB能管理的空间也越大。TLB代表的地址区间越大,地址转译请求在TLB中失效的可能性就越小。当一个地址转译请求无法在TLB中找到匹配项时,我们称之发生了“TLB失效”。TLB失效事件发生时常常需要遍历内存中的页表,査找虚拟地址到物理地址的映射。与在TLB中查找地址映射比较起来,遍历页表是一项非常昂贵的操作。由此可见,<font color="DeepPink"><strong>使用大页面的好处是其减小了TLB失效的几率。</strong></font></p>
 <p>HotSpot虚拟机在Oracle solaris(这之后称为Solaris)、 Linux和 Windows上都支持大页面。页面大小还可能随着处理器的不同有所不同。另外,为了使用大页面还可能需要对操作系统进行配置。</p>
 <h1 id="Java-应用的基准测试"><a href="#Java-应用的基准测试" class="headerlink" title="Java 应用的基准测试"></a>Java 应用的基准测试</h1><h2 id="基准测试所面临的挑战"><a href="#基准测试所面临的挑战" class="headerlink" title="基准测试所面临的挑战"></a>基准测试所面临的挑战</h2><h3 id="基准测试的预热阶段"><a href="#基准测试的预热阶段" class="headerlink" title="基准测试的预热阶段"></a>基准测试的预热阶段</h3><p>执行基准测试时使用HotSpot VM命令行选项-XX:+PrintCompilation是一个好习惯,使用该命令行选项的输岀可以判断JIT编译器何时完成了预热阶段,确保在 HotSpot编译器到达稳定态后,即已经完成它的优化工作(生成了适合基准测试的优化机器码)后再开始基准数据采样。-XX:+PrintCompilation选项通知VM为每个它优化或逆优化的函数输出一条日志。下面是在一段微基准测试中使用-XX:+PrintCompilation选项输出的日志片段:</p>
@@ -630,7 +630,7 @@
 <p>微基准测试中有一个惯例,即在开始采样间隔开始计时之前,先调用几次 System.gc()。多次调用 System.gc()的目的是希望通过Java对象的终结方法释放内存,而这往往需要进行多次垃圾收集才能完成。此外,当对象不可达,导致终结方法一直处于等待队列,或者部分执行队列中,调用System.runFinalization()接口可以请求JVM执行其fina1ize()方法,完成垃圾收集。</p>
 </blockquote>
 <h3 id="使用Java-Time接口"><a href="#使用Java-Time接口" class="headerlink" title="使用Java Time接口"></a>使用Java Time接口</h3><p>引入新的System.nanoTime()接口之前,大多数的Java基准测试或微基准测试都使用System.currentTimeMillis()接口获取采样间隔的开始和终止时间,根据终止时间与开始时间的间隔得到运行关注的代码所消耗的时间使用Java的System.currentTimeMillis()和System.nanoTime()接口都有一定程度的精度问题。虽然 System.currentTimeMillis()的返回值是以亳秒计的当前时间,但毫秒级的精度却取决于操作系统。Java API Specification中对于System.currentTimeMillis()有明确的陈述:虽然该接口的返回值是毫秒,但返回值的粒度取决于底层的操作系统。这一规范为操作系统使用自身的亳秒级系统接口提供了方便,但是可能存在这样的情况,尽管使用的是毫秒计数器,但是更新间隔却过大,譬如每30毫秒更新一次。这个规范有意地规定得比较宽松,试图让Java API尽可能地支持更多的操作系统,其中就包含一些无法提供毫秒级时钟精度的操作系统。使用Java API System. nanoTime()也有类似的问题。<font color="DeepPink"><strong>虽然该方法提供了纳秒级的精度,但接口并不保证提供纳秒级的精度: System.nanoTime()的 Java API Specification中明确提到不保证System.nanoTime()返回值的更新频度。</strong></font></p>
-<p>因此,使用System.currentTimeMillis()计算时间消耗时,采样的时间间隔应该足够大,尽量减少System, currentTimeMillis()精度带来的影响。也即是说,采样的时间间隔需要比毫秒大(譬如几秒、或者尽可能几分钟)同样的原则也适用于 System.nanoTime()。根据 jJava API Specification,System.nanoTime()依赖底层的操作系统,返回系统中可用的最精确时钟的当前值。然而,最精确的可用系统时钟可能也没有纳秒级的精度。进行基准测试时,建议首先摸清楚这两个Java API在对应平台或操作系统上的粒度或精度。如果你不是很清楚,但手里有源代码,可以通过查看这两个API的底层实现,了解其粒度和精度。如果你使用 System.currentTimeMillis(或System.nanoTime())。而且采样时间间隔很短(相对于毫秒或纳秒来讲),要特别注意这个问题。</p>
+<p>因此,使用System.currentTimeMillis()计算时间消耗时,采样的时间间隔应该足够大,尽量减少System, currentTimeMillis()精度带来的影响。也即是说,采样的时间间隔需要比毫秒大(譬如几秒、或者尽可能几分钟)同样的原则也适用于 System.nanoTime()。根据Java API Specification,System.nanoTime()依赖底层的操作系统,返回系统中可用的最精确时钟的当前值。然而,最精确的可用系统时钟可能也没有纳秒级的精度。进行基准测试时,建议首先摸清楚这两个Java API在对应平台或操作系统上的粒度或精度。如果你不是很清楚,但手里有源代码,可以通过查看这两个API的底层实现,了解其粒度和精度。如果你使用System.currentTimeMillis()或System.nanoTime()。而且采样时间间隔很短(相对于毫秒或纳秒来讲),要特别注意这个问题。</p>
 <blockquote>
 <p>微基准测试时,使用System.nanoTime()获取启动和终止时间计算采样间隔是一种好方法。接着计算终止与启动的时间差就可以得到微基准测试的耗时,以及每次操作选代所消耗的纳秒数或者每秒所发生的迭代次数。<font color="DeepPink"><strong>最重要的是要确保微基准测试运行的时间要足够长,确保应用程序运行已达稳定态且采样的时间也足够长。</strong></font></p>
 </blockquote>
@@ -640,7 +640,7 @@
 <li><font color="DeepPink"><strong>在釆样阶段结束时直接输出计算的结果,或者保存该计算结果,在采样阶段结束后输出该值</strong></font></li>
 </ul>
 <p>要使计算有意义,就要向被测方法传入参数,并从被测方法返回计算结果。此外,在基准测试采样阶段内或在多个不同的基准测试采样阶段间变换迭代次数也是一个不错的方法,然后比较每毫秒内发生的迭代次数,判断迭代次数是否保持恒定,同时使用-XX:+PrintCompilation选项追踪记录JIT编译器的状态。</p>
-<h3 id="内联"><a href="#内联" class="headerlink" title="内联"></a>内联</h3><p>HotSpot VM的Client和Server JIT编译器都能对方法进行内联。这意味着调用过程中,目标方法会被展开到调用方法中。这个过程是由J编译器完成的,J编译器通过降低方法调用的开销提升执行性能。此外,内联的代码可能提供更多的优化机会,整合后的代码可能更简单,或者消除了无效调用,而这些在不内联的情况下是无法实现的。内联在微基准测试中还可能实现让人眼前一亮的性能提升。</p>
+<h3 id="内联"><a href="#内联" class="headerlink" title="内联"></a>内联</h3><p>HotSpot VM的Client和Server JIT编译器都能对方法进行内联。这意味着调用过程中,目标方法会被展开到调用方法中。这个过程是由JIT编译器完成的,JIT编译器通过降低方法调用的开销提升执行性能。此外,内联的代码可能提供更多的优化机会,整合后的代码可能更简单,或者消除了无效调用,而这些在不内联的情况下是无法实现的。内联在微基准测试中还可能实现让人眼前一亮的性能提升。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-XX:+PrintInlining</span><br><span class="line">-XX:MaxInlineSize=N</span><br></pre></td></tr></table></figure>
 
 <h3 id="逆优化"><a href="#逆优化" class="headerlink" title="逆优化"></a>逆优化</h3><p>JIT编译器以其执行优化的能力而著称于世。但是,某些场景下JIT编译器也会进行“逆优化”。譬如,Java应用一旦开始运行,方法调用变得频繁;JIT编译器就可以根据从程序过程中了解到的信息做出优化决策。有些时候,优化的决策在后续可能被证明是错误的。当JIT编译器发现之前的优化作了错误的优化决策时就会进行逆优化。很多时候,在JIT编译器逆优化不久之后(一旦达到一定的执行次数阈值)就会接着再次进行优化。忽视发生的逆优化可能得出错误的性能结论。</p>
@@ -649,9 +649,9 @@
 </blockquote>
 <p><font color="DeepPink"><strong>软件开发者应该专注于优秀的软件架构、设计以及实现,没有必要过度担忧现代JIT编译器的影响。如果对软件架构、设计或实现的修改是为了克服JIT编译器的一些性质,就应该考虑这是JIT编译器的缺陷或不足。</strong></font></p>
 <h3 id="创建微基准测试的注意事项"><a href="#创建微基准测试的注意事项" class="headerlink" title="创建微基准测试的注意事项"></a>创建微基准测试的注意事项</h3><ol>
-<li>明确你需要了解的性能指标是什么,设计相应的实验冋答你需要解决的冋题。不要受些无关痛痒的因素影响而忽略了你真正需要解决的问题。</li>
+<li>明确你需要了解的性能指标是什么,设计相应的实验回答你需要解决的回题。不要受些无关痛痒的因素影响而忽略了你真正需要解决的问题。</li>
 <li>确保采样阶段中每次使用同样的工作量。</li>
-<li>计算并收集多种性能指标,譬如消耗时间、单位时冋迭代次数或每次迭代的消耗时间用在预热阶段之后,采样阶段期间记录的性能指标。留意度量时间的精度和粒度,特别是使用了System.currentTimeMi1lis()和 System.nanoTime()况。多次运行试验,并变换采样的周期数或釆样的持续时间。之后再比较其所消耗的时间,密切注意单位时间迭代次数或每迭代消耗时间指标的变化。微基准测试经历了足够的预热、达到稳定态时,后一个指标几乎应该与釆样阶段持续时间的变化保持一致。</li>
+<li>计算并收集多种性能指标,譬如消耗时间、单位时间迭代次数或每次迭代的消耗时间用在预热阶段之后,采样阶段期间记录的性能指标。留意度量时间的精度和粒度,特别是使用了System.currentTimeMi1lis()和System.nanoTime()的情况。多次运行试验,并变换采样的周期数或釆样的持续时间。之后再比较其所消耗的时间,密切注意单位时间迭代次数或每迭代消耗时间指标的变化。微基准测试经历了足够的预热、达到稳定态时,后一个指标几乎应该与釆样阶段持续时间的变化保持一致。</li>
 <li>开始釆样之前确认微基准测试已经到达稳定态。可遵循的一条通用原则是,确保微基准测试至少运行10秒以上。使用 HotSpot的-XX:+PrintCompilation选项通过插入表示微基准测试执行阶段的工具可以帮助确认基准测试已经到达稳定态。这一步的日的是确保在开始采样之前,微基准测试经过充分预热,在采样阶段不会发生进一步的优化或逆优化事件。</li>
 <li>多次运行基准测试以确保观测的结果是可重复的。多次运行可以为你最终的结论提供有力支持。</li>
 <li>运行实验及观测结果时特别要留意得到的结果是否合理。如果碰到无法解释或可疑的结果,要花时间去研究、回顾实验的设计,确保观察的结果合理。</li>
@@ -689,14 +689,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
+      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
+      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
       
     </li>
   

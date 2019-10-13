@@ -71,7 +71,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/java-jvm-gc-g1-note/%E6%96%B9%E6%B3%95%E5%8C%BA%E7%BB%84%E6%88%90%E5%9B%BE.png">
 <meta property="og:image" content="https://jiankunking.com/images/java-jvm-gc-g1-note/javax%E6%8E%A7%E5%88%B6%E5%8F%B0%E8%BE%93%E5%87%BA.png">
 <meta property="og:image" content="https://jiankunking.com/images/java-jvm-gc-g1-note/%E5%85%A8%E5%B1%80%E5%8D%A1%E8%A1%A8%E7%A4%BA%E6%84%8F%E5%9B%BE.png">
-<meta property="og:updated_time" content="2019-10-12T05:56:43.372Z">
+<meta property="og:updated_time" content="2019-10-13T11:28:15.487Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解JVM＆G1GC 笔记">
 <meta name="twitter:description" content="本文整理自：《深入理解JVM＆G1GC》 作者：周明耀本书很一般出版时间：2017-06-01">
@@ -326,7 +326,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-10-12 13:56:43" itemprop="dateModified" datetime="2019-10-12T13:56:43+08:00">2019-10-12</time>
+                <time title="修改时间：2019-10-13 19:28:15" itemprop="dateModified" datetime="2019-10-13T19:28:15+08:00">2019-10-13</time>
               </span>
             
           
@@ -464,7 +464,7 @@
 <h3 id="Java堆"><a href="#Java堆" class="headerlink" title="Java堆"></a>Java堆</h3><p>Java堆区在JVM启动的时候即被创建，它只要求逻辑上是连续的，在物理空间上可以是不连续。所有的线程共享Java堆，在这里可以划分线程私有的缓冲区(Thread Local Allocation Buffer，TLAB)。</p>
 <p>正是因为Java堆区是GC的重点回收区域，所以GC极有可能会在大内存的使用和频繁进行垃圾回收过程上成为系统性能瓶颈。为了解决这个问题，JVM的设计者们开始考虑是否一定需要将对象实例存储到Java堆区内。基于OpenJDK深度定制的TaobaoJVM，其中创新的GCIH(GC invisible heap)技术实现了off-heap，即将生命周期较长的Java对象从heap中移到heap之外，并且GC不能管理GCH内部的Java对象，以此达到降低GC的回收频率和提升GC的回收效率的目的。</p>
 <h3 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h3><p><font color="DeepPink"><strong>方法区主要保存的信息是类的元数据</strong></font>。方法区与堆空间类似，它也是被JVM中所有的线程共享的区域。如下图所示，<font color="DeepPink"><strong>方法区中最为重要的是类的类型信息、常量池、域信息、方法信息。</strong></font>类型信息包括类的完整名称、父类的完整名称、类型修饰符(public/protected/private)和类型的直接接口类表。<br><img src="/images/java-jvm-gc-g1-note/%E6%96%B9%E6%B3%95%E5%8C%BA%E7%BB%84%E6%88%90%E5%9B%BE.png" alt></p>
-<p><font color="DeepPink"><strong>常量池包括类方法、域等信息所引用的常量信息。域信息包括域名称、域类型和域修饰符方法信息包括方法名称、返回类型、方法参数、方法修饰符、方法字节码、操作数栈和方法栈帧的局部变量区大小以及异常表。方法区是线程间共享的，当两个线程同时需要加载一个类型时，只有一个类会请求ClassLoader加载，另一个线程则会等待。总而言之，方法区内保存的信息大部分来自于Class件，是Java应用程序运行必不可少的重要数据。</strong></font></p>
+<p><font color="DeepPink"><strong>常量池包括类方法、域等信息所引用的常量信息。域信息包括域名称、域类型和域修饰符。方法信息包括方法名称、返回类型、方法参数、方法修饰符、方法字节码、操作数栈和方法栈帧的局部变量区大小以及异常表。方法区是线程间共享的，当两个线程同时需要加载一个类型时，只有一个类会请求ClassLoader加载，另一个线程则会等待。总而言之，方法区内保存的信息大部分来自于Class件，是Java应用程序运行必不可少的重要数据。</strong></font></p>
 <p>在Hotspot虚拟机中，方法区也被称为永久区，是一块独立于Java堆的内存空间。虽然被叫作永久区，但是在永久区中的对象同样也是可以被GC回收的，只是对于GC的对应策略与Java堆空间略有不同。</p>
 <p>GC针对永久区的回收，通常主要从两个方面分析:一是GC对永久区常量池的回收，二是永久区对类元数据的回收。HotSpot虚拟机对常量池的回收策略是很明确的，只要常量池中的常量没有被任何地方引用，就可以被回收。</p>
 <h2 id="垃圾收集算法"><a href="#垃圾收集算法" class="headerlink" title="垃圾收集算法"></a>垃圾收集算法</h2><h3 id="根搜索算法"><a href="#根搜索算法" class="headerlink" title="根搜索算法"></a>根搜索算法</h3><p><font color="DeepPink"><strong>在HotSpot中，根对象集合中包含了5个元素，Java栈内的对象引用、本地方法栈内的对象引用、运行时常量池中的对象引用、方法区中类静态属性的对象引用以及与一个类对应的唯一数据类型的Class对象。</strong></font></p>
@@ -472,7 +472,7 @@
 <p>这部分了解一下就好<br>注意，在根搜索算法中不可达的对象，也并非是“非死不可”的，这时候它们暂时处于“缓刑”阶段，要真正宣告一个对象死亡，至少要经历两次标记过程。如果对象在进行根搜索后发现没有与GC Roots相连接的引用链，那它将会被第一次标记并且进行一次筛选，筛选的条件是此对象是否有必要执行finalize方法。当对象没有覆盖finalize方法，或者finalized方法已经被虚拟机调用过，虚拟机将这两种情况都视为“没有必要执行”。如果这个对象被判定为有必要执行finalize方法，那么这个对象将会被放置在一个名为F-Queue的队列之中，并在稍后由条由虚拟机自动建立的、低优先级的Finalizer线程去执行。这里所谓的“执行”是指虚拟机会触发这个方法，但并不承诺会等待它运行结束。这样做的原因是，如果一个对象在finalize方法中执行缓慢，或者发生了死循环(更极端的情况)，很可能会导致F-Queue队列中的其他对象永久处于等待状态，甚至导致整个内存回收系统崩溃。finalize()方法是对象逃脱死亡命运的最后一次机会，稍后GC将对F-Queue中的对象进行第二次小规模的标记，如果对象要在finalized中成功拯救自己—只要重新与引用链上的任何一个对象建立关联即可，譬如把自己(this关键字)赋值给某个类变量或对象的成员变量，那在第二次标记时它将被移除出“即将回收”的集合。如果对象这时候还没有逃脱，那它就真的离死不远了。</p>
 </blockquote>
 <h3 id="标记清除算法-Mark-Sweep"><a href="#标记清除算法-Mark-Sweep" class="headerlink" title="标记清除算法(Mark-Sweep)"></a>标记清除算法(Mark-Sweep)</h3><p>算法涉及几个概念，先来了解一下mutator和collector，这两个名词经常在垃圾收集算法中出现，<font color="DeepPink"><strong>collector指的就是垃圾收集器，而 mutator是指除了垃圾收集器之外的部分，比如说我们的应用程序本身。</strong></font>mutator的职责一般是NEW(分配内存)、READ(从内存中读取内容)、WRITE(将内容写入内存)，而collector则就是回收不再使用的内存来供mutator进行NEW操作的使用。mutator根对象一般指的是分配在堆内存之外，可以直接被mutator直接访问到的对象，一般是指静态/全局变量以及ThreadLocal变量。</p>
-<h3 id="复制算法-Copying"><a href="#复制算法-Copying" class="headerlink" title="复制算法(Copying)"></a>复制算法(Copying)</h3><p>基于分代的概念，Java堆区如果还要更进一步细分的话，还可以划分为年轻代(Young Gen)和老年代(OldEn)，其中年轻代又可以被划分为Eden空间、From Survivor空间和To Survivor空间。<font color="DeepPink"><strong>在HotSpot中，Eden空间和另外两个Survivor空间默认所占的比例是8:1，当然开发人员可以通过选项“-XX:SurvivorRatio”调整这个空间比例</strong></font>。当执行一次Minor GC(年轻代的垃圾回收)，Eden空间中的存活对象会被复制到To空间内，并且之前已经经历过一次 Minor GC并在From空间中存活下来的对象如果还年轻的话同样也会被复制到To空间内。需要注意的是，在满足两种特殊情况下，Eden和From空间中的存活对象将不会被复制到To空间内。首先是如果存活对象的分代年龄超过选项“-XX:MaxTenuringThreshold”所指定的阈值时，将会直接晋升到老年代中。其次当To空间的容量达到阈值时，存活对象同样也是直接晋升到老年代中。当所有的存活对象都被复制到To空间或者晋升到老年代后，剩下的均为垃圾对象，这就意味着GC可以对这些已经死亡了的对象执行一次Minor GC，释放掉其所占用的内存空间。</p>
+<h3 id="复制算法-Copying"><a href="#复制算法-Copying" class="headerlink" title="复制算法(Copying)"></a>复制算法(Copying)</h3><p>基于分代的概念，Java堆区如果还要更进一步细分的话，还可以划分为年轻代(YoungGen)和老年代(OldGen)，其中年轻代又可以被划分为Eden空间、From Survivor空间和To Survivor空间。<font color="DeepPink"><strong>在HotSpot中，Eden空间和另外两个Survivor空间默认所占的比例是8:1，当然开发人员可以通过选项“-XX:SurvivorRatio”调整这个空间比例</strong></font>。当执行一次Minor GC(年轻代的垃圾回收)，Eden空间中的存活对象会被复制到To空间内，并且之前已经经历过一次 Minor GC并在From空间中存活下来的对象如果还年轻的话同样也会被复制到To空间内。需要注意的是，在满足两种特殊情况下，Eden和From空间中的存活对象将不会被复制到To空间内。首先是如果存活对象的分代年龄超过选项“-XX:MaxTenuringThreshold”所指定的阈值时，将会直接晋升到老年代中。其次当To空间的容量达到阈值时，存活对象同样也是直接晋升到老年代中。当所有的存活对象都被复制到To空间或者晋升到老年代后，剩下的均为垃圾对象，这就意味着GC可以对这些已经死亡了的对象执行一次Minor GC，释放掉其所占用的内存空间。</p>
 <h3 id="标记压缩算法-Mark-Compact"><a href="#标记压缩算法-Mark-Compact" class="headerlink" title="标记压缩算法(Mark-Compact)"></a>标记压缩算法(Mark-Compact)</h3><p>在HotSpot中，基于分代的概念，GC所使用的内存回收算法必须结合年轻代和老年代各自的特点。简单来说，就是针对不同的代空间，从而结合使用不同的垃圾收集算法。<font color="DeepPink"><strong>为年轻代选择的垃圾收集算法通常是以速度优先，因为年轻代中所存储的瞬时对象生命周期非常短暂，可以有针对性地使用复制算法，因此执行Minor GC时，一定要保持高效和快速。而年轻代中的生存空间通常都比较小，所以回收年轻代时一定会非常频繁。但老年代通常使用更节省内存的回收算法，因为老年代中所存储的对象生命周期都非常长，并且老年代占据了大部分的堆空间，所以老年代的Full GC并不会跟年轻代的Minor GC一样频繁，不过一旦程序中发生一次Full GC，将会耗费更长的时间来完成，那么在老年代中使用标记-清除算法或者标记-压缩算法执行垃圾回收将会是不错的选择。</strong></font></p>
 <h2 id="Garbage-Collection"><a href="#Garbage-Collection" class="headerlink" title="Garbage Collection"></a>Garbage Collection</h2><h3 id="GC-概念"><a href="#GC-概念" class="headerlink" title="GC 概念"></a>GC 概念</h3><p>在许多情况下，GC不应该成为影响系统性能的瓶颈，可以根据以下六点来评估一款GC的性能。</p>
 <ul>
@@ -485,7 +485,7 @@
 </ul>
 <h3 id="Parallel收集器"><a href="#Parallel收集器" class="headerlink" title="Parallel收集器"></a>Parallel收集器</h3><p><font color="DeepPink"><strong>需要注意的是，垃圾收集器中吞吐量和低延迟这两个目标本身是相互矛盾的，因为如果选择以吞吐量优先，那么必然需要降低内存回收的执行频率，但是这样会导致GC需要更长的暂停时间来执行内存回收。相反的，如果选择以低延迟优先为原则，那么为了降低每次执行内存回收时的暂停时间，也只能频繁地执行内存回收，但这又引起了年轻代内存的缩减和导致程序吞吐量的下降。</strong></font></p>
 <p>举个例子，在60s的JVM总运行时间里，GC的执行频率是20秒/次，那么60s内一共会执行3次内存回收，按照每次GC耗时100ms来计算，最终一共会有300ms(3×100)被用于执行垃圾回收。但是如果我们将选项“-XX:MaxGCPauseMills”的值调小后，年轻代的内存空间也会自动调整，内存空间越小就越容易被耗尽，也就越容易造成GC的执行频繁发生。之前在60s的JVM总运行时间里，最终会有300ms被用于执行内存回收，而如今GC的执行频率却是10s/次，60s内将会执行6次内存回收，按照每次GC耗时60ms来计算，虽然看上去暂停时间更短了，但最终会耗时360ms(6×60)用于执行内存回收，很明显程序的吞吐量下降了。所以大家在设置这两个选项时，一定需要注意控制在一个折中的范围之内。Parallel收集器还提供个“-XX:UseAdaptiveSizePolicy”选项用于设置GC的自动分代大小调节策略，一旦设置这个选项后，就意味着开发人员将不再需要显式地设置年轻代中的一些细节参数，JVM会根据自身当前的运行情况动态调整这些相关参数。</p>
-<h3 id="Garbage-First-G1-GC"><a href="#Garbage-First-G1-GC" class="headerlink" title="Garbage First (G1) GC"></a>Garbage First (G1) GC</h3><p><font color="DeepPink"><strong>G1很重视老年代的垃圾回收，一旦整个堆空间占有率达到指定的阈值(启动时可配置)，G1会立即启动一个独占的并行初始标记阶段(inil-mark phase)进行垃圾回收。在G1 GC，判断的是整个Java堆内部老年代的占有率，足以见G1对老年代的重视。</strong></font></p>
+<h3 id="Garbage-First-G1-GC"><a href="#Garbage-First-G1-GC" class="headerlink" title="Garbage First (G1) GC"></a>Garbage First (G1) GC</h3><p><font color="DeepPink"><strong>G1很重视老年代的垃圾回收，一旦整个堆空间占有率达到指定的阈值(启动时可配置)，G1会立即启动一个独占的并行初始标记阶段(initial-mark phase)进行垃圾回收。在G1 GC，判断的是整个Java堆内部老年代的占有率，足以见G1对老年代的重视。</strong></font></p>
 <p>初始标记阶段一般和年轻代GC一起运行，一旦初始标记阶段结束，并行多线程的标记阶段就开始启动去标记所有老年代还存活的对象，注意这个标记阶段不是独占式的，它允许应用程序线程和它并行执行。当这个标记阶段运行完毕之后，为了再次确认是否有逃过扫描的对象，“启动一个独占式的再次标记阶段(remark phase)，尝试标记所有遗漏的对象。在这个再次标记阶段结束之后，G1就掌握了所有的老年代 Region的标记信息，这和国家的户口统计方式差不多。一旦老年代的某些Region内部存在任何的存活对象，它就可以在下一个阶段，即清除阶段(cleanup phase)被清除了，就是可以销户了，又被放回了可用Region队列。同样地，再次标记阶段结束后就可以对一些老年代执行收集动作。</p>
 <p>前面提到了CSet概念，一个CSet里面可以包含多少Region取决于多少空间可以被释放、G1停顿目标时间这两个因素。前面说起过混合GC(Mixed GC)，这里就要具体说明一下了。当CSet被确定之后，会在接下来的一个年轻代回收过程当中对CSet进行回收，通过年轻代GC的几个阶段，一部分的老年代Region会被回收并放入年轻代使用。这个概念很灵活，<font color="DeepPink"><strong>即G1只关注你有没有存活对象了，如果没有，无论你属于老年代，还是属于年轻代，你都会被回收并放入可用Region队列，下一次你被分配到哪里就不确定了。</strong></font>也正是因为Region、混合收集这些特性，让G1对老年代的垃圾收集方式有别于Serial GC、Parallel GC和CMS GC，G1采用Region方式让对象之间的联系存在于虚拟地址之上，这样就不需要针对老年代的压缩和回收动作对整个Java堆执行扫描，为老年代回收节约了时间。</p>
 <h4 id="G1-设计思路"><a href="#G1-设计思路" class="headerlink" title="G1 设计思路"></a>G1 设计思路</h4><p>Gl把整个Java堆划分为若干个区间(Region)。每个Region大小为2的倍数，范围在MB32MB之间，可能为1MB、2MB、4MB、8MB、16MB、32MB。<font color="DeepPink"><strong>所有的Region有一样的大小，在JVM生命周期内不会被改变。</strong></font></p>
@@ -697,14 +697,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-jrockit-note.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
+      <div class="popular-posts-title"><a href="\java-gc-g1.html" rel="bookmark">Java 垃圾回收算法之G1</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-gc-g1.html" rel="bookmark">Java 垃圾回收算法之G1</a></div>
+      <div class="popular-posts-title"><a href="\java-jrockit-note.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
       
     </li>
   
@@ -718,14 +718,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
+      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
+      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
       
     </li>
   
