@@ -1,8 +1,9 @@
 ---
 title: Arthas 学习笔记
 categories:
-  - JVM
+  - Java
 tags:
+  - Java
   - JVM
   - Arthas
   - 原创

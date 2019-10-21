@@ -10,6 +10,7 @@ tags:
   - Atomic
   - LongAdder
   - 原创
+  - Java
 ---
 
 > 基于OpenJDK 12
@@ -17,8 +18,8 @@ tags:
 <!-- more -->
 
 阅读本文前，推荐先阅读以下两篇文章，以便能更好的对比理解：
-* [译-Java-Concurrent-Atomic-Package-详解](https://jiankunking.com/%E8%AF%91-Java-Concurrent-Atomic-Package-%E8%AF%A6%E8%A7%A3.html)
-* [Java-JUC-Atomic-AtomicLong](https://jiankunking.com/Java-JUC-Atomic-AtomicLong.html)
+* [译-Java-Concurrent-Atomic-Package-详解](https://www.jiankunking.com/java-concurrent-atomic-package.html)
+* [Java-JUC-Atomic-AtomicLong](https://jiankunking.com/java-juc-atomic-atomiclong.html)
 
 LongAdder是JDK 1.8 新增的原子类，基于Striped64实现。 从官方文档看，LongAdder在高并发的场景下会比AtomicLong 具有更好的性能，代价是消耗更多的内存空间：
 

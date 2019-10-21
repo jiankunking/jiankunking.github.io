@@ -19,20 +19,20 @@ date: 2018-10-27 20:28:55
 
 AQS:AbstractQueuedSynchronizer
 
-ConditionObject是同步器AQS的内部类，因为Condition的操作需要获取相关联的锁，所以作为同步器的内部类也较为合理。每个Condition对象都包含着一个队列（以下称为等待队列），该队列是Condition对象实现等待/通知功能的关键。
+ConditionObject是同步器AQS的内部类，因为Condition的操作需要获取相关联的锁，所以作为同步器的内部类也较为合理。<font color=DeepPink>**每个Condition对象都包含着一个队列（以下称为等待队列），该队列是Condition对象实现等待/通知功能的关键。**</font>
 
 下面将分析Condition的实现，主要包括：等待队列、等待和通知，下面提到的Condition如果不加说明均指的是ConditionObject。
 
 # 1、等待队列
 
-等待队列是一个FIFO的队列，在队列中的每个节点都包含了一个线程引用，该线程就是在Condition对象上等待的线程，如果一个线程调用了Condition.await()方法，那么该线程将会释放锁、构造成节点加入等待队列并进入等待状态。事实上，节点的定义复用了同步器中节点的定义，也就是说，同步队列和等待队列中节点类型都是同步器的静态内部类AbstractQueuedSynchronizer.Node。
+**等待队列是一个FIFO的队列，在队列中的每个节点都包含了一个线程引用，该线程就是在Condition对象上等待的线程，如果一个线程调用了Condition.await()方法，那么该线程将会释放锁、构造成节点加入等待队列并进入等待状态。事实上，节点的定义复用了同步器中节点的定义，也就是说，同步队列和等待队列中节点类型都是同步器的静态内部类AbstractQueuedSynchronizer.Node。**
 
 一个Condition包含一个等待队列，Condition拥有首节点（firstWaiter）和尾节点（lastWaiter）。当前线程调用Condition.await()方法，将会以当前线程构造节点，并将节点从尾部加入等待队列，等待队列的基本结构如图5-9所示。
 ![](/images/java-juc-aqs-condition/59.png)
 
 如图所示，Condition拥有首尾节点的引用，而新增节点只需要将原有的尾节点nextWaiter指向它，并且更新尾节点即可。上述节点引用更新的过程并没有使用CAS保证，原因在于<font color=DeepPink>调用await()方法的线程必定是获取了锁的线程，也就是说该过程是由锁来保证线程安全的。 </font>
 
-在Object的监视器模型上，一个对象拥有一个同步队列和等待队列，而<font color=DeepPink>并发包中的Lock（更确切地说是同步器\）拥有一个同步队列和多个等待队列</font>，其对应关系如图5-10所示。
+在Object的监视器模型上，一个对象拥有一个同步队列和等待队列，而<font color=DeepPink>并发包中的Lock（更确切地说是同步器）拥有一个同步队列和多个等待队列</font>，其对应关系如图5-10所示。
 
 ![](/images/java-juc-aqs-condition/510.png)
 # 2、等待

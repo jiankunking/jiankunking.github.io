@@ -20,11 +20,11 @@ date: 2018-11-11 20:39:01
 # 1、前言
 希望在阅读本文之前，建议先看一下以下三篇文章：
 
-1、[面试必备：Java AQS 实现原理（图文）分析](https://juejin.im/post/5d37019a51882564c966add6) 
+1、[面试必备：Java AQS 实现原理（图文）分析](https://www.jiankunking.com/java-aqs.html) 
 
-2、[面试必备：Java AQS Condition的实现分析](https://juejin.im/post/5d3848e951882556d1684532) 
+2、[面试必备：Java AQS Condition的实现分析](https://www.jiankunking.com/java-aqs-condition.html) 
 
-3、[面试必备：Java volatile的内存语义与AQS锁内存可见性](https://juejin.im/post/5d3952bff265da1b7c615dba) 
+3、[面试必备：Java Volatile的内存语义与AQS锁内存可见性](https://www.jiankunking.com/java-volatile-aqs.html) 
 
 读完了以上三篇文章，先看一下ReentrantReadWriteLock的代码路径：
 ```

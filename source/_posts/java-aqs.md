@@ -335,9 +335,9 @@ JDK中AQS被广泛使用，基于AQS实现的同步器包括：
 # 7.后续
 
 后面会推出以下有关AQS的文章，已加深对于AQS的理解
-* AQS ConditionObject对象解析
-* AQS 应用案例 ReentrantReadWriteLock解析
-* Java volatile的内存语义与AQS锁内存可见性
+* [AQS ConditionObject对象解析](https://www.jiankunking.com/java-aqs-condition.html)
+* [AQS 应用案例 ReentrantReadWriteLock解析](https://www.jiankunking.com/java-reentrantreadwritelock.html)
+* [Java Volatile的内存语义与AQS锁内存可见性](https://www.jiankunking.com/java-volatile-aqs.html)
 
 # 8.感谢
 本文很多内容整理自网络，参考文献：

@@ -4,6 +4,7 @@ categories:
   - GC
 tags:
   - GC
+  - JVM
   - 读书笔记
 abbrlink: 57482
 date: 2019-09-16 16:44:57

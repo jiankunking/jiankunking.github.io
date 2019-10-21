@@ -1,5 +1,5 @@
 ---
-title: Java volatile的内存语义与AQS锁内存可见性
+title: Java Volatile的内存语义与AQS锁内存可见性
 categories:
   - JUC
 tags:

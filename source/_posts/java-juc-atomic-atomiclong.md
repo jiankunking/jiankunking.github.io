@@ -8,6 +8,7 @@ tags:
   - Atomic
   - AtomicLong
   - 原创
+  - Java
 abbrlink: 57432
 date: 2019-08-04 11:17:52
 ---
@@ -17,7 +18,7 @@ date: 2019-08-04 11:17:52
 
 <!-- more -->
 
-[Atomic Package解析参考（比如lazySet原理解析）](http://www.jiankunking.com/译-Java-Concurrent-Atomic-Package-详解.html)
+[Atomic Package解析参考（比如lazySet原理解析）](https://www.jiankunking.com/java-concurrent-atomic-package.html)
 
 AtomicLong的常用方法如下：
 * long addAndGet(long delta)：以原子方式将输入的数值与实例中的值（AtomicLong里的

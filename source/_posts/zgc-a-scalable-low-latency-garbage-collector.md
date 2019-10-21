@@ -5,6 +5,7 @@ categories:
 tags:
   - GC
   - ZGC
+  - JVM
   - Java
   - 原创
 abbrlink: 36241
