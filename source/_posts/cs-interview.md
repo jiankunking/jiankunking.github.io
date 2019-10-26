@@ -119,6 +119,7 @@ mysql通过innodb引擎的话，是通过表锁还是行锁？
 2. elasticsearch整个建索引. 查询的过程
 3. elasticsearch如何选举
 4. ik 是如何进行分词的？
+5. es Scroll 原理？ Search After原理？
 
 # OpenTSDB
 1. OpenTSDB与HBase 关系
@@ -144,3 +145,4 @@ mysql通过innodb引擎的话，是通过表锁还是行锁？
 
 # Spring
 1. spring 注入 接口即如何注入一个接口的多个实现类？
+2. spring 中用到的设计模式？spring中一次完整的http请求链路？

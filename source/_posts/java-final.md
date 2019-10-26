@@ -3,6 +3,7 @@ title: Java Final
 categories:
   - Java
 tags:
+  - Final
   - JDK
   - Java
   - 原创
@@ -21,4 +22,7 @@ date: 2019-10-21 14:03:08
 在引用变量为任意线程可见之前，该引用变量指向的对象的final域已经在构造函数中被正确初始化过了。其实，要得到这个效果，还需要一个保证：在构造函数内部，不能让这个被构造对象的引用为其他线程所见，也就是对象引用不能在构造函数中“逸出”。
 
 # 拓展
-在线：<a href="/attachments/jsr133.pdf" target="_blank">JSR 133:3.2 Final Fields（第九页）</a>
+
+[final-keyword-and-jvm-memory-impact](https://dzone.com/articles/final-keyword-and-jvm-memory-impact)
+
+在线JSR：<a href="/attachments/jsr133.pdf" target="_blank">JSR 133:3.2 Final Fields（第九页）</a>
