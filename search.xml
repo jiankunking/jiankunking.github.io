@@ -895,7 +895,9 @@
 <p>Garthwaite等[2005]讨论了如何对本地分配缓冲区的大小进行自适应调整,他们同时发现,将本地分配缓冲区与处理器而非线程相关联效果更佳。该算法通过如下方式对本地分配缓冲区的大小进行调整:线程初次申请本地分配缓冲区时将获得24个字的内存块,之后每次新申请的内存块均为上一次的1.5倍,同时每经历一次垃圾回收过程,回收器都会将线程的本地分配缓冲区的大小折半。该算法同时也会根据不同线程的分配次数调整年轻代的空间大小。每处理器(per-processor)本地分配缓冲区的实现依赖于多处理器的可重启临界区(restartable critical section),Garthwaite等人对此做了介绍。其基本原理是,线程可以判断自身是否被抢占(preempt)或者被重新调度(reschedule),然后可以据此判断自身是否被切换到其他处理器上运行。当线程抢占发生时,处理器会对某个本地寄存器进行修改,该操作会为抢占完成后的写入操作设置一个陷阱,而陷阱处理函数则会重启被中断的分配过程。尽管每处理器本地分配缓冲区需要更多的指令支持,但与每线程本地分配缓冲区相比,其分配时延相同,且不需要复杂的缓冲区调整机制。 Garthwaite同时发现,当线程数量较少时(特别是当线程数量小于处理器数量时),每线程(per-thread)本地分配缓冲区的性能较好,而在线程数量较多的情况下,每处理器本地分配缓冲区的表现更佳,因此他们将系统设计成可在两种方案之间进行动态切换。</p>
 <p>本地分配缓冲区通常使用顺序分配策略。每个线程(或处理器)也可以独立维护自身对应的分区适应空闲链表,同时使用增量清扫策略。线程在内存分配过程中会执行增量清扫,并将清扫所得的空闲内存单元添加到自身空闲链表中,但Berger等[2000]指出,如果将该算法用于显式内存管理会存在一些问题。例如,在某一使用生产者一消费者模型的程序中消息对象通常由生产者创建并由消费者释放,因此两个线程之间将会产生单方向的内存转移。在垃圾回收环境下通常不会存在这一问题,因为回收器可以将空闲内存释放到全局内存池中。如果使用增量清扫,空闲内存单元将被执行清扫的线程所获取,从而自然地将回收所得的内存返还给分配最频繁的线程。</p>
 <h2 id="需要考虑的问题-1"><a href="#需要考虑的问题-1" class="headerlink" title="需要考虑的问题"></a>需要考虑的问题</h2><p><font color="DeepPink"><strong>使用额外的位图表来标记内存颗粒的状态(空闲/已分配)以及内存单元/对象的起始地址,不仅能提升程序的鲁棒性,而且可以简化对象头部的设计。该策略同时可以加速回收器的操作,并可以在存储器层次结构方面提升回收器的性能。基于位图的分配策略空间开销不大,但其分配过程通常会存在额外的时间开销。</strong></font></p>
-<h1 id="小注"><a href="#小注" class="headerlink" title="小注"></a>小注</h1><p>读到了9.7 对程序行为的适应</p>
+<h2 id="分代间指针"><a href="#分代间指针" class="headerlink" title="分代间指针"></a>分代间指针</h2><p>分代间指针的创建有3种方式:一是在对象创建时写入,二是在赋值器更新指针槽时写入,三是在将对象移动到其他分代时产生。回收器必须要对分代间指针进行记录,只有这样才能确保在对某一分代单独进行回收时根的完整性。</p>
+<h3 id="记忆集"><a href="#记忆集" class="headerlink" title="记忆集"></a>记忆集</h3><p>因此,每个分代的记忆集均只需记录可能指向该分代内部对象的回收相关指针来源。不同的记忆集实现方式在来源地址的记录方面所能达到的精度也各不相同。精度并非越髙越好,较高的精度通常会增大赋值器的额外开销、记忆集空间开销以及回收器处理记忆集的时间开销。</p>
+<h1 id="小注"><a href="#小注" class="headerlink" title="小注"></a>小注</h1><p>读到了9.11 带式回收框架</p>
 ]]></content>
       <categories>
         <category>GC</category>
@@ -6100,8 +6102,8 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Go</tag>
-        <tag>SOFAMosn</tag>
         <tag>Performance</tag>
+        <tag>SOFAMosn</tag>
       </tags>
   </entry>
   <entry>
@@ -6213,9 +6215,9 @@ table th:nth-of-type(2) {
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
         <tag>ReentrantReadWriteLock</tag>
       </tags>
   </entry>
@@ -6260,9 +6262,9 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
         <tag>Condition</tag>
       </tags>
   </entry>
@@ -7069,9 +7071,9 @@ Connection: close
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
         <tag>Volatile</tag>
       </tags>
   </entry>
@@ -7383,9 +7385,9 @@ Connection: close
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
       </tags>
   </entry>
   <entry>
