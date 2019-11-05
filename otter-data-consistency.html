@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="Otter数据一致性实现思路分析">
+<meta name="keywords" content="MySQL,Otter">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Otter数据一致性">
+<meta property="og:url" content="https://jiankunking.com/otter-data-consistency.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="Otter数据一致性实现思路分析">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://jiankunking.com/images/otter-data-consistency/%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF.png">
+<meta property="og:image" content="https://jiankunking.com/images/otter-data-consistency/%E5%88%86%E5%B8%83%E5%BC%8FPermit.png">
+<meta property="og:image" content="https://jiankunking.com/images/otter-data-consistency/%E6%97%B6%E9%97%B4%E4%BA%A4%E9%9B%86%E8%A1%A5%E6%95%91.jpg">
+<meta property="og:updated_time" content="2019-11-05T13:40:29.605Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Otter数据一致性">
+<meta name="twitter:description" content="Otter数据一致性实现思路分析">
+<meta name="twitter:image" content="https://jiankunking.com/images/otter-data-consistency/%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF.png">
+  <link rel="canonical" href="https://jiankunking.com/otter-data-consistency">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Otter数据一致性 | 衣舞晨风</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">衣舞晨风</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-sitemap">
+      
+    
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/otter-data-consistency.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">Otter数据一致性
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-02-05 21:24:20" itemprop="dateCreated datePublished" datetime="2019-02-05T21:24:20+08:00">2019-02-05</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-11-05 21:40:29" itemprop="dateModified" datetime="2019-11-05T21:40:29+08:00">2019-11-05</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/otter-data-consistency.html#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/otter-data-consistency.html" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>2.9k</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>3 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>Otter数据一致性实现思路分析</p>
+</blockquote>
+<a id="more"></a>
+
+<h1 id="技术选型分析"><a href="#技术选型分析" class="headerlink" title="技术选型分析"></a>技术选型分析</h1><p>需要处理一致性的业务场景：</p>
+<ul>
+<li>多地修改 (双A机房)</li>
+<li>同一记录，同时变更</li>
+</ul>
+<p>同一记录定义：具体到某一张表，某一条pk，某一字段</p>
+<p>同时变更定义：A地写入的数据在B地还未可见的一段时间范围</p>
+<p>基本思路</p>
+<ul>
+<li>事前控制：比如paoxs协议，在多地数据写入各自数据存储之前，就已经决定好最后保留哪条记录</li>
+<li>事后处理：指A/B两地修改的数据，已经保存到数据库之后，通过数据同步后保证两数据的一致性</li>
+</ul>
+<h1 id="事前控制"><a href="#事前控制" class="headerlink" title="事前控制"></a>事前控制</h1><p>paxos协议，相信大家研究的人也比较多，但是它有一些局限性，就拿zookeeper来说，它使用了paxos的一个变种，但基本原理还是相似的。</p>
+<p>我们拿zookeeper的几种部署模式来看：</p>
+<h2 id="1-先看：-A地部署leader-follower集群，B地部署observer"><a href="#1-先看：-A地部署leader-follower集群，B地部署observer" class="headerlink" title="1. 先看： A地部署leader/follower集群，B地部署observer."></a>1. 先看： A地部署leader/follower集群，B地部署observer.</h2><p>此时A地收到数据后，需要的网络操作基本为同机房的leader/follower的paxos协议，耗时基本可控</p>
+<p>此时B地收到数据后，需要的网络操作为：</p>
+<ul>
+<li>B地接收到请求，转发给A地，一次机房网络</li>
+<li>地接收到请求，由leader转发给follower进行投票决策，同机房网络</li>
+<li>A地leader将投票的结构，反馈给B地，一次机房网络.</li>
+</ul>
+<p>这样一来，也就是说，事务时间 = 一次异地机房RTT + 同机房paxos算法耗时. 比如中美网络延迟200ms，那事务时间基本就是200ms+ 。 但此时，B地机房基本是一个只读镜像，读数据也有延迟，其系统写扩展性全在A机房，某一天当A机房不够用时，A机房进行拆分，就会遇到下一个问题。</p>
+<h2 id="2-再看：A地和B地组成leader-follower"><a href="#2-再看：A地和B地组成leader-follower" class="headerlink" title="2. 再看：A地和B地组成leader/follower"></a>2. 再看：A地和B地组成leader/follower</h2><p>此时A地收到数据后，需要的网络操作为：(假如A不是leader，B是leader)</p>
+<ul>
+<li>首先需要发送数据到B，一次机房网络</li>
+<li>B收到A的提议数据后，发起一个投票到A，一次机房网络</li>
+<li>A收到提议后，返回一个投票结果到B，一次机房网络</li>
+<li>B收到大部分投票结果，做出决定之后，将结果反馈给A，一次网络交互.</li>
+</ul>
+<p>这种理想无冲突的情况，总共会有2次RTT，如果优化A发起的提议自己默认投票，不返回给A进行投票，可以优化为1次RTT. 针对中美网络延迟200ms，那事务时间基本是200ms+. 如果A地和B地同时写入，那事务时间可能会翻倍。</p>
+<p>总结：如果你能接受事务时间的影响(比如你A地和B地的网络延迟只有10ms)，那是可以考虑选择paxos协议. 但目前otter所要解决的需求为中美200ms的RTT，暂时无法接收paxos协议来解决一致性问题.</p>
+<h1 id="事后处理"><a href="#事后处理" class="headerlink" title="事后处理"></a>事后处理</h1><p>针对事后处理，不管哪种方案，一定会是一个最终一致性，因为在你做处理前，A地和B地的数据内容已经不一致了，你不论选择任何一个版本，对另一边来说都是一个数据版本丢失，最终一致性。</p>
+<p>针对数据最终一致性处理，goldengate文档中提到了几种case :</p>
+<ul>
+<li>trusted source. 信任站点，数据出现冲突时，永远以某一边为准覆盖另一边</li>
+<li>timestamp，基于数据的修改时间戳，修改时间新的覆盖旧的数据</li>
+<li>数据类型merge， 比如针对库存信息，A地库存减一，B地库存减二，两边同步之后A地和B地的数据应该是减三，合并两者减一和减二的操作</li>
+</ul>
+<p>针对trusted source/timestamp模型，一定需要建立一个冲突数据kv表，(比如trusted source场景，如果B地修改了记录，而A地没修改此记录，那B地可以覆盖A地，即使A地是trusted source) ，对应冲突数据KV表的插入和删除，如果插入和删除不及时，就会有各种各样的误判，导致数据不一致。</p>
+<p>举个插入不及时的case: 比如A地和B地进行双向同步，同时修改了同一记录，但A地的binlog解析器因为异常挂起了，导致构建冲突数据KV表数据延迟了，而此时B地的数据就会认为无冲突，直接覆盖了A，即使A地是trusted source，然后A地数据解析恢复后，同步到B地时，因为A是trusted source，就会覆盖B地的数据，最后就是A和B两地各为两边之前的版本，导致数据不一致。</p>
+<p>因为goldengate外部文档针对双A机房同步，数据一致性处理描述的比较少，我只能推测到这，基本结论是风险太大，所以otter需要有一种完全可靠的数据一致性方案，这也是本文讨论的重点。</p>
+<h1 id="单向回环补救-基于trusted-source的改进版"><a href="#单向回环补救-基于trusted-source的改进版" class="headerlink" title="单向回环补救 (基于trusted source的改进版)"></a>单向回环补救 (基于trusted source的改进版)</h1><p><img src="/images/otter-data-consistency/%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF.png" alt></p>
+<p>思路：最终一致性</p>
+<p>适用场景： A地和B地数据不对等，比如A地为主，写入量比较高，B地有少量的数据写入</p>
+<p>单向回环流程：(比如图中以HZ为trusted source站点)</p>
+<ul>
+<li>us-&gt;hz同步的数据，会再次进入hz-&gt;us队列，形成一次单向回环</li>
+<li>hz-&gt;us同步的数据，不会进入us-&gt;hz队列(回环终止，保证不进入死循环)</li>
+</ul>
+<p>存在的问题：存在同步延迟时，会出现版本丢失高/数据交替性变化</p>
+<ul>
+<li>比如US同一条记录变更了10个版本，而且很快同步到了HZ，而HZ因为同步数据大，同步延迟，后续单向回环中将10个版本又在US进行了一次重放，导致出现数据交替</li>
+<li>比如HZ同一条记录变更了10个版本，而且很快同步到了US，而US因为同步延迟，将一个比较早的版本同步到了HZ，后续通过单向回环，将此记录重放到了US，导致之前HZ到US的10个版本丢失.</li>
+</ul>
+<p>解决方案：</p>
+<ul>
+<li>反查数据库同步 (以数据库最新版本同步，解决交替性，比如设置一致性反查数据库延迟阀值为60秒，即当同步过程中发现数据延迟超过了60秒，就会基于PK反查一次数据库，拿到当前最新值进行同步，减少交替性的问题)</li>
+<li>字段同步 (降低冲突概率)</li>
+<li>同步效率 (同步越快越好，降低双写导致版本丢失概率，不需要构建冲突数据KV表)</li>
+<li>同步全局控制 (比如HZ-&gt;US和US-&gt;HZ一定要一起启动，一起关闭，保证不会出现一边数据一直覆盖另一边，造成比较多的版本丢失)</li>
+</ul>
+<p>同步全局控制方案：(分布式Permit)</p>
+<p><img src="/images/otter-data-consistency/%E5%88%86%E5%B8%83%E5%BC%8FPermit.png" alt></p>
+<p>注意：A,B,C三点状态都正常才允许进行同步(解决数据单向覆盖)。 任何一边的canal不正常工作，都应该停掉整个双向同步，及时性越高越好。</p>
+<h1 id="时间交集补救"><a href="#时间交集补救" class="headerlink" title="时间交集补救"></a>时间交集补救</h1><p><img src="/images/otter-data-consistency/%E6%97%B6%E9%97%B4%E4%BA%A4%E9%9B%86%E8%A1%A5%E6%95%91.jpg" alt></p>
+<p>算法描述：</p>
+<ol>
+<li>首先定义两个时间概念</li>
+</ol>
+<ul>
+<li>数据变更时间A ：代表业务数据在A地数据库中产生的时间，即图中的时间A</li>
+<li>数据同步时间B：代表数据变更载入到B地数据库的时间，即图中的时间B</li>
+</ul>
+<ol start="2">
+<li><p>针对每条或者一批数据都记录变更时间A和同步时间B，同时保留历史同步过的数据记录</p>
+</li>
+<li><p>图中纵轴为时间轴，Aa代表从数据库A同步到数据库B的一个同步过程，Ba代表从数据库B到同步到的数据库A的一个同步过程,每个同步过程在纵轴上会有两个点，分别代表变更时间A和同步时间B.</p>
+</li>
+<li><p>根据同一时间的定义，在两边数据库的各自同步过程中，以数据库A为例，在数据库B的同步过程找到与Aa有时间交集的批次，比如这里就是Aa 与 (Ba , Bb , Bc)有时间交集</p>
+</li>
+<li><p>针对步骤４中的批次，根据同一数据的定义，在交集的每个批次中，比如首先拿Aa和Ba的历史同步数据记录，根据同一数据定义进行查找，然后再是Aa和Bb，依次类推。</p>
+</li>
+<li><p>针对步骤５中找到的同一数据，最后确定为需要进行单向回环的一致性算法的数据。</p>
+</li>
+</ol>
+<p>此方案相比于单向回环方案：减少单向回环同步的数据量，解决A和B地数据对等的case，不过目前开源版本暂未实现。</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">推荐阅读</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\mysql-explain.html" rel="bookmark">MySQL Explain</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\mysql-innodb-partition-table.html" rel="bookmark">MySQL InnoDB存储引擎：分区表</a></div>
+      
+    </li>
+  
+  </ul>
+
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center;">
+  <img id="wechat_subscriber_qcode" src="/images/wechat/wechat.jpg" alt="jiankunking wechat" style="width: 200px; max-width: 100%;">
+  <div>喜欢就关注一下呗</div>
+</div>
+
+      
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信支付">
+        <p>微信支付</p>
+      </div>
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>jiankunking</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://jiankunking.com/otter-data-consistency.html" title="Otter数据一致性">https://jiankunking.com/otter-data-consistency.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+            
+              <a href="/tags/Otter/" rel="tag"># Otter</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/pass-platform-architecture-design.html" rel="next" title="PaaS平台架构设计">
+                  <i class="fa fa-chevron-left"></i> PaaS平台架构设计
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/multi-live-high-available-architecture-design.html" rel="prev" title="异地多活高可用架构设计">
+                  异地多活高可用架构设计 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="comments"></div>
+  
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#技术选型分析"><span class="nav-number">1.</span> <span class="nav-text">技术选型分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#事前控制"><span class="nav-number">2.</span> <span class="nav-text">事前控制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-先看：-A地部署leader-follower集群，B地部署observer"><span class="nav-number">2.1.</span> <span class="nav-text">1. 先看： A地部署leader/follower集群，B地部署observer.</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-再看：A地和B地组成leader-follower"><span class="nav-number">2.2.</span> <span class="nav-text">2. 再看：A地和B地组成leader/follower</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#事后处理"><span class="nav-number">3.</span> <span class="nav-text">事后处理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#单向回环补救-基于trusted-source的改进版"><span class="nav-number">4.</span> <span class="nav-text">单向回环补救 (基于trusted source的改进版)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#时间交集补救"><span class="nav-number">5.</span> <span class="nav-text">时间交集补救</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/avatar/avatar.png"
+      alt="jiankunking">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">67</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">98</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/jiankunking" title="GitHub &rarr; https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-book"></i>
+      推荐阅读
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+        </li>
+      
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright"><a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=" rel="noopener" target="_blank"> </a>&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">471k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">7:08</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/pisces.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
+  });
+  new Valine({
+    el: '#comments',
+    verify: true,
+    notify: false,
+    appId: '6Qd847qBRIzFk0sECwvtfgI2-9Nh9j0Va',
+    appKey: 'a2veKRXyF7edg7bijbnArVof',
+    placeholder: '有啥疑问、心得，交流一下呗',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false,
+    lang: 'zh-cn' || 'zh-cn',
+    path: location.pathname,
+    recordIP: false,
+    serverURLs: ''
+  });
+}, window.Valine);
+</script>
+
+</body>
+</html>
