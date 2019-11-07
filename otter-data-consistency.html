@@ -69,7 +69,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/otter-data-consistency/%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF.png">
 <meta property="og:image" content="https://jiankunking.com/images/otter-data-consistency/%E5%88%86%E5%B8%83%E5%BC%8FPermit.png">
 <meta property="og:image" content="https://jiankunking.com/images/otter-data-consistency/%E6%97%B6%E9%97%B4%E4%BA%A4%E9%9B%86%E8%A1%A5%E6%95%91.jpg">
-<meta property="og:updated_time" content="2019-11-05T13:40:29.605Z">
+<meta property="og:updated_time" content="2019-11-07T12:17:45.506Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Otter数据一致性">
 <meta name="twitter:description" content="Otter数据一致性实现思路分析">
@@ -324,7 +324,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-11-05 21:40:29" itemprop="dateModified" datetime="2019-11-05T21:40:29+08:00">2019-11-05</time>
+                <time title="修改时间：2019-11-07 20:17:45" itemprop="dateModified" datetime="2019-11-07T20:17:45+08:00">2019-11-07</time>
               </span>
             
           
@@ -432,8 +432,8 @@
 </ul>
 <p>这种理想无冲突的情况，总共会有2次RTT，如果优化A发起的提议自己默认投票，不返回给A进行投票，可以优化为1次RTT. 针对中美网络延迟200ms，那事务时间基本是200ms+. 如果A地和B地同时写入，那事务时间可能会翻倍。</p>
 <p>总结：如果你能接受事务时间的影响(比如你A地和B地的网络延迟只有10ms)，那是可以考虑选择paxos协议. 但目前otter所要解决的需求为中美200ms的RTT，暂时无法接收paxos协议来解决一致性问题.</p>
-<h1 id="事后处理"><a href="#事后处理" class="headerlink" title="事后处理"></a>事后处理</h1><p>针对事后处理，不管哪种方案，一定会是一个最终一致性，因为在你做处理前，A地和B地的数据内容已经不一致了，你不论选择任何一个版本，对另一边来说都是一个数据版本丢失，最终一致性。</p>
-<p>针对数据最终一致性处理，goldengate文档中提到了几种case :</p>
+<h1 id="事后处理"><a href="#事后处理" class="headerlink" title="事后处理"></a>事后处理</h1><p><font color="DeepPink"><strong>针对事后处理，不管哪种方案，一定会是一个最终一致性，因为在你做处理前，A地和B地的数据内容已经不一致了，你不论选择任何一个版本，对另一边来说都是一个数据版本丢失，最终一致性。</strong></font></p>
+<p>针对数据最终一致性处理，GoldenGate文档中提到了几种case :</p>
 <ul>
 <li>trusted source. 信任站点，数据出现冲突时，永远以某一边为准覆盖另一边</li>
 <li>timestamp，基于数据的修改时间戳，修改时间新的覆盖旧的数据</li>
@@ -441,7 +441,7 @@
 </ul>
 <p>针对trusted source/timestamp模型，一定需要建立一个冲突数据kv表，(比如trusted source场景，如果B地修改了记录，而A地没修改此记录，那B地可以覆盖A地，即使A地是trusted source) ，对应冲突数据KV表的插入和删除，如果插入和删除不及时，就会有各种各样的误判，导致数据不一致。</p>
 <p>举个插入不及时的case: 比如A地和B地进行双向同步，同时修改了同一记录，但A地的binlog解析器因为异常挂起了，导致构建冲突数据KV表数据延迟了，而此时B地的数据就会认为无冲突，直接覆盖了A，即使A地是trusted source，然后A地数据解析恢复后，同步到B地时，因为A是trusted source，就会覆盖B地的数据，最后就是A和B两地各为两边之前的版本，导致数据不一致。</p>
-<p>因为goldengate外部文档针对双A机房同步，数据一致性处理描述的比较少，我只能推测到这，基本结论是风险太大，所以otter需要有一种完全可靠的数据一致性方案，这也是本文讨论的重点。</p>
+<p>因为GoldenGate外部文档针对双A机房同步，数据一致性处理描述的比较少，我只能推测到这，基本结论是风险太大，所以otter需要有一种完全可靠的数据一致性方案，这也是本文讨论的重点。</p>
 <h1 id="单向回环补救-基于trusted-source的改进版"><a href="#单向回环补救-基于trusted-source的改进版" class="headerlink" title="单向回环补救 (基于trusted source的改进版)"></a>单向回环补救 (基于trusted source的改进版)</h1><p><img src="/images/otter-data-consistency/%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF.png" alt></p>
 <p>思路：最终一致性</p>
 <p>适用场景： A地和B地数据不对等，比如A地为主，写入量比较高，B地有少量的数据写入</p>
@@ -499,13 +499,6 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
-      
-    </li>
-  
-    <li class="popular-posts-item">
-      
-      
       <div class="popular-posts-title"><a href="\mysql-explain.html" rel="bookmark">MySQL Explain</a></div>
       
     </li>
@@ -513,7 +506,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-partition-table.html" rel="bookmark">MySQL InnoDB存储引擎：分区表</a></div>
       
     </li>
   
@@ -527,7 +520,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\mysql-innodb-partition-table.html" rel="bookmark">MySQL InnoDB存储引擎：分区表</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
       
     </li>
   
