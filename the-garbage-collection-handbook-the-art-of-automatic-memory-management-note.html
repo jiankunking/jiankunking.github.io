@@ -59,14 +59,14 @@
 </script>
 
   <meta name="description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
-<meta name="keywords" content="读书笔记,JVM,GC">
+<meta name="keywords" content="JVM,读书笔记,GC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="垃圾回收算法手册：自动内存管理的艺术 笔记">
 <meta property="og:url" content="https://jiankunking.com/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-10-31T13:00:36.431Z">
+<meta property="og:updated_time" content="2019-11-12T11:37:03.365Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="垃圾回收算法手册：自动内存管理的艺术 笔记">
 <meta name="twitter:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
@@ -320,7 +320,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-10-31 21:00:36" itemprop="dateModified" datetime="2019-10-31T21:00:36+08:00">2019-10-31</time>
+                <time title="修改时间：2019-11-12 19:37:03" itemprop="dateModified" datetime="2019-11-12T19:37:03+08:00">2019-11-12</time>
               </span>
             
           
@@ -369,7 +369,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span>15k</span>
+              <span>16k</span>
             </span>
           
             <span class="post-meta-item" title="阅读时长">
@@ -483,7 +483,17 @@
 <h2 id="需要考虑的问题-1"><a href="#需要考虑的问题-1" class="headerlink" title="需要考虑的问题"></a>需要考虑的问题</h2><p><font color="DeepPink"><strong>使用额外的位图表来标记内存颗粒的状态(空闲/已分配)以及内存单元/对象的起始地址,不仅能提升程序的鲁棒性,而且可以简化对象头部的设计。该策略同时可以加速回收器的操作,并可以在存储器层次结构方面提升回收器的性能。基于位图的分配策略空间开销不大,但其分配过程通常会存在额外的时间开销。</strong></font></p>
 <h2 id="分代间指针"><a href="#分代间指针" class="headerlink" title="分代间指针"></a>分代间指针</h2><p>分代间指针的创建有3种方式:一是在对象创建时写入,二是在赋值器更新指针槽时写入,三是在将对象移动到其他分代时产生。回收器必须要对分代间指针进行记录,只有这样才能确保在对某一分代单独进行回收时根的完整性。</p>
 <h3 id="记忆集"><a href="#记忆集" class="headerlink" title="记忆集"></a>记忆集</h3><p>因此,每个分代的记忆集均只需记录可能指向该分代内部对象的回收相关指针来源。不同的记忆集实现方式在来源地址的记录方面所能达到的精度也各不相同。精度并非越髙越好,较高的精度通常会增大赋值器的额外开销、记忆集空间开销以及回收器处理记忆集的时间开销。</p>
-<h1 id="小注"><a href="#小注" class="headerlink" title="小注"></a>小注</h1><p>读到了9.11 带式回收框架</p>
+<h2 id="带式回收框架"><a href="#带式回收框架" class="headerlink" title="带式回收框架"></a>带式回收框架</h2><p>回收策略的基本指导思想大体上可以总结如下:</p>
+<ul>
+<li>“大多数对象都在年轻时死亡”,即弱分代假说。</li>
+<li>分代回收器会避免对年老对象进行频繁回收。</li>
+<li>增量回收可以改善回收停顿时间。在分代垃圾回收器中,新生代的空间通常较小;其他回收技术通常也会限制待回收空间的大小,例如成熟对象空间回收器(mature object space collector)(也称为火车回收器)。</li>
+<li>在较小的诞生空间中使用顺序分配可以提升数据的局部性。</li>
+<li>对象需要足够的时间到达死亡。</li>
+</ul>
+<h2 id="启发式方法在分代垃圾回收中的应用"><a href="#启发式方法在分代垃圾回收中的应用" class="headerlink" title="启发式方法在分代垃圾回收中的应用"></a>启发式方法在分代垃圾回收中的应用</h2><p>分代垃圾回收器可以较好地处理短命对象,但其对长寿对象的处理能力则略显不足,这一问题主要表现在两个方面:第一,年老代垃圾的回收不够及时,因为没有哪种策略可以确保在年老代出现大量垃圾时尽快将其回收;第二,年老代的所有长寿对象都必须是从年轻代复制而来的,同时为避免过早地提升对象,某些回收器要求年轻代对象在得到提升之前必须在年轻代中经历数次回收。对于长寿对象而言,这些复制操作都相当于是无用功,更好的解决方案是直接将长寿对象预分配到其最终可能到达的分代中。</p>
+<p>一些研究者尝试通过分析程序特定代码位置所分配对象的生命周期分布来解决这一问题。这一方案对于虚拟机的开发者来说具有一定的可行性,因为他们可以知道在其具体的虚拟机中哪些数据结构会是永久性的、哪些库或者代码对象永远不会或者至少不太可能被卸载。这些对象的预分配逻辑可以在虚拟机内部实现。</p>
+<h1 id="其他分区策略"><a href="#其他分区策略" class="headerlink" title="其他分区策略"></a>其他分区策略</h1><p>读到10.1.1</p>
 
     </div>
 
@@ -584,9 +594,9 @@
           
           <div class="post-tags">
             
-              <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
-            
               <a href="/tags/JVM/" rel="tag"># JVM</a>
+            
+              <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
             
               <a href="/tags/GC/" rel="tag"># GC</a>
             
@@ -660,7 +670,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#标记过程中的高速缓存不命中问题"><span class="nav-number">2.4.</span> <span class="nav-text">标记过程中的高速缓存不命中问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题"><span class="nav-number">2.5.</span> <span class="nav-text">需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间利用率"><span class="nav-number">2.5.1.</span> <span class="nav-text">空间利用率</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#引用计数"><span class="nav-number">3.</span> <span class="nav-text">引用计数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环状引用计数"><span class="nav-number">3.1.</span> <span class="nav-text">环状引用计数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存分配"><span class="nav-number">4.</span> <span class="nav-text">内存分配</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分区适应分配"><span class="nav-number">4.1.</span> <span class="nav-text">分区适应分配</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间大小分级的填充"><span class="nav-number">4.1.1.</span> <span class="nav-text">空间大小分级的填充</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它需要考虑的问题"><span class="nav-number">4.2.</span> <span class="nav-text">其它需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#字节对齐"><span class="nav-number">4.2.1.</span> <span class="nav-text">字节对齐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间大小限制"><span class="nav-number">4.2.2.</span> <span class="nav-text">空间大小限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#边界标签"><span class="nav-number">4.2.3.</span> <span class="nav-text">边界标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#局部性"><span class="nav-number">4.2.4.</span> <span class="nav-text">局部性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#并发系统中的内存分配"><span class="nav-number">4.2.5.</span> <span class="nav-text">并发系统中的内存分配</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题-1"><span class="nav-number">4.3.</span> <span class="nav-text">需要考虑的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分代间指针"><span class="nav-number">4.4.</span> <span class="nav-text">分代间指针</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#记忆集"><span class="nav-number">4.4.1.</span> <span class="nav-text">记忆集</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小注"><span class="nav-number">5.</span> <span class="nav-text">小注</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾算法之间的比较"><span class="nav-number">1.1.</span> <span class="nav-text">垃圾算法之间的比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性"><span class="nav-number">1.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#吞吐量"><span class="nav-number">1.1.2.</span> <span class="nav-text">吞吐量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整性与及时性"><span class="nav-number">1.1.3.</span> <span class="nav-text">完整性与及时性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停顿时间"><span class="nav-number">1.1.4.</span> <span class="nav-text">停顿时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间开销"><span class="nav-number">1.1.5.</span> <span class="nav-text">空间开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#针对特定语言的优化"><span class="nav-number">1.1.6.</span> <span class="nav-text">针对特定语言的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可扩展性与可移植性"><span class="nav-number">1.1.7.</span> <span class="nav-text">可扩展性与可移植性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能上的劣势"><span class="nav-number">1.2.</span> <span class="nav-text">性能上的劣势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验方法"><span class="nav-number">1.3.</span> <span class="nav-text">实验方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#术语和符号"><span class="nav-number">1.4.</span> <span class="nav-text">术语和符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值器与回收器"><span class="nav-number">1.4.1.</span> <span class="nav-text">赋值器与回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分配器"><span class="nav-number">1.4.2.</span> <span class="nav-text">分配器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#标记-清扫回收"><span class="nav-number">2.</span> <span class="nav-text">标记-清扫回收</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三色抽象"><span class="nav-number">2.1.</span> <span class="nav-text">三色抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#改进的标记-清扫算法"><span class="nav-number">2.2.</span> <span class="nav-text">改进的标记-清扫算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位图标记"><span class="nav-number">2.3.</span> <span class="nav-text">位图标记</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#标记过程中的高速缓存不命中问题"><span class="nav-number">2.4.</span> <span class="nav-text">标记过程中的高速缓存不命中问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题"><span class="nav-number">2.5.</span> <span class="nav-text">需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间利用率"><span class="nav-number">2.5.1.</span> <span class="nav-text">空间利用率</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#引用计数"><span class="nav-number">3.</span> <span class="nav-text">引用计数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环状引用计数"><span class="nav-number">3.1.</span> <span class="nav-text">环状引用计数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存分配"><span class="nav-number">4.</span> <span class="nav-text">内存分配</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分区适应分配"><span class="nav-number">4.1.</span> <span class="nav-text">分区适应分配</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#空间大小分级的填充"><span class="nav-number">4.1.1.</span> <span class="nav-text">空间大小分级的填充</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它需要考虑的问题"><span class="nav-number">4.2.</span> <span class="nav-text">其它需要考虑的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#字节对齐"><span class="nav-number">4.2.1.</span> <span class="nav-text">字节对齐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空间大小限制"><span class="nav-number">4.2.2.</span> <span class="nav-text">空间大小限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#边界标签"><span class="nav-number">4.2.3.</span> <span class="nav-text">边界标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#局部性"><span class="nav-number">4.2.4.</span> <span class="nav-text">局部性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#并发系统中的内存分配"><span class="nav-number">4.2.5.</span> <span class="nav-text">并发系统中的内存分配</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#需要考虑的问题-1"><span class="nav-number">4.3.</span> <span class="nav-text">需要考虑的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分代间指针"><span class="nav-number">4.4.</span> <span class="nav-text">分代间指针</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#记忆集"><span class="nav-number">4.4.1.</span> <span class="nav-text">记忆集</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#带式回收框架"><span class="nav-number">4.5.</span> <span class="nav-text">带式回收框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启发式方法在分代垃圾回收中的应用"><span class="nav-number">4.6.</span> <span class="nav-text">启发式方法在分代垃圾回收中的应用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其他分区策略"><span class="nav-number">5.</span> <span class="nav-text">其他分区策略</span></a></li></ol></div>
         
       </div>
       <!--/noindex-->
@@ -767,12 +777,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">471k</span>
+    <span title="站点总字数">472k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:08</span>
+    <span title="站点阅读时长">7:09</span>
 </div>
 
         
