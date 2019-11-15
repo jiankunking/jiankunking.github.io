@@ -49,7 +49,7 @@ date: 2017-02-02 08:22:15
 37. http与https区别？加密算法是？
 38. wait 是释放锁？为什么释放了锁，线程就挂起了。为什么线程wait了就挂起了？
 39. CMS 垃圾回收
-40. hashmap 线程不安全 什么时候会出现？会出现什么问题？
+40. hashmap 线程不安全 什么时候会出现？会出现什么问题？（hashmap为啥线程不安全？）
 41. equals 比较原理？
 42. jvm 内存分布
 43. arraylist linklist
@@ -68,6 +68,7 @@ date: 2017-02-02 08:22:15
 56. 线程有几种状态？
 57. 如何动态上报JVM信息，以便后期排查OOM等问题？
 58. ConcurrentHashMap put的时候加锁的是数组上的元素 还是啥？
+59. Concurrenthashmap中用到的优化技巧？
 
 # MySQL部分
 1. mysql 时间 比较无效 原因？
@@ -120,6 +121,8 @@ mysql通过innodb引擎的话，是通过表锁还是行锁？
 3. elasticsearch如何选举
 4. ik 是如何进行分词的？
 5. es Scroll 原理？ Search After原理？
+6. es 副本作用？
+7. mysql elasticsearch 查询对比？（比如整个搜索流程）
 
 # OpenTSDB
 1. OpenTSDB与HBase 关系
