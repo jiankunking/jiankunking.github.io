@@ -1,14 +1,15 @@
 ---
-title: The Uber Go Style Guide
+title: Uber Go 语言编码规范
 abbrlink: 1237
 date: 2019-11-15 09:01:40
 categories:
-  - Go
+  - 编码规范
 tags:
   - Go
   - Uber
   - Style
   - Guide
+  - 编码规范
 ---
 
 > 原文地址：
@@ -16,11 +17,7 @@ https://github.com/xxjwxc/uber_go_guide_cn
 
 <!-- more -->
 
-# [uber-go/guide](https://github.com/uber-go/guide) 的中文翻译
-
-# [English](https://github.com/uber-go/guide/blob/master/style.md)
-
-# Uber Go 语言编码规范
+<!-- # Uber Go 语言编码规范 -->
 
  [Uber](https://www.uber.com/) 是一家美国硅谷的科技公司，也是 Go 语言的早期 adopter。其开源了很多 golang 项目，诸如被 Gopher 圈熟知的 [zap](https://github.com/uber-go/zap)、[jaeger](https://github.com/jaegertracing/jaeger) 等。2018 年年末 Uber 将内部的 [Go 风格规范](https://github.com/uber-go/guide) 开源到 GitHub，经过一年的积累和更新，该规范已经初具规模，并受到广大 Gopher 的关注。本文是该规范的中文版本。本版本会根据原版实时更新。
  

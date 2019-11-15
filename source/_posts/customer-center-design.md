@@ -64,6 +64,35 @@ OAuth涉及的点有：
 		* [OpenShift OSIN](https://github.com/openshift/osin)
 		* ......
 
+## OAuth Server
+OAuth Server需要做以下事情：
+* /authorize接口，负责校验是否登录（比如校验Header中bear令牌）
+  * 已登录，设置Cookie，跳转请求authorize接口参数中的redirect_uri并携带code及state
+  * 未登录，跳转鉴权中心的登陆页
+    * 用户在鉴权中心的登录页输入用户名密码,校验通过，跳转请求authorize接口参数中的redirect_uri并携带code及state
+* /token接口，负责校验code，颁发access_token及refresh_token
+* /refresh_token接口，负责通过refresh_token刷新access_token
+* /logout接口，清理Cookie
+
+## OAuth Client
+OAuth Client对接OAuth Server需要做以下事情：
+* 拦截请求，校验是否已登录
+  * 已登录，放行
+  * 未登录，跳转OAuth Server的/authorize接口接口
+    * 根据code获取用户信息，设置Cookie、颁发自己的token（access_token、refresh_token）
+* /token接口，调用鉴权中心的密码模式校验密码，获取用户信息，颁发access_token、refresh_token
+* /refresh_token接口，负责通过refresh_token刷新access_token
+* 对于Web端而言，打开首页的时候，先调用me或者profile等接口获取用户信息
+  * 如果能获取到，则意味着登录成功
+  * 如果获取不到，则前端调用后端/login接口
+    * 后端/login接口（接口需要传递参数redirect_uri）校验是否登录
+      * 未登录，跳转鉴权中心的登陆页
+      * 已登录，跳转参数redirect_uri
+* 对于移动端而言，调用/token接口
+* /logout接口，清理自己设置的Cookie，再调用鉴权中心的登陆接口
+* /callback接口，供OAuth Server回调
+
+
 # 实现
 
 从服务架构图中可以看出，业务逻辑最复杂的是账户服务。
