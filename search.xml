@@ -1,6 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>MySQL 查询语句执行顺序</title>
+    <url>/order-of-execution-of-the-sql-query.html</url>
+    <content><![CDATA[<p>MySQL 查询语句执行顺序</p>
+<a id="more"></a>
+
+<ul>
+<li>FROM clause</li>
+<li>WHERE clause</li>
+<li>GROUP BY clause</li>
+<li>HAVING clause</li>
+<li>SELECT clause</li>
+<li>ORDER BY clause</li>
+</ul>
+<p>该执行顺序整理自网络，<a href="https://qxf2.com/blog/mysql-query-execution/" target="_blank" rel="noopener">mysql-query-execution</a></p>
+<blockquote>
+<p>一直想找一个权威的解释出处，比如官网，但没有找到，如果有人知道，欢迎留言。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>Query</tag>
+        <tag>MySQL</tag>
+        <tag>Execution</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Uber Go 语言编码规范</title>
     <url>/uber-go-guide.html</url>
     <content><![CDATA[<blockquote>
@@ -1091,8 +1119,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Microservice</tag>
       </tags>
   </entry>
@@ -1161,8 +1189,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Final</tag>
       </tags>
@@ -1252,6 +1280,47 @@ use one vs other -->
 </ul>
 </li>
 </ul>
+<h2 id="OAuth-Server"><a href="#OAuth-Server" class="headerlink" title="OAuth Server"></a>OAuth Server</h2><p>OAuth Server需要做以下事情：</p>
+<ul>
+<li>/authorize接口，负责校验是否登录（比如校验Header中bear令牌）<ul>
+<li>已登录，设置Cookie，跳转请求authorize接口参数中的redirect_uri并携带code及state</li>
+<li>未登录，跳转鉴权中心的登陆页<ul>
+<li>用户在鉴权中心的登录页输入用户名密码,校验通过，跳转请求authorize接口参数中的redirect_uri并携带code及state</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>/token接口，负责校验code，颁发access_token及refresh_token</li>
+<li>/refresh_token接口，负责通过refresh_token刷新access_token</li>
+<li>/logout接口，清理Cookie</li>
+</ul>
+<h2 id="OAuth-Client"><a href="#OAuth-Client" class="headerlink" title="OAuth Client"></a>OAuth Client</h2><p>OAuth Client对接OAuth Server需要做以下事情：</p>
+<ul>
+<li>拦截请求，校验是否已登录<ul>
+<li>已登录，放行</li>
+<li>未登录，跳转OAuth Server的/authorize接口接口<ul>
+<li>根据code获取用户信息，设置Cookie、颁发自己的token（access_token、refresh_token）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>/token接口，调用鉴权中心的密码模式校验密码，获取用户信息，颁发access_token、refresh_token</li>
+<li>/refresh_token接口，负责通过refresh_token刷新access_token</li>
+<li>对于Web端而言，打开首页的时候，先调用me或者profile等接口获取用户信息<ul>
+<li>如果能获取到，则意味着登录成功</li>
+<li>如果获取不到，则前端调用后端/login接口<ul>
+<li>后端/login接口（接口需要传递参数redirect_uri）校验是否登录<ul>
+<li>未登录，跳转鉴权中心的登陆页</li>
+<li>已登录，跳转参数redirect_uri</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>对于移动端而言，调用/token接口</li>
+<li>/logout接口，清理自己设置的Cookie，再调用鉴权中心的登陆接口</li>
+</ul>
 <h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><p>从服务架构图中可以看出，业务逻辑最复杂的是账户服务。</p>
 <p>账户服务的复杂的地方主要在：</p>
 <ul>
@@ -1309,8 +1378,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>OAuth</tag>
         <tag>Login</tag>
       </tags>
@@ -1703,9 +1772,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -1894,8 +1963,8 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
-        <tag>JVM</tag>
         <tag>读书笔记</tag>
+        <tag>JVM</tag>
         <tag>GC</tag>
       </tags>
   </entry>
@@ -3476,8 +3545,8 @@ use one vs other -->
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>ElasticSearch</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
@@ -4389,8 +4458,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>ForkJoin</tag>
       </tags>
@@ -4463,8 +4532,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>ThreadLocal</tag>
       </tags>
   </entry>
@@ -4596,8 +4665,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -4647,8 +4716,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -4736,8 +4805,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -4924,9 +4993,9 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
+        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>读书笔记</tag>
         <tag>GC</tag>
         <tag>JRockit</tag>
       </tags>
@@ -5226,9 +5295,9 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
+        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>读书笔记</tag>
         <tag>GC</tag>
         <tag>G1</tag>
       </tags>
@@ -5798,9 +5867,9 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
+        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>读书笔记</tag>
         <tag>GC</tag>
         <tag>Performance</tag>
       </tags>
@@ -5948,10 +6017,10 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>Arthas</tag>
-        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -6041,9 +6110,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -6789,8 +6858,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Multi-Live</tag>
         <tag>High-Available</tag>
       </tags>
@@ -6929,8 +6998,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>PaaS</tag>
       </tags>
   </entry>
@@ -7121,9 +7190,9 @@ table th:nth-of-type(2) {
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>G1</tag>
       </tags>
@@ -7307,8 +7376,8 @@ table th:nth-of-type(2) {
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -7694,8 +7763,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Log</tag>
         <tag>Elasticsearch</tag>
         <tag>Filebeat</tag>
@@ -8026,11 +8095,11 @@ Connection: close
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
         <tag>Gateway</tag>
         <tag>Design</tag>
         <tag>API</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -8163,8 +8232,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -8326,8 +8395,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>Lambda</tag>
       </tags>
   </entry>
@@ -8477,8 +8546,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -9140,8 +9209,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>HashMap</tag>
       </tags>
   </entry>
@@ -9263,8 +9332,8 @@ Connection: close
         <category>Spring</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Spring</tag>
         <tag>AOP</tag>

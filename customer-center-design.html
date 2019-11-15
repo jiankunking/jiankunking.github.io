@@ -59,7 +59,7 @@
 </script>
 
   <meta name="description" content="客户中心梳理">
-<meta name="keywords" content="原创,Architecture,OAuth,Login">
+<meta name="keywords" content="Architecture,原创,OAuth,Login">
 <meta property="og:type" content="article">
 <meta property="og:title" content="客户中心实现分析">
 <meta property="og:url" content="https://jiankunking.com/customer-center-design.html">
@@ -69,7 +69,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/customer-center-design/%E5%AE%A2%E6%88%B7%E4%B8%AD%E5%BF%83%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84.png">
 <meta property="og:image" content="https://jiankunking.com/images/customer-center-design/oauth_web_server_flow.png">
 <meta property="og:image" content="https://jiankunking.com/images/customer-center-design/CocSmsVerificationCodeSender.png">
-<meta property="og:updated_time" content="2019-10-17T01:03:07.530Z">
+<meta property="og:updated_time" content="2019-11-15T10:02:28.731Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="客户中心实现分析">
 <meta name="twitter:description" content="客户中心梳理">
@@ -324,7 +324,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-10-17 09:03:07" itemprop="dateModified" datetime="2019-10-17T09:03:07+08:00">2019-10-17</time>
+                <time title="修改时间：2019-11-15 18:02:28" itemprop="dateModified" datetime="2019-11-15T18:02:28+08:00">2019-11-15</time>
               </span>
             
           
@@ -373,7 +373,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span>2.2k</span>
+              <span>3k</span>
             </span>
           
             <span class="post-meta-item" title="阅读时长">
@@ -383,7 +383,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span>2 分钟</span>
+              <span>3 分钟</span>
             </span>
           
 
@@ -452,6 +452,47 @@
 </li>
 </ul>
 </li>
+</ul>
+<h2 id="OAuth-Server"><a href="#OAuth-Server" class="headerlink" title="OAuth Server"></a>OAuth Server</h2><p>OAuth Server需要做以下事情：</p>
+<ul>
+<li>/authorize接口，负责校验是否登录（比如校验Header中bear令牌）<ul>
+<li>已登录，设置Cookie，跳转请求authorize接口参数中的redirect_uri并携带code及state</li>
+<li>未登录，跳转鉴权中心的登陆页<ul>
+<li>用户在鉴权中心的登录页输入用户名密码,校验通过，跳转请求authorize接口参数中的redirect_uri并携带code及state</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>/token接口，负责校验code，颁发access_token及refresh_token</li>
+<li>/refresh_token接口，负责通过refresh_token刷新access_token</li>
+<li>/logout接口，清理Cookie</li>
+</ul>
+<h2 id="OAuth-Client"><a href="#OAuth-Client" class="headerlink" title="OAuth Client"></a>OAuth Client</h2><p>OAuth Client对接OAuth Server需要做以下事情：</p>
+<ul>
+<li>拦截请求，校验是否已登录<ul>
+<li>已登录，放行</li>
+<li>未登录，跳转OAuth Server的/authorize接口接口<ul>
+<li>根据code获取用户信息，设置Cookie、颁发自己的token（access_token、refresh_token）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>/token接口，调用鉴权中心的密码模式校验密码，获取用户信息，颁发access_token、refresh_token</li>
+<li>/refresh_token接口，负责通过refresh_token刷新access_token</li>
+<li>对于Web端而言，打开首页的时候，先调用me或者profile等接口获取用户信息<ul>
+<li>如果能获取到，则意味着登录成功</li>
+<li>如果获取不到，则前端调用后端/login接口<ul>
+<li>后端/login接口（接口需要传递参数redirect_uri）校验是否登录<ul>
+<li>未登录，跳转鉴权中心的登陆页</li>
+<li>已登录，跳转参数redirect_uri</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>对于移动端而言，调用/token接口</li>
+<li>/logout接口，清理自己设置的Cookie，再调用鉴权中心的登陆接口</li>
 </ul>
 <h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><p>从服务架构图中可以看出，业务逻辑最复杂的是账户服务。</p>
 <p>账户服务的复杂的地方主要在：</p>
@@ -524,14 +565,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\multi-live-high-available-architecture-design.html" rel="bookmark">异地多活高可用架构设计</a></div>
+      <div class="popular-posts-title"><a href="\log-service-architecture-design.html" rel="bookmark">日志服务架构设计</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\log-service-architecture-design.html" rel="bookmark">日志服务架构设计</a></div>
+      <div class="popular-posts-title"><a href="\multi-live-high-available-architecture-design.html" rel="bookmark">异地多活高可用架构设计</a></div>
       
     </li>
   
@@ -605,9 +646,9 @@
           
           <div class="post-tags">
             
-              <a href="/tags/原创/" rel="tag"># 原创</a>
-            
               <a href="/tags/Architecture/" rel="tag"># Architecture</a>
+            
+              <a href="/tags/原创/" rel="tag"># 原创</a>
             
               <a href="/tags/OAuth/" rel="tag"># OAuth</a>
             
@@ -683,7 +724,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#现状"><span class="nav-number">1.</span> <span class="nav-text">现状</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#服务层面"><span class="nav-number">2.</span> <span class="nav-text">服务层面</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#OAuth"><span class="nav-number">3.</span> <span class="nav-text">OAuth</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">4.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#账户合并"><span class="nav-number">4.1.</span> <span class="nav-text">账户合并</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#切换"><span class="nav-number">4.2.</span> <span class="nav-text">切换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">5.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#短信发送"><span class="nav-number">5.1.</span> <span class="nav-text">短信发送</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证码校验"><span class="nav-number">5.2.</span> <span class="nav-text">验证码校验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它-1"><span class="nav-number">5.3.</span> <span class="nav-text">其它</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#附录"><span class="nav-number">6.</span> <span class="nav-text">附录</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#现状"><span class="nav-number">1.</span> <span class="nav-text">现状</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#服务层面"><span class="nav-number">2.</span> <span class="nav-text">服务层面</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#OAuth"><span class="nav-number">3.</span> <span class="nav-text">OAuth</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#OAuth-Server"><span class="nav-number">3.1.</span> <span class="nav-text">OAuth Server</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OAuth-Client"><span class="nav-number">3.2.</span> <span class="nav-text">OAuth Client</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">4.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#账户合并"><span class="nav-number">4.1.</span> <span class="nav-text">账户合并</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#切换"><span class="nav-number">4.2.</span> <span class="nav-text">切换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">5.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#短信发送"><span class="nav-number">5.1.</span> <span class="nav-text">短信发送</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证码校验"><span class="nav-number">5.2.</span> <span class="nav-text">验证码校验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它-1"><span class="nav-number">5.3.</span> <span class="nav-text">其它</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#附录"><span class="nav-number">6.</span> <span class="nav-text">附录</span></a></li></ol></div>
         
       </div>
       <!--/noindex-->
@@ -702,7 +743,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-count">70</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -728,7 +769,7 @@
             <a href="/tags/">
           
         
-        <span class="site-state-item-count">103</span>
+        <span class="site-state-item-count">104</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -790,7 +831,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">494k</span>
+    <span title="站点总字数">495k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
