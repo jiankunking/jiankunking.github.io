@@ -1120,8 +1120,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Microservice</tag>
       </tags>
   </entry>
@@ -1190,8 +1190,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Final</tag>
       </tags>
@@ -1380,8 +1380,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>OAuth</tag>
         <tag>Login</tag>
       </tags>
@@ -1774,9 +1774,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -2037,6 +2037,31 @@ use one vs other -->
 <p>放宽一致性要求将会产生怎样的后果?第一,这可能导致程序的执行完全背离开发者的意图,也可能导致在完全一致性模型下可正常执行的代码在更加复杂的一致性模型下产生混乱的执行结果。第二,锁相关等技术要求硬件以某种方式确保对不同地址的访问能够有序执行。各种顺序模型必须能够区别出3种主要的访问原语:读(read)、写( write)、原子(atomic)操作。原子操作需要原子化的“读一修改-写”原语,该原语通常是条件性的,例如TestAndset。内存一致性对于依赖加载(dependent load)也十分重要,所谓依赖加载,即程序需要先从地址x加载数据,然后再从地址y加载数据,但第二次加载操作的地址y取决于地址x的加载结果。依赖加载的一个典型案例是沿着指针链进行追踪。在完全一致性之外,还存在着许多较弱的内存访问顺序模型,我们将选择其中较为常见的进行介绍。</p>
 <h3 id="内存屏障与先于关系"><a href="#内存屏障与先于关系" class="headerlink" title="内存屏障与先于关系"></a>内存屏障与先于关系</h3><p><font color="DeepPink"><strong>内存屏障(memory fence)是一种处理器操作,它可以阻止处理器对某些内存访问进行重排序。</strong></font>特别地,它可以避免某些访问指令在屏障之前发送(issue),也可以避免某些访问指令被延迟到屏障之后发送,或者两者皆可。例如,完全读内存屏障可以确保屏障之前的所有读操作都能先于屏障之后的读操作执行。</p>
 <p>先于关系(happens- before)这一概念则更加规范化,它是指内存访问操作在存储中所应遵从的发生顺序。完全读内存屏障相当于是在每两个相邻读操作之间施加了先于关系。<font color="DeepPink"><strong>原子操作通常会为其内部的所有子操作施加完全内存屏障:所有较早的读、写、原子操作都必须先于较晚的读、写、原子操作发生。</strong></font>在先于关系之外还存在其他一些模型,例如获取一释放(acquire-release)语义。在该模型下,获取操作(acquire operation)(可以将其看作是获取锁)能够阻止较晚操作在该操作之前发生,但较早的读写操作则可以在获取操作之后发生;释放操作(release operation)与之完全对称:它能够阻止较早的操作在释放操作之后发生,但是较晩的操作则可以在释放操作之前发生。简而言之,处理器可以将获取一释放操作对之外的操作移动到其内部,但却不能将其内部的操作移动到外部。临界区(critical section)便可使用获取一释放模型来实现。</p>
+<h3 id="内存一致性模型"><a href="#内存一致性模型" class="headerlink" title="内存一致性模型"></a>内存一致性模型</h3><p>最强的内存一致性模型当属严格一致性(strict consitency),即所有的读、写、原子操作在整个系统中的任意位置都以相同的顺序发生(occur)。严格一致性意味着所有操作的发生顺序都满足先于关系,且这一顺序是由某一全局时钟决定的。严格一致性是最容易理解的种模型,这可能也是大多数开发者以为硬件系统所遵从的顺序,但这一模型很难高效地实现。稍弱的一种模型是顺序一致性(sequential consistency)模型,在该模型中,全局先于顺序只需要与每个处理器的程序顺序保持一致即可。相对于其他更加宽松的一致性模型,顺序一致性模型下的编程更加简单,因而规模较小的处理器通常会尝试达到或者接近顺序一致性的要求。弱一致性(weak consitency)会将所有原子操作当作完全屏障。上文所描述的获取释放模型通常被称为释放一致性(release consitency)模型。因果一致性(causal consistency)模型的强度介于顺序一致性和弱一致性之间,该模型要求程序所发起的读操作与其后续的写操作之间必须满足先于关系,其目的在于避免读操作对写操作所写入的值造成影响,即对于先读取某个值然后再将其写入内存的操作,因果一致性会确保它们之间的先于关系。宽松一致性(relaxed consistency)模型泛指所有比顺序一致性模型更弱的模型。</p>
+<p><img src="/images/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note/13.1%E5%86%85%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%8F%AF%E8%83%BD%E7%9A%84%E9%87%8D%E6%8E%92%E5%88%97%E6%96%B9%E5%BC%8F.png" alt></p>
+<h2 id="硬件原语"><a href="#硬件原语" class="headerlink" title="硬件原语"></a>硬件原语</h2><h3 id="比较并交换"><a href="#比较并交换" class="headerlink" title="比较并交换"></a>比较并交换</h3><p>即先判断内存地址的当前值,然后再尝试原子性地将其更新,该操作通常被称为“比较一比较并交换”(compare-then- compare-and-swap)。CompareAndSwap原语潜藏着一个微妙的陷阱,即在调用CompareAndSwap时,目标内存地址的值改变了数次,但该地址的当前值却与调用者之前获取到的值相等。某些情况下这可能不会出现问题,但在其他情况下,相同的值并不意味着相同的状态。例如在垃圾回收中,在经历两次半区复制回收之后,某一指针的目标对象很可能与其最初的目标对象完全不同。CompareAndswap原语无法探测到“某个值被修改,然后再被改回原值”的情况,即所谓的ABA问题(ABA problem)。</p>
+<h3 id="加载链接-条件存储"><a href="#加载链接-条件存储" class="headerlink" title="加载链接/条件存储"></a>加载链接/条件存储</h3><p>在LoadLinked和StoreConditionally原语中,处理器会记录LoadLinked原语所访问的地址,并使用处理器的一致性机制来探测所有针对该地址的更新操作,从而解决ABA问题。</p>
+<p>LoadLinked/StoreConditionally原语还有另外一个特征需要注意:即使任何处理器都没有更新过保留地址的值, StoreConditionally原语也有可能出现假性失败。多种低级硬件状况可能导致假性失败,其中值得注意的是中断的出现,包括缺页陷阱、溢出陷阱、时钟中断、IO中断等,这些中断均需要由内核进行处理。这种失败通常不会成为问题,但是如果Loadlinked和StoreConditiona11y之间的某段代码总是引发陷阱,则StoreConditionallsy操作可能始终都会失败。</p>
+<p>由于LoadLinked/StoreConditionally原语可以优雅地解决ABA问题,所以我们更加倾向于用其替代可能产生ABA问题的 CompareAndSwap原语。当然,我们也可为CompareAndswap原语关联一个计数器来解决ABA问题。</p>
+<p>严格意义上讲,如果StoreConditionally原语所操作的并非之前保留的地址,则其最终结果可能是未定义的。但某些处理器在设计上便允许这种使用方式,这相当于提供了一种在某些场景下有用的、针对任意两个内存地址的原子操作。</p>
+<h3 id="原子算术原语"><a href="#原子算术原语" class="headerlink" title="原子算术原语"></a>原子算术原语</h3><p>我们也可使用AtomicAdd或FetchAndAdd原语来实现 AtomicIncrement和AtomicDecrement操作,且其返回值既可以是原始值,也可以是新值。另外,处理器在执行这些原语时通常会设置条件码(condition code),其值可以用于反映目标地址的值是否为零(或者原始值为零),也可反映其他一些信息。在垃圾回收领域, FetchAndAdd原语可以用于实现并发环境下的顺序分配(即阶跃指针分配),但更好的做法通常是为每个线程建立本地分配缓冲区。FetchAndAdd可以简单地用于从队列中添加或者移除元素的操作,但是对于环状缓冲区,还需要小心地处理回绕(wrap-around)问题。</p>
+<p>这些原子算术原语的能力严格弱于CompareAndswap,同时也弱于LoadLinked/StoreConditionally(参见Herlihy and Shavit)。每种原语都存在一个可以用一致数(consensus number)来描述的特征,如果某个原语的一致数为k,意味着它可以解决k个线程之间的一致问题,但无法解决多于k个线程之间的一致问题。所谓一致问题,是指多处理器算法是否能达到如下要求:</p>
+<ol>
+<li>对于某个变量,每个线程均建议一个值;</li>
+<li>所有线程针对某个值达成一致;</li>
+<li>该变量的最终值为某个线程所建议的值;</li>
+<li>所有线程均能够在有限步骤内完成操作,即算法必须满足无等待(wait-free)要求。</li>
+</ol>
+<p>对于所有的无条件设置原语(例如AtomicExchange)或者对相同值产生相同运算结果的更新原语(如AtomicIncrement与FetchAndAdd),其一致数均为2。而CompareAndSwap和LoadLinked/StoreConditionally的一致数则为∞,即它们能够以无等待的方式解决任意多个线程之间的一致问题。</p>
+<p>无条件算术原语的一个潜在优势在于它们通常都会成功,而如果使用CompareAndSwap或者LoadLinked/StoreConditionally来模拟无条件算术原语,线程之间的竞争很可能导致“饥饿”现象的出现。</p>
+<h3 id="更加强大的原语"><a href="#更加强大的原语" class="headerlink" title="更加强大的原语"></a>更加强大的原语</h3><p>在我们描述过的硬件原语中,LoadLinked/StoreConditionally的通用性最强,也是针对单字的最强的原子更新语义。除此之外,允许对多个独立字进行原子更新的硬件原语则更加强大。在单字原语之外,某些处理器还支持双字原语,例如双字比较并交换,我们称之为CompareAndSwapWide/CompareAndSetWide。如果仅从概念上来看,该原语的强大之处没得到充分体现。但是,使用双字CompareAndSwap操作却可以轻松应对单字CompareAndswap无法解决的ABA问题,此时我们只需要将第二个字用作记录第一个字被更新次数的计数器。对于32位的字,计数器的值最多可以达到2<sup>32</sup>,因而基本上可以忽略计数器回绕可能带来的安全问题。支持对相邻两个64位的字进行原子更新的硬件原语则更加强大。因此,尽管CompareAndSwapWide在概念上与常规的CompareAndswap并无较大差别,但其在使用上却更加方便、更加高效。</p>
+<p>尽管更新相邻两个字的原子操作原语十分有用,但如果其能够原子化地更新内存中任意两个(不相邻)字则会显得更加强大。 Motorola880000以及Sun的Rock处理器均提供了“双比较并交换”指令(compare-and-swap-two,也称double-compare-and-swap)。 CompareAndswap2的硬件实现较为复杂,因而目前尚无商业级别的处理器支持这一原语。 CompareAndSwap2可以泛化为通用的n路比较并交换(compare-and-swap-n,也称n-way-compare-and-swap),同理,也可对LoadLinkedStoreConditiona1ly原语进行泛化,由此得到的结果便是事务内存(transactional memory)。</p>
+<h3 id="原子操作原语的开销"><a href="#原子操作原语的开销" class="headerlink" title="原子操作原语的开销"></a>原子操作原语的开销</h3><p>开发者经常会错误地使用原子操作原语,其原因之一是他们知道原子操作的开销较大,因而会刻意避免使用原子操作,而另一种原因则是他们可能错误地使用了原子操作。我们曾经提到,有两个原因导致原子操作的开销较大:一是原子化的“读一修改一写”原语必须以独占方式访问相关的高速缓存行;二是在指令结束之前,处理器必须完成数据读取、计算新值、写入新值这一系列操作。现代处理器可能会使用多指令重叠(overlap)技术,但是如果后续操作强依赖于原子操作的结果,则必然会减少流水线中的指令条数。由于原子操作需要确保一致性,因而其通常会涉及总线甚至内存的访问,这通常会花费较多的指令周期。</p>
+<p>另一个导致原子操作执行速度较慢的原因是,它们要么天然包括内存屏障语义,要么要求开发者在其开始和结束位置手动添加额外的内存屏障。这潜在削减了指令重叠与流水线技术所带来的性能优势,从而导致处理器很难隐藏这些原语访问总线或者内存的开销。</p>
+<h2 id="前进保障"><a href="#前进保障" class="headerlink" title="前进保障"></a>前进保障</h2><p>当多个线程之间竞争相同数据结构时(例如共享堆,或者回收器数据结构),确保整个系统能够正常往下执行尤为重要(特别是在实时环境中),我们将这一要求称为前进保障(progress guarantee)。了解不同硬件原语在前进保障方面的相对强度也十分必要,常见的前进保障级别从强到弱分别是:无等待、无障碍、无锁。对于并发算法而言,如果每个线程始终都可以向前执行(不论其他线程执行何种操作),则称其为无等待(wait-free)算法;如果在并发算法中,对于任意一个线程,只要其拥有足够长的独占式执行时间,便能够在有限步骤内完成操作,则称该算法为无障碍(obstruction-free)算法;如果算法永远可以保证某些线程能在有限步骤内完成操作,则称该算法为无锁(lock-free)算法。在真实系统中,前进保障通常是条件性的,例如,某一算法满足无等待要求的条件可能是存储空间尚未耗尽。Herlihy和Shavit对这些概念及其实现进行了详尽的论述。</p>
+<p>无等待算法通常会引入线程互助的概念,也就是说,如果线程t2即将执行的操作可能会打断线程t1正在执行的、在一定程度上可以确定超前于线程n的操作,则线程t2将协助t1完成其工作,然后再开始执行自身工作。假设线程数量存在固定上界,且线程之间相互协助的工作单元或者对数据结构的操作也存在上界,则任何工作单元或者操作的完成步骤便都存在上界。但是,这一上界通常较大,且与较弱的前进保障相比,线程互助需要引入额外的数据结构与工作量,因而其操作时间通常相当长。对于较为简单的一致性场景,为其设计时间开销较小的无等待算法通常比较容易。从中我们可以看出,该算法满足解决N个线程的一致问题的所有标准,但是其空间开销正比于N。</p>
+<p>与无等待要求相比,无障碍更容易实现,但是其可能需要调度器的协助。如果线程发现当前存在竞争,则它可以使用随机递增的时间退让策略来确保其他线程优先完成工作。也就是说,每当线程探测到竞争时,其首先会计算一个比上次退让时间更长的时间周期T,然后再从0~T之间选择某一随机值作为本次退让的时间。从概率上讲,对于较少出现竞争的场景,每个线程最终都会成功执行。</p>
+<p>无锁要求的实现则更加简单,它只要求在任何情况下至少一个竞争者可以继续往下执行,即使其他线程可能会永久性地等待下去。</p>
 ]]></content>
       <categories>
         <category>GC</category>
@@ -3624,8 +3649,8 @@ use one vs other -->
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>ElasticSearch</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
@@ -4537,8 +4562,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>ForkJoin</tag>
       </tags>
@@ -4611,8 +4636,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>ThreadLocal</tag>
       </tags>
   </entry>
@@ -4744,8 +4769,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -4795,8 +4820,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -4884,8 +4909,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -6096,10 +6121,10 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>Arthas</tag>
-        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -6189,9 +6214,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -6937,8 +6962,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Multi-Live</tag>
         <tag>High-Available</tag>
       </tags>
@@ -7077,8 +7102,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>PaaS</tag>
       </tags>
   </entry>
@@ -7269,9 +7294,9 @@ table th:nth-of-type(2) {
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>G1</tag>
       </tags>
@@ -7455,8 +7480,8 @@ table th:nth-of-type(2) {
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -7842,8 +7867,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Log</tag>
         <tag>Elasticsearch</tag>
         <tag>Filebeat</tag>
@@ -8174,11 +8199,11 @@ Connection: close
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
         <tag>Gateway</tag>
         <tag>Design</tag>
         <tag>API</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -8311,8 +8336,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -8474,8 +8499,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>Lambda</tag>
       </tags>
   </entry>
@@ -8625,8 +8650,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -9288,8 +9313,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>HashMap</tag>
       </tags>
   </entry>
@@ -9411,8 +9436,8 @@ Connection: close
         <category>Spring</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Spring</tag>
         <tag>AOP</tag>
