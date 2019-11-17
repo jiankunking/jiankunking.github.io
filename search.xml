@@ -1190,8 +1190,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Final</tag>
       </tags>
@@ -1774,9 +1774,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -2062,7 +2062,16 @@ use one vs other -->
 <p>无等待算法通常会引入线程互助的概念,也就是说,如果线程t2即将执行的操作可能会打断线程t1正在执行的、在一定程度上可以确定超前于线程n的操作,则线程t2将协助t1完成其工作,然后再开始执行自身工作。假设线程数量存在固定上界,且线程之间相互协助的工作单元或者对数据结构的操作也存在上界,则任何工作单元或者操作的完成步骤便都存在上界。但是,这一上界通常较大,且与较弱的前进保障相比,线程互助需要引入额外的数据结构与工作量,因而其操作时间通常相当长。对于较为简单的一致性场景,为其设计时间开销较小的无等待算法通常比较容易。从中我们可以看出,该算法满足解决N个线程的一致问题的所有标准,但是其空间开销正比于N。</p>
 <p>与无等待要求相比,无障碍更容易实现,但是其可能需要调度器的协助。如果线程发现当前存在竞争,则它可以使用随机递增的时间退让策略来确保其他线程优先完成工作。也就是说,每当线程探测到竞争时,其首先会计算一个比上次退让时间更长的时间周期T,然后再从0~T之间选择某一随机值作为本次退让的时间。从概率上讲,对于较少出现竞争的场景,每个线程最终都会成功执行。</p>
 <p>无锁要求的实现则更加简单,它只要求在任何情况下至少一个竞争者可以继续往下执行,即使其他线程可能会永久性地等待下去。</p>
-]]></content>
+<h2 id="工作共享与结束检测"><a href="#工作共享与结束检测" class="headerlink" title="工作共享与结束检测"></a>工作共享与结束检测</h2><h3 id="汇聚屏障"><a href="#汇聚屏障" class="headerlink" title="汇聚屏障"></a>汇聚屏障</h3><p>并发回收或者并行回收中另一种常见的同步机制是要求所有回收线程到达算法的某点(基本上就是某一回收阶段的结束点),然后再继续往下执行。一般情况下,上述任意种结束检测算法都可以胜任这一场景的要求。另一种常见的场景是:算法在某一阶段的工作并不存在任何形式的工作共享或者负载均衡,但其仍要求所有线程都到达指定点,即汇聚屏障(rendezvous barrier)。</p>
+<h2 id="并发数据结构"><a href="#并发数据结构" class="headerlink" title="并发数据结构"></a>并发数据结构</h2><p>有多种通用实现策略可供开发者在构建并发数据结构时选择,这些策略在并发程度方面从最低到最高(通常也是从最简单到最复杂)分别如下:</p>
+<ul>
+<li>粗粒度锁(coarse-grained locking):使用一个“大”锁来控制整个数据结构的访问。</li>
+<li>细粒度锁(fine-grained locking):该方案为较大数据结构中的每个元素维护独立的锁,例如为链表或树中的每个节点维护一个锁。<font color="DeepPink"><strong>如果各线程对数据结构的访问与更新足够分散,则该策略可以显著提升并发程度。</strong></font>该策略通常需要考虑一个问题,即如果某一操作会对多个元素加锁,则其必须保证没有其他相同操作(或者任何其他操作)会以相反的顺序对相同元素进行加锁,否则将导致死锁的产生。一种通用的解决方案是要求所有操作在访问(单链表或者树中的)元素时遵从相同的方向,即锁联结(lock coupling):某一操作先对节点A加锁,然后再对A所指向的节点B加锁,接着再释放节点A的锁并对节点B所指向的节点C加锁,以此类推。使用这一逐步推进策略来遍历数据结构可以确保后发线程无法超越先发的线程,同时也可以确保在链表/树中插入/删除元素操作的安全性。<font color="DeepPink"><strong>细粒度锁的一个潜在缺陷是,对不同元素多次加解锁可能会给共享总线或者存储带来一定开销,进而掩盖了相对于粗粒度锁的优势。</strong></font></li>
+<li>乐观锁(optimistic locking):该方案对细粒度锁进行了改进,<font color="DeepPink"><strong>即线程在对数据结构进行遍历时先不加锁,直到其找到合适元素时才尝试对其进行加锁。但在从发现合适元素到加锁成功的过程中,该元素可能已被其他并发线程修改,因而线程在加锁完成后需要再次对该元素进行校验。如果校验失败,则其需要释放锁并继续查找。这种尽量将加锁操作延迟、直到迫不得已时才加锁的策略可以减少开销并提升并发能力。乐观锁在大多数场景下都具有较高的性能,但如果频繁发生更新冲突,</strong></font></li>
+<li>懒惰更新(lazy update):即使采用乐观锁,只读操作仍需要对其所读取的元素加锁,这不仅会成为提升并发程度的瓶颈,还可能在只读操作中引入写操作(即加解锁)。为此我们可以设计出一种数据结构,在该结构中只读操作无需加锁,代价是更新操作的复杂度稍有提高。<font color="DeepPink"><strong>一般来讲,懒惰更新策略中的写操作需要先达到其在“逻辑上”的目标(前提是不影响其他线程的并发访问),然后再进一步执行真正的更新操作,并确保数据结构回归正常状态。</strong></font>我们可以通过一个例子来理解懒惰更新的含义:对于以链表方式实现的集合, remove操作首先需要(在逻辑上)将待移除元素打上deleted标记,然后再将其前一个节点的指针重定向从而真正实现节点的移除。为避免并发更新可能带来的问题,所有操作都需要在持有相关元素锁的前提下执行。remove操作必须依照先标记再移除的顺序执行,这样才能确保其他线程能够在不加锁的情况下正确进行读操作。向链表中插入元素的操作只需要更新数据结构中的next指针,因而只需要一次更新操作(即无需事先设置标记),当然,这一操作同样必须在持有相关元素锁的前提下执行。</li>
+<li>非阻塞(non-blocking):在非阻塞策略中,对数据结构的所有操作均无需使用锁,仅依赖原子更新原语便可完成数据结构的状态变更。一般来说,状态变更操作通常都会存在某些特殊的原子更新事件,这些事件的发生点即为该操作的线性化点。与此相比,基于锁的策略则需要引入临界区来标识线性化“点”。非阻塞策略的并发能力可以通过前进保障来衡量,无锁实现可能允许部分线程出现饥饿;无障碍实现中的每个线程可能需要足够长的时间进行独占式操作,才能确保算法整体往下执行;无等待实现可以确保所有线程都能正确往下执行。</li>
+</ul>
+<h3 id="并发栈"><a href="#并发栈" class="headerlink" title="并发栈"></a>并发栈</h3>]]></content>
       <categories>
         <category>GC</category>
       </categories>
@@ -3649,8 +3658,8 @@ use one vs other -->
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
@@ -4562,8 +4571,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JUC</tag>
         <tag>ForkJoin</tag>
       </tags>
@@ -4636,8 +4645,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>ThreadLocal</tag>
       </tags>
   </entry>
@@ -4769,8 +4778,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -4820,8 +4829,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -4909,8 +4918,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -6121,10 +6130,10 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>Arthas</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -6214,9 +6223,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -7294,9 +7303,9 @@ table th:nth-of-type(2) {
         <category>GC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>原创</tag>
         <tag>GC</tag>
         <tag>G1</tag>
       </tags>
@@ -7369,8 +7378,8 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Go</tag>
-        <tag>Performance</tag>
         <tag>SOFAMosn</tag>
+        <tag>Performance</tag>
       </tags>
   </entry>
   <entry>
@@ -7480,8 +7489,8 @@ table th:nth-of-type(2) {
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -8200,10 +8209,10 @@ Connection: close
       </categories>
       <tags>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Gateway</tag>
         <tag>Design</tag>
         <tag>API</tag>
-        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -8336,8 +8345,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -8499,8 +8508,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>Lambda</tag>
       </tags>
   </entry>
@@ -8650,8 +8659,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -9313,8 +9322,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>HashMap</tag>
       </tags>
   </entry>
@@ -9436,8 +9445,8 @@ Connection: close
         <category>Spring</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Spring</tag>
         <tag>AOP</tag>
