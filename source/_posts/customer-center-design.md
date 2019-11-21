@@ -74,6 +74,8 @@ OAuth Server需要做以下事情：
 * /refresh_token接口，负责通过refresh_token刷新access_token
 * /logout接口，清理Cookie
 
+> code分为两种情况：一种是通过浏览器传递给接入方后端；一种是通过移动端获取到code后，通过调用接入方后端接口传递给接入方后端。
+
 ## OAuth Client
 OAuth Client对接OAuth Server需要做以下事情：
 * 拦截请求，校验是否已登录

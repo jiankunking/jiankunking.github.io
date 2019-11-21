@@ -14,7 +14,7 @@ date: 2019-10-23 08:53:40
 
 <!-- more -->
 
-
+# 微服务
 
 * [Jenkins](https://jenkins.io/zh/) CI&CD
 * [Kubernetes](https://kubernetes.io/) 调度、负载、高可用
@@ -37,3 +37,10 @@ date: 2019-10-23 08:53:40
 其中最重要的Kubernetes服务，[腾讯云](https://cloud.tencent.com/product/tke)、[阿里云](https://www.aliyun.com/product/kubernetes?spm=5176.13342246.1kquk9v2l.2.42243ccbAwomc4&aly_as=i7TpRzFx)都已经支持。
 
 微服务的未来应该是开发人员只需要写Sping Boot或者Gin/Iris应用就可以了，剩下的就交给Kubernetes。
+
+# Spring Cloud/Kubernetes
+![](/images/microservice-ideal-country/Spring-Cloud.png)
+
+# Istio Knowledge Map
+下图转自：[istio-knowledge-map](https://github.com/servicemesher/istio-knowledge-map/blob/master/png/istio-knowledge-map.png)
+![](/images/microservice-ideal-country/istio-knowledge-map.png)

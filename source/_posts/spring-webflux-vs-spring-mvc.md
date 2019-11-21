@@ -18,7 +18,7 @@ Spring MVC or WebFlux?
 ![](/images/spring-webflux-vs-spring-mvc/spring-mvc-and-webflux-venn.png)
 
 * <font color=DeepPink>**如果你的Spring MVC应用运行良好，则不需要改变。**</font>Spring MVC更容易编写、理解、调试，可以选择更多的库，因为目前大多数库都是阻塞的。
-* If you are already shopping for a non-blocking web stack, Spring WebFlux offers the same execution model benefits as others in this space and also provides a choice of servers (Netty, Tomcat, Jetty, Undertow, and Servlet 3.1+ containers), a choice of programming models (annotated controllers and functional web endpoints), and a choice of reactive libraries (Reactor, RxJava, or other).
+<!-- * If you are already shopping for a non-blocking web stack, Spring WebFlux offers the same execution model benefits as others in this space and also provides a choice of servers (Netty, Tomcat, Jetty, Undertow, and Servlet 3.1+ containers), a choice of programming models (annotated controllers and functional web endpoints), and a choice of reactive libraries (Reactor, RxJava, or other). -->
 * 如果你对轻量的web框架感兴趣，并希望使用Java 8 lambdas或者Kotlin，则可以选择Spring WebFlux。对于小型应用程序或微服务来说，这也是一个不错的选择，因为它们可以从更大的透明性（transparency）和控制中获益。
 * 在微服务体系架构中，可以混合使用带有Spring MVC或Spring WebFlux控制器或Spring WebFlux 函数式的应用程序。在两个框架中都支持相同的基于注释的编程模型，这使得重用知识更容易，同时也为正确的工作选择了正确的工具。
 *评估的一个简单方法是检查应用的依赖项。 <font color=DeepPink>**如果你要使用阻塞持久性APIs (JPA、JDBC)或网络APIs，那么Spring MVC至少是通用架构的最佳选择。**</font>在技术上，Reactor和RxJava都可以在单独的线程上执行阻塞调用，但这时就无法充分利用非阻塞网络栈。
