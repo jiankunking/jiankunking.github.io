@@ -59,14 +59,14 @@
 </script>
 
   <meta name="description" content="Java False Sharing">
-<meta name="keywords" content="原创,Java,false,Sharing">
+<meta name="keywords" content="原创,Java,Sharing">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java 伪共享">
 <meta property="og:url" content="https://jiankunking.com/java-false-sharing.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Java False Sharing">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-11-23T23:40:03.943Z">
+<meta property="og:updated_time" content="2019-11-23T23:43:59.717Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java 伪共享">
 <meta name="twitter:description" content="Java False Sharing">
@@ -320,7 +320,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-11-24 07:40:03" itemprop="dateModified" datetime="2019-11-24T07:40:03+08:00">2019-11-24</time>
+                <time title="修改时间：2019-11-24 07:43:59" itemprop="dateModified" datetime="2019-11-24T07:43:59+08:00">2019-11-24</time>
               </span>
             
           
@@ -403,7 +403,7 @@
 <p>更多信息可以参见：<a href="https://www.jiankunking.com/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note.html" target="_blank" rel="noopener">《垃圾回收算法手册：自动内存管理的艺术 笔记》中的 【高速缓存一致性】</a></p>
 <h1 id="Java中的伪共享"><a href="#Java中的伪共享" class="headerlink" title="Java中的伪共享"></a>Java中的伪共享</h1><p>Hotspot为了优化内存占用会将字段自由地重新安排，以满足对齐要求，从而使间隙更小。也正是这种优化，导致出现了在同一缓存行上，有可能有多个数据，从而导致伪共享。</p>
 <h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><p>使用@Contended注解，使用该注解，我们可以将热的频繁写入的共享字段与其他主要为只读或冷的字段隔离开来。简单的规则是读共享很便宜，写共享很昂贵。我们还可以将经常由同一线程同时写入的字段打包。</p>
-<p>更一般地说，我们试图影响相关字段的位置，以最小化一致性缺失。在一个简单的单线程环境中，在时间上紧密地一起访问的字段应该放在相邻的空间，以促进缓存局部性。也就是说，时间局部性应该制约空间局部性。在时间上一起访问的字段应该在空间上相邻。也就是说，当线程同时访问我们的字段时，我们必须小心避免错误共享和一致性通信的过度失效。因此，我们试图集群或以其他方式隔离在同一线程上大约在同一时间写入相同缓存行的字段。请注意，这里有一个竞争的因素：如果我们过于努力地将单线程容量丢失最小化，那么我们最终可能会在并行环境中运行过多的一致性丢失。在本机C/c++代码中，程序员通常使用通知并发的结构布局。@Contended应该在Java中提供相同的功能，尽管在本地代码中，字段与偏移量的绑定在编译时发生，而在Java的加载时发生。值得指出的是，在一般情况下，对于单线程和多线程环境都没有单一的最佳布局。而理想的布局问题本身就是<a href="https://en.wikipedia.org/wiki/NP-hardness" target="_blank" rel="noopener">NP-hard</a>。</p>
+<p>更一般地说，我们试图影响相关字段的位置，以最小化一致性缺失。在一个简单的单线程环境中，在时间上紧密地一起访问的字段应该放在相邻的空间，以促进缓存局部性。也就是说，时间局部性应该制约空间局部性。在时间上一起访问的字段应该在空间上相邻。也就是说，当线程同时访问我们的字段时，我们必须小心避免错误共享和一致性通信的过度失效。因此，我们试图集群或以其他方式隔离在同一线程上大约在同一时间写入相同缓存行的字段。请注意，这里有一个竞争的因素：如果我们过于努力地将单线程容量丢失最小化，那么我们最终可能会在并行环境中运行过多的一致性丢失。在本机C/C++代码中，程序员通常使用通知并发的结构布局。@Contended应该在Java中提供相同的功能，尽管在本地代码中，字段与偏移量的绑定在编译时发生，而在Java的加载时发生。值得指出的是，在一般情况下，对于单线程和多线程环境都没有单一的最佳布局。而理想的布局问题本身就是<a href="https://en.wikipedia.org/wiki/NP-hardness" target="_blank" rel="noopener">NP-hard</a>。</p>
 <p>理想情况下，JVM将使用硬件监控设施来检测共享行为并动态更改布局。这有点困难，因为我们还没有合适的方式来向JVM提供高效和方便的信息。提示：我们需要取消OS和hypervisor的中间层。另一个挑战是，在不安全的设施中使用原始字段偏移，因此我们需要解决这个问题，可能需要额外的间接级别。</p>
 <p>最后，我也希望能够将最终字段打包在一起，因为这些字段是只读的。</p>
 <p>参考资料：<br><a href="https://en.wikipedia.org/wiki/False_sharing" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/False_sharing</a><br><a href="http://mail.openjdk.java.net/pipermail/hotspot-dev/2012-November/007309.html" target="_blank" rel="noopener">http://mail.openjdk.java.net/pipermail/hotspot-dev/2012-November/007309.html</a><br><a href="https://blogs.oracle.com/dave/java-contended-annotation-to-help-reduce-false-sharing" target="_blank" rel="noopener">https://blogs.oracle.com/dave/java-contended-annotation-to-help-reduce-false-sharing</a></p>
@@ -416,13 +416,6 @@
       
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
-    <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\arthas-learning-notes.html" rel="bookmark">Arthas 学习笔记</a></div>
-      
-    </li>
-  
     <li class="popular-posts-item">
       
       
@@ -440,6 +433,13 @@
     <li class="popular-posts-item">
       
       
+      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
       <div class="popular-posts-title"><a href="\java-gc-g1.html" rel="bookmark">Java 垃圾回收算法之G1</a></div>
       
     </li>
@@ -447,7 +447,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-final.html" rel="bookmark">Java Final</a></div>
+      <div class="popular-posts-title"><a href="\java-forkjoin.html" rel="bookmark">Java ForkJoin 解析</a></div>
       
     </li>
   
@@ -510,8 +510,6 @@
               <a href="/tags/原创/" rel="tag"># 原创</a>
             
               <a href="/tags/Java/" rel="tag"># Java</a>
-            
-              <a href="/tags/false/" rel="tag"># false</a>
             
               <a href="/tags/Sharing/" rel="tag"># Sharing</a>
             
@@ -626,7 +624,7 @@
             <a href="/tags/">
           
         
-        <span class="site-state-item-count">108</span>
+        <span class="site-state-item-count">107</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
