@@ -59,14 +59,14 @@
 </script>
 
   <meta name="description" content="Java False Sharing">
-<meta name="keywords" content="Java,原创,Sharing">
+<meta name="keywords" content="原创,Java,Sharing">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java 伪共享">
 <meta property="og:url" content="https://jiankunking.com/java-false-sharing.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Java False Sharing">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-11-24T00:24:05.024Z">
+<meta property="og:updated_time" content="2019-11-24T00:28:05.525Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java 伪共享">
 <meta name="twitter:description" content="Java False Sharing">
@@ -320,7 +320,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-11-24 08:24:05" itemprop="dateModified" datetime="2019-11-24T08:24:05+08:00">2019-11-24</time>
+                <time title="修改时间：2019-11-24 08:28:05" itemprop="dateModified" datetime="2019-11-24T08:28:05+08:00">2019-11-24</time>
               </span>
             
           
@@ -413,7 +413,7 @@
 <p>更一般地说，我们试图影响相关字段的位置，以最小化一致性缺失。在一个简单的单线程环境中，在时间上紧密地一起访问的字段应该放在相邻的空间，以促进缓存局部性。也就是说，时间局部性应该制约空间局部性。在时间上一起访问的字段应该在空间上相邻。也就是说，当线程同时访问我们的字段时，我们必须小心避免错误共享和一致性通信的过度失效。因此，我们试图集群或以其他方式隔离在同一线程上大约在同一时间写入相同缓存行的字段。请注意，这里有一个竞争的因素：如果我们过于努力地将单线程容量丢失最小化，那么我们最终可能会在并行环境中运行过多的一致性丢失。在本机C/C++代码中，程序员通常使用通知并发的结构布局。@Contended应该在Java中提供相同的功能，尽管在本地代码中，字段与偏移量的绑定在编译时发生，而在Java的加载时发生。值得指出的是，在一般情况下，对于单线程和多线程环境都没有单一的最佳布局。而理想的布局问题本身就是<a href="https://en.wikipedia.org/wiki/NP-hardness" target="_blank" rel="noopener">NP-hard</a>。</p>
 <p>理想情况下，JVM将使用硬件监控设施来检测共享行为并动态更改布局。这有点困难，因为我们还没有合适的方式来向JVM提供高效和方便的信息。提示：我们需要取消OS和hypervisor的中间层。另一个挑战是，在不安全的设施中使用原始字段偏移，因此我们需要解决这个问题，可能需要额外的间接级别。</p>
 <p>最后，我也希望能够将最终字段打包在一起，因为这些字段是只读的。</p>
-<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p><font color="DeepPink"><strong>伪共享本质是就是在缓存中最小的颗粒度仍然大于某个对象的属性的内存占用，导致该缓存最小单元中存储了多个不相关的对象属性，多个不相关属性的修改会导致缓存状态的频繁变化。由于硬件一般支持高速缓存一致性协议，缓存状态的变化会导致多核CPU频繁更新缓存状态，导致性能下降。</strong></font></p>
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p><font color="DeepPink"><strong>伪共享本质是就是在缓存中最小的颗粒度仍然大于某个对象的属性的内存占用，导致该缓存最小单元中存储了多个不相关的对象属性，多个不相关属性的（各自）修改会导致缓存状态的频繁变化。由于硬件一般支持高速缓存一致性协议，缓存状态的变化会导致多核CPU频繁更新缓存状态，导致性能下降。</strong></font></p>
 <p>参考资料：<br><a href="https://en.wikipedia.org/wiki/False_sharing" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/False_sharing</a><br><a href="http://mail.openjdk.java.net/pipermail/hotspot-dev/2012-November/007309.html" target="_blank" rel="noopener">http://mail.openjdk.java.net/pipermail/hotspot-dev/2012-November/007309.html</a><br><a href="https://blogs.oracle.com/dave/java-contended-annotation-to-help-reduce-false-sharing" target="_blank" rel="noopener">https://blogs.oracle.com/dave/java-contended-annotation-to-help-reduce-false-sharing</a></p>
 
     </div>
@@ -441,14 +441,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-aqs.html" rel="bookmark">Java AQS 实现原理（图文）分析</a></div>
-      
-    </li>
-  
-    <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
+      <div class="popular-posts-title"><a href="\java-forkjoin.html" rel="bookmark">Java ForkJoin 解析</a></div>
       
     </li>
   
@@ -456,6 +449,13 @@
       
       
       <div class="popular-posts-title"><a href="\java-final.html" rel="bookmark">Java Final</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\java-aqs.html" rel="bookmark">Java AQS 实现原理（图文）分析</a></div>
       
     </li>
   
@@ -515,9 +515,9 @@
           
           <div class="post-tags">
             
-              <a href="/tags/Java/" rel="tag"># Java</a>
-            
               <a href="/tags/原创/" rel="tag"># 原创</a>
+            
+              <a href="/tags/Java/" rel="tag"># Java</a>
             
               <a href="/tags/Sharing/" rel="tag"># Sharing</a>
             
