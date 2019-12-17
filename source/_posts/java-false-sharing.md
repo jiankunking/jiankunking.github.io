@@ -33,7 +33,14 @@ date: 2019-11-22 08:35:33
 # Java中的伪共享
 Hotspot为了优化内存占用会将字段自由地重新安排，以满足对齐要求，从而使间隙更小。也正是这种优化，导致出现了在同一缓存行上，有可能有多个数据，从而导致伪共享。
 
-# 解决
+> 伪共享说的是缓存，而缓存的目的就是加快读取速度，也就意味了被缓存的数据不应该频繁更改。
+> 换个角度考虑伪共享就是硬件层面高速缓存的失效，导致性能的下降。
+
+以下图为例，当不同处理器上的线程修改驻留在同一高速缓存行上的变量时，会发生错误共享。这将使高速缓存行失效，并强制进行内存更新以保持高速缓存的一致性。
+
+![](/images/java-false-sharing/5-4-figure-1.gif)
+
+# Java中的解决方案
 
 使用@Contended注解，<font color=DeepPink>**使用该注解，我们可以将热的频繁写入的共享字段与其他主要为只读或冷的字段隔离开来。**</font>简单的规则是读共享很便宜，写共享很昂贵。我们还可以将经常由同一线程同时写入的字段打包。
 
@@ -44,9 +51,16 @@ Hotspot为了优化内存占用会将字段自由地重新安排，以满足对�
 最后，我也希望能够将最终字段打包在一起，因为这些字段是只读的。
 
 # 小结
-<font color=DeepPink>**伪共享本质是就是在缓存中最小的颗粒度仍然大于某个对象的属性的内存占用，导致该缓存最小单元中存储了多个不相关的对象属性，多个不相关属性的修改会导致缓存状态的频繁变化。由于硬件一般支持高速缓存一致性协议，缓存状态的变化会导致多核CPU频繁更新缓存状态，导致性能下降。**</font>
+<font color=DeepPink>**伪共享本质是就是在缓存中最小的颗粒度仍然大于某个对象的属性的内存占用，导致该缓存最小单元中存储了多个不相关的对象属性，多个不相关属性的（各自）修改会导致缓存状态的频繁变化。由于硬件一般支持高速缓存一致性协议，缓存状态的变化会导致多核CPU频繁更新缓存状态，导致性能下降。**</font>
+
+图片来自：
+https://software.intel.com/en-us/articles/avoiding-and-identifying-false-sharing-among-threads
 
 参考资料：
 https://en.wikipedia.org/wiki/False_sharing
 http://mail.openjdk.java.net/pipermail/hotspot-dev/2012-November/007309.html
 https://blogs.oracle.com/dave/java-contended-annotation-to-help-reduce-false-sharing
+
+拓展阅读：
+https://software.intel.com/en-us/articles/avoiding-and-identifying-false-sharing-among-threads
+https://software.intel.com/en-us/articles/intel-guide-for-developing-multithreaded-applications
