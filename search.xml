@@ -45,7 +45,7 @@
 <p><font color="DeepPink"><strong>碰到 CPU 使用率升高的问题，你可以借助 top、pidstat 等工具，确认引发 CPU 性能问题的来源；再使用 perf 等工具，排查出引起性能问题的具体函数。</strong></font></p>
 <p><font color="DeepPink"><strong>短时应用的运行时间比较短，很难在 top 或者 ps 这类展示系统概要和进程快照的工具中发现，你需要使用记录事件的工具来配合诊断，比如 execsnoop 或者 perf top。</strong></font></p>
 <h2 id="实践-1"><a href="#实践-1" class="headerlink" title="实践"></a>实践</h2><p><a href="/attachments/Linux性能优化实战/06系统的CPU使用率很高但为啥却找不到高CPU？.pdf" target="_blank">06系统的CPU使用率很高但为啥却找不到高CPU？</a></p>
-<p>下面是一个 top 命令输出的示例，S 列（也就是 Status 列）表示进程的状态。从这个示例里，你可以看到<br>R、D、Z、S、I 等几个状态，它们分别是什么意思呢？</p>
+<h1 id="系统中出现大量不可中断进程和僵尸进程怎么办？"><a href="#系统中出现大量不可中断进程和僵尸进程怎么办？" class="headerlink" title="系统中出现大量不可中断进程和僵尸进程怎么办？"></a>系统中出现大量不可中断进程和僵尸进程怎么办？</h1><h2 id="Top-输出分析"><a href="#Top-输出分析" class="headerlink" title="Top 输出分析"></a>Top 输出分析</h2><p>下面是一个 top 命令输出的示例，S 列（也就是 Status 列）表示进程的状态。从这个示例里，你可以看到<br>R、D、Z、S、I 等几个状态，它们分别是什么意思呢？</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ top</span><br><span class="line">PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND</span><br><span class="line">28961 root 20 0 43816 3148 4040 R 3.2 0.0 0:00.01 top</span><br><span class="line">620 root 20 0 37280 33676 908 D 0.3 0.4 0:00.01 app</span><br><span class="line">1 root 20 0 160072 9416 6752 S 0.0 0.1 0:37.64 systemd</span><br><span class="line">1896 root 20 0 0 0 0 Z 0.0 0.0 0:00.00 devapp</span><br><span class="line">2 root 20 0 0 0 0 S 0.0 0.0 0:00.10 kthreadd</span><br><span class="line">4 root 0 -20 0 0 0 I 0.0 0.0 0:00.00 kworker/0:0H</span><br><span class="line">6 root 0 -20 0 0 0 I 0.0 0.0 0:00.00 mm_percpu_wq</span><br><span class="line">7 root 20 0 0 0 0 S 0.0 0.0 0:06.37 ksoftirqd/0</span><br></pre></td></tr></table></figure>
 
 <p>我们挨个来看一下：</p>
@@ -67,6 +67,8 @@
 <blockquote>
 <p>不可中断状态，表示进程正在跟硬件交互，为了保护进程数据和硬件的一致性，系统不允许其他进程或中断打断这个进程。进程长时间处于不可中断状态，通常表示系统有 I/O 性能问题。</p>
 </blockquote>
+<h2 id="实践-2"><a href="#实践-2" class="headerlink" title="实践"></a>实践</h2><p>dstat命令 是一个用来替换vmstat、iostat、netstat、nfsstat和ifstat这些命令的工具，是一个全能系统信息统计工具。与sysstat相比，dstat拥有一个彩色的界面，在手动观察性能状况时，数据比较显眼容易观察；而且dstat支持即时刷新，譬如输入dstat 3即每三秒收集一次，但最新的数据都会每秒刷新显示。和sysstat相同的是，dstat也可以收集指定的性能资源，譬如dstat -c即显示CPU的使用情况。</p>
+<p><a href="/attachments/Linux性能优化实战/08系统中出现大量不可中断进程和僵尸进程怎么办？.pdf" target="_blank">08系统中出现大量不可中断进程和僵尸进程怎么办？</a></p>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -212,8 +214,8 @@
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>Sharing</tag>
       </tags>
   </entry>
@@ -1553,8 +1555,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Microservice</tag>
       </tags>
   </entry>
@@ -1623,8 +1625,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Final</tag>
       </tags>
@@ -1816,8 +1818,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>OAuth</tag>
         <tag>Login</tag>
       </tags>
@@ -2210,9 +2212,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -4101,8 +4103,8 @@ use one vs other -->
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>ElasticSearch</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
@@ -5014,8 +5016,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>ForkJoin</tag>
       </tags>
@@ -5088,8 +5090,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>ThreadLocal</tag>
       </tags>
   </entry>
@@ -5221,8 +5223,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -5272,8 +5274,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -5361,8 +5363,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -6573,10 +6575,10 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>Arthas</tag>
-        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -6666,9 +6668,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -7287,9 +7289,9 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Architecture</tag>
+        <tag>Distributed</tag>
         <tag>Fescar</tag>
         <tag>Seata</tag>
-        <tag>Distributed</tag>
         <tag>Transaction</tag>
       </tags>
   </entry>
@@ -7414,8 +7416,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Multi-Live</tag>
         <tag>High-Available</tag>
       </tags>
@@ -7554,8 +7556,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>PaaS</tag>
       </tags>
   </entry>
@@ -7746,9 +7748,9 @@ table th:nth-of-type(2) {
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>G1</tag>
       </tags>
@@ -7932,8 +7934,8 @@ table th:nth-of-type(2) {
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -8319,8 +8321,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Log</tag>
         <tag>Elasticsearch</tag>
         <tag>Filebeat</tag>
@@ -8651,11 +8653,11 @@ Connection: close
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
         <tag>Gateway</tag>
         <tag>Design</tag>
         <tag>API</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -8788,8 +8790,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -8951,8 +8953,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>Lambda</tag>
       </tags>
   </entry>
@@ -9102,8 +9104,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -9765,8 +9767,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>HashMap</tag>
       </tags>
   </entry>
@@ -9888,8 +9890,8 @@ Connection: close
         <category>Spring</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Spring</tag>
         <tag>AOP</tag>
