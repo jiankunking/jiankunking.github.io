@@ -44,7 +44,7 @@
 </ul>
 <p><font color="DeepPink"><strong>碰到 CPU 使用率升高的问题，你可以借助 top、pidstat 等工具，确认引发 CPU 性能问题的来源；再使用 perf 等工具，排查出引起性能问题的具体函数。</strong></font></p>
 <p><font color="DeepPink"><strong>短时应用的运行时间比较短，很难在 top 或者 ps 这类展示系统概要和进程快照的工具中发现，你需要使用记录事件的工具来配合诊断，比如 execsnoop 或者 perf top。</strong></font></p>
-<h2 id="实践-1"><a href="#实践-1" class="headerlink" title="实践"></a>实践</h2><p><a href="/attachments/Linux性能优化实战/06系统的CPU使用率很高但为啥却找不到高CPU？.pdf" target="_blank">06系统的CPU使用率很高但为啥却找不到高CPU？</a></p>
+<h2 id="实践-1"><a href="#实践-1" class="headerlink" title="实践"></a>实践</h2><p><a href="/attachments/Linux性能优化实战/06系统的CPU使用率很高但为啥却找不到高CPU？.pdf" target="_blank">系统的CPU使用率很高但为啥却找不到高CPU？</a></p>
 <h1 id="系统中出现大量不可中断进程和僵尸进程怎么办？"><a href="#系统中出现大量不可中断进程和僵尸进程怎么办？" class="headerlink" title="系统中出现大量不可中断进程和僵尸进程怎么办？"></a>系统中出现大量不可中断进程和僵尸进程怎么办？</h1><h2 id="Top-输出分析"><a href="#Top-输出分析" class="headerlink" title="Top 输出分析"></a>Top 输出分析</h2><p>下面是一个 top 命令输出的示例，S 列（也就是 Status 列）表示进程的状态。从这个示例里，你可以看到<br>R、D、Z、S、I 等几个状态，它们分别是什么意思呢？</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ top</span><br><span class="line">PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND</span><br><span class="line">28961 root 20 0 43816 3148 4040 R 3.2 0.0 0:00.01 top</span><br><span class="line">620 root 20 0 37280 33676 908 D 0.3 0.4 0:00.01 app</span><br><span class="line">1 root 20 0 160072 9416 6752 S 0.0 0.1 0:37.64 systemd</span><br><span class="line">1896 root 20 0 0 0 0 Z 0.0 0.0 0:00.00 devapp</span><br><span class="line">2 root 20 0 0 0 0 S 0.0 0.0 0:00.10 kthreadd</span><br><span class="line">4 root 0 -20 0 0 0 I 0.0 0.0 0:00.00 kworker/0:0H</span><br><span class="line">6 root 0 -20 0 0 0 I 0.0 0.0 0:00.00 mm_percpu_wq</span><br><span class="line">7 root 20 0 0 0 0 S 0.0 0.0 0:06.37 ksoftirqd/0</span><br></pre></td></tr></table></figure>
 
@@ -68,16 +68,37 @@
 <p>不可中断状态，表示进程正在跟硬件交互，为了保护进程数据和硬件的一致性，系统不允许其他进程或中断打断这个进程。进程长时间处于不可中断状态，通常表示系统有 I/O 性能问题。</p>
 </blockquote>
 <h2 id="实践-2"><a href="#实践-2" class="headerlink" title="实践"></a>实践</h2><p>dstat命令 是一个用来替换vmstat、iostat、netstat、nfsstat和ifstat这些命令的工具，是一个全能系统信息统计工具。与sysstat相比，dstat拥有一个彩色的界面，在手动观察性能状况时，数据比较显眼容易观察；而且dstat支持即时刷新，譬如输入dstat 3即每三秒收集一次，但最新的数据都会每秒刷新显示。和sysstat相同的是，dstat也可以收集指定的性能资源，譬如dstat -c即显示CPU的使用情况。</p>
-<p><a href="/attachments/Linux性能优化实战/08系统中出现大量不可中断进程和僵尸进程怎么办？.pdf" target="_blank">08系统中出现大量不可中断进程和僵尸进程怎么办？</a></p>
+<p><a href="/attachments/Linux性能优化实战/08系统中出现大量不可中断进程和僵尸进程怎么办？.pdf" target="_blank">系统中出现大量不可中断进程和僵尸进程怎么办？</a></p>
 <h1 id="怎么理解Linux软中断？"><a href="#怎么理解Linux软中断？" class="headerlink" title="怎么理解Linux软中断？"></a>怎么理解Linux软中断？</h1><p><a href="/attachments/Linux性能优化实战/09怎么理解Linux软中断？.pdf" target="_blank">09怎么理解Linux软中断？</a></p>
-<p>读到10</p>
+<h1 id="如何迅速分析出系统CPU的瓶颈在哪里？"><a href="#如何迅速分析出系统CPU的瓶颈在哪里？" class="headerlink" title="如何迅速分析出系统CPU的瓶颈在哪里？"></a>如何迅速分析出系统CPU的瓶颈在哪里？</h1><p><a href="/attachments/Linux性能优化实战/11如何迅速分析出系统CPU的瓶颈在哪里？.pdf" target="_blank">如何迅速分析出系统CPU的瓶颈在哪里？</a></p>
+<blockquote>
+<p>pidstat 中， %wait 表示进程等待 CPU 的时间百分比。<br>top 中 ，iowait% 则表示等待 I/O 的 CPU 时间百分比。</p>
+</blockquote>
+<h1 id="Linux性能优化答疑"><a href="#Linux性能优化答疑" class="headerlink" title="Linux性能优化答疑"></a>Linux性能优化答疑</h1><p>关注一下：【问题 2：如何用 perf 工具分析 Java 程序】</p>
+<blockquote>
+<p>像是 Java 这种通过 JVM 来运行的应用程序，运行堆栈用的都是 JVM 内置的函数和堆栈管理。所以，从系统层面你只能看到JVM的函数堆栈，而不能直接得到 Java 应用程序的堆栈。<br>perf_events 实际上已经支持了 JIT，但还需要一个 /tmp/perf-PID.map 文件，来进行符号翻译。当然，开源项目  perf-map-agent 可以帮你生成这个符号表。</p>
+</blockquote>
+<p><a href="/attachments/Linux性能优化实战/14Linux性能优化答疑（二）.pdf" target="_blank">Linux性能优化答疑</a></p>
+<h1 id="怎么理解内存中的Buffer和Cache？"><a href="#怎么理解内存中的Buffer和Cache？" class="headerlink" title="怎么理解内存中的Buffer和Cache？"></a>怎么理解内存中的Buffer和Cache？</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># 注意不同版本的 free 输出可能会有所不同</span><br><span class="line">$ free</span><br><span class="line">total used free shared buff/cache available</span><br><span class="line">Mem: 8169348 263524 6875352 668 1030472 7611064</span><br><span class="line">Swap: 0 0 0</span><br></pre></td></tr></table></figure>
+
+<p>这里的大部分指标都比较容易理解，但 Buffer 和 Cache 可能不太好区分。从字面上来说，Buffer 是缓冲区，而 Cache 是缓存，两者都是数据在内存中的临时存储。那么，你知道这两种“临时存储”有什么区别吗？</p>
+<h2 id="free-数据的来源"><a href="#free-数据的来源" class="headerlink" title="free 数据的来源"></a>free 数据的来源</h2><p>Buffers 是内核缓冲区用到的内存，对应的是 /proc/meminfo 中的 Buffers 值。<br>Cache 是内核页缓存和 Slab 用到的内存，对应的是 /proc/meminfo 中的 Cached 与 SReclaimable 之和。</p>
+<h2 id="proc-文件系统"><a href="#proc-文件系统" class="headerlink" title="proc 文件系统"></a>proc 文件系统</h2><p>/proc 是 Linux 内核提供的一种特殊文件系统，是用户跟内核交互的接口。比方说，用户可以从 /proc 中查询内核的运行状态和配置选项，查询进程的运行状态、统计数据等，当然，你也可以通过 /proc 来修改内核的配置。</p>
+<p>proc 文件系统同时也是很多性能工具的最终数据来源。比如我们刚才看到的 free ，就是通过读取 /proc/meminfo ，得到内存的使用情况。</p>
+<p>Buffers 是对原始磁盘块的临时存储，也就是用来缓存磁盘的数据，通常不会特别大（20MB 左右）。这样，内核就可以把分散的写集中起来，统一优化磁盘的写入，比如可以把多次小的写合并成单次大的写等等。</p>
+<p>Cached 是从磁盘读取文件的页缓存，也就是用来缓存从文件读取的数据。这样，下次访问这些文件数据时，就可以直接从内存中快速获取，而不需要再次访问缓慢的磁盘。SReclaimable 是 Slab 的一部分。Slab 包括两部分，其中的可回收部分，用SReclaimable 记录；而不可回收部分，用 SUnreclaim 记录。</p>
+<blockquote>
+<p>Buffer 是对磁盘数据的缓存，而 Cache 是文件数据的缓存，它们既会用在读请求中，也会用在写请求中。</p>
+</blockquote>
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><p><a href="/attachments/Linux性能优化实战/17如何利用系统缓存优化程序的运行效率？.pdf" target="_blank">如何利用系统缓存优化程序的运行效率？</a></p>
+<p>读到18</p>
 ]]></content>
       <categories>
         <category>Linux</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>读书笔记</tag>
+        <tag>原创</tag>
         <tag>Linux</tag>
       </tags>
   </entry>
@@ -1629,8 +1650,8 @@ use one vs other -->
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
-        <tag>JDK</tag>
         <tag>Final</tag>
+        <tag>JDK</tag>
       </tags>
   </entry>
   <entry>
@@ -5020,8 +5041,8 @@ use one vs other -->
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
-        <tag>ForkJoin</tag>
         <tag>JUC</tag>
+        <tag>ForkJoin</tag>
       </tags>
   </entry>
   <entry>
@@ -6138,8 +6159,8 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>Design</tag>
         <tag>读书笔记</tag>
+        <tag>Design</tag>
         <tag>MySQL</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
@@ -7785,9 +7806,9 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
+        <tag>读书笔记</tag>
         <tag>Architecture</tag>
         <tag>Distributed</tag>
-        <tag>读书笔记</tag>
         <tag>Cache</tag>
         <tag>Consistent</tag>
       </tags>
