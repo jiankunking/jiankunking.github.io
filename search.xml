@@ -8,7 +8,7 @@
       <link href="/linux-performance-optimization-practices-notes.html"/>
       <url>/linux-performance-optimization-practices-notes.html</url>
       
-        <content type="html"><![CDATA[<p>Linux性能优化实战 学习笔记<br>作者： 倪朋飞</p><a id="more"></a><h1 id="平均负载"><a href="#平均负载" class="headerlink" title="平均负载"></a>平均负载</h1><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>简单来说，平均负载是指单位时间内，系统处于可运行状态和不可中断状态的平均进程数，也就是平均活跃进程数，它和CPU使用率并没有直接关系。这里我先解释下，可运行状态和不可中断状态这俩词儿。</p><p>所谓可运行状态的进程，是指正在使用CPU或者正在等待CPU的进程，也就是我们常用ps命令看到的，处于R状态（Running或Runnable）的进程。</p><p>不可中断状态的进程则是正处于内核态关键流程中的进程，并且这些流程是不可打断的，比如最常见的是等待硬件设备的I/O响应，也就是我们在ps命令中看到的D状态（Uninterruptible Sleep，也称为 Disk leep）的进程。<br>比如，当一个进程向磁盘读写数据时，为了保证数据的一致性，在得到磁盘回复前，它是不能被其他进程或者中断打断的，这个时候的进程就处于不可中断状态。如果此时的进程被打断了，就容易出现磁盘数据与进程数据不一致的问题。</p><p>所以，不可中断状态实际上是系统对进程和硬件设备的一种保护机制。因此，你可以简单理解为，平均负载其实就是平均活跃进程数。平均活跃进程数，直观上的理解就是单位时间内的活跃进程数，但它实际上是活跃进程数的指数衰减平均值。</p><p>获取CPU核数</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grep &apos;model name&apos; /proc/cpuinfo | wc -l</span><br></pre></td></tr></table></figure><h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>平均负载提供了一个快速查看系统整体性能的手段，反映了整体的负载情况。但只看平均负载本身，我们并不能直接发现，到底是哪里出现了瓶颈。所以，在理解平均负载时，也要注意：</p><ul><li>平均负载高有可能是CPU密集型进程导致的；</li><li>平均负载高并不一定代表CPU使用率高，还有可能是I/O更繁忙了；</li><li>当发现负载高的时候，你可以使用mpstat、pidstat等工具，辅助分析负载的来源。</li></ul><h1 id="CPU上下文切换"><a href="#CPU上下文切换" class="headerlink" title="CPU上下文切换"></a>CPU上下文切换</h1><p>线程与进程最大的区别在于，线程是调度的基本单位，而进程则是资源拥有的基本单位。说白了，所谓内核中的任务调度，实际上的调度对象是线程；而进程只是给线程提供了虚拟内存、全局变量等资源。</p><p>根据 <a href="https://blog.tsunanet.net/2010/11/how-long-does-it-take-to-make-context.html" target="_blank" rel="noopener">Tsuna</a> 的测试报告，每次上下文切换都需要几十纳秒到数微秒的 CPU 时间。这个时间还是相当可观的，特别是在进程上下文切换次数较多的情况下，很容易导致 CPU 将大量时间耗费在寄存器、内核栈以及虚拟内存等资源的保存和恢复上，进而大大缩短了真正运行进程的时间。</p><h2 id="实践"><a href="#实践" class="headerlink" title="实践"></a>实践</h2><p><a href="/attachments/Linux性能优化实战/04经常说的CPU上下文切换是什么意思？.pdf" target="_blank">经常说的CPU上下文切换是什么意思？</a></p><h1 id="CPU-使用率"><a href="#CPU-使用率" class="headerlink" title="CPU 使用率"></a>CPU 使用率</h1><p>GDB 并不适合在性能分析的早期应用。</p><p>为什么呢？因为 GDB 调试程序的过程会中断程序运行，这在线上环境往往是不允许的。所以，GDB 只适合用在性能分析的后期，当你找到了出问题的大致函数后，线下再借助它来进一步调试函数内部的问题。</p><p>那么哪种工具适合在第一时间分析进程的 CPU 问题呢？我的推荐是 perf。perf 是 Linux 2.6.31 以后内置的性能分析工具。它以性能事件采样为基础，不仅可以分析系统的各种事件和内核性能，还可以用来分析指定应用程序的性能问题。</p><p>使用 perf 分析 CPU 性能问题，我来说两种最常见、也是我最喜欢的用法。<br>第一种常见用法是 perf top，类似于 top，它能够实时显示占用 CPU 时钟最多的函数或者指令，因此可以用来查找热点函数，使用界面如下所示：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ perf top</span><br><span class="line">Samples: 833 of event &apos;cpu-clock&apos;, Event count (approx.): 97742399</span><br><span class="line">Overhead Shared Object Symbol</span><br><span class="line">7.28% perf [.] 0x00000000001f78a4</span><br><span class="line">4.72% [kernel] [k] vsnprintf</span><br><span class="line">4.32% [kernel] [k] module_get_kallsym</span><br><span class="line">3.65% [kernel] [k] _raw_spin_unlock_irqrestore</span><br><span class="line">...</span><br></pre></td></tr></table></figure><p>输出结果中，第一行包含三个数据，分别是采样数（Samples）、事件类型（event）和事件总数量（Event count）。比如这个例子中，perf 总共采集了 833 个 CPU 时钟事件，而总事件数则为 97742399。</p><p>另外，采样数需要我们特别注意。如果采样数过少（比如只有十几个），那下面的排序和百分比就没什么实际参考价值了。<br>再往下看是一个表格式样的数据，每一行包含四列，分别是：</p><p>第一列 Overhead ，是该符号的性能事件在所有采样中的比例，用百分比来表示。<br>第二列 Shared ，是该函数或指令所在的动态共享对象（Dynamic Shared Object），如内核、进程名、动态链接库名、内核模块名等。<br>第三列 Object ，是动态共享对象的类型。比如 [.] 表示用户空间的可执行程序、或者动态链接库，而 [k] 则表示内核空间。<br>最后一列 Symbol 是符号名，也就是函数名。当函数名未知时，用十六进制的地址来表示。</p><p>还是以上面的输出为例，我们可以看到，占用 CPU 时钟最多的是 perf 工具自身，不过它的比例也只有 7.28%，说明系统并没有 CPU 性能问题。 perf top 的使用你应该很清楚了吧。</p><p>接着再来看第二种常见用法，也就是 perf record 和 perf report。 perf top 虽然实时展示了系统的性能信息，但它的缺点是并不保存数据，也就无法用于离线或者后续的分析。而 perf record 则提供了保存数据的功能，保存后的数据，需要你用 perf report 解析展示。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ perf record # 按 Ctrl+C 终止采样</span><br><span class="line">[ perf record: Woken up 1 times to write data ]</span><br><span class="line">[ perf record: Captured and wrote 0.452 MB perf.data (6093 samples) ]</span><br><span class="line">$ perf report # 展示类似于 perf top 的报告</span><br></pre></td></tr></table></figure><p>在实际使用中，我们还经常为 perf top 和 perf record 加上 -g 参数，开启调用关系的采样，方便我们根据调用链来分析性能问题。</p><h2 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h2><ul><li>用户 CPU 和 Nice CPU 高，说明用户态进程占用了较多的 CPU，所以应该着重排查进程的性能问题。</li><li>系统 CPU 高，说明内核态占用了较多的 CPU，所以应该着重排查内核线程或者系统调用的性能问题。</li><li>I/O 等待 CPU 高，说明等待 I/O 的时间比较长，所以应该着重排查系统存储是不是出现了 I/O 问题。</li><li>软中断和硬中断高，说明软中断或硬中断的处理程序占用了较多的 CPU，所以应该着重排查内核中的中断服务程序。</li></ul><p><font color="DeepPink"><strong>碰到 CPU 使用率升高的问题，你可以借助 top、pidstat 等工具，确认引发 CPU 性能问题的来源；再使用 perf 等工具，排查出引起性能问题的具体函数。</strong></font></p><p><font color="DeepPink"><strong>短时应用的运行时间比较短，很难在 top 或者 ps 这类展示系统概要和进程快照的工具中发现，你需要使用记录事件的工具来配合诊断，比如 execsnoop 或者 perf top。</strong></font></p><h2 id="实践-1"><a href="#实践-1" class="headerlink" title="实践"></a>实践</h2><p><a href="/attachments/Linux性能优化实战/06系统的CPU使用率很高但为啥却找不到高CPU？.pdf" target="_blank">系统的CPU使用率很高但为啥却找不到高CPU？</a></p><h1 id="系统中出现大量不可中断进程和僵尸进程怎么办？"><a href="#系统中出现大量不可中断进程和僵尸进程怎么办？" class="headerlink" title="系统中出现大量不可中断进程和僵尸进程怎么办？"></a>系统中出现大量不可中断进程和僵尸进程怎么办？</h1><h2 id="Top-输出分析"><a href="#Top-输出分析" class="headerlink" title="Top 输出分析"></a>Top 输出分析</h2><p>下面是一个 top 命令输出的示例，S 列（也就是 Status 列）表示进程的状态。从这个示例里，你可以看到<br>R、D、Z、S、I 等几个状态，它们分别是什么意思呢？</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ top</span><br><span class="line">PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND</span><br><span class="line">28961 root 20 0 43816 3148 4040 R 3.2 0.0 0:00.01 top</span><br><span class="line">620 root 20 0 37280 33676 908 D 0.3 0.4 0:00.01 app</span><br><span class="line">1 root 20 0 160072 9416 6752 S 0.0 0.1 0:37.64 systemd</span><br><span class="line">1896 root 20 0 0 0 0 Z 0.0 0.0 0:00.00 devapp</span><br><span class="line">2 root 20 0 0 0 0 S 0.0 0.0 0:00.10 kthreadd</span><br><span class="line">4 root 0 -20 0 0 0 I 0.0 0.0 0:00.00 kworker/0:0H</span><br><span class="line">6 root 0 -20 0 0 0 I 0.0 0.0 0:00.00 mm_percpu_wq</span><br><span class="line">7 root 20 0 0 0 0 S 0.0 0.0 0:06.37 ksoftirqd/0</span><br></pre></td></tr></table></figure><p>我们挨个来看一下：</p><ul><li>R 是 Running 或 Runnable 的缩写，表示进程在 CPU 的就绪队列中，正在运行或者正在等待运行。</li><li>D 是 Disk Sleep 的缩写，也就是不可中断状态睡眠（Uninterruptible Sleep），一般表示进程正在跟硬件交互，并且交互过程不允许被其他进程或中断打断。</li><li>Z 是 Zombie 的缩写，如果你玩过“植物大战僵尸”这款游戏，应该知道它的意思。它表示僵尸进程，也就是进程实际上已经结束了，但是父进程还没有回收它的资源（比如进程的描述符、PID 等）。</li><li>S 是 Interruptible Sleep 的缩写，也就是可中断状态睡眠，表示进程因为等待某个事件而被系统挂起。当进程等待的事件发生时，它会被唤醒并进入 R 状态。</li><li>I 是 Idle 的缩写，也就是空闲状态，用在不可中断睡眠的内核线程上。前面说了，硬件交互导致的不可中断进程用 D 表示，但对某些内核线程来说，它们有可能实际上并没有任何负载，用 Idle 正是为了区分这种情况。要注意，D 状态的进程会导致平均负载升高， I 状态的进程却不会。</li></ul><p>当然了，上面的示例并没有包括进程的所有状态。除了以上 5 个状态，进程还包括下面这2个状态。</p><p>第一个是 T 或者 t，也就是 Stopped 或 Traced 的缩写，表示进程处于暂停或者跟踪状态。</p><p>向一个进程发送 SIGSTOP 信号，它就会因响应这个信号变成暂停状态（Stopped）；再向它发送 SIGCONT 信号，进程又会恢复运行（如果进程是终端里直接启动的，则需要你用 fg 命令，恢复到前台运行）。</p><p>而当你用调试器（如 gdb）调试一个进程时，在使用断点中断进程后，进程就会变成跟踪状态，这其实也是一种特殊的暂停状态，只不过你可以用调试器来跟踪并按需要控制进程的运行。</p><p>另一个是 X，也就是 Dead 的缩写，表示进程已经消亡，所以你不会在 top 或者 ps 命令中看到它。</p><blockquote><p>僵尸进程，这是多进程应用很容易碰到的问题。正常情况下，当一个进程创建了子进程后，它应该通过系统调用 wait() 或者 waitpid() 等待子进程结束，回收子进程的资源而子进程在结束时，会向它的父进程发送 SIGCHLD 信号，所以，父进程还可以注册SIGCHLD 信号的处理函数，异步回收资源。<br>如果父进程没这么做，或是子进程执行太快，父进程还没来得及处理子进程状态，子进程就已经提前退出，那这时的子进程就会变成僵尸进程。换句话说，父亲应该一直对儿子负责，善始善终，如果不作为或者跟不上，都会导致“问题少年”的出现。<br>通常，僵尸进程持续的时间都比较短，在父进程回收它的资源后就会消亡；或者在父进程退出后，由 init 进程回收后也会消亡。<br>一旦父进程没有处理子进程的终止，还一直保持运行状态，那么子进程就会一直处于僵尸状态。大量的僵尸进程会用尽 PID 进程号，导致新进程不能创建，所以这种情况一定要避免。</p></blockquote><blockquote><p>不可中断状态，表示进程正在跟硬件交互，为了保护进程数据和硬件的一致性，系统不允许其他进程或中断打断这个进程。进程长时间处于不可中断状态，通常表示系统有 I/O 性能问题。</p></blockquote><h2 id="实践-2"><a href="#实践-2" class="headerlink" title="实践"></a>实践</h2><p>dstat命令 是一个用来替换vmstat、iostat、netstat、nfsstat和ifstat这些命令的工具，是一个全能系统信息统计工具。与sysstat相比，dstat拥有一个彩色的界面，在手动观察性能状况时，数据比较显眼容易观察；而且dstat支持即时刷新，譬如输入dstat 3即每三秒收集一次，但最新的数据都会每秒刷新显示。和sysstat相同的是，dstat也可以收集指定的性能资源，譬如dstat -c即显示CPU的使用情况。</p><p><a href="/attachments/Linux性能优化实战/08系统中出现大量不可中断进程和僵尸进程怎么办？.pdf" target="_blank">系统中出现大量不可中断进程和僵尸进程怎么办？</a></p><h1 id="怎么理解Linux软中断？"><a href="#怎么理解Linux软中断？" class="headerlink" title="怎么理解Linux软中断？"></a>怎么理解Linux软中断？</h1><p><a href="/attachments/Linux性能优化实战/09怎么理解Linux软中断？.pdf" target="_blank">09怎么理解Linux软中断？</a></p><h1 id="如何迅速分析出系统CPU的瓶颈在哪里？"><a href="#如何迅速分析出系统CPU的瓶颈在哪里？" class="headerlink" title="如何迅速分析出系统CPU的瓶颈在哪里？"></a>如何迅速分析出系统CPU的瓶颈在哪里？</h1><p><a href="/attachments/Linux性能优化实战/11如何迅速分析出系统CPU的瓶颈在哪里？.pdf" target="_blank">如何迅速分析出系统CPU的瓶颈在哪里？</a></p><blockquote><p>pidstat 中， %wait 表示进程等待 CPU 的时间百分比。<br>top 中 ，iowait% 则表示等待 I/O 的 CPU 时间百分比。</p></blockquote><h1 id="Linux性能优化答疑"><a href="#Linux性能优化答疑" class="headerlink" title="Linux性能优化答疑"></a>Linux性能优化答疑</h1><p>关注一下：【问题 2：如何用 perf 工具分析 Java 程序】</p><blockquote><p>像是 Java 这种通过 JVM 来运行的应用程序，运行堆栈用的都是 JVM 内置的函数和堆栈管理。所以，从系统层面你只能看到JVM的函数堆栈，而不能直接得到 Java 应用程序的堆栈。<br>perf_events 实际上已经支持了 JIT，但还需要一个 /tmp/perf-PID.map 文件，来进行符号翻译。当然，开源项目  perf-map-agent 可以帮你生成这个符号表。</p></blockquote><p><a href="/attachments/Linux性能优化实战/14Linux性能优化答疑（二）.pdf" target="_blank">Linux性能优化答疑</a></p><h1 id="怎么理解内存中的Buffer和Cache？"><a href="#怎么理解内存中的Buffer和Cache？" class="headerlink" title="怎么理解内存中的Buffer和Cache？"></a>怎么理解内存中的Buffer和Cache？</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 注意不同版本的 free 输出可能会有所不同</span><br><span class="line">$ free</span><br><span class="line">total used free shared buff/cache available</span><br><span class="line">Mem: 8169348 263524 6875352 668 1030472 7611064</span><br><span class="line">Swap: 0 0 0</span><br></pre></td></tr></table></figure><p>这里的大部分指标都比较容易理解，但 Buffer 和 Cache 可能不太好区分。从字面上来说，Buffer 是缓冲区，而 Cache 是缓存，两者都是数据在内存中的临时存储。那么，你知道这两种“临时存储”有什么区别吗？</p><h2 id="free-数据的来源"><a href="#free-数据的来源" class="headerlink" title="free 数据的来源"></a>free 数据的来源</h2><p>Buffers 是内核缓冲区用到的内存，对应的是 /proc/meminfo 中的 Buffers 值。<br>Cache 是内核页缓存和 Slab 用到的内存，对应的是 /proc/meminfo 中的 Cached 与 SReclaimable 之和。</p><h2 id="proc-文件系统"><a href="#proc-文件系统" class="headerlink" title="proc 文件系统"></a>proc 文件系统</h2><p>/proc 是 Linux 内核提供的一种特殊文件系统，是用户跟内核交互的接口。比方说，用户可以从 /proc 中查询内核的运行状态和配置选项，查询进程的运行状态、统计数据等，当然，你也可以通过 /proc 来修改内核的配置。</p><p>proc 文件系统同时也是很多性能工具的最终数据来源。比如我们刚才看到的 free ，就是通过读取 /proc/meminfo ，得到内存的使用情况。</p><p>Buffers 是对原始磁盘块的临时存储，也就是用来缓存磁盘的数据，通常不会特别大（20MB 左右）。这样，内核就可以把分散的写集中起来，统一优化磁盘的写入，比如可以把多次小的写合并成单次大的写等等。</p><p>Cached 是从磁盘读取文件的页缓存，也就是用来缓存从文件读取的数据。这样，下次访问这些文件数据时，就可以直接从内存中快速获取，而不需要再次访问缓慢的磁盘。SReclaimable 是 Slab 的一部分。Slab 包括两部分，其中的可回收部分，用SReclaimable 记录；而不可回收部分，用 SUnreclaim 记录。</p><blockquote><p>Buffer 是对磁盘数据的缓存，而 Cache 是文件数据的缓存，它们既会用在读请求中，也会用在写请求中。</p></blockquote><h2 id="磁盘与文件"><a href="#磁盘与文件" class="headerlink" title="磁盘与文件"></a>磁盘与文件</h2><p>磁盘是一个存储设备（确切地说是块设备），可以被划分为不同的磁盘分区。而在磁盘或者磁盘分区上，还可以再创建文件系统，并挂载到系统的某个目录中。这样，系统就可以通过这个挂载目录，来读写文件。</p><p>换句话说，磁盘是存储数据的块设备，也是文件系统的载体。所以，文件系统确实还是要通过磁盘，来保证数据的持久化存储。</p><p>你在很多地方都会看到这句话， Linux 中一切皆文件。换句话说，你可以通过相同的文件接口，来访问磁盘和文件（比如 open、read、write、close 等）。</p><p>在读写普通文件时，I/O 请求会首先经过文件系统，然后由文件系统负责，来与磁盘进行交互。而在读写块设备文件时，会跳过文件系统，直接与磁盘交互，也就是所谓的“裸I/O”。</p><p>这两种读写方式使用的缓存自然不同。文件系统管理的缓存，其实就是 Cache 的一部分。而裸磁盘的缓存，用的正是 Buffer。</p><blockquote><p>cache是针对文件系统的缓存,而 buffers是对磁盘数据的缓存,是直接跟硬件那一层相关的,那一般来说, cache会比 buffers 的数量大了很多。</p></blockquote><h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><p><a href="/attachments/Linux性能优化实战/17如何利用系统缓存优化程序的运行效率？.pdf" target="_blank">如何利用系统缓存优化程序的运行效率？</a></p><h1 id="为什么系统的Swap变高了？"><a href="#为什么系统的Swap变高了？" class="headerlink" title="为什么系统的Swap变高了？"></a>为什么系统的Swap变高了？</h1><h2 id="NUMA-与-Swap"><a href="#NUMA-与-Swap" class="headerlink" title="NUMA 与 Swap"></a>NUMA 与 Swap</h2><p><a href="/attachments/Linux性能优化实战/19为什么系统的Swap变高了？.pdf" target="_blank">19为什么系统的Swap变高了？</a></p><p>在内存资源紧张时，Linux 会通过 Swap ，把不常访问的匿名页换出到磁盘中，下次访问的时候再从磁盘换入到内存中来。你可以设置 /proc/sys/vm/min_free_kbytes，来调整系统定期回收内存的阈值；也可以设置 /proc/sys/vm/swappiness，来调整文件页和匿名页的回收倾向。</p><p>当 Swap 变高时，你可以用 sar、/proc/zoneinfo、/proc/pid/status 等方法，查看系统和进程的内存使用情况，进而找出 Swap 升高的根源和受影响的进程。</p><h1 id="如何“快准狠”找到系统内存的问题？"><a href="#如何“快准狠”找到系统内存的问题？" class="headerlink" title="如何“快准狠”找到系统内存的问题？"></a>如何“快准狠”找到系统内存的问题？</h1><p>为了迅速定位内存问题，我通常会先运行几个覆盖面比较大的性能工具，比如free、top、vmstat、pidstat 等。</p><p>具体的分析思路主要有这几步。</p><ol><li>先用 free 和 top，查看系统整体的内存使用情况。</li><li>再用 vmstat 和 pidstat，查看一段时间的趋势，从而判断出内存问题的类型。</li><li>最后进行详细分析，比如内存分配分析、缓存 / 缓冲区分析、具体进程的内存使用分析等。</li></ol><p><img src="/images/linux-performance-optimization-practices-notes/memory_tools.png" alt></p>]]></content>
+        <content type="html"><![CDATA[<p>Linux性能优化实战 学习笔记<br>作者： 倪朋飞</p><a id="more"></a><h1 id="平均负载"><a href="#平均负载" class="headerlink" title="平均负载"></a>平均负载</h1><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>简单来说，平均负载是指单位时间内，系统处于可运行状态和不可中断状态的平均进程数，也就是平均活跃进程数，它和CPU使用率并没有直接关系。这里我先解释下，可运行状态和不可中断状态这俩词儿。</p><p>所谓可运行状态的进程，是指正在使用CPU或者正在等待CPU的进程，也就是我们常用ps命令看到的，处于R状态（Running或Runnable）的进程。</p><p>不可中断状态的进程则是正处于内核态关键流程中的进程，并且这些流程是不可打断的，比如最常见的是等待硬件设备的I/O响应，也就是我们在ps命令中看到的D状态（Uninterruptible Sleep，也称为 Disk leep）的进程。<br>比如，当一个进程向磁盘读写数据时，为了保证数据的一致性，在得到磁盘回复前，它是不能被其他进程或者中断打断的，这个时候的进程就处于不可中断状态。如果此时的进程被打断了，就容易出现磁盘数据与进程数据不一致的问题。</p><p>所以，不可中断状态实际上是系统对进程和硬件设备的一种保护机制。因此，你可以简单理解为，平均负载其实就是平均活跃进程数。平均活跃进程数，直观上的理解就是单位时间内的活跃进程数，但它实际上是活跃进程数的指数衰减平均值。</p><p>获取CPU核数</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grep &apos;model name&apos; /proc/cpuinfo | wc -l</span><br></pre></td></tr></table></figure><h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>平均负载提供了一个快速查看系统整体性能的手段，反映了整体的负载情况。但只看平均负载本身，我们并不能直接发现，到底是哪里出现了瓶颈。所以，在理解平均负载时，也要注意：</p><ul><li>平均负载高有可能是CPU密集型进程导致的；</li><li>平均负载高并不一定代表CPU使用率高，还有可能是I/O更繁忙了；</li><li>当发现负载高的时候，你可以使用mpstat、pidstat等工具，辅助分析负载的来源。</li></ul><h1 id="CPU上下文切换"><a href="#CPU上下文切换" class="headerlink" title="CPU上下文切换"></a>CPU上下文切换</h1><p>线程与进程最大的区别在于，线程是调度的基本单位，而进程则是资源拥有的基本单位。说白了，所谓内核中的任务调度，实际上的调度对象是线程；而进程只是给线程提供了虚拟内存、全局变量等资源。</p><p>根据 <a href="https://blog.tsunanet.net/2010/11/how-long-does-it-take-to-make-context.html" target="_blank" rel="noopener">Tsuna</a> 的测试报告，每次上下文切换都需要几十纳秒到数微秒的 CPU 时间。这个时间还是相当可观的，特别是在进程上下文切换次数较多的情况下，很容易导致 CPU 将大量时间耗费在寄存器、内核栈以及虚拟内存等资源的保存和恢复上，进而大大缩短了真正运行进程的时间。</p><h2 id="实践"><a href="#实践" class="headerlink" title="实践"></a>实践</h2><p><a href="/attachments/Linux性能优化实战/04经常说的CPU上下文切换是什么意思？.pdf" target="_blank">经常说的CPU上下文切换是什么意思？</a></p><h1 id="CPU-使用率"><a href="#CPU-使用率" class="headerlink" title="CPU 使用率"></a>CPU 使用率</h1><p>GDB 并不适合在性能分析的早期应用。</p><p>为什么呢？因为 GDB 调试程序的过程会中断程序运行，这在线上环境往往是不允许的。所以，GDB 只适合用在性能分析的后期，当你找到了出问题的大致函数后，线下再借助它来进一步调试函数内部的问题。</p><p>那么哪种工具适合在第一时间分析进程的 CPU 问题呢？我的推荐是 perf。perf 是 Linux 2.6.31 以后内置的性能分析工具。它以性能事件采样为基础，不仅可以分析系统的各种事件和内核性能，还可以用来分析指定应用程序的性能问题。</p><p>使用 perf 分析 CPU 性能问题，我来说两种最常见、也是我最喜欢的用法。<br>第一种常见用法是 perf top，类似于 top，它能够实时显示占用 CPU 时钟最多的函数或者指令，因此可以用来查找热点函数，使用界面如下所示：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ perf top</span><br><span class="line">Samples: 833 of event &apos;cpu-clock&apos;, Event count (approx.): 97742399</span><br><span class="line">Overhead Shared Object Symbol</span><br><span class="line">7.28% perf [.] 0x00000000001f78a4</span><br><span class="line">4.72% [kernel] [k] vsnprintf</span><br><span class="line">4.32% [kernel] [k] module_get_kallsym</span><br><span class="line">3.65% [kernel] [k] _raw_spin_unlock_irqrestore</span><br><span class="line">...</span><br></pre></td></tr></table></figure><p>输出结果中，第一行包含三个数据，分别是采样数（Samples）、事件类型（event）和事件总数量（Event count）。比如这个例子中，perf 总共采集了 833 个 CPU 时钟事件，而总事件数则为 97742399。</p><p>另外，采样数需要我们特别注意。如果采样数过少（比如只有十几个），那下面的排序和百分比就没什么实际参考价值了。<br>再往下看是一个表格式样的数据，每一行包含四列，分别是：</p><p>第一列 Overhead ，是该符号的性能事件在所有采样中的比例，用百分比来表示。<br>第二列 Shared ，是该函数或指令所在的动态共享对象（Dynamic Shared Object），如内核、进程名、动态链接库名、内核模块名等。<br>第三列 Object ，是动态共享对象的类型。比如 [.] 表示用户空间的可执行程序、或者动态链接库，而 [k] 则表示内核空间。<br>最后一列 Symbol 是符号名，也就是函数名。当函数名未知时，用十六进制的地址来表示。</p><p>还是以上面的输出为例，我们可以看到，占用 CPU 时钟最多的是 perf 工具自身，不过它的比例也只有 7.28%，说明系统并没有 CPU 性能问题。 perf top 的使用你应该很清楚了吧。</p><p>接着再来看第二种常见用法，也就是 perf record 和 perf report。 perf top 虽然实时展示了系统的性能信息，但它的缺点是并不保存数据，也就无法用于离线或者后续的分析。而 perf record 则提供了保存数据的功能，保存后的数据，需要你用 perf report 解析展示。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ perf record # 按 Ctrl+C 终止采样</span><br><span class="line">[ perf record: Woken up 1 times to write data ]</span><br><span class="line">[ perf record: Captured and wrote 0.452 MB perf.data (6093 samples) ]</span><br><span class="line">$ perf report # 展示类似于 perf top 的报告</span><br></pre></td></tr></table></figure><p>在实际使用中，我们还经常为 perf top 和 perf record 加上 -g 参数，开启调用关系的采样，方便我们根据调用链来分析性能问题。</p><h2 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h2><ul><li>用户 CPU 和 Nice CPU 高，说明用户态进程占用了较多的 CPU，所以应该着重排查进程的性能问题。</li><li>系统 CPU 高，说明内核态占用了较多的 CPU，所以应该着重排查内核线程或者系统调用的性能问题。</li><li>I/O 等待 CPU 高，说明等待 I/O 的时间比较长，所以应该着重排查系统存储是不是出现了 I/O 问题。</li><li>软中断和硬中断高，说明软中断或硬中断的处理程序占用了较多的 CPU，所以应该着重排查内核中的中断服务程序。</li></ul><p><font color="DeepPink"><strong>碰到 CPU 使用率升高的问题，你可以借助 top、pidstat 等工具，确认引发 CPU 性能问题的来源；再使用 perf 等工具，排查出引起性能问题的具体函数。</strong></font></p><p><font color="DeepPink"><strong>短时应用的运行时间比较短，很难在 top 或者 ps 这类展示系统概要和进程快照的工具中发现，你需要使用记录事件的工具来配合诊断，比如 execsnoop 或者 perf top。</strong></font></p><h2 id="实践-1"><a href="#实践-1" class="headerlink" title="实践"></a>实践</h2><p><a href="/attachments/Linux性能优化实战/06系统的CPU使用率很高但为啥却找不到高CPU？.pdf" target="_blank">系统的CPU使用率很高但为啥却找不到高CPU？</a></p><h1 id="系统中出现大量不可中断进程和僵尸进程怎么办？"><a href="#系统中出现大量不可中断进程和僵尸进程怎么办？" class="headerlink" title="系统中出现大量不可中断进程和僵尸进程怎么办？"></a>系统中出现大量不可中断进程和僵尸进程怎么办？</h1><h2 id="Top-输出分析"><a href="#Top-输出分析" class="headerlink" title="Top 输出分析"></a>Top 输出分析</h2><p>下面是一个 top 命令输出的示例，S 列（也就是 Status 列）表示进程的状态。从这个示例里，你可以看到<br>R、D、Z、S、I 等几个状态，它们分别是什么意思呢？</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ top</span><br><span class="line">PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND</span><br><span class="line">28961 root 20 0 43816 3148 4040 R 3.2 0.0 0:00.01 top</span><br><span class="line">620 root 20 0 37280 33676 908 D 0.3 0.4 0:00.01 app</span><br><span class="line">1 root 20 0 160072 9416 6752 S 0.0 0.1 0:37.64 systemd</span><br><span class="line">1896 root 20 0 0 0 0 Z 0.0 0.0 0:00.00 devapp</span><br><span class="line">2 root 20 0 0 0 0 S 0.0 0.0 0:00.10 kthreadd</span><br><span class="line">4 root 0 -20 0 0 0 I 0.0 0.0 0:00.00 kworker/0:0H</span><br><span class="line">6 root 0 -20 0 0 0 I 0.0 0.0 0:00.00 mm_percpu_wq</span><br><span class="line">7 root 20 0 0 0 0 S 0.0 0.0 0:06.37 ksoftirqd/0</span><br></pre></td></tr></table></figure><p>我们挨个来看一下：</p><ul><li>R 是 Running 或 Runnable 的缩写，表示进程在 CPU 的就绪队列中，正在运行或者正在等待运行。</li><li>D 是 Disk Sleep 的缩写，也就是不可中断状态睡眠（Uninterruptible Sleep），一般表示进程正在跟硬件交互，并且交互过程不允许被其他进程或中断打断。</li><li>Z 是 Zombie 的缩写，如果你玩过“植物大战僵尸”这款游戏，应该知道它的意思。它表示僵尸进程，也就是进程实际上已经结束了，但是父进程还没有回收它的资源（比如进程的描述符、PID 等）。</li><li>S 是 Interruptible Sleep 的缩写，也就是可中断状态睡眠，表示进程因为等待某个事件而被系统挂起。当进程等待的事件发生时，它会被唤醒并进入 R 状态。</li><li>I 是 Idle 的缩写，也就是空闲状态，用在不可中断睡眠的内核线程上。前面说了，硬件交互导致的不可中断进程用 D 表示，但对某些内核线程来说，它们有可能实际上并没有任何负载，用 Idle 正是为了区分这种情况。要注意，D 状态的进程会导致平均负载升高， I 状态的进程却不会。</li></ul><p>当然了，上面的示例并没有包括进程的所有状态。除了以上 5 个状态，进程还包括下面这2个状态。</p><p>第一个是 T 或者 t，也就是 Stopped 或 Traced 的缩写，表示进程处于暂停或者跟踪状态。</p><p>向一个进程发送 SIGSTOP 信号，它就会因响应这个信号变成暂停状态（Stopped）；再向它发送 SIGCONT 信号，进程又会恢复运行（如果进程是终端里直接启动的，则需要你用 fg 命令，恢复到前台运行）。</p><p>而当你用调试器（如 gdb）调试一个进程时，在使用断点中断进程后，进程就会变成跟踪状态，这其实也是一种特殊的暂停状态，只不过你可以用调试器来跟踪并按需要控制进程的运行。</p><p>另一个是 X，也就是 Dead 的缩写，表示进程已经消亡，所以你不会在 top 或者 ps 命令中看到它。</p><blockquote><p>僵尸进程，这是多进程应用很容易碰到的问题。正常情况下，当一个进程创建了子进程后，它应该通过系统调用 wait() 或者 waitpid() 等待子进程结束，回收子进程的资源而子进程在结束时，会向它的父进程发送 SIGCHLD 信号，所以，父进程还可以注册SIGCHLD 信号的处理函数，异步回收资源。<br>如果父进程没这么做，或是子进程执行太快，父进程还没来得及处理子进程状态，子进程就已经提前退出，那这时的子进程就会变成僵尸进程。换句话说，父亲应该一直对儿子负责，善始善终，如果不作为或者跟不上，都会导致“问题少年”的出现。<br>通常，僵尸进程持续的时间都比较短，在父进程回收它的资源后就会消亡；或者在父进程退出后，由 init 进程回收后也会消亡。<br>一旦父进程没有处理子进程的终止，还一直保持运行状态，那么子进程就会一直处于僵尸状态。大量的僵尸进程会用尽 PID 进程号，导致新进程不能创建，所以这种情况一定要避免。</p></blockquote><blockquote><p>不可中断状态，表示进程正在跟硬件交互，为了保护进程数据和硬件的一致性，系统不允许其他进程或中断打断这个进程。进程长时间处于不可中断状态，通常表示系统有 I/O 性能问题。</p></blockquote><h2 id="实践-2"><a href="#实践-2" class="headerlink" title="实践"></a>实践</h2><p>dstat命令 是一个用来替换vmstat、iostat、netstat、nfsstat和ifstat这些命令的工具，是一个全能系统信息统计工具。与sysstat相比，dstat拥有一个彩色的界面，在手动观察性能状况时，数据比较显眼容易观察；而且dstat支持即时刷新，譬如输入dstat 3即每三秒收集一次，但最新的数据都会每秒刷新显示。和sysstat相同的是，dstat也可以收集指定的性能资源，譬如dstat -c即显示CPU的使用情况。</p><p><a href="/attachments/Linux性能优化实战/08系统中出现大量不可中断进程和僵尸进程怎么办？.pdf" target="_blank">系统中出现大量不可中断进程和僵尸进程怎么办？</a></p><h1 id="怎么理解Linux软中断？"><a href="#怎么理解Linux软中断？" class="headerlink" title="怎么理解Linux软中断？"></a>怎么理解Linux软中断？</h1><p><a href="/attachments/Linux性能优化实战/09怎么理解Linux软中断？.pdf" target="_blank">09怎么理解Linux软中断？</a></p><h1 id="如何迅速分析出系统CPU的瓶颈在哪里？"><a href="#如何迅速分析出系统CPU的瓶颈在哪里？" class="headerlink" title="如何迅速分析出系统CPU的瓶颈在哪里？"></a>如何迅速分析出系统CPU的瓶颈在哪里？</h1><p><a href="/attachments/Linux性能优化实战/11如何迅速分析出系统CPU的瓶颈在哪里？.pdf" target="_blank">如何迅速分析出系统CPU的瓶颈在哪里？</a></p><blockquote><p>pidstat 中， %wait 表示进程等待 CPU 的时间百分比。<br>top 中 ，iowait% 则表示等待 I/O 的 CPU 时间百分比。</p></blockquote><h1 id="Linux性能优化答疑"><a href="#Linux性能优化答疑" class="headerlink" title="Linux性能优化答疑"></a>Linux性能优化答疑</h1><p>关注一下：【问题 2：如何用 perf 工具分析 Java 程序】</p><blockquote><p>像是 Java 这种通过 JVM 来运行的应用程序，运行堆栈用的都是 JVM 内置的函数和堆栈管理。所以，从系统层面你只能看到JVM的函数堆栈，而不能直接得到 Java 应用程序的堆栈。<br>perf_events 实际上已经支持了 JIT，但还需要一个 /tmp/perf-PID.map 文件，来进行符号翻译。当然，开源项目  perf-map-agent 可以帮你生成这个符号表。</p></blockquote><p><a href="/attachments/Linux性能优化实战/14Linux性能优化答疑（二）.pdf" target="_blank">Linux性能优化答疑</a></p><h1 id="怎么理解内存中的Buffer和Cache？"><a href="#怎么理解内存中的Buffer和Cache？" class="headerlink" title="怎么理解内存中的Buffer和Cache？"></a>怎么理解内存中的Buffer和Cache？</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 注意不同版本的 free 输出可能会有所不同</span><br><span class="line">$ free</span><br><span class="line">total used free shared buff/cache available</span><br><span class="line">Mem: 8169348 263524 6875352 668 1030472 7611064</span><br><span class="line">Swap: 0 0 0</span><br></pre></td></tr></table></figure><p>这里的大部分指标都比较容易理解，但 Buffer 和 Cache 可能不太好区分。从字面上来说，Buffer 是缓冲区，而 Cache 是缓存，两者都是数据在内存中的临时存储。那么，你知道这两种“临时存储”有什么区别吗？</p><h2 id="free-数据的来源"><a href="#free-数据的来源" class="headerlink" title="free 数据的来源"></a>free 数据的来源</h2><p>Buffers 是内核缓冲区用到的内存，对应的是 /proc/meminfo 中的 Buffers 值。<br>Cache 是内核页缓存和 Slab 用到的内存，对应的是 /proc/meminfo 中的 Cached 与 SReclaimable 之和。</p><h2 id="proc-文件系统"><a href="#proc-文件系统" class="headerlink" title="proc 文件系统"></a>proc 文件系统</h2><p>/proc 是 Linux 内核提供的一种特殊文件系统，是用户跟内核交互的接口。比方说，用户可以从 /proc 中查询内核的运行状态和配置选项，查询进程的运行状态、统计数据等，当然，你也可以通过 /proc 来修改内核的配置。</p><p>proc 文件系统同时也是很多性能工具的最终数据来源。比如我们刚才看到的 free ，就是通过读取 /proc/meminfo ，得到内存的使用情况。</p><p>Buffers 是对原始磁盘块的临时存储，也就是用来缓存磁盘的数据，通常不会特别大（20MB 左右）。这样，内核就可以把分散的写集中起来，统一优化磁盘的写入，比如可以把多次小的写合并成单次大的写等等。</p><p>Cached 是从磁盘读取文件的页缓存，也就是用来缓存从文件读取的数据。这样，下次访问这些文件数据时，就可以直接从内存中快速获取，而不需要再次访问缓慢的磁盘。SReclaimable 是 Slab 的一部分。Slab 包括两部分，其中的可回收部分，用SReclaimable 记录；而不可回收部分，用 SUnreclaim 记录。</p><blockquote><p>Buffer 是对磁盘数据的缓存，而 Cache 是文件数据的缓存，它们既会用在读请求中，也会用在写请求中。</p></blockquote><h2 id="磁盘与文件"><a href="#磁盘与文件" class="headerlink" title="磁盘与文件"></a>磁盘与文件</h2><p>磁盘是一个存储设备（确切地说是块设备），可以被划分为不同的磁盘分区。而在磁盘或者磁盘分区上，还可以再创建文件系统，并挂载到系统的某个目录中。这样，系统就可以通过这个挂载目录，来读写文件。</p><p>换句话说，磁盘是存储数据的块设备，也是文件系统的载体。所以，文件系统确实还是要通过磁盘，来保证数据的持久化存储。</p><p>你在很多地方都会看到这句话， Linux 中一切皆文件。换句话说，你可以通过相同的文件接口，来访问磁盘和文件（比如 open、read、write、close 等）。</p><p>在读写普通文件时，I/O 请求会首先经过文件系统，然后由文件系统负责，来与磁盘进行交互。而在读写块设备文件时，会跳过文件系统，直接与磁盘交互，也就是所谓的“裸I/O”。</p><p>这两种读写方式使用的缓存自然不同。文件系统管理的缓存，其实就是 Cache 的一部分。而裸磁盘的缓存，用的正是 Buffer。</p><blockquote><p>cache是针对文件系统的缓存,而 buffers是对磁盘数据的缓存,是直接跟硬件那一层相关的,那一般来说, cache会比 buffers 的数量大了很多。</p></blockquote><h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><p><a href="/attachments/Linux性能优化实战/17如何利用系统缓存优化程序的运行效率？.pdf" target="_blank">如何利用系统缓存优化程序的运行效率？</a></p><h1 id="为什么系统的Swap变高了？"><a href="#为什么系统的Swap变高了？" class="headerlink" title="为什么系统的Swap变高了？"></a>为什么系统的Swap变高了？</h1><h2 id="NUMA-与-Swap"><a href="#NUMA-与-Swap" class="headerlink" title="NUMA 与 Swap"></a>NUMA 与 Swap</h2><p><a href="/attachments/Linux性能优化实战/19为什么系统的Swap变高了？.pdf" target="_blank">19为什么系统的Swap变高了？</a></p><p>在内存资源紧张时，Linux 会通过 Swap ，把不常访问的匿名页换出到磁盘中，下次访问的时候再从磁盘换入到内存中来。你可以设置 /proc/sys/vm/min_free_kbytes，来调整系统定期回收内存的阈值；也可以设置 /proc/sys/vm/swappiness，来调整文件页和匿名页的回收倾向。</p><p>当 Swap 变高时，你可以用 sar、/proc/zoneinfo、/proc/pid/status 等方法，查看系统和进程的内存使用情况，进而找出 Swap 升高的根源和受影响的进程。</p><h1 id="如何“快准狠”找到系统内存的问题？"><a href="#如何“快准狠”找到系统内存的问题？" class="headerlink" title="如何“快准狠”找到系统内存的问题？"></a>如何“快准狠”找到系统内存的问题？</h1><p>为了迅速定位内存问题，我通常会先运行几个覆盖面比较大的性能工具，比如free、top、vmstat、pidstat 等。</p><p>具体的分析思路主要有这几步。</p><ol><li>先用 free 和 top，查看系统整体的内存使用情况。</li><li>再用 vmstat 和 pidstat，查看一段时间的趋势，从而判断出内存问题的类型。</li><li>最后进行详细分析，比如内存分配分析、缓存 / 缓冲区分析、具体进程的内存使用分析等。</li></ol><h2 id="根据指标查找工具"><a href="#根据指标查找工具" class="headerlink" title="根据指标查找工具"></a>根据指标查找工具</h2><p><img src="/images/linux-performance-optimization-practices-notes/tools_memory.png" alt></p><h2 id="根据工具查找指标"><a href="#根据工具查找指标" class="headerlink" title="根据工具查找指标"></a>根据工具查找指标</h2><p><img src="/images/linux-performance-optimization-practices-notes/memory_tools.png" alt></p><h1 id="Linux-磁盘I-O是怎么工作的？"><a href="#Linux-磁盘I-O是怎么工作的？" class="headerlink" title="Linux 磁盘I/O是怎么工作的？"></a>Linux 磁盘I/O是怎么工作的？</h1><h2 id="磁盘性能指标"><a href="#磁盘性能指标" class="headerlink" title="磁盘性能指标"></a>磁盘性能指标</h2><p>说到磁盘性能的衡量标准，必须要提到五个常见指标，也就是我们经常用到的，使用率、饱和度、IOPS、吞吐量以及响应时间等。这五个指标，是衡量磁盘性能的基本指标。</p><ul><li>使用率，是指磁盘处理 I/O 的时间百分比。过高的使用率（比如超过 80%），通常意味着磁盘 I/O 存在性能瓶颈。</li><li>饱和度，是指磁盘处理 I/O 的繁忙程度。过高的饱和度，意味着磁盘存在严重的性能瓶颈。当饱和度为 100% 时，磁盘无法接受新的 I/O 请求。</li><li>IOPS（Input/Output Per Second），是指每秒的 I/O 请求数。</li><li>吞吐量，是指每秒的 I/O 请求大小。</li><li>响应时间，是指 I/O 请求从发出到收到响应的间隔时间。</li></ul><p>这里要注意的是，使用率只考虑有没有 I/O，而不考虑 I/O 的大小。换句话说，当使用率是 100% 的时候，磁盘依然有可能接受新的 I/O 请求。</p><p>这些指标，很可能是你经常挂在嘴边的，一讨论磁盘性能必定提起的对象。不过我还是要强调一点，不要孤立地去比较某一指标，而要结合读写比例、I/O 类型（随机还是连续）以及 I/O 的大小，综合来分析。</p><h2 id="磁盘-I-O-观测"><a href="#磁盘-I-O-观测" class="headerlink" title="磁盘 I/O 观测"></a>磁盘 I/O 观测</h2><p><img src="/images/linux-performance-optimization-practices-notes/iostat.png" alt></p><p>这些指标中，你要注意：</p><ul><li>%util ，就是我们前面提到的磁盘 I/O 使用率；</li><li>r/s+ w/s ，就是 IOPS；</li><li>rkB/s+wkB/s ，就是吞吐量；</li><li>r_await+w_await ，就是响应时间。</li></ul><p>在观测指标时，也别忘了结合请求的大小（ rareq-sz 和 wareq-sz）一起分析。</p><h2 id="进程-I-O-观测"><a href="#进程-I-O-观测" class="headerlink" title="进程 I/O 观测"></a>进程 I/O 观测</h2><p>要观察进程的 I/O 情况，你还可以使用 pidstat 和 iotop 这两个工具。</p><h2 id="根据指标查找工具-1"><a href="#根据指标查找工具-1" class="headerlink" title="根据指标查找工具"></a>根据指标查找工具</h2><p><img src="/images/linux-performance-optimization-practices-notes/file_disk_io_tool.png" alt></p><h2 id="根据工具查找指标-1"><a href="#根据工具查找指标-1" class="headerlink" title="根据工具查找指标"></a>根据工具查找指标</h2><p><img src="/images/linux-performance-optimization-practices-notes/tool_file_disk_io.png" alt></p><h1 id="关于-Linux-网络，你必须知道这些"><a href="#关于-Linux-网络，你必须知道这些" class="headerlink" title="关于 Linux 网络，你必须知道这些"></a>关于 Linux 网络，你必须知道这些</h1><h2 id="网络模型"><a href="#网络模型" class="headerlink" title="网络模型"></a>网络模型</h2><p>为了解决网络互联中异构设备的兼容性问题，并解耦复杂的网络包处理流程，OSI 模型把网络互联的框架分为应用层、表示层、会话层、传输层、网络层、数据链路层以及物理层等七层，每个层负责不同的功能。其中：</p><ul><li>应用层，负责为应用程序提供统一的接口。</li><li>表示层，负责把数据转换成兼容接收系统的格式。</li><li>会话层，负责维护计算机之间的通信连接。</li><li>传输层，负责为数据加上传输表头，形成数据包。</li><li>网络层，负责数据的路由和转发。</li><li>数据链路层，负责 MAC 寻址、错误侦测和改错。</li><li>物理层，负责在物理网络中传输数据帧。</li></ul><p>但是 OSI 模型还是太复杂了，也没能提供一个可实现的方法。所以，在 Linux 中，我们实际上使用的是另一个更实用的四层模型，即 TCP/IP 网络模型。</p><p>TCP/IP 模型，把网络互联的框架分为应用层、传输层、网络层、网络接口层等四层，其中：</p><ul><li>应用层，负责向用户提供一组应用程序，比如 HTTP、FTP、DNS 等。</li><li>传输层，负责端到端的通信，比如 TCP、UDP 等。</li><li>网络层，负责网络包的封装、寻址和路由，比如 IP、ICMP 等。</li><li>网络接口层，负责网络包在物理网络中的传输，比如 MAC 寻址、错误侦测以及通过网卡传输网络帧等。</li></ul><p><img src="/images/linux-performance-optimization-practices-notes/osi_tcp_ip.png" alt></p><p>看到34</p>]]></content>
       
       
       <categories>
@@ -20,9 +20,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> 原创 </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> Linux </tag>
             
@@ -283,9 +283,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> Microservice </tag>
             
@@ -397,9 +397,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> OAuth </tag>
             
@@ -1175,9 +1175,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> Design </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> MySQL </tag>
             
@@ -1458,9 +1458,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> Multi-Live </tag>
             
@@ -1516,9 +1516,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> PaaS </tag>
             
@@ -1578,11 +1578,11 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> Architecture </tag>
             
             <tag> Distributed </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> Cache </tag>
             
@@ -1644,11 +1644,11 @@
             
             <tag> Java </tag>
             
-            <tag> JDK </tag>
-            
             <tag> JUC </tag>
             
             <tag> AQS </tag>
+            
+            <tag> JDK </tag>
             
             <tag> ReentrantReadWriteLock </tag>
             
@@ -1677,11 +1677,11 @@
             
             <tag> Java </tag>
             
-            <tag> JDK </tag>
-            
             <tag> JUC </tag>
             
             <tag> AQS </tag>
+            
+            <tag> JDK </tag>
             
             <tag> Condition </tag>
             
@@ -1853,9 +1853,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> Log </tag>
             
@@ -1913,8 +1913,6 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
             
             <tag> Gateway </tag>
@@ -1922,6 +1920,8 @@
             <tag> Design </tag>
             
             <tag> API </tag>
+            
+            <tag> 原创 </tag>
             
         </tags>
       
@@ -1950,11 +1950,11 @@
             
             <tag> Java </tag>
             
-            <tag> JDK </tag>
-            
             <tag> JUC </tag>
             
             <tag> AQS </tag>
+            
+            <tag> JDK </tag>
             
             <tag> Volatile </tag>
             
@@ -2014,11 +2014,11 @@
             
             <tag> Java </tag>
             
-            <tag> JDK </tag>
-            
             <tag> JUC </tag>
             
             <tag> AQS </tag>
+            
+            <tag> JDK </tag>
             
         </tags>
       
@@ -2132,9 +2132,9 @@
       
         <tags>
             
-            <tag> Interview </tag>
-            
             <tag> 原创 </tag>
+            
+            <tag> Interview </tag>
             
         </tags>
       

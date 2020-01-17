@@ -59,19 +59,24 @@
 </script>
 
   <meta name="description" content="Linux性能优化实战 学习笔记作者： 倪朋飞">
-<meta name="keywords" content="读书笔记,原创,Linux">
+<meta name="keywords" content="原创,读书笔记,Linux">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linux性能优化实战 笔记">
 <meta property="og:url" content="https://jiankunking.com/linux-performance-optimization-practices-notes.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Linux性能优化实战 学习笔记作者： 倪朋飞">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/tools_memory.png">
 <meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/memory_tools.png">
-<meta property="og:updated_time" content="2020-01-17T05:46:26.753Z">
+<meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/iostat.png">
+<meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/file_disk_io_tool.png">
+<meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/tool_file_disk_io.png">
+<meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/osi_tcp_ip.png">
+<meta property="og:updated_time" content="2020-01-17T08:19:31.576Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux性能优化实战 笔记">
 <meta name="twitter:description" content="Linux性能优化实战 学习笔记作者： 倪朋飞">
-<meta name="twitter:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/memory_tools.png">
+<meta name="twitter:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/tools_memory.png">
   <link rel="canonical" href="https://jiankunking.com/linux-performance-optimization-practices-notes">
 
 
@@ -300,7 +305,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-01-17 13:46:26" itemprop="dateModified" datetime="2020-01-17T13:46:26+08:00">2020-01-17</time>
+                <time title="修改时间：2020-01-17 16:19:31" itemprop="dateModified" datetime="2020-01-17T16:19:31+08:00">2020-01-17</time>
               </span>
             
           
@@ -349,7 +354,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span>6.9k</span>
+              <span>8.1k</span>
             </span>
           
             <span class="post-meta-item" title="阅读时长">
@@ -359,7 +364,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span>6 分钟</span>
+              <span>7 分钟</span>
             </span>
           
 
@@ -478,7 +483,50 @@
 <li>再用 vmstat 和 pidstat，查看一段时间的趋势，从而判断出内存问题的类型。</li>
 <li>最后进行详细分析，比如内存分配分析、缓存 / 缓冲区分析、具体进程的内存使用分析等。</li>
 </ol>
-<p><img src="/images/linux-performance-optimization-practices-notes/memory_tools.png" alt></p>
+<h2 id="根据指标查找工具"><a href="#根据指标查找工具" class="headerlink" title="根据指标查找工具"></a>根据指标查找工具</h2><p><img src="/images/linux-performance-optimization-practices-notes/tools_memory.png" alt></p>
+<h2 id="根据工具查找指标"><a href="#根据工具查找指标" class="headerlink" title="根据工具查找指标"></a>根据工具查找指标</h2><p><img src="/images/linux-performance-optimization-practices-notes/memory_tools.png" alt></p>
+<h1 id="Linux-磁盘I-O是怎么工作的？"><a href="#Linux-磁盘I-O是怎么工作的？" class="headerlink" title="Linux 磁盘I/O是怎么工作的？"></a>Linux 磁盘I/O是怎么工作的？</h1><h2 id="磁盘性能指标"><a href="#磁盘性能指标" class="headerlink" title="磁盘性能指标"></a>磁盘性能指标</h2><p>说到磁盘性能的衡量标准，必须要提到五个常见指标，也就是我们经常用到的，使用率、饱和度、IOPS、吞吐量以及响应时间等。这五个指标，是衡量磁盘性能的基本指标。</p>
+<ul>
+<li>使用率，是指磁盘处理 I/O 的时间百分比。过高的使用率（比如超过 80%），通常意味着磁盘 I/O 存在性能瓶颈。</li>
+<li>饱和度，是指磁盘处理 I/O 的繁忙程度。过高的饱和度，意味着磁盘存在严重的性能瓶颈。当饱和度为 100% 时，磁盘无法接受新的 I/O 请求。</li>
+<li>IOPS（Input/Output Per Second），是指每秒的 I/O 请求数。</li>
+<li>吞吐量，是指每秒的 I/O 请求大小。</li>
+<li>响应时间，是指 I/O 请求从发出到收到响应的间隔时间。</li>
+</ul>
+<p>这里要注意的是，使用率只考虑有没有 I/O，而不考虑 I/O 的大小。换句话说，当使用率是 100% 的时候，磁盘依然有可能接受新的 I/O 请求。</p>
+<p>这些指标，很可能是你经常挂在嘴边的，一讨论磁盘性能必定提起的对象。不过我还是要强调一点，不要孤立地去比较某一指标，而要结合读写比例、I/O 类型（随机还是连续）以及 I/O 的大小，综合来分析。</p>
+<h2 id="磁盘-I-O-观测"><a href="#磁盘-I-O-观测" class="headerlink" title="磁盘 I/O 观测"></a>磁盘 I/O 观测</h2><p><img src="/images/linux-performance-optimization-practices-notes/iostat.png" alt></p>
+<p>这些指标中，你要注意：</p>
+<ul>
+<li>%util ，就是我们前面提到的磁盘 I/O 使用率；</li>
+<li>r/s+ w/s ，就是 IOPS；</li>
+<li>rkB/s+wkB/s ，就是吞吐量；</li>
+<li>r_await+w_await ，就是响应时间。</li>
+</ul>
+<p>在观测指标时，也别忘了结合请求的大小（ rareq-sz 和 wareq-sz）一起分析。</p>
+<h2 id="进程-I-O-观测"><a href="#进程-I-O-观测" class="headerlink" title="进程 I/O 观测"></a>进程 I/O 观测</h2><p>要观察进程的 I/O 情况，你还可以使用 pidstat 和 iotop 这两个工具。</p>
+<h2 id="根据指标查找工具-1"><a href="#根据指标查找工具-1" class="headerlink" title="根据指标查找工具"></a>根据指标查找工具</h2><p><img src="/images/linux-performance-optimization-practices-notes/file_disk_io_tool.png" alt></p>
+<h2 id="根据工具查找指标-1"><a href="#根据工具查找指标-1" class="headerlink" title="根据工具查找指标"></a>根据工具查找指标</h2><p><img src="/images/linux-performance-optimization-practices-notes/tool_file_disk_io.png" alt></p>
+<h1 id="关于-Linux-网络，你必须知道这些"><a href="#关于-Linux-网络，你必须知道这些" class="headerlink" title="关于 Linux 网络，你必须知道这些"></a>关于 Linux 网络，你必须知道这些</h1><h2 id="网络模型"><a href="#网络模型" class="headerlink" title="网络模型"></a>网络模型</h2><p>为了解决网络互联中异构设备的兼容性问题，并解耦复杂的网络包处理流程，OSI 模型把网络互联的框架分为应用层、表示层、会话层、传输层、网络层、数据链路层以及物理层等七层，每个层负责不同的功能。其中：</p>
+<ul>
+<li>应用层，负责为应用程序提供统一的接口。</li>
+<li>表示层，负责把数据转换成兼容接收系统的格式。</li>
+<li>会话层，负责维护计算机之间的通信连接。</li>
+<li>传输层，负责为数据加上传输表头，形成数据包。</li>
+<li>网络层，负责数据的路由和转发。</li>
+<li>数据链路层，负责 MAC 寻址、错误侦测和改错。</li>
+<li>物理层，负责在物理网络中传输数据帧。</li>
+</ul>
+<p>但是 OSI 模型还是太复杂了，也没能提供一个可实现的方法。所以，在 Linux 中，我们实际上使用的是另一个更实用的四层模型，即 TCP/IP 网络模型。</p>
+<p>TCP/IP 模型，把网络互联的框架分为应用层、传输层、网络层、网络接口层等四层，其中：</p>
+<ul>
+<li>应用层，负责向用户提供一组应用程序，比如 HTTP、FTP、DNS 等。</li>
+<li>传输层，负责端到端的通信，比如 TCP、UDP 等。</li>
+<li>网络层，负责网络包的封装、寻址和路由，比如 IP、ICMP 等。</li>
+<li>网络接口层，负责网络包在物理网络中的传输，比如 MAC 寻址、错误侦测以及通过网卡传输网络帧等。</li>
+</ul>
+<p><img src="/images/linux-performance-optimization-practices-notes/osi_tcp_ip.png" alt></p>
+<p>看到34</p>
 
     </div>
 
@@ -491,35 +539,35 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\2-power-table.html" rel="bookmark">2的幂表</a></div>
+      <div class="popular-posts-title"><a href="\api-gateway-design.html" rel="bookmark">API网关架构设计</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\distributed-cache-consistent-hash-algorithm.html" rel="bookmark">分布式缓存的一致性Hash算法</a></div>
+      <div class="popular-posts-title"><a href="\coder-vocabulary.html" rel="bookmark">程序员常用词汇</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-jrockit-notes.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
+      <div class="popular-posts-title"><a href="\cs-interview.html" rel="bookmark">cs-interview</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-performance-notes.html" rel="bookmark">Java性能优化权威指南 笔记</a></div>
+      <div class="popular-posts-title"><a href="\customer-center-design.html" rel="bookmark">客户中心实现分析</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\kubernetes-authoritative-guide-node.html" rel="bookmark">Kubernetes权威指南：从Docker到Kubernetes实践全接触 笔记</a></div>
+      <div class="popular-posts-title"><a href="\arthas-learning-notes.html" rel="bookmark">Arthas 学习笔记</a></div>
       
     </li>
   
@@ -579,9 +627,9 @@
           
           <div class="post-tags">
             
-              <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
-            
               <a href="/tags/原创/" rel="tag"># 原创</a>
+            
+              <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
             
               <a href="/tags/Linux/" rel="tag"># Linux</a>
             
@@ -651,7 +699,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#平均负载"><span class="nav-number">1.</span> <span class="nav-text">平均负载</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">1.1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.2.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU上下文切换"><span class="nav-number">2.</span> <span class="nav-text">CPU上下文切换</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#实践"><span class="nav-number">2.1.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU-使用率"><span class="nav-number">3.</span> <span class="nav-text">CPU 使用率</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.1.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践-1"><span class="nav-number">3.2.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#系统中出现大量不可中断进程和僵尸进程怎么办？"><span class="nav-number">4.</span> <span class="nav-text">系统中出现大量不可中断进程和僵尸进程怎么办？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Top-输出分析"><span class="nav-number">4.1.</span> <span class="nav-text">Top 输出分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践-2"><span class="nav-number">4.2.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么理解Linux软中断？"><span class="nav-number">5.</span> <span class="nav-text">怎么理解Linux软中断？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何迅速分析出系统CPU的瓶颈在哪里？"><span class="nav-number">6.</span> <span class="nav-text">如何迅速分析出系统CPU的瓶颈在哪里？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux性能优化答疑"><span class="nav-number">7.</span> <span class="nav-text">Linux性能优化答疑</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么理解内存中的Buffer和Cache？"><span class="nav-number">8.</span> <span class="nav-text">怎么理解内存中的Buffer和Cache？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#free-数据的来源"><span class="nav-number">8.1.</span> <span class="nav-text">free 数据的来源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proc-文件系统"><span class="nav-number">8.2.</span> <span class="nav-text">proc 文件系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘与文件"><span class="nav-number">8.3.</span> <span class="nav-text">磁盘与文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例"><span class="nav-number">8.4.</span> <span class="nav-text">案例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么系统的Swap变高了？"><span class="nav-number">9.</span> <span class="nav-text">为什么系统的Swap变高了？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#NUMA-与-Swap"><span class="nav-number">9.1.</span> <span class="nav-text">NUMA 与 Swap</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何“快准狠”找到系统内存的问题？"><span class="nav-number">10.</span> <span class="nav-text">如何“快准狠”找到系统内存的问题？</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#平均负载"><span class="nav-number">1.</span> <span class="nav-text">平均负载</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">1.1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.2.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU上下文切换"><span class="nav-number">2.</span> <span class="nav-text">CPU上下文切换</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#实践"><span class="nav-number">2.1.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU-使用率"><span class="nav-number">3.</span> <span class="nav-text">CPU 使用率</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.1.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践-1"><span class="nav-number">3.2.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#系统中出现大量不可中断进程和僵尸进程怎么办？"><span class="nav-number">4.</span> <span class="nav-text">系统中出现大量不可中断进程和僵尸进程怎么办？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Top-输出分析"><span class="nav-number">4.1.</span> <span class="nav-text">Top 输出分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践-2"><span class="nav-number">4.2.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么理解Linux软中断？"><span class="nav-number">5.</span> <span class="nav-text">怎么理解Linux软中断？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何迅速分析出系统CPU的瓶颈在哪里？"><span class="nav-number">6.</span> <span class="nav-text">如何迅速分析出系统CPU的瓶颈在哪里？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux性能优化答疑"><span class="nav-number">7.</span> <span class="nav-text">Linux性能优化答疑</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么理解内存中的Buffer和Cache？"><span class="nav-number">8.</span> <span class="nav-text">怎么理解内存中的Buffer和Cache？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#free-数据的来源"><span class="nav-number">8.1.</span> <span class="nav-text">free 数据的来源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proc-文件系统"><span class="nav-number">8.2.</span> <span class="nav-text">proc 文件系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘与文件"><span class="nav-number">8.3.</span> <span class="nav-text">磁盘与文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例"><span class="nav-number">8.4.</span> <span class="nav-text">案例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么系统的Swap变高了？"><span class="nav-number">9.</span> <span class="nav-text">为什么系统的Swap变高了？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#NUMA-与-Swap"><span class="nav-number">9.1.</span> <span class="nav-text">NUMA 与 Swap</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何“快准狠”找到系统内存的问题？"><span class="nav-number">10.</span> <span class="nav-text">如何“快准狠”找到系统内存的问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#根据指标查找工具"><span class="nav-number">10.1.</span> <span class="nav-text">根据指标查找工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据工具查找指标"><span class="nav-number">10.2.</span> <span class="nav-text">根据工具查找指标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux-磁盘I-O是怎么工作的？"><span class="nav-number">11.</span> <span class="nav-text">Linux 磁盘I/O是怎么工作的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘性能指标"><span class="nav-number">11.1.</span> <span class="nav-text">磁盘性能指标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘-I-O-观测"><span class="nav-number">11.2.</span> <span class="nav-text">磁盘 I/O 观测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#进程-I-O-观测"><span class="nav-number">11.3.</span> <span class="nav-text">进程 I/O 观测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据指标查找工具-1"><span class="nav-number">11.4.</span> <span class="nav-text">根据指标查找工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据工具查找指标-1"><span class="nav-number">11.5.</span> <span class="nav-text">根据工具查找指标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#关于-Linux-网络，你必须知道这些"><span class="nav-number">12.</span> <span class="nav-text">关于 Linux 网络，你必须知道这些</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#网络模型"><span class="nav-number">12.1.</span> <span class="nav-text">网络模型</span></a></li></ol></li></ol></div>
         
       </div>
       <!--/noindex-->
@@ -758,7 +806,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">540k</span>
+    <span title="站点总字数">541k</span>
 </div>
 
         
