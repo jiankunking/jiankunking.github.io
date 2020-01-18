@@ -155,7 +155,7 @@ dstat命令 是一个用来替换vmstat、iostat、netstat、nfsstat和ifstat这
 
 # 怎么理解Linux软中断？
 
-<a href="/attachments/Linux性能优化实战/09怎么理解Linux软中断？.pdf" target="_blank">09怎么理解Linux软中断？</a>
+<a href="/attachments/Linux性能优化实战/09怎么理解Linux软中断？.pdf" target="_blank">怎么理解Linux软中断？</a>
 
 # 如何迅速分析出系统CPU的瓶颈在哪里？
 
@@ -199,8 +199,470 @@ Cached 是从磁盘读取文件的页缓存，也就是用来缓存从文件读�
 
 > Buffer 是对磁盘数据的缓存，而 Cache 是文件数据的缓存，它们既会用在读请求中，也会用在写请求中。
 
+## 磁盘与文件
+
+磁盘是一个存储设备（确切地说是块设备），可以被划分为不同的磁盘分区。而在磁盘或者磁盘分区上，还可以再创建文件系统，并挂载到系统的某个目录中。这样，系统就可以通过这个挂载目录，来读写文件。
+
+换句话说，磁盘是存储数据的块设备，也是文件系统的载体。所以，文件系统确实还是要通过磁盘，来保证数据的持久化存储。
+
+你在很多地方都会看到这句话， Linux 中一切皆文件。换句话说，你可以通过相同的文件接口，来访问磁盘和文件（比如 open、read、write、close 等）。
+
+在读写普通文件时，I/O 请求会首先经过文件系统，然后由文件系统负责，来与磁盘进行交互。而在读写块设备文件时，会跳过文件系统，直接与磁盘交互，也就是所谓的“裸I/O”。
+
+这两种读写方式使用的缓存自然不同。文件系统管理的缓存，其实就是 Cache 的一部分。而裸磁盘的缓存，用的正是 Buffer。
+
+> cache是针对文件系统的缓存,而 buffers是对磁盘数据的缓存,是直接跟硬件那一层相关的,那一般来说, cache会比 buffers 的数量大了很多。
+
 ## 案例
 
 <a href="/attachments/Linux性能优化实战/17如何利用系统缓存优化程序的运行效率？.pdf" target="_blank">如何利用系统缓存优化程序的运行效率？</a>
 
-读到18
+
+# 为什么系统的Swap变高了？
+
+## NUMA 与 Swap
+
+<a href="/attachments/Linux性能优化实战/19为什么系统的Swap变高了？.pdf" target="_blank">19为什么系统的Swap变高了？</a>
+
+在内存资源紧张时，Linux 会通过 Swap ，把不常访问的匿名页换出到磁盘中，下次访问的时候再从磁盘换入到内存中来。你可以设置 /proc/sys/vm/min_free_kbytes，来调整系统定期回收内存的阈值；也可以设置 /proc/sys/vm/swappiness，来调整文件页和匿名页的回收倾向。
+
+当 Swap 变高时，你可以用 sar、/proc/zoneinfo、/proc/pid/status 等方法，查看系统和进程的内存使用情况，进而找出 Swap 升高的根源和受影响的进程。
+
+# 如何“快准狠”找到系统内存的问题？
+
+为了迅速定位内存问题，我通常会先运行几个覆盖面比较大的性能工具，比如free、top、vmstat、pidstat 等。
+
+具体的分析思路主要有这几步。
+1. 先用 free 和 top，查看系统整体的内存使用情况。
+2. 再用 vmstat 和 pidstat，查看一段时间的趋势，从而判断出内存问题的类型。
+3. 最后进行详细分析，比如内存分配分析、缓存 / 缓冲区分析、具体进程的内存使用分析等。
+
+## 根据指标查找工具
+
+![](/images/linux-performance-optimization-practices-notes/tools_memory.png)
+
+## 根据工具查找指标
+
+![](/images/linux-performance-optimization-practices-notes/memory_tools.png)
+
+# Linux 磁盘I/O是怎么工作的？
+
+## 磁盘性能指标
+说到磁盘性能的衡量标准，必须要提到五个常见指标，也就是我们经常用到的，使用率、饱和度、IOPS、吞吐量以及响应时间等。这五个指标，是衡量磁盘性能的基本指标。
+
+* 使用率，是指磁盘处理 I/O 的时间百分比。过高的使用率（比如超过 80%），通常意味着磁盘 I/O 存在性能瓶颈。
+* 饱和度，是指磁盘处理 I/O 的繁忙程度。过高的饱和度，意味着磁盘存在严重的性能瓶颈。当饱和度为 100% 时，磁盘无法接受新的 I/O 请求。
+* IOPS（Input/Output Per Second），是指每秒的 I/O 请求数。
+* 吞吐量，是指每秒的 I/O 请求大小。
+* 响应时间，是指 I/O 请求从发出到收到响应的间隔时间。
+
+这里要注意的是，使用率只考虑有没有 I/O，而不考虑 I/O 的大小。换句话说，当使用率是 100% 的时候，磁盘依然有可能接受新的 I/O 请求。
+
+这些指标，很可能是你经常挂在嘴边的，一讨论磁盘性能必定提起的对象。不过我还是要强调一点，不要孤立地去比较某一指标，而要结合读写比例、I/O 类型（随机还是连续）以及 I/O 的大小，综合来分析。
+
+## 磁盘 I/O 观测
+
+![](/images/linux-performance-optimization-practices-notes/iostat.png)
+
+这些指标中，你要注意：
+
+* %util ，就是我们前面提到的磁盘 I/O 使用率；
+* r/s+ w/s ，就是 IOPS；
+* rkB/s+wkB/s ，就是吞吐量；
+* r_await+w_await ，就是响应时间。
+
+在观测指标时，也别忘了结合请求的大小（ rareq-sz 和 wareq-sz）一起分析。
+
+## 进程 I/O 观测
+
+要观察进程的 I/O 情况，你还可以使用 pidstat 和 iotop 这两个工具。
+
+## 根据指标查找工具
+
+![](/images/linux-performance-optimization-practices-notes/file_disk_io_tool.png)
+
+## 根据工具查找指标
+
+![](/images/linux-performance-optimization-practices-notes/tool_file_disk_io.png)
+
+# 关于 Linux 网络，你必须知道这些
+
+## 网络模型
+
+为了解决网络互联中异构设备的兼容性问题，并解耦复杂的网络包处理流程，OSI 模型把网络互联的框架分为应用层、表示层、会话层、传输层、网络层、数据链路层以及物理层等七层，每个层负责不同的功能。其中：
+
+* 应用层，负责为应用程序提供统一的接口。
+* 表示层，负责把数据转换成兼容接收系统的格式。
+* 会话层，负责维护计算机之间的通信连接。
+* 传输层，负责为数据加上传输表头，形成数据包。
+* 网络层，负责数据的路由和转发。
+* 数据链路层，负责 MAC 寻址、错误侦测和改错。
+* 物理层，负责在物理网络中传输数据帧。
+
+但是 OSI 模型还是太复杂了，也没能提供一个可实现的方法。所以，在 Linux 中，我们实际上使用的是另一个更实用的四层模型，即 TCP/IP 网络模型。
+
+TCP/IP 模型，把网络互联的框架分为应用层、传输层、网络层、网络接口层等四层，其中：
+
+* 应用层，负责向用户提供一组应用程序，比如 HTTP、FTP、DNS 等。
+* 传输层，负责端到端的通信，比如 TCP、UDP 等。
+* 网络层，负责网络包的封装、寻址和路由，比如 IP、ICMP 等。
+* 网络接口层，负责网络包在物理网络中的传输，比如 MAC 寻址、错误侦测以及通过网卡传输网络帧等。
+
+![](/images/linux-performance-optimization-practices-notes/osi_tcp_ip.png)
+
+## 网络配置
+
+ifconfig 和 ip 分别属于软件包 net-tools 和 iproute2，iproute2 是 net-tools 的下一代。
+
+> 我个人更推荐使用 ip 工具，因为它提供了更丰富的功能和更易用的接口。
+
+以网络接口 ens160 为例，你可以运行下面的两个命令，查看它的配置和状态：
+
+```
+[root@jiankunking ~]# ip -s addr show dev ens160
+2: ens160: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 00:50:56:b1:ee:91 brd ff:ff:ff:ff:ff:ff
+    inet 10.138.40.223/24 brd 10.138.40.255 scope global noprefixroute ens160
+       valid_lft forever preferred_lft forever
+    RX: bytes  packets  errors  dropped overrun mcast
+    105694689249 460305272 0       139334  0       78892
+    TX: bytes  packets  errors  dropped carrier collsns
+    501968646454 337674507 0       0       0       0
+[root@jiankunking ~]# ifconfig ens160
+ens160: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.138.40.223  netmask 255.255.255.0  broadcast 10.138.40.255
+        ether 00:50:56:b1:ee:91  txqueuelen 1000  (Ethernet)
+        RX packets 460306226  bytes 105694760042 (98.4 GiB)
+        RX errors 0  dropped 139334  overruns 0  frame 0
+        TX packets 337674596  bytes 501968659316 (467.4 GiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+[root@jiankunking ~]#
+```
+
+你可以看到，ifconfig 和 ip 命令输出的指标基本相同，只是显示格式略微不同。比如，它们都包括了网络接口的状态标志、MTU 大小、IP、子网、MAC 地址以及网络包收发的统计信息。
+
+这里有几个跟网络性能密切相关的指标，需要你特别关注一下。
+
+第一，网络接口的状态标志。ifconfig 输出中的 RUNNING ，或 ip 输出中的LOWER_UP ，都表示物理网络是连通的，即网卡已经连接到了交换机或者路由器中。如果你看不到它们，通常表示网线被拔掉了。
+
+第二，MTU 的大小。MTU 默认大小是 1500，根据网络架构的不同（比如是否使用了VXLAN 等叠加网络），你可能需要调大或者调小 MTU 的数值。
+
+第三，网络接口的 IP 地址、子网以及 MAC 地址。这些都是保障网络功能正常工作所必需的，你需要确保配置正确。
+
+第四，网络收发的字节数、包数、错误数以及丢包情况，特别是 TX 和 RX 部分的errors、dropped、overruns、carrier 以及 collisions 等指标不为 0 时，通常表示出现了网络 I/O 问题。其中：
+
+* errors 表示发生错误的数据包数，比如校验错误、帧同步错误等；
+* dropped 表示丢弃的数据包数，即数据包已经收到了 Ring Buffer，但因为内存不足等原因丢包；
+* overruns 表示超限数据包数，即网络 I/O 速度过快，导致 Ring Buffer 中的数据包来不及处理（队列满）而导致的丢包；
+* carrier 表示发生 carrirer 错误的数据包数，比如双工模式不匹配、物理电缆出现问题等；
+* collisions 表示碰撞数据包数。
+
+## 套接字信息
+
+可以用 netstat 或者 ss ，来查看套接字、网络栈、网络接口以及路由表的信息。
+
+我个人更推荐，使用 ss 来查询网络的连接信息，因为它比 netstat 提供了更好的性能（速度更快）。
+
+比如，你可以执行下面的命令，查询套接字信息：
+
+```
+# head -n 3 表示只显示前面 3 行
+# -l 表示只显示监听套接字
+# -n 表示显示数字地址和端口 (而不是名字)
+# -p 表示显示进程信息
+[root@jiankunking ~]# netstat -nlp | head -n 3
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 0.0.0.0:18022           0.0.0.0:*               LISTEN      68726/sshd
+
+# -l 表示只显示监听套接字
+# -t 表示只显示 TCP 套接字
+# -n 表示显示数字地址和端口 (而不是名字)
+# -p 表示显示进程信息
+[root@jiankunking ~]# ss -ltnp | head -n 3
+State      Recv-Q Send-Q Local Address:Port               Peer Address:Port
+LISTEN     0      128          *:18022                    *:*                   users:(("sshd",pid=68726,fd=3))
+LISTEN     0      128          *:111                      *:*                   users:(("rpcbind",pid=767,fd=8))
+[root@jiankunking ~]#
+```
+
+netstat 和 ss 的输出也是类似的，都展示了套接字的状态、接收队列、发送队列、本地地址、远端地址、进程 PID 和进程名称等。
+
+其中，接收队列（Recv-Q）和发送队列（Send-Q）需要你特别关注，它们通常应该是0。当你发现它们不是 0 时，说明有网络包的堆积发生。当然还要注意，在不同套接字状态下，它们的含义不同。
+
+当套接字处于连接状态（Established）时，
+* Recv-Q 表示套接字缓冲还没有被应用程序取走的字节数（即接收队列长度）。
+* 而 Send-Q 表示还没有被远端主机确认的字节数（即发送队列长度）。
+
+当套接字处于监听状态（Listening）时，
+* Recv-Q 表示 syn backlog 的当前值。
+* 而 Send-Q 表示最大的 syn backlog 值。
+
+而 syn backlog 是 TCP 协议栈中的半连接队列长度，相应的也有一个全连接队列（accept queue），它们都是维护 TCP 状态的重要机制。
+
+顾名思义，所谓半连接，就是还没有完成 TCP 三次握手的连接，连接只进行了一半，而服务器收到了客户端的 SYN 包后，就会把这个连接放到半连接队列中，然后再向客户端发送SYN+ACK 包。
+
+而全连接，则是指服务器收到了客户端的 ACK，完成了 TCP 三次握手，然后就会把这个连接挪到全连接队列中。这些全连接中的套接字，还需要再被 accept() 系统调用取走，这样，服务器就可以开始真正处理客户端的请求了。
+
+## 协议栈统计信息
+
+类似的，使用 netstat 或 ss ，也可以查看协议栈的信息：
+
+```
+[root@jiankunking ~]# netstat -s
+Ip:
+    402945296 total packets received
+    226103155 forwarded
+    0 incoming packets discarded
+    176782594 incoming packets delivered
+    435480099 requests sent out
+    83 dropped because of missing route
+    10 fragments dropped after timeout
+    76066 reassemblies required
+    38028 packets reassembled ok
+    10 packet reassembles failed
+    38028 fragments received ok
+    76056 fragments created
+Icmp:
+    1556987 ICMP messages received
+    188 input ICMP message failed.
+    ICMP input histogram:
+        destination unreachable: 287
+        timeout in transit: 51
+        echo requests: 1556516
+        echo replies: 128
+        timestamp request: 1
+        address mask request: 3
+    1559315 ICMP messages sent
+    0 ICMP messages failed
+    ICMP output histogram:
+        destination unreachable: 1351
+        time exceeded: 9
+        echo request: 1477
+        echo replies: 1556477
+        timestamp replies: 1
+IcmpMsg:
+        InType0: 128
+        InType3: 287
+        InType8: 1556516
+        InType11: 51
+        InType13: 1
+        InType17: 3
+        InType37: 1
+        OutType0: 1556477
+        OutType3: 1351
+        OutType8: 1477
+        OutType11: 9
+        OutType14: 1
+Tcp:
+    139812 active connections openings
+    211060 passive connection openings
+    100597 failed connection attempts
+    62428 connection resets received
+    4 connections established
+    150899781 segments received
+    365986218 segments send out
+    10055307 segments retransmited
+    563 bad segments received.
+    11969603 resets sent
+Udp:
+    222705 packets received
+    1284 packets to unknown port received.
+    0 packet receive errors
+    144320 packets sent
+    0 receive buffer errors
+    0 send buffer errors
+UdpLite:
+TcpExt:
+    48 invalid SYN cookies received
+    66 resets received for embryonic SYN_RECV sockets
+    1 packets pruned from receive queue because of socket buffer overrun
+    29246 TCP sockets finished time wait in fast timer
+    122 packets rejects in established connections because of timestamp
+    244108 delayed acks sent
+    478 delayed acks further delayed because of locked socket
+    Quick ack mode was activated 72512 times
+    3 SYNs to LISTEN sockets dropped
+    1298878 packets directly queued to recvmsg prequeue.
+    25326935 bytes directly in process context from backlog
+    893754064 bytes directly received in process context from prequeue
+    21894596 packet headers predicted
+    464608 packets header predicted and directly queued to user
+    80559045 acknowledgments not containing data payload received
+    28273640 predicted acknowledgments
+    1683221 times recovered from packet loss by selective acknowledgements
+    Detected reordering 8 times using FACK
+    Detected reordering 29 times using SACK
+    Detected reordering 14 times using time stamp
+    7 congestion windows fully recovered without slow start
+    14 congestion windows partially recovered using Hoe heuristic
+    2422 congestion windows recovered without slow start by DSACK
+    26128 congestion windows recovered without slow start after partial ack
+    TCPLostRetransmit: 464900
+    64529 timeouts after SACK recovery
+    19702 timeouts in loss state
+    7514677 fast retransmits
+    64464 forward retransmits
+    1952441 retransmits in slow start
+    69482 other TCP timeouts
+    TCPLossProbes: 2063407
+    TCPLossProbeRecovery: 51490
+    285857 SACK retransmits failed
+    9 times receiver scheduled too late for direct processing
+    33 packets collapsed in receive queue due to low socket buffer
+    75591 DSACKs sent for old packets
+    2417 DSACKs sent for out of order packets
+    51166 DSACKs received
+    108 DSACKs for out of order packets received
+    818 connections reset due to unexpected data
+    2539 connections reset due to early user close
+    877 connections aborted due to timeout
+    TCPDSACKIgnoredOld: 86
+    TCPDSACKIgnoredNoUndo: 29967
+    TCPSpuriousRTOs: 18826
+    TCPSackShifted: 5442611
+    TCPSackMerged: 24407294
+    TCPSackShiftFallback: 6093474
+    IPReversePathFilter: 19377
+    TCPRetransFail: 2
+    TCPRcvCoalesce: 6972829
+    TCPOFOQueue: 1696509
+    TCPOFOMerge: 2507
+    TCPChallengeACK: 11895
+    TCPSYNChallenge: 583
+    TCPSpuriousRtxHostQueues: 85
+    TCPAutoCorking: 2372093
+    TCPFromZeroWindowAdv: 547
+    TCPToZeroWindowAdv: 547
+    TCPWantZeroWindowAdv: 15006
+    TCPSynRetrans: 3442
+    TCPOrigDataSent: 332599913
+    TCPHystartTrainDetect: 40604
+    TCPHystartTrainCwnd: 718075
+    TCPHystartDelayDetect: 162
+    TCPHystartDelayCwnd: 5279
+    TCPACKSkippedSynRecv: 41
+    TCPACKSkippedPAWS: 1
+    TCPACKSkippedSeq: 18
+    TCPACKSkippedChallenge: 7
+IpExt:
+    InNoRoutes: 3
+    InMcastPkts: 78849
+    OutMcastPkts: 129
+    InBcastPkts: 24101843
+    InOctets: 110759051551
+    OutOctets: 566785322634
+    InMcastOctets: 14057178
+    OutMcastOctets: 14779
+    InBcastOctets: 2175831088
+    InNoECTPkts: 429510271
+    InECT0Pkts: 183432
+Sctp:
+    0 Current Associations
+    0 Active Associations
+    0 Passive Associations
+    0 Number of Aborteds
+    0 Number of Graceful Terminations
+    0 Number of Out of Blue packets
+    0 Number of Packets with invalid Checksum
+    0 Number of control chunks sent
+    0 Number of ordered chunks sent
+    0 Number of Unordered chunks sent
+    0 Number of control chunks received
+    0 Number of ordered chunks received
+    0 Number of Unordered chunks received
+    0 Number of messages fragmented
+    0 Number of messages reassembled
+    0 Number of SCTP packets sent
+    0 Number of SCTP packets received
+
+[root@jiankunking ~]# ss -s
+Total: 5091 (kernel 5465)
+TCP:   51 (estab 4, closed 24, orphaned 0, synrecv 0, timewait 0/0), ports 0
+
+Transport Total     IP        IPv6
+*         5465      -         -
+RAW       0         0         0
+UDP       12        9         3
+TCP       27        10        17
+INET      39        19        20
+FRAG      0         0         0
+
+[root@jiankunking ~]#
+```
+
+这些协议栈的统计信息都很直观。ss 只显示已经连接、关闭、孤儿套接字等简要统计，而netstat 则提供的是更详细的网络协议栈信息。
+
+## 网络吞吐和 PPS
+
+接下来，我们再来看看，如何查看系统当前的网络吞吐量和 PPS。在这里，我推荐使用我们的老朋友 sar，在前面的 CPU、内存和 I/O 模块中，我们已经多次用到它。
+
+给 sar 增加 -n 参数就可以查看网络的统计信息，比如网络接口（DEV）、网络接口错误（EDEV）、TCP、UDP、ICMP 等等。执行下面的命令，你就可以得到网络接口统计信息：
+
+```
+# 数字 1 表示每隔 1 秒输出一组数据
+[root@jiankunking ~]# sar -n DEV 1
+Linux 3.10.0-862.el7.x86_64 (hlhtapp36)         01/18/2020      _x86_64_        (4 CPU)
+
+08:44:18 AM     IFACE   rxpck/s   txpck/s    rxkB/s    txkB/s   rxcmp/s   txcmp/s  rxmcst/s
+08:44:19 AM br-0e096fe8aab3      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM veth78a4161      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM veth4d5f845      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM veth2b3160e      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM vethf4ce5a2      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM veth2a67a16      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM veth77ebe8e      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM veth9eb34b3      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM vethf6f4fec      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM veth53108ef      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM        lo      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM vethecb9ea8      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM veth842d0d1      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+08:44:19 AM    ens160      8.00      0.00      0.55      0.00      0.00      0.00      0.00
+08:44:19 AM   docker0      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+```
+这儿输出的指标比较多，我来简单解释下它们的含义。
+
+* rxpck/s 和 txpck/s 分别是接收和发送的 PPS，单位为包 / 秒。
+* rxkB/s 和 txkB/s 分别是接收和发送的吞吐量，单位是 KB/ 秒。
+* rxcmp/s 和 txcmp/s 分别是接收和发送的压缩数据包数，单位是包 / 秒。
+* %ifutil 是网络接口的使用率，即半双工模式下为 (rxkB/s+txkB/s)/Bandwidth，而全双工模式下为 max(rxkB/s, txkB/s)/Bandwidth。
+
+其中，Bandwidth 可以用 ethtool 来查询，它的单位通常是 Gb/s 或者 Mb/s，不过注意这里小写字母 b ，表示比特而不是字节。我们通常提到的千兆网卡、万兆网卡等，单位也都是比特。如下你可以看到，我的 ens160 网卡就是一个千兆网卡：
+
+```
+[root@jiankunking ~]# ethtool ens160 | grep Speed
+        Speed: 10000Mb/s
+[root@jiankunking ~]#
+```
+
+## 连通性和延时
+
+我们通常使用 ping ，来测试远程主机的连通性和延时，而这基于 ICMP 协议。比如，执行下面的命令，你就可以测试本机到 114.114.114.114 这个 IP 地址的连通性和延时：
+
+```
+# -c3 表示发送三次 ICMP 包后停止
+[root@jiankunking ~]# ping -c3 114.114.114.114
+PING 114.114.114.114 (114.114.114.114) 56(84) bytes of data.
+64 bytes from 114.114.114.114: icmp_seq=1 ttl=66 time=17.1 ms
+64 bytes from 114.114.114.114: icmp_seq=2 ttl=69 time=17.0 ms
+64 bytes from 114.114.114.114: icmp_seq=3 ttl=72 time=16.9 ms
+
+--- 114.114.114.114 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+rtt min/avg/max/mdev = 16.919/17.023/17.128/0.173 ms
+[root@jiankunking ~]#
+```
+
+ping 的输出，可以分为两部分。
+
+第一部分，是每个 ICMP 请求的信息，包括 ICMP 序列号（icmp_seq）、TTL（生存时间，或者跳数）以及往返延时。
+第二部分，则是三次 ICMP 请求的汇总。
+
+比如上面的示例显示，发送了 3 个网络包，并且接收到 3 个响应，没有丢包发生，这说明测试主机到 114.114.114.114 是连通的；平均往返延时（RTT）是 17ms左右，也就是从发送 ICMP 开始，到接收到 114.114.114.114 回复的确认，总共经历 17ms左右。
+
+# C10K 和 C1000K
+
+<a href="/attachments/Linux性能优化实战/35C10K和C1000K回顾.pdf" target="_blank">C10K和C1000K</a>
+
