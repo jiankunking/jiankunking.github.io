@@ -59,7 +59,7 @@
 </script>
 
   <meta name="description" content="Linux性能优化实战 学习笔记作者： 倪朋飞">
-<meta name="keywords" content="读书笔记,原创,Linux">
+<meta name="keywords" content="原创,读书笔记,Linux">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linux性能优化实战 笔记">
 <meta property="og:url" content="https://jiankunking.com/linux-performance-optimization-practices-notes.html">
@@ -72,7 +72,9 @@
 <meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/file_disk_io_tool.png">
 <meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/tool_file_disk_io.png">
 <meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/osi_tcp_ip.png">
-<meta property="og:updated_time" content="2020-01-18T01:08:50.965Z">
+<meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/tcpdump1.png">
+<meta property="og:image" content="https://jiankunking.com/images/linux-performance-optimization-practices-notes/tcpdump2.png">
+<meta property="og:updated_time" content="2020-01-18T04:13:37.431Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux性能优化实战 笔记">
 <meta name="twitter:description" content="Linux性能优化实战 学习笔记作者： 倪朋飞">
@@ -305,7 +307,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-01-18 09:08:50" itemprop="dateModified" datetime="2020-01-18T09:08:50+08:00">2020-01-18</time>
+                <time title="修改时间：2020-01-18 12:13:37" itemprop="dateModified" datetime="2020-01-18T12:13:37+08:00">2020-01-18</time>
               </span>
             
           
@@ -354,7 +356,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span>18k</span>
+              <span>21k</span>
             </span>
           
             <span class="post-meta-item" title="阅读时长">
@@ -364,7 +366,7 @@
               
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               
-              <span>17 分钟</span>
+              <span>19 分钟</span>
             </span>
           
 
@@ -591,6 +593,25 @@
 <p>第一部分，是每个 ICMP 请求的信息，包括 ICMP 序列号（icmp_seq）、TTL（生存时间，或者跳数）以及往返延时。<br>第二部分，则是三次 ICMP 请求的汇总。</p>
 <p>比如上面的示例显示，发送了 3 个网络包，并且接收到 3 个响应，没有丢包发生，这说明测试主机到 114.114.114.114 是连通的；平均往返延时（RTT）是 17ms左右，也就是从发送 ICMP 开始，到接收到 114.114.114.114 回复的确认，总共经历 17ms左右。</p>
 <h1 id="C10K-和-C1000K"><a href="#C10K-和-C1000K" class="headerlink" title="C10K 和 C1000K"></a>C10K 和 C1000K</h1><p><a href="/attachments/Linux性能优化实战/35C10K和C1000K回顾.pdf" target="_blank">C10K和C1000K</a></p>
+<h1 id="DNS-解析"><a href="#DNS-解析" class="headerlink" title="DNS 解析"></a>DNS 解析</h1><h2 id="域名与-DNS-解析"><a href="#域名与-DNS-解析" class="headerlink" title="域名与 DNS 解析"></a>域名与 DNS 解析</h2><p>DNS 协议在 TCP/IP 栈中属于应用层，不过实际传输还是基于 UDP 或者 TCP 协议（UDP 居多） ，并且域名服务器一般监听在端口 53 上。</p>
+<p>DNS 服务通过资源记录的方式，来管理所有数据，它支持 A、CNAME、MX、NS、PTR 等多种类型的记录。比如：</p>
+<ul>
+<li>A 记录，用来把域名转换成 IP 地址；</li>
+<li>CNAME 记录，用来创建别名；</li>
+<li>而 NS 记录，则表示该域名对应的域名服务器地址。</li>
+</ul>
+<p>如果没有命中缓存，DNS 查询实际上是一个递归过程，那有没有方法可以知道整个递归查询的执行呢？</p>
+<p>其实除了 nslookup，另外一个常用的 DNS 解析工具 dig ，就提供了 trace 功能，可以展示递归查询的整个过程。比如你可以执行下面的命令，得到查询结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">[root@VM_0_3_centos ~]# dig +trace +nodnssec jiankunking.com</span><br><span class="line"></span><br><span class="line">; &lt;&lt;&gt;&gt; DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 &lt;&lt;&gt;&gt; +trace +nodnssec jiankunking.com</span><br><span class="line">;; global options: +cmd</span><br><span class="line">.			151746	IN	NS	e.root-servers.net.</span><br><span class="line">.			151746	IN	NS	f.root-servers.net.</span><br><span class="line">.			151746	IN	NS	g.root-servers.net.</span><br><span class="line">.			151746	IN	NS	h.root-servers.net.</span><br><span class="line">.			151746	IN	NS	i.root-servers.net.</span><br><span class="line">.			151746	IN	NS	j.root-servers.net.</span><br><span class="line">.			151746	IN	NS	k.root-servers.net.</span><br><span class="line">.			151746	IN	NS	l.root-servers.net.</span><br><span class="line">.			151746	IN	NS	m.root-servers.net.</span><br><span class="line">.			151746	IN	NS	a.root-servers.net.</span><br><span class="line">.			151746	IN	NS	b.root-servers.net.</span><br><span class="line">.			151746	IN	NS	c.root-servers.net.</span><br><span class="line">.			151746	IN	NS	d.root-servers.net.</span><br><span class="line">;; Received 239 bytes from 183.60.83.19#53(183.60.83.19) in 0 ms</span><br><span class="line"></span><br><span class="line">com.			172800	IN	NS	a.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	b.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	c.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	d.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	e.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	f.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	g.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	h.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	i.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	j.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	k.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	l.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	m.gtld-servers.net.</span><br><span class="line">;; Received 840 bytes from 199.7.91.13#53(d.root-servers.net) in 236 ms</span><br><span class="line"></span><br><span class="line">jiankunking.com.	172800	IN	NS	f1g1ns1.dnspod.net.</span><br><span class="line">jiankunking.com.	172800	IN	NS	f1g1ns2.dnspod.net.</span><br><span class="line">;; Received 98 bytes from 192.52.178.30#53(k.gtld-servers.net) in 200 ms</span><br><span class="line"></span><br><span class="line">jiankunking.com.	600	IN	A	139.199.31.69</span><br><span class="line">jiankunking.com.	86400	IN	NS	f1g1ns1.dnspod.net.</span><br><span class="line">jiankunking.com.	86400	IN	NS	f1g1ns2.dnspod.net.</span><br><span class="line">;; Received 124 bytes from 58.247.212.48#53(f1g1ns2.dnspod.net) in 21 ms</span><br><span class="line"></span><br><span class="line">[root@VM_0_3_centos ~]#</span><br></pre></td></tr></table></figure>
+
+<p>dig trace 的输出，主要包括四部分:<br>第一部分，是从 183.60.83.19 查到的一些根域名服务器（.）的 NS 记录。<br>第二部分，是从 NS 记录结果中选一个（d.root-servers.net），并查询顶级域名 com.的 NS 记录。<br>第三部分，是从 com. 的 NS 记录中选择一个（k.gtld-servers.net），并查询二级域名 jiankunking.com. 的 NS 服务器。<br>最后一部分，就是从 jiankunking.com. 的 NS 服务器（f1g1ns2.dnspod.net）查询最终主机 jiankunking.com. 的 A 记录。</p>
+<p>当然，不仅仅是发布到互联网的服务需要域名，很多时候，我们也希望能对局域网内部的主机进行域名解析（即内网域名，大多数情况下为主机名）。Linux 也支持这种行为。<br>所以，你可以把主机名和 IP 地址的映射关系，写入本机的 /etc/hosts 文件中。这样，指定的主机名就可以在<strong>本地直接</strong>找到目标 IP。</p>
+<p>或者，你还可以在内网中，搭建自定义的 DNS 服务器，专门用来解析内网中的域名。而内网 DNS 服务器，一般还会设置一个或多个上游 DNS 服务器，用来解析外网的域名。</p>
+<h1 id="使用-tcpdump-和-Wireshark-分析网络流量"><a href="#使用-tcpdump-和-Wireshark-分析网络流量" class="headerlink" title="使用 tcpdump 和 Wireshark 分析网络流量"></a>使用 tcpdump 和 Wireshark 分析网络流量</h1><h2 id="tcpdump"><a href="#tcpdump" class="headerlink" title="tcpdump"></a>tcpdump</h2><p><img src="/images/linux-performance-optimization-practices-notes/tcpdump1.png" alt><br><img src="/images/linux-performance-optimization-practices-notes/tcpdump2.png" alt></p>
+<h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><p><a href="/attachments/Linux性能优化实战/38怎么使用tcpdump和Wireshark分析网络流量.pdf" target="_blank">怎么使用tcpdump和Wireshark分析网络流量？</a></p>
+<blockquote>
+<p>实际上，<font color="DeepPink"><strong>根据 IP 地址反查域名、根据端口号反查协议名称，是很多网络工具默认的行为，而这往往会导致性能工具的工作缓慢。</strong></font>所以，通常，网络性能工具都会提供一个选项（比如 -n 或者 -nn），来禁止名称解析。</p>
+</blockquote>
 
     </div>
 
@@ -603,35 +624,35 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\2-power-table.html" rel="bookmark">2的幂表</a></div>
+      <div class="popular-posts-title"><a href="\api-gateway-design.html" rel="bookmark">API网关架构设计</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\distributed-cache-consistent-hash-algorithm.html" rel="bookmark">分布式缓存的一致性Hash算法</a></div>
+      <div class="popular-posts-title"><a href="\arthas-learning-notes.html" rel="bookmark">Arthas 学习笔记</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-jrockit-notes.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
+      <div class="popular-posts-title"><a href="\cs-interview.html" rel="bookmark">cs-interview</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\java-performance-notes.html" rel="bookmark">Java性能优化权威指南 笔记</a></div>
+      <div class="popular-posts-title"><a href="\coder-vocabulary.html" rel="bookmark">程序员常用词汇</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\kubernetes-authoritative-guide-node.html" rel="bookmark">Kubernetes权威指南：从Docker到Kubernetes实践全接触 笔记</a></div>
+      <div class="popular-posts-title"><a href="\csharp-il-delegate-event-func-action-predicate.html" rel="bookmark">通过IL分析C#中的委托、事件、Func、Action、Predicate之间的区别与联系</a></div>
       
     </li>
   
@@ -691,9 +712,9 @@
           
           <div class="post-tags">
             
-              <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
-            
               <a href="/tags/原创/" rel="tag"># 原创</a>
+            
+              <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
             
               <a href="/tags/Linux/" rel="tag"># Linux</a>
             
@@ -714,6 +735,10 @@
             <span class="post-nav-divider"></span>
 
             <div class="post-nav-prev post-nav-item">
+              
+                <a href="/tcp-state-diagram.html" rel="prev" title="TCP 状态图">
+                  TCP 状态图 <i class="fa fa-chevron-right"></i>
+                </a>
               
             </div>
           </div>
@@ -763,7 +788,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#平均负载"><span class="nav-number">1.</span> <span class="nav-text">平均负载</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">1.1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.2.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU上下文切换"><span class="nav-number">2.</span> <span class="nav-text">CPU上下文切换</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#实践"><span class="nav-number">2.1.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU-使用率"><span class="nav-number">3.</span> <span class="nav-text">CPU 使用率</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.1.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践-1"><span class="nav-number">3.2.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#系统中出现大量不可中断进程和僵尸进程怎么办？"><span class="nav-number">4.</span> <span class="nav-text">系统中出现大量不可中断进程和僵尸进程怎么办？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Top-输出分析"><span class="nav-number">4.1.</span> <span class="nav-text">Top 输出分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践-2"><span class="nav-number">4.2.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么理解Linux软中断？"><span class="nav-number">5.</span> <span class="nav-text">怎么理解Linux软中断？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何迅速分析出系统CPU的瓶颈在哪里？"><span class="nav-number">6.</span> <span class="nav-text">如何迅速分析出系统CPU的瓶颈在哪里？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux性能优化答疑"><span class="nav-number">7.</span> <span class="nav-text">Linux性能优化答疑</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么理解内存中的Buffer和Cache？"><span class="nav-number">8.</span> <span class="nav-text">怎么理解内存中的Buffer和Cache？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#free-数据的来源"><span class="nav-number">8.1.</span> <span class="nav-text">free 数据的来源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proc-文件系统"><span class="nav-number">8.2.</span> <span class="nav-text">proc 文件系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘与文件"><span class="nav-number">8.3.</span> <span class="nav-text">磁盘与文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例"><span class="nav-number">8.4.</span> <span class="nav-text">案例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么系统的Swap变高了？"><span class="nav-number">9.</span> <span class="nav-text">为什么系统的Swap变高了？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#NUMA-与-Swap"><span class="nav-number">9.1.</span> <span class="nav-text">NUMA 与 Swap</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何“快准狠”找到系统内存的问题？"><span class="nav-number">10.</span> <span class="nav-text">如何“快准狠”找到系统内存的问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#根据指标查找工具"><span class="nav-number">10.1.</span> <span class="nav-text">根据指标查找工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据工具查找指标"><span class="nav-number">10.2.</span> <span class="nav-text">根据工具查找指标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux-磁盘I-O是怎么工作的？"><span class="nav-number">11.</span> <span class="nav-text">Linux 磁盘I/O是怎么工作的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘性能指标"><span class="nav-number">11.1.</span> <span class="nav-text">磁盘性能指标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘-I-O-观测"><span class="nav-number">11.2.</span> <span class="nav-text">磁盘 I/O 观测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#进程-I-O-观测"><span class="nav-number">11.3.</span> <span class="nav-text">进程 I/O 观测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据指标查找工具-1"><span class="nav-number">11.4.</span> <span class="nav-text">根据指标查找工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据工具查找指标-1"><span class="nav-number">11.5.</span> <span class="nav-text">根据工具查找指标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#关于-Linux-网络，你必须知道这些"><span class="nav-number">12.</span> <span class="nav-text">关于 Linux 网络，你必须知道这些</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#网络模型"><span class="nav-number">12.1.</span> <span class="nav-text">网络模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#网络配置"><span class="nav-number">12.2.</span> <span class="nav-text">网络配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#套接字信息"><span class="nav-number">12.3.</span> <span class="nav-text">套接字信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#协议栈统计信息"><span class="nav-number">12.4.</span> <span class="nav-text">协议栈统计信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#网络吞吐和-PPS"><span class="nav-number">12.5.</span> <span class="nav-text">网络吞吐和 PPS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#连通性和延时"><span class="nav-number">12.6.</span> <span class="nav-text">连通性和延时</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C10K-和-C1000K"><span class="nav-number">13.</span> <span class="nav-text">C10K 和 C1000K</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#平均负载"><span class="nav-number">1.</span> <span class="nav-text">平均负载</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">1.1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.2.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU上下文切换"><span class="nav-number">2.</span> <span class="nav-text">CPU上下文切换</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#实践"><span class="nav-number">2.1.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPU-使用率"><span class="nav-number">3.</span> <span class="nav-text">CPU 使用率</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.1.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践-1"><span class="nav-number">3.2.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#系统中出现大量不可中断进程和僵尸进程怎么办？"><span class="nav-number">4.</span> <span class="nav-text">系统中出现大量不可中断进程和僵尸进程怎么办？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Top-输出分析"><span class="nav-number">4.1.</span> <span class="nav-text">Top 输出分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践-2"><span class="nav-number">4.2.</span> <span class="nav-text">实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么理解Linux软中断？"><span class="nav-number">5.</span> <span class="nav-text">怎么理解Linux软中断？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何迅速分析出系统CPU的瓶颈在哪里？"><span class="nav-number">6.</span> <span class="nav-text">如何迅速分析出系统CPU的瓶颈在哪里？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux性能优化答疑"><span class="nav-number">7.</span> <span class="nav-text">Linux性能优化答疑</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么理解内存中的Buffer和Cache？"><span class="nav-number">8.</span> <span class="nav-text">怎么理解内存中的Buffer和Cache？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#free-数据的来源"><span class="nav-number">8.1.</span> <span class="nav-text">free 数据的来源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proc-文件系统"><span class="nav-number">8.2.</span> <span class="nav-text">proc 文件系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘与文件"><span class="nav-number">8.3.</span> <span class="nav-text">磁盘与文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例"><span class="nav-number">8.4.</span> <span class="nav-text">案例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么系统的Swap变高了？"><span class="nav-number">9.</span> <span class="nav-text">为什么系统的Swap变高了？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#NUMA-与-Swap"><span class="nav-number">9.1.</span> <span class="nav-text">NUMA 与 Swap</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何“快准狠”找到系统内存的问题？"><span class="nav-number">10.</span> <span class="nav-text">如何“快准狠”找到系统内存的问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#根据指标查找工具"><span class="nav-number">10.1.</span> <span class="nav-text">根据指标查找工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据工具查找指标"><span class="nav-number">10.2.</span> <span class="nav-text">根据工具查找指标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Linux-磁盘I-O是怎么工作的？"><span class="nav-number">11.</span> <span class="nav-text">Linux 磁盘I/O是怎么工作的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘性能指标"><span class="nav-number">11.1.</span> <span class="nav-text">磁盘性能指标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘-I-O-观测"><span class="nav-number">11.2.</span> <span class="nav-text">磁盘 I/O 观测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#进程-I-O-观测"><span class="nav-number">11.3.</span> <span class="nav-text">进程 I/O 观测</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据指标查找工具-1"><span class="nav-number">11.4.</span> <span class="nav-text">根据指标查找工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根据工具查找指标-1"><span class="nav-number">11.5.</span> <span class="nav-text">根据工具查找指标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#关于-Linux-网络，你必须知道这些"><span class="nav-number">12.</span> <span class="nav-text">关于 Linux 网络，你必须知道这些</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#网络模型"><span class="nav-number">12.1.</span> <span class="nav-text">网络模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#网络配置"><span class="nav-number">12.2.</span> <span class="nav-text">网络配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#套接字信息"><span class="nav-number">12.3.</span> <span class="nav-text">套接字信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#协议栈统计信息"><span class="nav-number">12.4.</span> <span class="nav-text">协议栈统计信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#网络吞吐和-PPS"><span class="nav-number">12.5.</span> <span class="nav-text">网络吞吐和 PPS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#连通性和延时"><span class="nav-number">12.6.</span> <span class="nav-text">连通性和延时</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C10K-和-C1000K"><span class="nav-number">13.</span> <span class="nav-text">C10K 和 C1000K</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DNS-解析"><span class="nav-number">14.</span> <span class="nav-text">DNS 解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#域名与-DNS-解析"><span class="nav-number">14.1.</span> <span class="nav-text">域名与 DNS 解析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用-tcpdump-和-Wireshark-分析网络流量"><span class="nav-number">15.</span> <span class="nav-text">使用 tcpdump 和 Wireshark 分析网络流量</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#tcpdump"><span class="nav-number">15.1.</span> <span class="nav-text">tcpdump</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例"><span class="nav-number">15.2.</span> <span class="nav-text">实例</span></a></li></ol></li></ol></div>
         
       </div>
       <!--/noindex-->
@@ -782,7 +807,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">76</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -870,7 +895,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">551k</span>
+    <span title="站点总字数">554k</span>
 </div>
 
         

@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>TCP 状态图</title>
+    <url>/tcp-state-diagram.html</url>
+    <content><![CDATA[<blockquote>
+<p>SYN_REVEIVED 的状态，通常被缩写为 SYN_RECV。</p>
+</blockquote>
+<p><img src="/images/tcp-state-diagram/Tcp_state_diagram.png" alt></p>
+]]></content>
+      <categories>
+        <category>Network</category>
+      </categories>
+      <tags>
+        <tag>Network</tag>
+        <tag>TCP</tag>
+        <tag>IP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Linux性能优化实战 笔记</title>
     <url>/linux-performance-optimization-practices-notes.html</url>
     <content><![CDATA[<p>Linux性能优化实战 学习笔记<br>作者： 倪朋飞</p>
@@ -217,13 +234,32 @@
 <p>第一部分，是每个 ICMP 请求的信息，包括 ICMP 序列号（icmp_seq）、TTL（生存时间，或者跳数）以及往返延时。<br>第二部分，则是三次 ICMP 请求的汇总。</p>
 <p>比如上面的示例显示，发送了 3 个网络包，并且接收到 3 个响应，没有丢包发生，这说明测试主机到 114.114.114.114 是连通的；平均往返延时（RTT）是 17ms左右，也就是从发送 ICMP 开始，到接收到 114.114.114.114 回复的确认，总共经历 17ms左右。</p>
 <h1 id="C10K-和-C1000K"><a href="#C10K-和-C1000K" class="headerlink" title="C10K 和 C1000K"></a>C10K 和 C1000K</h1><p><a href="/attachments/Linux性能优化实战/35C10K和C1000K回顾.pdf" target="_blank">C10K和C1000K</a></p>
+<h1 id="DNS-解析"><a href="#DNS-解析" class="headerlink" title="DNS 解析"></a>DNS 解析</h1><h2 id="域名与-DNS-解析"><a href="#域名与-DNS-解析" class="headerlink" title="域名与 DNS 解析"></a>域名与 DNS 解析</h2><p>DNS 协议在 TCP/IP 栈中属于应用层，不过实际传输还是基于 UDP 或者 TCP 协议（UDP 居多） ，并且域名服务器一般监听在端口 53 上。</p>
+<p>DNS 服务通过资源记录的方式，来管理所有数据，它支持 A、CNAME、MX、NS、PTR 等多种类型的记录。比如：</p>
+<ul>
+<li>A 记录，用来把域名转换成 IP 地址；</li>
+<li>CNAME 记录，用来创建别名；</li>
+<li>而 NS 记录，则表示该域名对应的域名服务器地址。</li>
+</ul>
+<p>如果没有命中缓存，DNS 查询实际上是一个递归过程，那有没有方法可以知道整个递归查询的执行呢？</p>
+<p>其实除了 nslookup，另外一个常用的 DNS 解析工具 dig ，就提供了 trace 功能，可以展示递归查询的整个过程。比如你可以执行下面的命令，得到查询结果：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[root@VM_0_3_centos ~]# dig +trace +nodnssec jiankunking.com</span><br><span class="line"></span><br><span class="line">; &lt;&lt;&gt;&gt; DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 &lt;&lt;&gt;&gt; +trace +nodnssec jiankunking.com</span><br><span class="line">;; global options: +cmd</span><br><span class="line">.			151746	IN	NS	e.root-servers.net.</span><br><span class="line">.			151746	IN	NS	f.root-servers.net.</span><br><span class="line">.			151746	IN	NS	g.root-servers.net.</span><br><span class="line">.			151746	IN	NS	h.root-servers.net.</span><br><span class="line">.			151746	IN	NS	i.root-servers.net.</span><br><span class="line">.			151746	IN	NS	j.root-servers.net.</span><br><span class="line">.			151746	IN	NS	k.root-servers.net.</span><br><span class="line">.			151746	IN	NS	l.root-servers.net.</span><br><span class="line">.			151746	IN	NS	m.root-servers.net.</span><br><span class="line">.			151746	IN	NS	a.root-servers.net.</span><br><span class="line">.			151746	IN	NS	b.root-servers.net.</span><br><span class="line">.			151746	IN	NS	c.root-servers.net.</span><br><span class="line">.			151746	IN	NS	d.root-servers.net.</span><br><span class="line">;; Received 239 bytes from 183.60.83.19#53(183.60.83.19) in 0 ms</span><br><span class="line"></span><br><span class="line">com.			172800	IN	NS	a.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	b.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	c.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	d.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	e.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	f.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	g.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	h.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	i.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	j.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	k.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	l.gtld-servers.net.</span><br><span class="line">com.			172800	IN	NS	m.gtld-servers.net.</span><br><span class="line">;; Received 840 bytes from 199.7.91.13#53(d.root-servers.net) in 236 ms</span><br><span class="line"></span><br><span class="line">jiankunking.com.	172800	IN	NS	f1g1ns1.dnspod.net.</span><br><span class="line">jiankunking.com.	172800	IN	NS	f1g1ns2.dnspod.net.</span><br><span class="line">;; Received 98 bytes from 192.52.178.30#53(k.gtld-servers.net) in 200 ms</span><br><span class="line"></span><br><span class="line">jiankunking.com.	600	IN	A	139.199.31.69</span><br><span class="line">jiankunking.com.	86400	IN	NS	f1g1ns1.dnspod.net.</span><br><span class="line">jiankunking.com.	86400	IN	NS	f1g1ns2.dnspod.net.</span><br><span class="line">;; Received 124 bytes from 58.247.212.48#53(f1g1ns2.dnspod.net) in 21 ms</span><br><span class="line"></span><br><span class="line">[root@VM_0_3_centos ~]#</span><br></pre></td></tr></table></figure>
+
+<p>dig trace 的输出，主要包括四部分:<br>第一部分，是从 183.60.83.19 查到的一些根域名服务器（.）的 NS 记录。<br>第二部分，是从 NS 记录结果中选一个（d.root-servers.net），并查询顶级域名 com.的 NS 记录。<br>第三部分，是从 com. 的 NS 记录中选择一个（k.gtld-servers.net），并查询二级域名 jiankunking.com. 的 NS 服务器。<br>最后一部分，就是从 jiankunking.com. 的 NS 服务器（f1g1ns2.dnspod.net）查询最终主机 jiankunking.com. 的 A 记录。</p>
+<p>当然，不仅仅是发布到互联网的服务需要域名，很多时候，我们也希望能对局域网内部的主机进行域名解析（即内网域名，大多数情况下为主机名）。Linux 也支持这种行为。<br>所以，你可以把主机名和 IP 地址的映射关系，写入本机的 /etc/hosts 文件中。这样，指定的主机名就可以在<strong>本地直接</strong>找到目标 IP。</p>
+<p>或者，你还可以在内网中，搭建自定义的 DNS 服务器，专门用来解析内网中的域名。而内网 DNS 服务器，一般还会设置一个或多个上游 DNS 服务器，用来解析外网的域名。</p>
+<h1 id="使用-tcpdump-和-Wireshark-分析网络流量"><a href="#使用-tcpdump-和-Wireshark-分析网络流量" class="headerlink" title="使用 tcpdump 和 Wireshark 分析网络流量"></a>使用 tcpdump 和 Wireshark 分析网络流量</h1><h2 id="tcpdump"><a href="#tcpdump" class="headerlink" title="tcpdump"></a>tcpdump</h2><p><img src="/images/linux-performance-optimization-practices-notes/tcpdump1.png" alt><br><img src="/images/linux-performance-optimization-practices-notes/tcpdump2.png" alt></p>
+<h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><p><a href="/attachments/Linux性能优化实战/38怎么使用tcpdump和Wireshark分析网络流量.pdf" target="_blank">怎么使用tcpdump和Wireshark分析网络流量？</a></p>
+<blockquote>
+<p>实际上，<font color="DeepPink"><strong>根据 IP 地址反查域名、根据端口号反查协议名称，是很多网络工具默认的行为，而这往往会导致性能工具的工作缓慢。</strong></font>所以，通常，网络性能工具都会提供一个选项（比如 -n 或者 -nn），来禁止名称解析。</p>
+</blockquote>
 ]]></content>
       <categories>
         <category>Linux</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>原创</tag>
+        <tag>读书笔记</tag>
         <tag>Linux</tag>
       </tags>
   </entry>
@@ -362,8 +398,8 @@
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>Sharing</tag>
       </tags>
   </entry>
@@ -1773,8 +1809,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Final</tag>
       </tags>
@@ -2360,9 +2396,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -3329,8 +3365,8 @@ use one vs other -->
         <category>Go</category>
       </categories>
       <tags>
-        <tag>Go</tag>
         <tag>Design</tag>
+        <tag>Go</tag>
       </tags>
   </entry>
   <entry>
@@ -4251,8 +4287,8 @@ use one vs other -->
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>ElasticSearch</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
@@ -5164,8 +5200,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>ForkJoin</tag>
       </tags>
@@ -5238,8 +5274,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>ThreadLocal</tag>
       </tags>
   </entry>
@@ -5371,8 +5407,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -5422,8 +5458,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -5511,8 +5547,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -6284,8 +6320,8 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Design</tag>
+        <tag>读书笔记</tag>
         <tag>MySQL</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
@@ -6723,10 +6759,10 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>Arthas</tag>
-        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -6816,9 +6852,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -7896,9 +7932,9 @@ table th:nth-of-type(2) {
         <category>GC</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
-        <tag>原创</tag>
         <tag>GC</tag>
         <tag>G1</tag>
       </tags>
@@ -7932,8 +7968,8 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Architecture</tag>
-        <tag>Distributed</tag>
         <tag>读书笔记</tag>
+        <tag>Distributed</tag>
         <tag>Cache</tag>
         <tag>Consistent</tag>
       </tags>
@@ -8082,8 +8118,8 @@ table th:nth-of-type(2) {
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -8802,10 +8838,10 @@ Connection: close
       </categories>
       <tags>
         <tag>Architecture</tag>
-        <tag>原创</tag>
-        <tag>Design</tag>
         <tag>Gateway</tag>
+        <tag>Design</tag>
         <tag>API</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -8938,8 +8974,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -9101,8 +9137,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>Lambda</tag>
       </tags>
   </entry>
@@ -9252,8 +9288,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -9915,8 +9951,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>HashMap</tag>
       </tags>
   </entry>
@@ -10038,8 +10074,8 @@ Connection: close
         <category>Spring</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>原创</tag>
+        <tag>Java</tag>
         <tag>JDK</tag>
         <tag>Spring</tag>
         <tag>AOP</tag>
