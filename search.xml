@@ -253,6 +253,22 @@
 <blockquote>
 <p>实际上，<font color="DeepPink"><strong>根据 IP 地址反查域名、根据端口号反查协议名称，是很多网络工具默认的行为，而这往往会导致性能工具的工作缓慢。</strong></font>所以，通常，网络性能工具都会提供一个选项（比如 -n 或者 -nn），来禁止名称解析。</p>
 </blockquote>
+<h1 id="NAT-原理"><a href="#NAT-原理" class="headerlink" title="NAT 原理"></a>NAT 原理</h1><p>NAT 技术可以重写 IP 数据包的源 IP 或者目的 IP，被普遍地用来解决公网 IP 地址短缺的问题。它的主要原理就是，网络中的多台主机，通过共享同一个公网 IP 地址，来访问外网资源。同时，由于 NAT 屏蔽了内网网络，自然也就为局域网中的机器提供了安全隔离。</p>
+<p>NAT 的主要目的，是实现地址转换。根据实现方式的不同，NAT 可以分为三类：</p>
+<ul>
+<li>静态 NAT，即内网 IP 与公网 IP 是一对一的永久映射关系；</li>
+<li>动态 NAT，即内网 IP 从公网 IP 池中，动态选择一个进行映射；</li>
+<li>网络地址端口转换 NAPT（Network Address and Port Translation），即把内网 IP 映射到公网 IP 的不同端口上，让多个内网 IP 可以共享同一个公网 IP 地址。</li>
+</ul>
+<p>NAPT 是目前最流行的 NAT 类型，我们在 Linux 中配置的 NAT 也是这种类型。而根据转换方式的不同，我们又可以把 NAPT 分为三类。</p>
+<p>第一类是源地址转换 SNAT，即目的地址不变，只替换源 IP 或源端口。SNAT 主要用于，多个内网 IP 共享同一个公网 IP ，来访问外网资源的场景。</p>
+<p>第二类是目的地址转换 DNAT，即源 IP 保持不变，只替换目的 IP 或者目的端口。DNAT主要通过公网 IP 的不同端口号，来访问内网的多种服务，同时会隐藏后端服务器的真实IP 地址。</p>
+<p>第三类是双向地址转换，即同时使用 SNAT 和 DNAT。当接收到网络包时，执行DNAT，把目的 IP 转换为内网 IP；而在发送网络包时，执行 SNAT，把源 IP 替换为外部IP。</p>
+<p>双向地址转换，其实就是外网 IP 与内网 IP 的一对一映射关系，所以常用在虚拟化环境中，为虚拟机分配浮动的公网 IP 地址。</p>
+<h1 id="网络性能优化的几个思路"><a href="#网络性能优化的几个思路" class="headerlink" title="网络性能优化的几个思路"></a>网络性能优化的几个思路</h1><h2 id="根据指标查找工具-2"><a href="#根据指标查找工具-2" class="headerlink" title="根据指标查找工具"></a>根据指标查找工具</h2><p><img src="/images/linux-performance-optimization-practices-notes/network_tools1.png" alt></p>
+<h2 id="根据工具查找指标-2"><a href="#根据工具查找指标-2" class="headerlink" title="根据工具查找指标"></a>根据工具查找指标</h2><p><img src="/images/linux-performance-optimization-practices-notes/network_tools2.png" alt></p>
+<h2 id="实践-3"><a href="#实践-3" class="headerlink" title="实践"></a>实践</h2><p><a href="/attachments/Linux性能优化实战/43网络性能优化的几个思路（上）.pdf" target="_blank">网络性能优化的几个思路（上）</a></p>
+<p><a href="/attachments/Linux性能优化实战/44网络性能优化的几个思路（下）.pdf" target="_blank">网络性能优化的几个思路（下）</a></p>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -398,8 +414,8 @@
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>Sharing</tag>
       </tags>
   </entry>
@@ -1739,8 +1755,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>Microservice</tag>
       </tags>
   </entry>
@@ -1809,8 +1825,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Final</tag>
       </tags>
@@ -2002,8 +2018,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>OAuth</tag>
         <tag>Login</tag>
       </tags>
@@ -2396,9 +2412,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -2705,8 +2721,8 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>JVM</tag>
+        <tag>读书笔记</tag>
         <tag>GC</tag>
       </tags>
   </entry>
@@ -4287,8 +4303,8 @@ use one vs other -->
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
@@ -5158,8 +5174,8 @@ use one vs other -->
         <tag>读书笔记</tag>
         <tag>Network</tag>
         <tag>TCP</tag>
-        <tag>UDP</tag>
         <tag>HTTP</tag>
+        <tag>UDP</tag>
         <tag>SSL</tag>
       </tags>
   </entry>
@@ -5200,8 +5216,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JUC</tag>
         <tag>ForkJoin</tag>
       </tags>
@@ -5274,8 +5290,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>ThreadLocal</tag>
       </tags>
   </entry>
@@ -5407,8 +5423,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -5458,8 +5474,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -5547,8 +5563,8 @@ use one vs other -->
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
@@ -5735,9 +5751,9 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>读书笔记</tag>
         <tag>GC</tag>
         <tag>JRockit</tag>
       </tags>
@@ -6037,9 +6053,9 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>读书笔记</tag>
         <tag>GC</tag>
         <tag>G1</tag>
       </tags>
@@ -6320,8 +6336,8 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>Design</tag>
         <tag>读书笔记</tag>
+        <tag>Design</tag>
         <tag>MySQL</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
@@ -6609,10 +6625,10 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
-        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>Performance</tag>
+        <tag>读书笔记</tag>
         <tag>GC</tag>
       </tags>
   </entry>
@@ -6759,10 +6775,10 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>Arthas</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -6852,9 +6868,9 @@ use one vs other -->
         <category>GC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>原创</tag>
         <tag>GC</tag>
         <tag>ZGC</tag>
       </tags>
@@ -7600,8 +7616,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>Multi-Live</tag>
         <tag>High-Available</tag>
       </tags>
@@ -7740,8 +7756,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>PaaS</tag>
       </tags>
   </entry>
@@ -7932,9 +7948,9 @@ table th:nth-of-type(2) {
         <category>GC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
+        <tag>原创</tag>
         <tag>GC</tag>
         <tag>G1</tag>
       </tags>
@@ -7967,8 +7983,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>读书笔记</tag>
+        <tag>Architecture</tag>
         <tag>Distributed</tag>
         <tag>Cache</tag>
         <tag>Consistent</tag>
@@ -8118,8 +8134,8 @@ table th:nth-of-type(2) {
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -8505,8 +8521,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>Log</tag>
         <tag>Elasticsearch</tag>
         <tag>Filebeat</tag>
@@ -8837,11 +8853,11 @@ Connection: close
         <category>Architecture</category>
       </categories>
       <tags>
+        <tag>原创</tag>
         <tag>Architecture</tag>
         <tag>Gateway</tag>
         <tag>Design</tag>
         <tag>API</tag>
-        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -8974,8 +8990,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -9137,8 +9153,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>Lambda</tag>
       </tags>
   </entry>
@@ -9288,8 +9304,8 @@ Connection: close
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>JDK</tag>
@@ -9951,8 +9967,8 @@ Connection: close
         <category>Java</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>HashMap</tag>
       </tags>
   </entry>
@@ -10074,8 +10090,8 @@ Connection: close
         <category>Spring</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Java</tag>
+        <tag>原创</tag>
         <tag>JDK</tag>
         <tag>Spring</tag>
         <tag>AOP</tag>
