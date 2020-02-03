@@ -1,6 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>深入拆解 Java 虚拟机 笔记</title>
+    <url>/deeply-disassemble-the-java-virtual-machine.html</url>
+    <content><![CDATA[<p>深入拆解 Java 虚拟机 学习笔记<br>作者： 郑雨迪</p>
+<a id="more"></a>
+
+<h1 id="Java代码是怎么运行的？"><a href="#Java代码是怎么运行的？" class="headerlink" title="Java代码是怎么运行的？"></a>Java代码是怎么运行的？</h1><h2 id="Java-虚拟机具体是怎样运行-Java-字节码的？"><a href="#Java-虚拟机具体是怎样运行-Java-字节码的？" class="headerlink" title="Java 虚拟机具体是怎样运行 Java 字节码的？"></a>Java 虚拟机具体是怎样运行 Java 字节码的？</h2><p>从虚拟机视角来看，执行 Java 代码首先需要将它编译而成的 class 文件加载到 Java 虚拟机中。加载后的 Java 类会被存放于方法区（Method Area）中。实际运行时，虚拟机会执行方法区内的代码。</p>
+<p>Java 虚拟机会将栈细分为面向 Java 方法的 Java 方法栈，面向本地方法（用 C++ 写的 native 方法）的本地方法栈，以及存放各个线程执行位置的 PC 寄存器。<br><img src="/images/deeply-disassemble-the-java-virtual-machine/1.png" alt></p>
+<p>在运行过程中，每当调用进入一个 Java 方法，Java 虚拟机会在当前线程的 Java 方法栈中生成一个栈帧，用以存放局部变量以及字节码的操作数。这个栈帧的大小是提前计算好的，而且 Java 虚拟机不要求栈帧在内存空间里连续分布。</p>
+<p>当退出当前执行的方法时，不管是正常返回还是异常返回，Java 虚拟机均会弹出当前线程的当前栈帧，并将之舍弃。</p>
+<p>在 HotSpot 里面，翻译过程有两种形式：第一种是解释执行，即逐条将字节码翻译成机器码并执行；第二种是即时编译（Just-In-Time compilation，JIT），即将一个方法中包含的所有字节码编译成机器码后再执行。</p>
+<p><img src="/images/deeply-disassemble-the-java-virtual-machine/2.png" alt></p>
+<h2 id="Java-虚拟机的运行效率究竟是怎么样的？"><a href="#Java-虚拟机的运行效率究竟是怎么样的？" class="headerlink" title="Java 虚拟机的运行效率究竟是怎么样的？"></a>Java 虚拟机的运行效率究竟是怎么样的？</h2><p>即时编译建立在程序符合二八定律的假设上，也就是百分之二十的代码占据了百分之八十的计算资源。</p>
+<p>对于占据大部分的不常用的代码，我们无需耗费时间将其编译成机器码，而是采取解释执行的方式运行；另一方面，对于仅占据小部分的热点代码，我们则可以将其编译成机器码，以达到理想的运行速度。</p>
+<p>为了满足不同用户场景的需要，HotSpot 内置了多个即时编译器：C1、C2 和 Graal。Graal 是 Java 10 正式引入的实验性即时编译器。</p>
+<p>之所以引入多个即时编译器，是为了在编译时间和生成代码的执行效率之间进行取舍。C1 又叫做Client 编译器，面向的是对启动性能有要求的客户端 GUI 程序，采用的优化手段相对简单，因此编译时间较短。</p>
+<p>C2 又叫做 Server 编译器，面向的是对峰值性能有要求的服务器端程序，采用的优化手段相对复杂，因此编译时间较长，但同时生成代码的执行效率较高。</p>
+<p>从 Java 7 开始，HotSpot 默认采用分层编译的方式：热点方法首先会被 C1 编译，而后热点方法中的热点会进一步被 C2 编译。</p>
+<p>为了不干扰应用的正常运行，HotSpot 的即时编译是放在额外的编译线程中进行的。HotSpot 会根据 CPU 的数量设置编译线程的数目，并且按 1:2 的比例配置给 C1 及 C2 编译器。</p>
+]]></content>
+      <categories>
+        <category>JVM</category>
+      </categories>
+      <tags>
+        <tag>读书笔记</tag>
+        <tag>原创</tag>
+        <tag>Java</tag>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>TCP 状态图</title>
     <url>/tcp-state-diagram.html</url>
     <content><![CDATA[<blockquote>
@@ -274,6 +304,19 @@
 <h1 id="内核线程-CPU-利用率太高，我该怎么办？"><a href="#内核线程-CPU-利用率太高，我该怎么办？" class="headerlink" title="内核线程 CPU 利用率太高，我该怎么办？"></a>内核线程 CPU 利用率太高，我该怎么办？</h1><p><a href="/attachments/Linux性能优化实战/49内核线程CPU利用率太高，我该怎么办？.pdf" target="_blank">内核线程CPU利用率太高，我该怎么办？</a></p>
 <h1 id="动态追踪怎么用？"><a href="#动态追踪怎么用？" class="headerlink" title="动态追踪怎么用？"></a>动态追踪怎么用？</h1><p><a href="/attachments/Linux性能优化实战/50动态追踪怎么用？（上）.pdf" target="_blank">动态追踪怎么用？（上）</a></p>
 <p><a href="/attachments/Linux性能优化实战/51动态追踪怎么用？（下）.pdf" target="_blank">动态追踪怎么用？（下）</a></p>
+<h1 id="服务吞吐量下降很厉害，怎么分析？"><a href="#服务吞吐量下降很厉害，怎么分析？" class="headerlink" title="服务吞吐量下降很厉害，怎么分析？"></a>服务吞吐量下降很厉害，怎么分析？</h1><p><a href="/attachments/Linux性能优化实战/52服务吞吐量下降很厉害，怎么分析？.pdf" target="_blank">服务吞吐量下降很厉害，怎么分析？</a></p>
+<blockquote>
+<p>注意套接字部分的排查，netstat -s | grep socket<br>套接字丢包?  套接字队列溢出?</p>
+</blockquote>
+<h1 id="排查问题注意的指标"><a href="#排查问题注意的指标" class="headerlink" title="排查问题注意的指标"></a>排查问题注意的指标</h1><p><img src="/images/linux-performance-optimization-practices-notes/%E5%B8%B8%E8%A7%81%E6%8C%87%E6%A0%87%E5%88%86%E7%B1%BB.png" alt></p>
+<blockquote>
+<p>注意网络部分</p>
+</blockquote>
+<h1 id="分析性能问题的一般步骤"><a href="#分析性能问题的一般步骤" class="headerlink" title="分析性能问题的一般步骤"></a>分析性能问题的一般步骤</h1><p><a href="/attachments/Linux性能优化实战/55分析性能问题的一般步骤.pdf" target="_blank">分析性能问题的一般步骤</a></p>
+<p><a href="/attachments/Linux性能优化实战/56优化性能问题的一般方法.pdf" target="_blank">优化性能问题的一般方法</a></p>
+<p><a href="/attachments/Linux性能优化实战/57Linux性能工具速查.pdf" target="_blank">Linux 性能工具速查</a></p>
+<h1 id="书籍推荐"><a href="#书籍推荐" class="headerlink" title="书籍推荐"></a>书籍推荐</h1><p><a href="/attachments/Linux性能优化实战/书籍推荐1" target="_blank">书籍推荐1</a></p>
+<p><a href="/attachments/Linux性能优化实战/书籍推荐2.pdf" target="_blank">书籍推荐2</a></p>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -1936,7 +1979,7 @@ use one vs other -->
 <li>/logout接口，清理Cookie</li>
 </ul>
 <blockquote>
-<p>code分为两种情况：一种是通过浏览器传递给接入方后端；一种是通过移动端获取到code后，通过调用接入方后端接口传递给接入方后端。</p>
+<p>code分为两种情况：一种是通过浏览器传递给接入方后端；一种是通过移动端获取到code后，通过调用接入方后端接口传递给接入方后端。<br>redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。</p>
 </blockquote>
 <h2 id="OAuth-Client"><a href="#OAuth-Client" class="headerlink" title="OAuth Client"></a>OAuth Client</h2><p>OAuth Client对接OAuth Server需要做以下事情：</p>
 <ul>
@@ -1963,7 +2006,7 @@ use one vs other -->
 </ul>
 </li>
 <li>对于移动端而言，调用/token接口</li>
-<li>/logout接口，清理自己设置的Cookie，再调用鉴权中心的登陆接口</li>
+<li>/logout接口，清理自己设置的Cookie，再调用鉴权中心的登出接口</li>
 <li>/callback接口，供OAuth Server回调</li>
 </ul>
 <h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><p>从服务架构图中可以看出，业务逻辑最复杂的是账户服务。</p>
@@ -4309,8 +4352,8 @@ use one vs other -->
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>ElasticSearch</tag>
         <tag>Java</tag>
+        <tag>ElasticSearch</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
         <tag>Encrypted</tag>
@@ -8859,10 +8902,10 @@ Connection: close
       </categories>
       <tags>
         <tag>Architecture</tag>
-        <tag>原创</tag>
         <tag>Gateway</tag>
         <tag>Design</tag>
         <tag>API</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -9843,8 +9886,8 @@ Connection: close
         <category>Interview</category>
       </categories>
       <tags>
-        <tag>Interview</tag>
         <tag>原创</tag>
+        <tag>Interview</tag>
       </tags>
   </entry>
   <entry>
