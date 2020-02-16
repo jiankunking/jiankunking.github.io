@@ -75,6 +75,7 @@ OAuth Server需要做以下事情：
 * /logout接口，清理Cookie
 
 > code分为两种情况：一种是通过浏览器传递给接入方后端；一种是通过移动端获取到code后，通过调用接入方后端接口传递给接入方后端。
+> redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。
 
 ## OAuth Client
 OAuth Client对接OAuth Server需要做以下事情：
@@ -91,7 +92,7 @@ OAuth Client对接OAuth Server需要做以下事情：
       * 未登录，跳转鉴权中心的登陆页
       * 已登录，跳转参数redirect_uri
 * 对于移动端而言，调用/token接口
-* /logout接口，清理自己设置的Cookie，再调用鉴权中心的登陆接口
+* /logout接口，清理自己设置的Cookie，再调用鉴权中心的登出接口
 * /callback接口，供OAuth Server回调
 
 

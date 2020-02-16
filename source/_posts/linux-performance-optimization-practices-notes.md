@@ -666,3 +666,167 @@ ping 的输出，可以分为两部分。
 
 <a href="/attachments/Linux性能优化实战/35C10K和C1000K回顾.pdf" target="_blank">C10K和C1000K</a>
 
+# DNS 解析
+
+## 域名与 DNS 解析
+
+DNS 协议在 TCP/IP 栈中属于应用层，不过实际传输还是基于 UDP 或者 TCP 协议（UDP 居多） ，并且域名服务器一般监听在端口 53 上。
+
+DNS 服务通过资源记录的方式，来管理所有数据，它支持 A、CNAME、MX、NS、PTR 等多种类型的记录。比如：
+* A 记录，用来把域名转换成 IP 地址；
+* CNAME 记录，用来创建别名；
+* 而 NS 记录，则表示该域名对应的域名服务器地址。
+
+如果没有命中缓存，DNS 查询实际上是一个递归过程，那有没有方法可以知道整个递归查询的执行呢？
+
+其实除了 nslookup，另外一个常用的 DNS 解析工具 dig ，就提供了 trace 功能，可以展示递归查询的整个过程。比如你可以执行下面的命令，得到查询结果：
+
+```
+[root@VM_0_3_centos ~]# dig +trace +nodnssec jiankunking.com
+
+; <<>> DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 <<>> +trace +nodnssec jiankunking.com
+;; global options: +cmd
+.			151746	IN	NS	e.root-servers.net.
+.			151746	IN	NS	f.root-servers.net.
+.			151746	IN	NS	g.root-servers.net.
+.			151746	IN	NS	h.root-servers.net.
+.			151746	IN	NS	i.root-servers.net.
+.			151746	IN	NS	j.root-servers.net.
+.			151746	IN	NS	k.root-servers.net.
+.			151746	IN	NS	l.root-servers.net.
+.			151746	IN	NS	m.root-servers.net.
+.			151746	IN	NS	a.root-servers.net.
+.			151746	IN	NS	b.root-servers.net.
+.			151746	IN	NS	c.root-servers.net.
+.			151746	IN	NS	d.root-servers.net.
+;; Received 239 bytes from 183.60.83.19#53(183.60.83.19) in 0 ms
+
+com.			172800	IN	NS	a.gtld-servers.net.
+com.			172800	IN	NS	b.gtld-servers.net.
+com.			172800	IN	NS	c.gtld-servers.net.
+com.			172800	IN	NS	d.gtld-servers.net.
+com.			172800	IN	NS	e.gtld-servers.net.
+com.			172800	IN	NS	f.gtld-servers.net.
+com.			172800	IN	NS	g.gtld-servers.net.
+com.			172800	IN	NS	h.gtld-servers.net.
+com.			172800	IN	NS	i.gtld-servers.net.
+com.			172800	IN	NS	j.gtld-servers.net.
+com.			172800	IN	NS	k.gtld-servers.net.
+com.			172800	IN	NS	l.gtld-servers.net.
+com.			172800	IN	NS	m.gtld-servers.net.
+;; Received 840 bytes from 199.7.91.13#53(d.root-servers.net) in 236 ms
+
+jiankunking.com.	172800	IN	NS	f1g1ns1.dnspod.net.
+jiankunking.com.	172800	IN	NS	f1g1ns2.dnspod.net.
+;; Received 98 bytes from 192.52.178.30#53(k.gtld-servers.net) in 200 ms
+
+jiankunking.com.	600	IN	A	139.199.31.69
+jiankunking.com.	86400	IN	NS	f1g1ns1.dnspod.net.
+jiankunking.com.	86400	IN	NS	f1g1ns2.dnspod.net.
+;; Received 124 bytes from 58.247.212.48#53(f1g1ns2.dnspod.net) in 21 ms
+
+[root@VM_0_3_centos ~]# 
+
+```
+
+dig trace 的输出，主要包括四部分:
+第一部分，是从 183.60.83.19 查到的一些根域名服务器（.）的 NS 记录。
+第二部分，是从 NS 记录结果中选一个（d.root-servers.net），并查询顶级域名 com.的 NS 记录。
+第三部分，是从 com. 的 NS 记录中选择一个（k.gtld-servers.net），并查询二级域名 jiankunking.com. 的 NS 服务器。
+最后一部分，就是从 jiankunking.com. 的 NS 服务器（f1g1ns2.dnspod.net）查询最终主机 jiankunking.com. 的 A 记录。
+
+当然，不仅仅是发布到互联网的服务需要域名，很多时候，我们也希望能对局域网内部的主机进行域名解析（即内网域名，大多数情况下为主机名）。Linux 也支持这种行为。
+所以，你可以把主机名和 IP 地址的映射关系，写入本机的 /etc/hosts 文件中。这样，指定的主机名就可以在**本地直接**找到目标 IP。
+
+或者，你还可以在内网中，搭建自定义的 DNS 服务器，专门用来解析内网中的域名。而内网 DNS 服务器，一般还会设置一个或多个上游 DNS 服务器，用来解析外网的域名。
+
+# 使用 tcpdump 和 Wireshark 分析网络流量
+
+## tcpdump
+
+![](/images/linux-performance-optimization-practices-notes/tcpdump1.png)
+![](/images/linux-performance-optimization-practices-notes/tcpdump2.png)
+
+## 实例
+
+<a href="/attachments/Linux性能优化实战/38怎么使用tcpdump和Wireshark分析网络流量.pdf" target="_blank">怎么使用tcpdump和Wireshark分析网络流量？</a>
+
+> 实际上，<font color=DeepPink>**根据 IP 地址反查域名、根据端口号反查协议名称，是很多网络工具默认的行为，而这往往会导致性能工具的工作缓慢。**</font>所以，通常，网络性能工具都会提供一个选项（比如 -n 或者 -nn），来禁止名称解析。
+
+# NAT 原理
+
+NAT 技术可以重写 IP 数据包的源 IP 或者目的 IP，被普遍地用来解决公网 IP 地址短缺的问题。它的主要原理就是，网络中的多台主机，通过共享同一个公网 IP 地址，来访问外网资源。同时，由于 NAT 屏蔽了内网网络，自然也就为局域网中的机器提供了安全隔离。
+
+NAT 的主要目的，是实现地址转换。根据实现方式的不同，NAT 可以分为三类：
+* 静态 NAT，即内网 IP 与公网 IP 是一对一的永久映射关系；
+* 动态 NAT，即内网 IP 从公网 IP 池中，动态选择一个进行映射；
+* 网络地址端口转换 NAPT（Network Address and Port Translation），即把内网 IP 映射到公网 IP 的不同端口上，让多个内网 IP 可以共享同一个公网 IP 地址。
+
+NAPT 是目前最流行的 NAT 类型，我们在 Linux 中配置的 NAT 也是这种类型。而根据转换方式的不同，我们又可以把 NAPT 分为三类。
+
+第一类是源地址转换 SNAT，即目的地址不变，只替换源 IP 或源端口。SNAT 主要用于，多个内网 IP 共享同一个公网 IP ，来访问外网资源的场景。
+
+第二类是目的地址转换 DNAT，即源 IP 保持不变，只替换目的 IP 或者目的端口。DNAT主要通过公网 IP 的不同端口号，来访问内网的多种服务，同时会隐藏后端服务器的真实IP 地址。
+
+第三类是双向地址转换，即同时使用 SNAT 和 DNAT。当接收到网络包时，执行DNAT，把目的 IP 转换为内网 IP；而在发送网络包时，执行 SNAT，把源 IP 替换为外部IP。
+
+双向地址转换，其实就是外网 IP 与内网 IP 的一对一映射关系，所以常用在虚拟化环境中，为虚拟机分配浮动的公网 IP 地址。
+
+# 网络性能优化的几个思路
+
+## 根据指标查找工具
+
+![](/images/linux-performance-optimization-practices-notes/network_tools1.png)
+
+## 根据工具查找指标
+
+![](/images/linux-performance-optimization-practices-notes/network_tools2.png)
+
+## 实践
+
+<a href="/attachments/Linux性能优化实战/43网络性能优化的几个思路（上）.pdf" target="_blank">网络性能优化的几个思路（上）</a>
+
+<a href="/attachments/Linux性能优化实战/44网络性能优化的几个思路（下）.pdf" target="_blank">网络性能优化的几个思路（下）</a>
+
+# 服务器总是时不时丢包，我该怎么办？
+
+<a href="/attachments/Linux性能优化实战/47服务器总是时不时丢包，我该怎么办？（上）.pdf" target="_blank">服务器总是时不时丢包，我该怎么办？（上）</a>
+
+<a href="/attachments/Linux性能优化实战/48服务器总是时不时丢包，我该怎么办？（下）.pdf" target="_blank">服务器总是时不时丢包，我该怎么办？（下）</a>
+
+# 内核线程 CPU 利用率太高，我该怎么办？
+
+<a href="/attachments/Linux性能优化实战/49内核线程CPU利用率太高，我该怎么办？.pdf" target="_blank">内核线程CPU利用率太高，我该怎么办？</a>
+
+# 动态追踪怎么用？
+
+<a href="/attachments/Linux性能优化实战/50动态追踪怎么用？（上）.pdf" target="_blank">动态追踪怎么用？（上）</a>
+
+<a href="/attachments/Linux性能优化实战/51动态追踪怎么用？（下）.pdf" target="_blank">动态追踪怎么用？（下）</a>
+
+# 服务吞吐量下降很厉害，怎么分析？
+
+<a href="/attachments/Linux性能优化实战/52服务吞吐量下降很厉害，怎么分析？.pdf" target="_blank">服务吞吐量下降很厉害，怎么分析？</a>
+
+> 注意套接字部分的排查，netstat -s | grep socket
+> 套接字丢包?  套接字队列溢出?
+
+# 排查问题注意的指标
+
+![](/images/linux-performance-optimization-practices-notes/常见指标分类.png)
+
+> 注意网络部分
+
+# 分析性能问题的一般步骤
+
+<a href="/attachments/Linux性能优化实战/55分析性能问题的一般步骤.pdf" target="_blank">分析性能问题的一般步骤</a>
+
+<a href="/attachments/Linux性能优化实战/56优化性能问题的一般方法.pdf" target="_blank">优化性能问题的一般方法</a>
+
+<a href="/attachments/Linux性能优化实战/57Linux性能工具速查.pdf" target="_blank">Linux 性能工具速查</a>
+
+# 书籍推荐
+
+<a href="/attachments/Linux性能优化实战/书籍推荐1" target="_blank">书籍推荐1</a>
+
+<a href="/attachments/Linux性能优化实战/书籍推荐2.pdf" target="_blank">书籍推荐2</a>

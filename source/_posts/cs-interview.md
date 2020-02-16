@@ -69,6 +69,7 @@ date: 2017-02-02 08:22:15
 57. 如何动态上报JVM信息，以便后期排查OOM等问题？
 58. ConcurrentHashMap put的时候加锁的是数组上的元素 还是啥？
 59. Concurrenthashmap中用到的优化技巧？
+60. LRU如何实现？
 
 # MySQL部分
 1. mysql 时间 比较无效 原因？
