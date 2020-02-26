@@ -567,7 +567,96 @@ optimizer_trace 可支持把MySQL查询执行计划树打印出来。
 
 更加详细的处理方法参见：<a href="/attachments/MySQL实战45讲/22讲MySQL有哪些“饮鸩止渴”提高性能的方法.pdf" target="_blank">MySQL有哪些“饮鸩止渴”提高性能的方法</a>
 
+# MySQL是怎么保证数据不丢的？
 
-看到23了
+WAL机制主要得益于两个⽅⾯：
+1. redo log 和 binlog都是顺序写，磁盘的顺序写⽐随机写速度要快；
+2. 组提交机制，可以⼤幅度降低磁盘的IOPS消耗。
 
+事务执⾏期间，还没到提交阶段，如果发⽣crash的话，redo log肯定丢了，这会不会导致主备不⼀致呢？
+回答：不会。因为这时候binlog 也还在binlog cache⾥，没发给备库。crash以后redo log和binlog都没有了，从业务⻆度看这个事务也没有提交，所以数据是⼀致的。
 
+<a href="/attachments/MySQL实战45讲/23讲MySQL是怎么保证数据不丢的.pdf" target="_blank">MySQL是怎么保证数据不丢的？</a>
+
+# MySQL是怎么保证主备一致的？
+
+<a href="/attachments/MySQL实战45讲/24讲MySQL是怎么保证主备一致的.pdf" target="_blank">MySQL是怎么保证主备一致的？</a>
+
+# MySQL是怎么保证高可用的？
+
+<a href="/attachments/MySQL实战45讲/25讲MySQL是怎么保证高可用的.pdf" target="_blank">MySQL是怎么保证高可用的？</a>
+
+# 备库为什么会延迟好几个小时？
+
+* MySQL 5.5版本的并⾏复制策略
+	* 按表分发策略
+	* 按⾏分发策略
+* MySQL 5.6版本的并⾏复制策略
+* MariaDB的并⾏复制策略
+* MySQL 5.7的并⾏复制策略
+* MySQL 5.7.22的并⾏复制策略
+
+<a href="/attachments/MySQL实战45讲/26讲备库为什么会延迟好几个小时.pdf" target="_blank">备库为什么会延迟好几个小时？</a>
+
+# 主库出问题了从库怎么办？
+
+* 基于位点的主备切换
+* GTID
+* 基于 GTID 的主备切换
+* GTID 和在线 DDL
+
+<a href="/attachments/MySQL实战45讲/27讲主库出问题了从库怎么办.pdf" target="_blank">主库出问题了从库怎么办？</a>
+
+# 读写分离有哪些坑？
+
+* 强制走主库方案
+* sleep 方案
+* 判断主备无延迟方案
+* 配合 semi-sync 方案
+* 等主库位点方案
+* 等 GTID 方案
+
+<a href="/attachments/MySQL实战45讲/28讲读写分离有哪些坑.pdf" target="_blank">读写分离有哪些坑？</a>
+
+# 如何判断一个数据库是不是出问题了？
+
+* select 1 判断
+* 查表判断
+* 更新判断
+* 内部统计
+
+<a href="/attachments/MySQL实战45讲/29讲如何判断一个数据库是不是出问题了.pdf" target="_blank">如何判断一个数据库是不是出问题了？</a>
+
+# 误删数据后除了跑路还能怎么办？
+
+* 误删行
+* 误删库/表
+* 延迟复制备库
+* 预防误删库/表的方法
+* rm 删除数据
+
+<a href="/attachments/MySQL实战45讲/31讲误删数据后除了跑路还能怎么办.pdf" target="_blank">误删数据后除了跑路还能怎么办？</a>
+
+# 为什么还有kill不掉的语句？
+
+<a href="/attachments/MySQL实战45讲/32讲为什么还有kill不掉的语句.pdf" target="_blank">为什么还有kill不掉的语句？</a>
+
+# 关于Join
+
+<a href="/attachments/MySQL实战45讲/34讲到底可不可以使用join.pdf" target="_blank">到底可不可以使用join？</a>
+
+<a href="/attachments/MySQL实战45讲/35讲join语句怎么优化.pdf" target="_blank">join语句怎么优化？</a>
+
+# 自增主键为什么不是连续的？
+
+在 MyISAM 引擎里面，自增值是被写在数据文件上的。而在 InnoDB 中，自增值是被记录在内存的。 MySQL 直到 8.0 版本，才给 InnoDB 表的自增值加上了持久化的能力，确保重启前后一个表的自增值不变。
+
+<a href="/attachments/MySQL实战45讲/39讲自增主键为什么不是连续的.pdf" target="_blank">自增主键为什么不是连续的？</a>
+
+# insert语句的锁为什么这么多？
+
+insert … select  是很常见的在两个表之间拷贝数据的方法。你需要注意，在可重复读隔离级别下，这个语句会给 select 的表里扫描到的记录和间隙加读锁。
+而如果 insert 和 select 的对象是同一个表，则有可能会造成循环写入。这种情况下，我们需要引入用户临时表来做优化。
+insert  语句如果出现唯一键冲突，会在冲突的唯一值上加共享的 next-key lock(S 锁 ) 。因此，碰到由于唯一键约束导致报错后，要尽快提交或回滚事务，避免加锁时间过长。
+
+读到41
