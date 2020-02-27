@@ -39,7 +39,7 @@
       <link href="/sentry-high-availability-deploy.html"/>
       <url>/sentry-high-availability-deploy.html</url>
       
-        <content type="html"><![CDATA[<blockquote><p>Sentry 高可用部署，部署分析基于Sentry 10.1.0.dev 05e720a7</p></blockquote><a id="more"></a><p>Sentry官方对于<a href="https://docs.sentry.io/server/" target="_blank" rel="noopener">自托管</a>推荐的部署方式是<a href="https://docs.sentry.io/server/installation/" target="_blank" rel="noopener">Docker Compose</a>,但这种方式有以下几个缺点：</p><ul><li>所有服务都部署在一台机器上</li><li>所有的组件都不是高可用的</li></ul><p>对于生产环境来说，组件高可用是一个必备的条件，所以有了下面的高可用部署，高可用部署分为两部分：</p><ul><li>Sentry依赖中间件的高可用</li><li>Sentry本身组件的高可用</li></ul><h1 id="Sentry-服务"><a href="#Sentry-服务" class="headerlink" title="Sentry 服务"></a>Sentry 服务</h1><p>Sentry具体的服务关系及依赖，具体见下图：</p><p><img src="/images/sentry-high-availability-deploy/Sentry.png" alt></p><p>需要注意以下几点：</p><ul><li>symbolicator、symbolicator-cleanup 依赖挂载卷sentry-symbolicator:/data</li><li>web、cron、worker、post-process-forwarder、sentry-cleanup 也依赖挂载卷，具体可以可见：<a href="https://docs.sentry.io/server/filestore/" target="_blank" rel="noopener">https://docs.sentry.io/server/filestore/</a></li></ul><p>为什么需要关注挂载卷？</p><p>因为挂载卷依赖存储服务，如果没用高可用的存储服务，Sentry自身组件就难以做到全部高可用。</p><h1 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h1><h2 id="Sentry依赖中间件"><a href="#Sentry依赖中间件" class="headerlink" title="Sentry依赖中间件"></a>Sentry依赖中间件</h2><ul><li>Sentry依赖中间件的高可用，可以通过购买云服务商的服务来实现或者自己搭建。</li><li>通过修改sentry onpremise将Sentry依赖的服务替换为相关的ip或者域名，具体代码可以参考：<a href="https://github.com/jiankunking/onpremise" target="_blank" rel="noopener">jiankunking/onpremise</a>。</li></ul><h2 id="Sentry自身服务"><a href="#Sentry自身服务" class="headerlink" title="Sentry自身服务"></a>Sentry自身服务</h2><p>将Sentry服务拆分，部署到kubernetes集群中，具体设置参考onpremise中docker-compose.yml中的启动命令、端口、环境变量来设置。</p><p>其中有以下几点需要注意：</p><ul><li>Sentry各个服务的启动命令，相比docker-compose.yml中command，不太一致，简单列一下：<ul><li>sentry run web –loglevel DEBUG</li><li>sentry run worker</li><li>snuba api</li><li>snuba consumer –auto-offset-reset=latest –max-batch-time-ms 750</li><li>symbolicator run</li><li>……</li></ul></li><li><a href="https://github.com/jiankunking/snuba" target="_blank" rel="noopener">snuba</a> api默认监听的是127.0.0.1，修改为0.0.0.0，具体修改位置参见：<br><a href="https://github.com/jiankunking/snuba/commit/69fee6253c6a78e7c2668bf6c86692e4df8fe012" target="_blank" rel="noopener">https://github.com/jiankunking/snuba/commit/69fee6253c6a78e7c2668bf6c86692e4df8fe012</a></li><li><a href="https://github.com/jiankunking/sentry" target="_blank" rel="noopener">sentry</a> sentry/conf/server.py中KAFKA_CLUSTERS默认是localhost:9092,修改方式参见：<br><a href="https://github.com/jiankunking/onpremise/blob/master/sentry/cover/server.py#L1640" target="_blank" rel="noopener">https://github.com/jiankunking/onpremise/blob/master/sentry/cover/server.py#L1640</a></li><li>构建sentry镜像，当启动命令为post-process-forwarder时，需要将自定义后的config.yml、sentry.conf.py拷贝到镜像/etc/sentry目录下，具体参见：<br><a href="https://github.com/jiankunking/onpremise/blob/master/sentry/Dockerfile#L10" target="_blank" rel="noopener">https://github.com/jiankunking/onpremise/blob/master/sentry/Dockerfile#L10</a></li><li>sentry 环境变量中添加C_FORCE_ROOT=true，可以强制以root身份运行</li></ul><h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>总的来说，将sentry部署到kubernetes中，需要注意的点还是挺多的，很多细节需要看代码来排查。</p>]]></content>
+        <content type="html"><![CDATA[<blockquote><p>Sentry 高可用部署，部署分析基于Sentry 10.1.0.dev 05e720a7</p></blockquote><a id="more"></a><p>Sentry官方对于<a href="https://docs.sentry.io/server/" target="_blank" rel="noopener">自托管</a>推荐的部署方式是<a href="https://docs.sentry.io/server/installation/" target="_blank" rel="noopener">Docker Compose</a>,但这种方式有以下几个缺点：</p><ul><li>所有服务都部署在一台机器上</li><li>所有的组件都不是高可用的</li></ul><p>对于生产环境来说，组件高可用是一个必备的条件，所以有了下面的高可用部署，高可用部署分为两部分：</p><ul><li>Sentry依赖中间件的高可用</li><li>Sentry本身组件的高可用</li></ul><h1 id="Sentry-服务"><a href="#Sentry-服务" class="headerlink" title="Sentry 服务"></a>Sentry 服务</h1><p>Sentry具体的服务关系及依赖，具体见下图：</p><p><img src="/images/sentry-high-availability-deploy/Sentry.png" alt></p><p>需要注意以下几点：</p><ul><li>symbolicator、symbolicator-cleanup 依赖挂载卷sentry-symbolicator:/data</li><li>web、cron、worker、post-process-forwarder、sentry-cleanup 也依赖挂载卷，具体可以可见：<a href="https://docs.sentry.io/server/filestore/" target="_blank" rel="noopener">https://docs.sentry.io/server/filestore/</a></li></ul><p>为什么需要关注挂载卷？</p><p>因为挂载卷依赖存储服务，如果没用高可用的存储服务，Sentry自身组件就难以做到全部高可用。</p><h1 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h1><h2 id="Sentry依赖中间件"><a href="#Sentry依赖中间件" class="headerlink" title="Sentry依赖中间件"></a>Sentry依赖中间件</h2><ul><li>Sentry依赖中间件的高可用，可以通过购买云服务商的服务来实现或者自己搭建。</li><li>通过修改sentry onpremise将Sentry依赖的服务替换为相关的ip或者域名，具体代码可以参考：<a href="https://github.com/jiankunking/onpremise" target="_blank" rel="noopener">jiankunking/onpremise</a>。</li></ul><h2 id="Sentry自身服务"><a href="#Sentry自身服务" class="headerlink" title="Sentry自身服务"></a>Sentry自身服务</h2><p>将Sentry服务拆分，部署到kubernetes集群中，具体设置参考onpremise中docker-compose.yml中的启动命令、端口、环境变量来设置。</p><p>其中有以下几点需要注意：</p><ul><li>Sentry各个服务的启动命令，相比docker-compose.yml中command，不太一致，简单列一下：<ul><li>sentry run web –loglevel DEBUG</li><li>sentry run worker</li><li>snuba api</li><li>snuba consumer –auto-offset-reset=latest –max-batch-time-ms 750</li><li>symbolicator run</li><li>……</li></ul></li><li><a href="https://github.com/jiankunking/snuba" target="_blank" rel="noopener">snuba</a> api默认监听的是127.0.0.1，修改为0.0.0.0，具体修改位置参见：<br><a href="https://github.com/jiankunking/snuba/commit/69fee6253c6a78e7c2668bf6c86692e4df8fe012" target="_blank" rel="noopener">https://github.com/jiankunking/snuba/commit/69fee6253c6a78e7c2668bf6c86692e4df8fe012</a></li><li><a href="https://github.com/jiankunking/sentry" target="_blank" rel="noopener">sentry</a> sentry/conf/server.py中KAFKA_CLUSTERS默认是localhost:9092,修改方式参见：<br><a href="https://github.com/jiankunking/onpremise/blob/master/sentry/cover/server.py#L1640" target="_blank" rel="noopener">https://github.com/jiankunking/onpremise/blob/master/sentry/cover/server.py#L1640</a></li><li>构建sentry镜像，当启动命令为post-process-forwarder时，需要将自定义后的config.yml、sentry.conf.py拷贝到镜像/etc/sentry目录下，具体参见：<br><a href="https://github.com/jiankunking/onpremise/blob/master/sentry/Dockerfile#L10" target="_blank" rel="noopener">https://github.com/jiankunking/onpremise/blob/master/sentry/Dockerfile#L10</a></li><li>sentry 环境变量中添加C_FORCE_ROOT=true，可以强制以root身份运行</li><li><a href="https://github.com/jiankunking/onpremise/blob/master/install.sh" target="_blank" rel="noopener">install.sh脚本</a><ul><li><a href="https://github.com/jiankunking/onpremise/blob/master/install.sh#L113" target="_blank" rel="noopener">初始化clickhouse数据库结构</a></li><li><a href="https://github.com/jiankunking/onpremise/blob/master/install.sh#L142" target="_blank" rel="noopener">添加初始用户</a></li></ul></li></ul><h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>总的来说，将sentry部署到kubernetes中，需要注意的点还是挺多的，很多细节需要看代码来排查。</p>]]></content>
       
       
       <categories>
@@ -80,9 +80,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> 原创 </tag>
             
@@ -194,9 +194,9 @@
       
         <tags>
             
-            <tag> Performance </tag>
-            
             <tag> 读书笔记 </tag>
+            
+            <tag> Performance </tag>
             
         </tags>
       
@@ -602,9 +602,9 @@
       
         <tags>
             
-            <tag> Performance </tag>
-            
             <tag> 读书笔记 </tag>
+            
+            <tag> Performance </tag>
             
         </tags>
       
@@ -1293,9 +1293,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> Design </tag>
             
@@ -1334,13 +1334,13 @@
       
         <tags>
             
-            <tag> Performance </tag>
-            
             <tag> 读书笔记 </tag>
             
             <tag> Java </tag>
             
             <tag> JVM </tag>
+            
+            <tag> Performance </tag>
             
             <tag> GC </tag>
             
@@ -1762,11 +1762,11 @@
             
             <tag> Java </tag>
             
-            <tag> JDK </tag>
-            
             <tag> JUC </tag>
             
             <tag> AQS </tag>
+            
+            <tag> JDK </tag>
             
             <tag> ReentrantReadWriteLock </tag>
             
@@ -1795,11 +1795,11 @@
             
             <tag> Java </tag>
             
-            <tag> JDK </tag>
-            
             <tag> JUC </tag>
             
             <tag> AQS </tag>
+            
+            <tag> JDK </tag>
             
             <tag> Condition </tag>
             
@@ -1826,9 +1826,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> InnoDB </tag>
             
@@ -1855,9 +1855,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> InnoDB </tag>
             
@@ -1884,9 +1884,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> InnoDB </tag>
             
@@ -1913,9 +1913,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> InnoDB </tag>
             
@@ -1942,9 +1942,9 @@
       
         <tags>
             
-            <tag> 读书笔记 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 读书笔记 </tag>
             
             <tag> InnoDB </tag>
             
@@ -2068,11 +2068,11 @@
             
             <tag> Java </tag>
             
-            <tag> JDK </tag>
-            
             <tag> JUC </tag>
             
             <tag> AQS </tag>
+            
+            <tag> JDK </tag>
             
             <tag> Volatile </tag>
             
@@ -2132,11 +2132,11 @@
             
             <tag> Java </tag>
             
-            <tag> JDK </tag>
-            
             <tag> JUC </tag>
             
             <tag> AQS </tag>
+            
+            <tag> JDK </tag>
             
         </tags>
       
