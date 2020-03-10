@@ -62,7 +62,10 @@ https://github.com/jiankunking/onpremise/blob/master/sentry/cover/server.py#L164
 * 构建sentry镜像，当启动命令为post-process-forwarder时，需要将自定义后的config.yml、sentry.conf.py拷贝到镜像/etc/sentry目录下，具体参见：
 https://github.com/jiankunking/onpremise/blob/master/sentry/Dockerfile#L10
 * sentry 环境变量中添加C_FORCE_ROOT=true，可以强制以root身份运行
-
+* [install.sh脚本](https://github.com/jiankunking/onpremise/blob/master/install.sh)
+	* [初始化clickhouse数据库结构](https://github.com/jiankunking/onpremise/blob/master/install.sh#L113)
+	* [添加初始用户](https://github.com/jiankunking/onpremise/blob/master/install.sh#L142)
+	
 # 小结
 
 总的来说，将sentry部署到kubernetes中，需要注意的点还是挺多的，很多细节需要看代码来排查。
