@@ -11,6 +11,11 @@ tags:
 ---
 
 > Sentry 高可用部署，部署分析基于Sentry 10.1.0.dev 05e720a7
+> 对应dockerhub镜像版本分别为：
+getsentry/snuba:31c967e774759c0548652d986645fdff844e0a39
+getsentry/sentry:8549f2a492c803bab77af26e7417272975b9369a
+getsentry/symbolicator:94cdbb7b543ebe53744144305db21a56b6a0d5a8
+
 
 <!-- more -->
 
@@ -49,11 +54,13 @@ Sentry具体的服务关系及依赖，具体见下图：
 
 其中有以下几点需要注意：
 * Sentry各个服务的启动命令，相比docker-compose.yml中command，不太一致，简单列一下：
-	* sentry run web --loglevel DEBUG
-	* sentry run worker
 	* snuba api
 	* snuba consumer --auto-offset-reset=latest --max-batch-time-ms 750
+	* snuba replacer --auto-offset-reset=latest --max-batch-size 3
 	* symbolicator run
+	* sentry run web --loglevel DEBUG
+	* sentry run cron
+	* sentry run worker
 	* ......
 * [snuba](https://github.com/jiankunking/snuba) api默认监听的是127.0.0.1，修改为0.0.0.0，具体修改位置参见：
 https://github.com/jiankunking/snuba/commit/69fee6253c6a78e7c2668bf6c86692e4df8fe012
@@ -65,6 +72,7 @@ https://github.com/jiankunking/onpremise/blob/master/sentry/Dockerfile#L10
 * [install.sh脚本](https://github.com/jiankunking/onpremise/blob/master/install.sh)
 	* [初始化clickhouse数据库结构](https://github.com/jiankunking/onpremise/blob/master/install.sh#L113)
 	* [添加初始用户](https://github.com/jiankunking/onpremise/blob/master/install.sh#L142)
+* sentry worker依赖于sentry cron，所以不能只部署worker，否则会有下面的错误提示：Background workers haven't checked in recently. This is likely an issue with your configuration or the workers aren't running.
 	
 # 小结
 

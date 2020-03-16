@@ -10,6 +10,10 @@ tags:
   - IP
 ---
 
+TCP 的三次握手、TCP 四次挥手、TCP 状态机
+
+<!-- more -->
+
 <!-- > SYN_REVEIVED 的状态，通常被缩写为 SYN_RECV。 -->
 
 > SYN 是发起一个连接，ACK 是回复，RST 是重新连接，FIN 是结束连接

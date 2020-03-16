@@ -51,7 +51,7 @@ VALUES
 	(5);
 ```
 ![](/images/mysql-innodb-row-lock-algorithm/唯一索引的锁定示例.png)
-表t中共有1、2、5三个值。在上面的例子中，在会话A中首先对a=5进行X锁定。而由于a是主键且唯一，因此锁定的仅是5这个值，而不是(2,5)这个范围，这样在会话B中插入值4而不会阻塞，可以立即插入并返回。即锁定由Next-Key Lock算法降级为了Record Lock，从而提高应用的并发性。正如前面所介绍的，<font color=DeepPink>**Next-Key降级为Record Lock仅在查询的列是唯一索引的情况下。若是辅助索引，则情况会完全不同。**</font>同样，首先根据如下代码创建测试表z：
+表t中共有1、2、5三个值。在上面的例子中，在会话A中首先对a=5进行X锁定。而由于a是主键且唯一，因此锁定的仅是5这个值，而不是(2,5)这个范围，这样在会话B中插入值4而不会阻塞，可以立即插入并返回。即锁定由Next-Key Lock算法降级为了Record Lock，从而提高应用的并发性。正如前面所介绍的，<font color=DeepPink>**Next-Key降级为Record Lock仅在查询的列是唯一索引的情况下。若是辅助索引，则情况会完全不同。**</font>同样，首先根据如下代码创建测试表Z：
 ```
 CREATE TABLE Z (
 	a INT,
@@ -68,7 +68,7 @@ VALUES
 	(7, 6),
 	(10, 8);
 ```
-表z的列b是辅助索引，若在**会话A**中执行下面的SQL语句：
+表Z的列b是辅助索引，若在**会话A**中执行下面的SQL语句：
 ```
 SELECT * FROM Z WHERE b=3 FOR UPDATE;
 ```
