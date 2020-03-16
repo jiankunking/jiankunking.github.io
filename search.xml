@@ -236,11 +236,13 @@
 <p>其中有以下几点需要注意：</p>
 <ul>
 <li>Sentry各个服务的启动命令，相比docker-compose.yml中command，不太一致，简单列一下：<ul>
-<li>sentry run web –loglevel DEBUG</li>
-<li>sentry run worker</li>
 <li>snuba api</li>
 <li>snuba consumer –auto-offset-reset=latest –max-batch-time-ms 750</li>
+<li>snuba replacer –auto-offset-reset=latest –max-batch-size 3</li>
 <li>symbolicator run</li>
+<li>sentry run web –loglevel DEBUG</li>
+<li>sentry run cron</li>
+<li>sentry run worker</li>
 <li>……</li>
 </ul>
 </li>
@@ -253,6 +255,7 @@
 <li><a href="https://github.com/jiankunking/onpremise/blob/master/install.sh#L142" target="_blank" rel="noopener">添加初始用户</a></li>
 </ul>
 </li>
+<li>sentry worker依赖于sentry cron，所以不能只部署worker，否则会有下面的错误提示：Background workers haven’t checked in recently. This is likely an issue with your configuration or the workers aren’t running.</li>
 </ul>
 <h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>总的来说，将sentry部署到kubernetes中，需要注意的点还是挺多的，很多细节需要看代码来排查。</p>
 ]]></content>
@@ -657,8 +660,8 @@
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>原创</tag>
       </tags>
   </entry>
@@ -1067,8 +1070,8 @@
         <category>Interview</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -3074,8 +3077,8 @@ use one vs other -->
         <category>Network</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -3185,8 +3188,8 @@ use one vs other -->
         <category>Linux</category>
       </categories>
       <tags>
-        <tag>Network</tag>
         <tag>Linux</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -5914,8 +5917,8 @@ use one vs other -->
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
-        <tag>ForkJoin</tag>
         <tag>JUC</tag>
+        <tag>ForkJoin</tag>
       </tags>
   </entry>
   <entry>
@@ -7032,8 +7035,8 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>Design</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
@@ -7321,8 +7324,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>GC</tag>
@@ -8833,9 +8836,9 @@ table th:nth-of-type(2) {
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
-        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
+        <tag>JDK</tag>
         <tag>ReentrantReadWriteLock</tag>
       </tags>
   </entry>
@@ -8880,9 +8883,9 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Java</tag>
-        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
+        <tag>JDK</tag>
         <tag>Condition</tag>
       </tags>
   </entry>
@@ -8900,8 +8903,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -8927,10 +8930,10 @@ table th:nth-of-type(2) {
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">DROP TABLE</span><br><span class="line">IF EXISTS t;</span><br><span class="line"></span><br><span class="line">CREATE TABLE t (a INT PRIMARY KEY);</span><br><span class="line"></span><br><span class="line">INSERT INTO t</span><br><span class="line">VALUES</span><br><span class="line">	(1),</span><br><span class="line">	(2),</span><br><span class="line">	(5);</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/mysql-innodb-row-lock-algorithm/%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%94%81%E5%AE%9A%E7%A4%BA%E4%BE%8B.png" alt><br>表t中共有1、2、5三个值。在上面的例子中，在会话A中首先对a=5进行X锁定。而由于a是主键且唯一，因此锁定的仅是5这个值，而不是(2,5)这个范围，这样在会话B中插入值4而不会阻塞，可以立即插入并返回。即锁定由Next-Key Lock算法降级为了Record Lock，从而提高应用的并发性。正如前面所介绍的，<font color="DeepPink"><strong>Next-Key降级为Record Lock仅在查询的列是唯一索引的情况下。若是辅助索引，则情况会完全不同。</strong></font>同样，首先根据如下代码创建测试表z：</p>
+<p><img src="/images/mysql-innodb-row-lock-algorithm/%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%94%81%E5%AE%9A%E7%A4%BA%E4%BE%8B.png" alt><br>表t中共有1、2、5三个值。在上面的例子中，在会话A中首先对a=5进行X锁定。而由于a是主键且唯一，因此锁定的仅是5这个值，而不是(2,5)这个范围，这样在会话B中插入值4而不会阻塞，可以立即插入并返回。即锁定由Next-Key Lock算法降级为了Record Lock，从而提高应用的并发性。正如前面所介绍的，<font color="DeepPink"><strong>Next-Key降级为Record Lock仅在查询的列是唯一索引的情况下。若是辅助索引，则情况会完全不同。</strong></font>同样，首先根据如下代码创建测试表Z：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE TABLE Z (</span><br><span class="line">	a INT,</span><br><span class="line">	b INT,</span><br><span class="line">	PRIMARY KEY (a),</span><br><span class="line">	KEY (b)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">INSERT INTO Z</span><br><span class="line">VALUES</span><br><span class="line">	(1, 1),</span><br><span class="line">	(3, 1),</span><br><span class="line">	(5, 3),</span><br><span class="line">	(7, 6),</span><br><span class="line">	(10, 8);</span><br></pre></td></tr></table></figure>
 
-<p>表z的列b是辅助索引，若在<strong>会话A</strong>中执行下面的SQL语句：</p>
+<p>表Z的列b是辅助索引，若在<strong>会话A</strong>中执行下面的SQL语句：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT * FROM Z WHERE b=3 FOR UPDATE;</span><br></pre></td></tr></table></figure>
 
 <p>很明显，这时SQL语句通过索引列b进行查询，因此其使用传统的Next-Key Locking技术加锁，并且由于<strong>有两个索引，其需要分别进行锁定</strong>。<strong>对于聚集索引，其仅对列a等于5的索引加上Record Lock。而对于辅助索引，其加上的是Next-Key Locking，锁定的范围是(1,3)</strong>,特别需要注意的是，<font color="DeepPink"><strong>InnoDB存储引擎会对辅助索引下一个键值加上gap lock，即还有一个辅助索引范围为(3,6)的锁</strong></font>。 因此，若在新<strong>会话B</strong>中运行下面的SQL语句，都会被阻塞：</p>
@@ -8974,8 +8977,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9026,8 +9029,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9049,8 +9052,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9091,8 +9094,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9689,9 +9692,9 @@ Connection: close
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
-        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
+        <tag>JDK</tag>
         <tag>Volatile</tag>
       </tags>
   </entry>
@@ -10003,9 +10006,9 @@ Connection: close
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
-        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
+        <tag>JDK</tag>
       </tags>
   </entry>
   <entry>
