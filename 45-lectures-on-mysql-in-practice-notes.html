@@ -24,7 +24,7 @@
   </script>
 
   <meta name="description" content="MySQL实战45讲 学习笔记作者： 林晓斌">
-<meta name="keywords" content="MySQL,读书笔记,原创">
+<meta name="keywords" content="读书笔记,MySQL,原创">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL实战45讲 学习笔记">
 <meta property="og:url" content="https://jiankunking.com/45-lectures-on-mysql-in-practice-notes.html">
@@ -39,7 +39,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/45-lectures-on-mysql-in-practice-notes/InnoDB%E7%9A%84%E7%B4%A2%E5%BC%95%E7%BB%84%E7%BB%87%E7%BB%93%E6%9E%84.png">
 <meta property="og:image" content="https://jiankunking.com/images/45-lectures-on-mysql-in-practice-notes/redo_log%E7%8A%B6%E6%80%81%E5%9B%BE.png">
 <meta property="og:image" content="https://jiankunking.com/images/45-lectures-on-mysql-in-practice-notes/%E4%BC%9A%E8%AF%9DA%E3%80%81B%E7%9A%84%E6%89%A7%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE.png">
-<meta property="og:updated_time" content="2020-04-03T08:35:16.751Z">
+<meta property="og:updated_time" content="2020-04-03T08:38:53.249Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL实战45讲 学习笔记">
 <meta name="twitter:description" content="MySQL实战45讲 学习笔记作者： 林晓斌">
@@ -243,7 +243,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-03 16:35:16" itemprop="dateModified" datetime="2020-04-03T16:35:16+08:00">2020-04-03</time>
+                <time title="修改时间：2020-04-03 16:38:53" itemprop="dateModified" datetime="2020-04-03T16:38:53+08:00">2020-04-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -417,11 +417,11 @@
 <li>再到ID索引树查到ID=300对应的R3；</li>
 <li>在k索引树取下一个值k=5，取得ID=500；</li>
 <li>再回到ID索引树查到ID=500对应的R4；</li>
-<li>在k索引树取下一个值k=6，不满⾜条件，循环结束。</li>
+<li>在k索引树取下一个值k=6，不满足条件，循环结束。</li>
 </ol>
 <p>在这个过程中，<strong>回到主键索引树搜索的过程，我们称为回表</strong>。可以看到，这个查询过程读了k索引树的3条记录（步骤1、3和5），回表了两次（步骤2和4）。</p>
 <h2 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h2><p>如果执行的语句是select ID from T where k between 3 and 5，这时只需要查ID的值，而ID的值已经在k索引树上了，因此可以直接提供查询结果，不需要回表。也就是说，在这个查询里面，索引k已经“覆盖了”我们的查询需求，我们称为覆盖索引。</p>
-<h2 id="索引下推"><a href="#索引下推" class="headerlink" title="索引下推"></a>索引下推</h2><p>而MySQL 5.6 引入的索引下推优化（index condition pushdown)， 可以在索引遍历过程中，对索引中包含的字段先做判断，直接过滤掉不满⾜条件的记录，减少回表次数。</p>
+<h2 id="索引下推"><a href="#索引下推" class="headerlink" title="索引下推"></a>索引下推</h2><p>而MySQL 5.6 引入的索引下推优化（index condition pushdown)， 可以在索引遍历过程中，对索引中包含的字段先做判断，直接过滤掉不满足条件的记录，减少回表次数。</p>
 <h1 id="全局锁和表锁"><a href="#全局锁和表锁" class="headerlink" title="全局锁和表锁"></a>全局锁和表锁</h1><p>根据加锁的范围，MySQL里面的锁大致可以分成全局锁、表级锁和行锁三类。</p>
 <h2 id="全局锁"><a href="#全局锁" class="headerlink" title="全局锁"></a>全局锁</h2><p>顾名思义，全局锁就是对整个数据库实例加锁。MySQL提供了一个加全局读锁的方法，命令是 Flush tables with read lock(FTWRL)。当你需要让整个库处于只读状态的时候，可以使用这个命令，之后其他线程的以下语句会被阻塞：数据更新语句（数据的增删改）、数据定义语句（包括建表、修改表结构等）和更新类事务的提交语句。</p>
 <p><strong>全局锁的典型使用场景是，做全库逻辑备份。</strong>也就是把整库每个表都select出来存成文本。</p>
@@ -492,8 +492,8 @@
 <p><img src="/images/45-lectures-on-mysql-in-practice-notes/InnoDB%E7%9A%84%E7%B4%A2%E5%BC%95%E7%BB%84%E7%BB%87%E7%BB%93%E6%9E%84.png" alt></p>
 <h2 id="查询过程"><a href="#查询过程" class="headerlink" title="查询过程"></a>查询过程</h2><p>假设，执行查询的语句是 select id from T where k=5。这个查询语句在索引树上查找的过程，先是通过B+树从树根开始，按层搜索到叶子节点，也就是图中右下⻆的这个数据页，然后可以认为数据页内部通过二分法来定位记录。</p>
 <ul>
-<li>对于普通索引来说，查找到满⾜条件的第一个记录(5,500)后，需要查找下一个记录，直到碰到第一个不满⾜k=5条件的记录。</li>
-<li>对于唯一索引来说，由于索引定义了唯一性，查找到第一个满⾜条件的记录后，就会停止继续检索。</li>
+<li>对于普通索引来说，查找到满足条件的第一个记录(5,500)后，需要查找下一个记录，直到碰到第一个不满足k=5条件的记录。</li>
+<li>对于唯一索引来说，由于索引定义了唯一性，查找到第一个满足条件的记录后，就会停止继续检索。</li>
 </ul>
 <p>那么，这个不同带来的性能差距会有多少呢？答案是，微乎其微。</p>
 <p>你知道的，InnoDB的数据是按数据页为单位来读写的。也就是说，当需要读一条记录的时候，并不是将这个记录本身从磁盘读出来，而是以页为单位，将其整体读入内存。在InnoDB中，每个数据页的大小默认是16KB。</p>
@@ -508,7 +508,7 @@
 <p>对于唯一索引来说，所有的更新操作都要先判断这个操作是否违反唯一性约束。比如，要插入(4,400)这个记录，就要先判断现在表中是否已经存在k=4的记录，而这必须要将数据页读入内存才能判断。如果都已经读入到内存了，那直接更新内存会更快，就没必要使用change buffer了。</p>
 <p>因此，<strong>唯一索引的更新就不能使用change buffer，实际上也只有普通索引可以使用。</strong></p>
 <p><a href="/attachments/MySQL实战45讲/09讲普通索引和唯一索引，应该怎么选择.pdf" target="_blank">普通索引和唯一索引，应该怎么选择?</a></p>
-<h1 id="MySQL为什么有时候会选错索引"><a href="#MySQL为什么有时候会选错索引" class="headerlink" title="MySQL为什么有时候会选错索引?"></a>MySQL为什么有时候会选错索引?</h1><p>MySQL在真正开始执行语句之前，并不能精确地知道满⾜这个条件的记录有多少条，而只能根据统计信息来估算记录数。</p>
+<h1 id="MySQL为什么有时候会选错索引"><a href="#MySQL为什么有时候会选错索引" class="headerlink" title="MySQL为什么有时候会选错索引?"></a>MySQL为什么有时候会选错索引?</h1><p>MySQL在真正开始执行语句之前，并不能精确地知道满足这个条件的记录有多少条，而只能根据统计信息来估算记录数。</p>
 <p>估算出来的数字有可能会不准确，从而导致索引选择不对。</p>
 <p><a href="/attachments/MySQL实战45讲/10讲MySQL为什么有时候会选错索引.pdf" target="_blank">MySQL为什么有时候会选错索引?</a></p>
 <h1 id="怎么给字符串字段加索引？"><a href="#怎么给字符串字段加索引？" class="headerlink" title="怎么给字符串字段加索引？"></a>怎么给字符串字段加索引？</h1><ol>
@@ -521,7 +521,7 @@
 <p>那么，什么情况会引发数据库的flush过程呢？</p>
 <p>第一种场景是，InnoDB的redo log写满了。这时候系统会停止所有更新操作，把checkpoint往前推进，redo log留出空间可以继续写。</p>
 <p><img src="/images/45-lectures-on-mysql-in-practice-notes/redo_log%E7%8A%B6%E6%80%81%E5%9B%BE.png" alt></p>
-<p>第二种场景是，就是系统内存不⾜。当需要新的内存页，而内存不够用的时候，就要淘汰一些数据页，空出内存给别的数据页使用。如果淘汰的是“脏页”，就要先将脏页写到磁盘。</p>
+<p>第二种场景是，就是系统内存不足。当需要新的内存页，而内存不够用的时候，就要淘汰一些数据页，空出内存给别的数据页使用。如果淘汰的是“脏页”，就要先将脏页写到磁盘。</p>
 <p>你一定会说，这时候难道不能直接把内存淘汰掉，下次需要请求的时候，从磁盘读入数据页，然后拿redo log出来应用不就行了？这里其实是从性能考虑的。如果刷脏页一定会写盘，就保证了每个数据页有两种状态：</p>
 <ul>
 <li>一种是内存里存在，内存里就肯定是正确的结果，直接返回；</li>
@@ -553,7 +553,7 @@
 <p><img src="/images/45-lectures-on-mysql-in-practice-notes/%E4%BC%9A%E8%AF%9DA%E3%80%81B%E7%9A%84%E6%89%A7%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE.png" alt></p>
 <p>我们来看下现在的执行结果。虽然会话B的读操作仍然是在T3执行的，但是因为这时候更新事务还没有提交，所以计数值加1这个操作对会话B还不可见。</p>
 <p>因此，会话B看到的结果里， 查计数值和“最近100条记录”看到的结果，逻辑上就是一致的。</p>
-<h2 id="不同的count用法"><a href="#不同的count用法" class="headerlink" title="不同的count用法"></a>不同的count用法</h2><p>count(*)、count(主键id)和count(1) 都表示返回满⾜条件的结果集的总行数；而count(字段），则表示返回满⾜条件的数据行里面，参数“字段”不为NULL的总个数。</p>
+<h2 id="不同的count用法"><a href="#不同的count用法" class="headerlink" title="不同的count用法"></a>不同的count用法</h2><p>count(*)、count(主键id)和count(1) 都表示返回满足条件的结果集的总行数；而count(字段），则表示返回满足条件的数据行里面，参数“字段”不为NULL的总个数。</p>
 <p>至于分析性能差别的时候，你可以记住这么几个原则：</p>
 <ol>
 <li>server层要什么就给什么；</li>
@@ -605,8 +605,8 @@
 <li>原则1：<font color="DeepPink"><strong>加锁的基本单位是next-key lock</strong></font>。希望你还记得，next-key lock是前开后闭区间。</li>
 <li>原则2：查找过程中访问到的对象才会加锁。</li>
 <li>优化1：索引上的等值查询，给唯一索引加锁的时候，next-key lock退化为行锁。</li>
-<li>优化2：索引上的等值查询，向右遍历时且最后一个值不满⾜等值条件的时候，next-key lock退化为间隙锁。</li>
-<li>一个bug：唯一索引上的范围查询会访问到不满⾜条件的第一个值为止。</li>
+<li>优化2：索引上的等值查询，向右遍历时且最后一个值不满足等值条件的时候，next-key lock退化为间隙锁。</li>
+<li>一个bug：唯一索引上的范围查询会访问到不满足条件的第一个值为止。</li>
 </ol>
 <blockquote>
 <p>MySQL后面的版本可能会改变加锁策略，所以这个规则只限于截止到现在的最新版本，即5.x系列&lt;=5.7.24，8.0系列&lt;=8.0.13。</p>
@@ -695,19 +695,19 @@
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\fun-talk-about-network-protocols.html" rel="bookmark">趣谈网络协议 学习笔记</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\linux-performance-optimization-practices-notes.html" rel="bookmark">Linux性能优化实战 笔记</a></div>
+    </li>
+    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\mysql-innodb-partition-table.html" rel="bookmark">MySQL InnoDB存储引擎：分区表</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\mysql-innodb-row-lock-algorithm.html" rel="bookmark">MySQL InnoDB存储引擎：行锁的3种算法</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
     </li>
   </ul>
 
@@ -751,8 +751,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
               <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
           </div>
 
