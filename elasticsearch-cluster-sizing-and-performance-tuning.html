@@ -23,20 +23,20 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="翻译自：Elasticsearch Cluster Sizing and Performance Tuning地址：https://www.elastic.co/cn/blog/found-sizing-elasticsearch  集群应该有多少个节点?应该创建多少个副本?为了获得最佳的搜索性能，分片(Shard)的最佳平均大小是多少？诸如此类的问题只有你自己知道答案。 没有人知道你的数据和查">
-<meta name="keywords" content="原创,Performance,ElasticSearch,Cluster,Size,Tuning,翻译">
+  <meta name="description" content="翻译自：Elasticsearch Cluster Sizing and Performance Tuning地址：https://www.elastic.co/cn/blog/found-sizing-elasticsearch">
+<meta name="keywords" content="Performance,ElasticSearch,Cluster,Size,Tuning,原创,翻译">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Elasticsearch集群规模和性能调优">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-cluster-sizing-and-performance-tuning.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="翻译自：Elasticsearch Cluster Sizing and Performance Tuning地址：https://www.elastic.co/cn/blog/found-sizing-elasticsearch  集群应该有多少个节点?应该创建多少个副本?为了获得最佳的搜索性能，分片(Shard)的最佳平均大小是多少？诸如此类的问题只有你自己知道答案。 没有人知道你的数据和查">
+<meta property="og:description" content="翻译自：Elasticsearch Cluster Sizing and Performance Tuning地址：https://www.elastic.co/cn/blog/found-sizing-elasticsearch">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/elasticsearch-cluster-sizing-and-performance-tuning/shard-lucene-index-segment.jpeg">
 <meta property="og:image" content="https://jiankunking.com/images/elasticsearch-cluster-sizing-and-performance-tuning/Scheme-2.png">
-<meta property="og:updated_time" content="2020-04-07T13:08:17.760Z">
+<meta property="og:updated_time" content="2020-04-07T13:16:19.870Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Elasticsearch集群规模和性能调优">
-<meta name="twitter:description" content="翻译自：Elasticsearch Cluster Sizing and Performance Tuning地址：https://www.elastic.co/cn/blog/found-sizing-elasticsearch  集群应该有多少个节点?应该创建多少个副本?为了获得最佳的搜索性能，分片(Shard)的最佳平均大小是多少？诸如此类的问题只有你自己知道答案。 没有人知道你的数据和查">
+<meta name="twitter:description" content="翻译自：Elasticsearch Cluster Sizing and Performance Tuning地址：https://www.elastic.co/cn/blog/found-sizing-elasticsearch">
 <meta name="twitter:image" content="https://jiankunking.com/images/elasticsearch-cluster-sizing-and-performance-tuning/shard-lucene-index-segment.jpeg">
 
 <link rel="canonical" href="https://jiankunking.com/elasticsearch-cluster-sizing-and-performance-tuning.html">
@@ -231,7 +231,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2020-04-07 16:22:48 / 修改时间：21:08:17" itemprop="dateCreated datePublished" datetime="2020-04-07T16:22:48+08:00">2020-04-07</time>
+              <time title="创建时间：2020-04-07 16:22:48 / 修改时间：21:16:19" itemprop="dateCreated datePublished" datetime="2020-04-07T16:22:48+08:00">2020-04-07</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -292,6 +292,8 @@
         <blockquote>
 <p>翻译自：Elasticsearch Cluster Sizing and Performance Tuning<br>地址：<a href="https://www.elastic.co/cn/blog/found-sizing-elasticsearch" target="_blank" rel="noopener">https://www.elastic.co/cn/blog/found-sizing-elasticsearch</a></p>
 </blockquote>
+<a id="more"></a>
+
 <p>集群应该有多少个节点?应该创建多少个副本?为了获得最佳的搜索性能，分片(Shard)的最佳平均大小是多少？诸如此类的问题只有你自己知道答案。</p>
 <p>没有人知道你的数据和查询结构，你使用的硬件，你的吞吐量。没有数学公式，也没有理论计算方法。如果你带着这样的期望而来，我很抱歉让你失望。但是别担心，你可以自己回答。</p>
 <h1 id="数据的大小"><a href="#数据的大小" class="headerlink" title="数据的大小"></a>数据的大小</h1><p>如您所知，由于分布式体系结构中的硬件限制，数据被划分为更小的块，并分布在不同的节点上。这些小片段称为分片。实际上，当其中一个节点发生故障时，与原始节点完全相同的分片仍保留在备用中。这些分片称为副本。</p>
@@ -333,7 +335,7 @@
 <p>使用best_compression压缩_source数据。</p>
 <h1 id="监控索引大小"><a href="#监控索引大小" class="headerlink" title="监控索引大小"></a>监控索引大小</h1><p>索引的大小可能会随时间增长，这可能要求您对集群或硬件进行一些更改。</p>
 <h2 id="定期Reindex索引"><a href="#定期Reindex索引" class="headerlink" title="定期Reindex索引"></a>定期Reindex索引</h2><p>特别是在写密集型索引中，索引大小会随着时间增加。这是由于更新的文档。<font color="DeepPink"><strong>实际上，在Elasticsearch中，文档不会更新，因为它们是不可变的。因此，使用新数据创建了另一个文档，并且该文档的版本增加了一个。重新索引索引时，新索引将包含最新版本的文档。因此索引大小将减小。</strong></font></p>
-<h2 id="强制合并"><a href="#强制合并" class="headerlink" title="强制合并"></a>强制合并</h2><p>在Elasticsearch中，所有分片都是Lucene索引。Lucene索引由一个或多个文件组成。强制合并使我们可以合并这些文件并导致形成更大的段。较大的段能更有效地存储数据。</p>
+<h2 id="强制合并"><a href="#强制合并" class="headerlink" title="强制合并"></a>强制合并</h2><p>在Elasticsearch中，所有分片都是Lucene索引。Lucene索引由一个或多个文件组成。<font color="DeepPink"><strong>强制合并使我们可以合并这些文件并导致形成更大的段。较大的段能更有效地存储数据。</strong></font></p>
 <h1 id="刷新间隔"><a href="#刷新间隔" class="headerlink" title="刷新间隔"></a>刷新间隔</h1><p><font color="DeepPink"><strong>刷新时间是建立索引后可搜索数据所需的时间。</strong></font> 这就是为什么Elasticsearch近实时，而不是实时的原因。</p>
 <p>如果您的数据不经常更改，并且您不需要实时数据，则应增加或不使用刷新间隔。 如果您根本不希望刷新，则可以将其分配为-1。刷新是一项昂贵的任务。 较小的刷新时间可能会对搜索性能产生不利影响。</p>
 <p>初始索引时，应将刷新间隔设置为-1。</p>
@@ -366,19 +368,19 @@
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\encrypted-communication-elasticsearch-java-rest-client.html" rel="bookmark">encrypted communication elasticsearch java rest client</a></div>
+      <div class="popular-posts-title"><a href="\elasticsearch-scroll-and-search-after.html" rel="bookmark">Elasticsearch Scroll and Search After</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-scroll-and-search-after.html" rel="bookmark">Elasticsearch Scroll and Search After</a></div>
+      <div class="popular-posts-title"><a href="\encrypted-communication-elasticsearch-java-rest-client.html" rel="bookmark">encrypted communication elasticsearch java rest client</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\45-lectures-on-mysql-in-practice-notes.html" rel="bookmark">MySQL实战45讲 学习笔记</a></div>
+      <div class="popular-posts-title"><a href="\2-power-table.html" rel="bookmark">2的幂表</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\api-gateway-design.html" rel="bookmark">API网关架构设计</a></div>
+      <div class="popular-posts-title"><a href="\java-performance-notes.html" rel="bookmark">Java性能优化权威指南 笔记</a></div>
     </li>
   </ul>
 
@@ -422,12 +424,12 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/Performance/" rel="tag"># Performance</a>
               <a href="/tags/ElasticSearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/Cluster/" rel="tag"># Cluster</a>
               <a href="/tags/Size/" rel="tag"># Size</a>
               <a href="/tags/Tuning/" rel="tag"># Tuning</a>
+              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/翻译/" rel="tag"># 翻译</a>
           </div>
 
