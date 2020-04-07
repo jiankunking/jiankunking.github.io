@@ -31,6 +31,6 @@ Explain SQL
 
 > 反例：explain 表的结果，type=index，索引物理文件全扫描，速度非常慢，这个 index 级别比 range还低，与全表扫描是小巫见大巫。
 
-Extra字段显示Using temporary，表示的是需要使⽤临时表；Using filesort，表示的是需要执⾏排序操作。
+Extra字段显示Using temporary，表示的是需要使用临时表；Using filesort，表示的是需要执行排序操作。
 
 推荐阅读阿里巴巴开发手册MySQL部分：<a href="/attachments/阿里巴巴Java开发手册（华山版）.pdf" target="_blank">阿里巴巴Java开发手册（华山版）.pdf</a>

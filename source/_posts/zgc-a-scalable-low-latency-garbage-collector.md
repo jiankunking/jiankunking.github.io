@@ -8,15 +8,15 @@ tags:
   - JVM
   - Java
   - 原创
+  - 翻译
 abbrlink: 36241
 date: 2019-07-31 20:49:32
 ---
 
 > 翻译自：JEP 333
+> 地址：https://openjdk.java.net/jeps/333
 
 <!-- more -->
-
-> 地址：https://openjdk.java.net/jeps/333
 
 # 一、摘要
 Z垃圾收集器，也称为ZGC，是一个可伸缩的低延迟垃圾收集器。
