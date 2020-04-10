@@ -24,7 +24,7 @@
   </script>
 
   <meta name="description" content="MySQL实战45讲 学习笔记作者： 林晓斌">
-<meta name="keywords" content="读书笔记,原创,MySQL">
+<meta name="keywords" content="MySQL,读书笔记,原创">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL实战45讲 学习笔记">
 <meta property="og:url" content="https://jiankunking.com/45-lectures-on-mysql-in-practice-notes.html">
@@ -39,7 +39,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/45-lectures-on-mysql-in-practice-notes/InnoDB%E7%9A%84%E7%B4%A2%E5%BC%95%E7%BB%84%E7%BB%87%E7%BB%93%E6%9E%84.png">
 <meta property="og:image" content="https://jiankunking.com/images/45-lectures-on-mysql-in-practice-notes/redo_log%E7%8A%B6%E6%80%81%E5%9B%BE.png">
 <meta property="og:image" content="https://jiankunking.com/images/45-lectures-on-mysql-in-practice-notes/%E4%BC%9A%E8%AF%9DA%E3%80%81B%E7%9A%84%E6%89%A7%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE.png">
-<meta property="og:updated_time" content="2020-04-03T08:38:53.249Z">
+<meta property="og:updated_time" content="2020-04-10T01:09:21.656Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL实战45讲 学习笔记">
 <meta name="twitter:description" content="MySQL实战45讲 学习笔记作者： 林晓斌">
@@ -243,7 +243,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-03 16:38:53" itemprop="dateModified" datetime="2020-04-03T16:38:53+08:00">2020-04-03</time>
+                <time title="修改时间：2020-04-10 09:09:21" itemprop="dateModified" datetime="2020-04-10T09:09:21+08:00">2020-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -306,7 +306,7 @@
 
 <h1 id="基础架构：一条SQL查询语句是如何执行的？"><a href="#基础架构：一条SQL查询语句是如何执行的？" class="headerlink" title="基础架构：一条SQL查询语句是如何执行的？"></a>基础架构：一条SQL查询语句是如何执行的？</h1><p><img src="/images/45-lectures-on-mysql-in-practice-notes/mysql_logical_architecture_diagram.png" alt></p>
 <p><strong>大多数情况下我会建议你不要使用查询缓存，为什么呢？因为查询缓存往往弊大于利。</strong></p>
-<p>查询缓存的失效⾮常频繁，只要有对一个表的更新，这个表上所有的查询缓存都会被清空。因此很可能你费劲地把结果存起来，还没使用呢，就被一个更新全清空了。对于更新压力大的数据库来说，查询缓存的命中率会⾮常低。除⾮你的业务就是有一张静态表，很长时间才会更新一次。比如，一个系统配置表，那这张表上的查询才适合使用查询缓存。</p>
+<p>查询缓存的失效非常频繁，只要有对一个表的更新，这个表上所有的查询缓存都会被清空。因此很可能你费劲地把结果存起来，还没使用呢，就被一个更新全清空了。对于更新压力大的数据库来说，查询缓存的命中率会非常低。除非你的业务就是有一张静态表，很长时间才会更新一次。比如，一个系统配置表，那这张表上的查询才适合使用查询缓存。</p>
 <p>好在MySQL也提供了这种“按需使用”的方式。你可以将参数query_cache_type设置成DEMAND，这样对于默认的SQL语句都不使用查询缓存。而对于你确定要使用查询缓存的语句，可以用SQL_CACHE显式指定，像下面这个语句一样：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select SQL_CACHE * from T where ID=10；</span><br></pre></td></tr></table></figure>
 
@@ -346,7 +346,7 @@
 </ul>
 <p>这样你的临时库就跟误删之前的线上库一样了，然后你可以把表数据从临时库取出来，按需要恢复到线上库去。</p>
 <p>好了，说完了数据恢复过程，我们回来说说，为什么日志需要“两阶段提交”。这里不妨用反证法来进行解释。</p>
-<p>由于redo log和binlog是两个独⽴的逻辑，如果不用两阶段提交，要么就是先写完redo log再写binlog，或者采用反过来的顺序。我们看看这两种方式会有什么问题。</p>
+<p>由于redo log和binlog是两个独立的逻辑，如果不用两阶段提交，要么就是先写完redo log再写binlog，或者采用反过来的顺序。我们看看这两种方式会有什么问题。</p>
 <p>仍然用前面的update语句来做例子。假设当前ID=2的行，字段c的值是0，再假设执行update语句过程中在写完第一个日志后，第二个日志还没有写完期间发生了crash，会出现什么情况呢？</p>
 <ol>
 <li>先写redo log后写binlog。假设在redo log写完，binlog还没有写完的时候，MySQL进程异常重启。由于我们前面说过的，redo log写完之后，系统即使崩溃，仍然能够把数据恢复回来，所以恢复后这一行c的值是1。<br>但是由于binlog没写完就crash了，这时候binlog里面就没有记录这个语句。因此，之后备份日志的时候，存起来的binlog里面就没有这条语句。<br>然后你会发现，如果需要用这个binlog来恢复临时库的话，由于这个语句的binlog丢失，这个临时库就会少了这一次更新，恢复出来的这一行c的值就是0，与原库的值不同。</li>
@@ -378,14 +378,14 @@
 <p>不管是哈希还是有序数组，或者N叉树，它们都是不断迭代、不断优化的产物或者解决方案。数据库技术发展到今天，跳表、LSM树等数据结构也被用于引擎设计中，这里我就不再一一展开了。</p>
 <p><font color="DeepPink"><strong>你⼼里要有个概念，数据库底层存储的核⼼就是基于这些数据模型的。每碰到一个新数据库，我们需要先关注它的数据模型，这样才能从理论上分析出这个数据库的适用场景。</strong></font></p>
 <p>在MySQL中，索引是在存储引擎层实现的，所以并没有统一的索引标准，即不同存储引擎的索引的⼯作方式并不一样。而即使多个存储引擎支持同一种类型的索引，其底层的实现也可能不同。</p>
-<h2 id="InnoDB-的索引模型"><a href="#InnoDB-的索引模型" class="headerlink" title="InnoDB 的索引模型"></a>InnoDB 的索引模型</h2><p><strong>主键索引的叶子节点存的是整行数据。</strong>在InnoDB里，主键索引也被称为聚簇索引（clustered index）。<br><strong>⾮主键索引的叶子节点内容是主键的值。</strong>在InnoDB里，⾮主键索引也被称为二级索引（secondary index）。<br>根据上面的索引结构说明，我们来讨论一个问题：基于主键索引和普通索引的查询有什么区别？</p>
+<h2 id="InnoDB-的索引模型"><a href="#InnoDB-的索引模型" class="headerlink" title="InnoDB 的索引模型"></a>InnoDB 的索引模型</h2><p><strong>主键索引的叶子节点存的是整行数据。</strong>在InnoDB里，主键索引也被称为聚簇索引（clustered index）。<br><strong>非主键索引的叶子节点内容是主键的值。</strong>在InnoDB里，非主键索引也被称为二级索引（secondary index）。<br>根据上面的索引结构说明，我们来讨论一个问题：基于主键索引和普通索引的查询有什么区别？</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// 主键列为ID的表，表中有字段k，并且在k上有索引。</span><br><span class="line">create table T(</span><br><span class="line">id int primary key,</span><br><span class="line">k int not null,</span><br><span class="line">name varchar(16),</span><br><span class="line">index (k))engine=InnoDB;</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li>如果语句是select * from T where ID=500，即主键查询方式，则只需要搜索ID这棵B+树；</li>
 <li>如果语句是select * from T where k=5，即普通索引查询方式，则需要先搜索k索引树，得到ID的值为500，再到ID索引树搜索一次。这个过程称为回表。</li>
 </ul>
-<p>也就是说，基于⾮主键索引的查询需要多扫描一棵索引树。因此，我们在应用中应该尽量使用主键查询。</p>
+<p>也就是说，基于非主键索引的查询需要多扫描一棵索引树。因此，我们在应用中应该尽量使用主键查询。</p>
 <h2 id="索引维护"><a href="#索引维护" class="headerlink" title="索引维护"></a>索引维护</h2><p>B+树为了维护索引有序性，在插入新值的时候需要做必要的维护。</p>
 <blockquote>
 <p>你可能在一些建表规范里面见到过类似的描述，要求建表语句里一定要有自增主键。当然事⽆绝对，我们来分析一下哪些场景下应该使用自增主键，而哪些场景下不应该。</p>
@@ -395,7 +395,7 @@
 <p>也就是说，<font color="DeepPink"><strong>自增主键的插入数据模式，正符合了我们前面提到的递增插入的场景。每次插入一条新记录，都是追加操作，都不涉及到挪动其他记录，也不会触发叶子节点的分裂。</strong></font></p>
 <p>而有业务逻辑的字段做主键，则往往不容易保证有序插入，这样写数据成本相对较高。</p>
 <p>除了考虑性能外，我们还可以从存储空间的⻆度来看。假设你的表中确实有一个唯一字段，比如字符串类型的身份证号，那应该用身份证号做主键，还是用自增字段做主键呢？</p>
-<p>由于每个⾮主键索引的叶子节点上都是主键的值。如果用身份证号做主键，那么每个二级索引的叶子节点占用约20个字节，而如果用整型做主键，则只要4个字节，如果是长整型（bigint）则是8个字节。</p>
+<p>由于每个非主键索引的叶子节点上都是主键的值。如果用身份证号做主键，那么每个二级索引的叶子节点占用约20个字节，而如果用整型做主键，则只要4个字节，如果是长整型（bigint）则是8个字节。</p>
 <p>显然，主键长度越小，普通索引的叶子节点就越小，普通索引占用的空间也就越小。</p>
 <p>所以，从性能和存储空间方面考量，自增主键往往是更合理的选择。</p>
 <p>有没有什么场景适合用业务字段直接做主键的呢？还是有的。比如，有些业务的场景需求是这样的：</p>
@@ -452,7 +452,7 @@
 <p>如果只有session C自己被阻塞还没什么关系，但是之后所有要在表t上新申请MDL读锁的请求也会被session C阻塞。前面我们说了，所有对表的增删改查操作都需要先申请MDL读锁，就都被锁住，等于这个表现在完全不可读写了。</p>
 <p>如果某个表上的查询语句频繁，而且客户端有重试机制，也就是说超时后会再起一个新session再请求的话，这个库的线程很快就会爆满。</p>
 <p>你现在应该知道了，事务中的MDL锁，在语句执行开始时申请，但是语句结束后并不会马上释放，而会等到整个事务提交后再释放。</p>
-<h1 id="行锁"><a href="#行锁" class="headerlink" title="行锁"></a>行锁</h1><p><strong>在InnoDB事务中，行锁是在需要的时候才加上的，但并不是不需要了就⽴刻释放，而是要等到事务结束时才释放</strong>。这个就是两阶段锁协议。</p>
+<h1 id="行锁"><a href="#行锁" class="headerlink" title="行锁"></a>行锁</h1><p><strong>在InnoDB事务中，行锁是在需要的时候才加上的，但并不是不需要了就立刻释放，而是要等到事务结束时才释放</strong>。这个就是两阶段锁协议。</p>
 <p>知道了这个设定，对我们使用事务有什么帮助呢？那就是，<font color="DeepPink"><strong>如果你的事务中需要锁多个行，要把最可能造成锁冲突、最可能影响并发度的锁尽量往后放。</strong></font>我给你举个例子。</p>
 <p>假设你负责实现一个电影票在线交易业务，顾客A要在影院B购买电影票。我们简化一点，这个业务需要涉及到以下操作：</p>
 <ol>
@@ -549,7 +549,7 @@
 <p>这里需要注意的是，我们在这篇文章里讨论的是没有过滤条件的count(*)，如果加了where 条件的话，MyISAM表也是不能返回得这么快的。</p>
 <p>那为什么<strong>InnoDB不跟MyISAM一样，也把数字存起来呢？</strong><br>这是因为即使是在同一个时刻的多个查询，由于多版本并发控制（MVCC）的原因，InnoDB表“应该返回多少行”也是不确定的。</p>
 <p>由于InnoDB要支持事务，从而导致InnoDB表不能把count(*)直接存起来，然后查询的时候直接返回形成的。</p>
-<p>所谓以子之⽭攻子之盾，现在我们就利用“事务”这个特性，把问题解决掉。</p>
+<p>所谓以子之矛攻子之盾，现在我们就利用“事务”这个特性，把问题解决掉。</p>
 <p><img src="/images/45-lectures-on-mysql-in-practice-notes/%E4%BC%9A%E8%AF%9DA%E3%80%81B%E7%9A%84%E6%89%A7%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE.png" alt></p>
 <p>我们来看下现在的执行结果。虽然会话B的读操作仍然是在T3执行的，但是因为这时候更新事务还没有提交，所以计数值加1这个操作对会话B还不可见。</p>
 <p>因此，会话B看到的结果里， 查计数值和“最近100条记录”看到的结果，逻辑上就是一致的。</p>
@@ -695,19 +695,19 @@
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\fun-talk-about-network-protocols.html" rel="bookmark">趣谈网络协议 学习笔记</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\linux-performance-optimization-practices-notes.html" rel="bookmark">Linux性能优化实战 笔记</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
+      <div class="popular-posts-title"><a href="\mysql-innodb-partition-table.html" rel="bookmark">MySQL InnoDB存储引擎：分区表</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\mysql-innodb-row-lock-algorithm.html" rel="bookmark">MySQL InnoDB存储引擎：行锁的3种算法</a></div>
     </li>
   </ul>
 
@@ -751,9 +751,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
               <a href="/tags/读书笔记/" rel="tag"># 读书笔记</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
-              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
           </div>
 
         
