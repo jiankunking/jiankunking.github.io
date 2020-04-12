@@ -1,5 +1,5 @@
 ---
-title: SQL union vs or 性能
+title: SQL UNION vs OR 性能
 categories:
   - MySQL
 tags:
