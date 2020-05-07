@@ -70,6 +70,8 @@ date: 2017-02-02 08:22:15
 58. ConcurrentHashMap put的时候加锁的是数组上的元素 还是啥？
 59. Concurrenthashmap中用到的优化技巧？
 60. LRU如何实现？
+61. 为什么Concurrenthashmap扩容是安全的？
+62. LinkedHashMap和HashMap 区别？
 
 # MySQL部分
 1. mysql 时间 比较无效 原因？
@@ -141,6 +143,7 @@ mysql通过innodb引擎的话，是通过表锁还是行锁？
 5. 有什么知名的开源apm(Application Performance Management)工具吗？
 6. pinpoint 原理？
 7. consul template作用？如何与prometheus交互的？
+
 
 # 金融
 1. 同业拆借

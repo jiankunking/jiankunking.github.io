@@ -373,21 +373,24 @@ swapon -a
 echo "vm.swappiness = 1">> /etc/sysctl.conf 
 sysctl -p  (执行这个使其生效，不用重启)
 ```
-66、软连接
+65、软连接
 将/data/blog/wordpress/nginx_conf/2_jiankunking.com.key（真实存在） 软连接到/etc/nginx/目录下
 ```
 ln -s /data/blog/wordpress/nginx_conf/2_jiankunking.com.key  /etc/nginx/
 ```
-67、移动到文件末尾
+66、移动到文件末尾
 可以按 shift+g  即可跳到文件底部
 要返回文件顶部的时候 按 gg即可
 shift+$是移动到行尾，0是移动到行首
-
-
-68、字符替换
-# 86替换成 214
+67、字符替换
+86替换成 214
 ```
 sed -i "s/10.133.0.86/10.138.25.214/g"  lishan.txt
+```
+68、 粗暴安装openjdk
+```
+yum install java-1.8.0-openjdk* -y
+sudo apt-get install default-jdk -y
 ```
 # Vi/Vim
 1、 粘贴时行首出现很多缩进和空格
@@ -483,7 +486,7 @@ sudo sh docker-netstat.sh demo
 
 第一步可以用docker top 找到pid
 
-151、当 OOM 发生时，系统会把相关的 OOM 信息，记录到日志中。所以，我们可以在终端中执行 dmesg 命令，查看系统日志，并定位 OOM 相关的日志。（即使docker容器OOM后，也可以查看）
+13、当 OOM 发生时，系统会把相关的 OOM 信息，记录到日志中。所以，我们可以在终端中执行 dmesg 命令，查看系统日志，并定位 OOM 相关的日志。（即使docker容器OOM后，也可以查看）
 
 # Idea
 
@@ -493,6 +496,10 @@ ctrl + shift + 减号
 ctrl + shift + 加号
 3、 idea 回到调用方法
 ctrl + alt + f7
+4、查找接口的实现类
+ctrl + alt +B
+5、查看类或接口的继承关系
+ctrl + h
 
 # Kafka
 
@@ -609,7 +616,7 @@ mvn clean package  -Dmaven.test.skip=true
 ```
 nginx -t
 ```
-# Mysql
+# MySQL
 
 1、查看mysql表分区
 ```
@@ -637,7 +644,7 @@ SET FOREIGN_KEY_CHECKS=1;
 
 1、登陆MongoDB
 ```
-sudo ssh jiankunkingadmin@10.138.40.221
+sudo ssh jiankunking@10.138.40.221
 sudo docker ps
 sudo docker exec -it 83aa14b64901 /bin/bash
 mongo
@@ -677,6 +684,10 @@ sh bin/elasticsearch -d
 3、elasticsearch 查看集群所有设置（包含默认的）
 ```
 http://10.138.16.191:9200/_cluster/settings?include_defaults=true
+```
+4、elasticsearch设置密码
+```
+./bin/elasticsearch-setup-passwords interactive
 ```
 # Prometheus
 

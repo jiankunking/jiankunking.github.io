@@ -144,6 +144,10 @@ Elasticsearch集群在部署的时候，一般都是提前估计好容量、机�
 > 前提：能要求使用方，按照某种规则打印日志。
 > 监控发展：监控基本就是先打通链路trace，然后再在上报信息或者日志信息中，加强业务方面标识，即给监控添加业务维度方面的视角。
 
+# 演进
+
+![](/images/log-service-architecture-design/日志解析.png)
+
 # 其它
 ## DaemonSet
 以DaemonSet方式部署Filebeat来收集日志，其实收集也是宿主机/var/lib/docker/containers目录下的日志。
