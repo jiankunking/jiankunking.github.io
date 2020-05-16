@@ -114,7 +114,26 @@
 <li><p>编译,测试。</p>
 </li>
 </ul>
-]]></content>
+<p>临时变量往往为数众多,甚至会使提炼工作举步维艰。这种情况下,我会尝试先运用Replace Temp with Query(减少临时变量。如果即使这么做了提炼依旧困难重重,我就会动用Replace Method with Method Object,这个重构手法不在乎 代码中有多少临时变量,也不在乎你如何使用它们。</p>
+<h2 id="Inline-Method-内联方法"><a href="#Inline-Method-内联方法" class="headerlink" title="Inline Method 内联方法"></a>Inline Method 内联方法</h2><p>一个函数的本体与名称同样清楚易懂。</p>
+<p>在函数调用点插入函数本体,然后移除该函数。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">int getRating()&#123;</span><br><span class="line">	return (moreThanFiveLateDeliveries())? 2: 1;</span><br><span class="line">&#125;</span><br><span class="line">boolean moreThanFiveLateDeliveries()&#123;</span><br><span class="line">	return numberofLateDeliveries &gt;5:</span><br><span class="line">&#125;</span><br><span class="line">    ||</span><br><span class="line">    ||</span><br><span class="line">    \/</span><br><span class="line">int getRating()&#123;</span><br><span class="line">	return(numberofLateDeliveries &gt;5)?2: 1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Inline-Temp-内联临时变量"><a href="#Inline-Temp-内联临时变量" class="headerlink" title="Inline Temp 内联临时变量"></a>Inline Temp 内联临时变量</h2><p>你有一个临时变量,只被一个简单表达式赋值一次,而它妨碍了其他重构手法。</p>
+<p><strong>将所有对该变量的引用动作,替换为对它赋值的那个表达式自身。</strong></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">double basePrice= anorder.basePrice();</span><br><span class="line">return (basePrice&gt;1000)</span><br><span class="line">    ||</span><br><span class="line">    ||</span><br><span class="line">    \/</span><br><span class="line">return (anorder. basePrice()&gt; 1000)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Replace-Temp-with-Query-用查询方法代替临时变量"><a href="#Replace-Temp-with-Query-用查询方法代替临时变量" class="headerlink" title="Replace Temp with Query 用查询方法代替临时变量"></a>Replace Temp with Query 用查询方法代替临时变量</h2><p>你的程序以一个临时变量保存某一表达式的运算结果。</p>
+<p>将这个表达式提炼到一个独立函数中。将这个临时变量的所有引用点替换为对新函数的调用。此后,新函数就可被其他函数使用。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">double basePrice =quantity *_itemPrice:</span><br><span class="line">	if(baseprice&gt;1000)</span><br><span class="line">		return baseprice *0.95</span><br><span class="line">	else</span><br><span class="line">		return baseprice *0.98;</span><br></pre></td></tr></table></figure>
+
+<p>替换为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">if(basePrice())&gt; 1000</span><br><span class="line">	return baseprice() *0. 95:</span><br><span class="line">else</span><br><span class="line">	return basePrice()*0.98</span><br><span class="line"></span><br><span class="line">double basePrice()&#123;</span><br><span class="line">	return _quantity*_itemPrice;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="动机-1"><a href="#动机-1" class="headerlink" title="动机"></a>动机</h3><p><font color="DeepPink"><strong>临时变量的问题在于:它们是暂时的,而且只能在所属函数内使用。由于临时变量只在所属函数内可见,所以它们会驱使你写出更长的函数,因为只有这样你才能访问到需要的临时变量。如果把临时变量替换为一个查询,那么同一个类中的所有函数都将可以获得这份信息。这将带给你极大帮助,使你能够为这个类编写更清晰的代码。</strong></font></p>
+<p>Replace Temp with Query往往是你运用Extract Method之前必不可少的个步骤。局部变量会使代码难以被提炼,所以你应该尽可能把它们替换为查询式。</p>
+<p>这个重构手法较为简单的情况是:临时变量只被赋值一次,或者赋值给临时变量的表达式不受其他条件影响。其他情况比较棘手,但也有可能发生。你可能需要先运用Split Temporary Variable或Separate Query from Modifier使情况变得简单一些,然后再替换临时变量。如果你想替换的临时变量是用来收集结果的,就需要将某些程序逻辑(例如循环)复制到查询函数去。</p>
+<h3 id="做法-1"><a href="#做法-1" class="headerlink" title="做法"></a>做法</h3>]]></content>
       <categories>
         <category>Refactoring</category>
       </categories>
@@ -590,8 +609,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Performance</tag>
+        <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Size</tag>
@@ -1329,8 +1348,8 @@
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>原创</tag>
       </tags>
   </entry>
@@ -1739,8 +1758,8 @@
         <category>Interview</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -3746,8 +3765,8 @@ use one vs other -->
         <category>Network</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -3857,8 +3876,8 @@ use one vs other -->
         <category>Linux</category>
       </categories>
       <tags>
-        <tag>Network</tag>
         <tag>Linux</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -7704,8 +7723,8 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>Design</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
@@ -7993,8 +8012,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>GC</tag>
@@ -9570,8 +9589,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9644,8 +9663,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9696,8 +9715,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9719,8 +9738,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9761,8 +9780,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
