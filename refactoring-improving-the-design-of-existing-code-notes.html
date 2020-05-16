@@ -31,7 +31,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《重构改善既有代码的设计》  作者：MartinFowler 出版时间：2015-08">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2020-05-16T04:39:32.197Z">
+<meta property="og:updated_time" content="2020-05-16T05:08:43.604Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="重构：改善既有代码的设计 笔记">
 <meta name="twitter:description" content="本文整理自：《重构改善既有代码的设计》  作者：MartinFowler 出版时间：2015-08">
@@ -228,7 +228,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2020-05-16 10:51:15 / 修改时间：12:39:32" itemprop="dateCreated datePublished" datetime="2020-05-16T10:51:15+08:00">2020-05-16</time>
+              <time title="创建时间：2020-05-16 10:51:15 / 修改时间：13:08:43" itemprop="dateCreated datePublished" datetime="2020-05-16T10:51:15+08:00">2020-05-16</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -267,14 +267,14 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>1.1k</span>
+              <span>1.9k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>2 分钟</span>
             </span>
 
         </div>
@@ -306,6 +306,13 @@
 </blockquote>
 <h3 id="复审代码时重构"><a href="#复审代码时重构" class="headerlink" title="复审代码时重构"></a>复审代码时重构</h3><p>如果是比较大的设计复审工作，那么在一个较大团队内保留多种观点通常会更好一些。此时直接展示代码往往不是最佳办法。我喜欢运用 UML 示意图展现设计，并以 CRC 卡展示软件情节。换句话说，我会和某个团队进行设计复审，而和单个复审者进行代码复审。</p>
 <p>极限编程[ Beck ,  XP ]中的“结对编程”形式，把代码复审的积极性发挥到了极致。一旦采用这种形式，所有正式开发任务都由两名开发者在同一台机器上进行。这样便在开发过程中形成随时进行的代码复审工作，而重构也就被包含在开发过程内了。</p>
+<h2 id="重构的难题"><a href="#重构的难题" class="headerlink" title="重构的难题"></a>重构的难题</h2><h3 id="修改接口"><a href="#修改接口" class="headerlink" title="修改接口"></a>修改接口</h3><p>如今的问题是：该如何面对那些必须修改“已发布接口”的重构手法？</p>
+<p>简言之，如果重构手法改变了已发布接口，你必须同时维护新旧两个接口，直到所有用户都有时间对这个变化做出反应。幸运的是，这不太困难。你通常都有办法把事情组织好，让旧接口继续工作。请尽量这么做：让旧接口调用新接口。当你要修改某个函数名称时，请留下旧函数，让它调用新函数。千万不要复制函数实现，那会让你陷入重复代码的泥悼中难以自拔。你还应该使用 Java 提供的 deprecation (不建议使用）设施，将旧接口标记为 deprecated 。这么一来你的调用者就会注意到它了。</p>
+<p>这个过程的一个好例子就是 Java 容器类（集合类 ， collection classes)。 Java 2的新容器取代了原先一些容器。当 Java 2容器发布时， JavaSoft 花了很大力气来为开发者提供一条顺利迁徙之路。</p>
+<p>“保留旧接口”的办法通常可行，但很烦人。起码在一段时间里你必须构造并维护一些额外的函数。它们会使接口变得复杂，使接口难以使用。还好我们有另一个选择：不要发布接口。当然我不是说要完全禁止，因为很明显你总得发布一些接口。如果你正在建造供外部使用的 API (就像 Sim 公司所做的那样），就必须发布接口。之所以说尽量不要发布，是因为我常常看到一些开发团队公开了太多接口。我曾经看到一支三人团队这么工作：每个人都向另外两人公开发布接口。这使他们不得不经常来回维护接口，而其实他们原本可以直換进入程序库，径行修改自己管理的那一部分，那会轻松许多。过度强调代码所有权的团队常常会犯这种错误。发布接口很有用，但也有代价。所以除非真有必要，不要发布接口。这可能意味需要改变你的代码所有权观念，让每个人都可以修改别人的代码，以适应接口的改动。以结对编程的方式完成这一切通常是个好主意。</p>
+<blockquote>
+<p>不要过早发布接口。请修改你的代码所有权政策，使重构更顺畅。</p>
+</blockquote>
 
     </div>
 
@@ -468,7 +475,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#重构，第一个案例"><span class="nav-number">1.</span> <span class="nav-text">重构，第一个案例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重构原则"><span class="nav-number">2.</span> <span class="nav-text">重构原则</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#何谓重构"><span class="nav-number">2.1.</span> <span class="nav-text">何谓重构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#何时重构"><span class="nav-number">2.2.</span> <span class="nav-text">何时重构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次法则"><span class="nav-number">2.2.1.</span> <span class="nav-text">三次法则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#复审代码时重构"><span class="nav-number">2.2.2.</span> <span class="nav-text">复审代码时重构</span></a></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#重构，第一个案例"><span class="nav-number">1.</span> <span class="nav-text">重构，第一个案例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重构原则"><span class="nav-number">2.</span> <span class="nav-text">重构原则</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#何谓重构"><span class="nav-number">2.1.</span> <span class="nav-text">何谓重构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#何时重构"><span class="nav-number">2.2.</span> <span class="nav-text">何时重构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次法则"><span class="nav-number">2.2.1.</span> <span class="nav-text">三次法则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#复审代码时重构"><span class="nav-number">2.2.2.</span> <span class="nav-text">复审代码时重构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重构的难题"><span class="nav-number">2.3.</span> <span class="nav-text">重构的难题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#修改接口"><span class="nav-number">2.3.1.</span> <span class="nav-text">修改接口</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -551,7 +558,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">602k</span>
+    <span title="站点总字数">603k</span>
 </div>
 
         
