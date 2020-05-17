@@ -1,5 +1,5 @@
 ---
-title: Arthas 学习笔记
+title: Arthas 笔记
 categories:
   - Java
 tags:
@@ -11,7 +11,7 @@ abbrlink: 37344
 date: 2019-08-02 09:11:35
 ---
 
-阿里 Arthas 学习笔记
+阿里 Arthas 读书笔记
 
 <!-- more -->
 

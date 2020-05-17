@@ -657,9 +657,10 @@ mongo
 kubectl exec -it --namespace=kube-system  g-lsb-proxy-nginx-r7zfl-2522744936-11rld /bin/sh
 kubectl exec -it g-lsb-proxy-nginx-r7zfl-2522744936-9tz5k -n kube-system  /bin/bash
 ```
-2、查看k8s pod状态
+2、查看k8s pod详情
 ```
 kubectl describe pods -n  console gateway-7d89b6f6fb-dj4qp
+kubectl get pod logging-filebeat-filebeat-v1-0-5565m -n kube-system -o json
 ```
 # Elasticsearch
 1、索引备份

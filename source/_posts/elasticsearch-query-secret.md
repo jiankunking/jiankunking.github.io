@@ -275,4 +275,4 @@ Elasticsearch的索引思路:
 
 ## 原文
 
-[Elasticsearch 学习笔记](https://neway6655.github.io/elasticsearch/2015/09/11/elasticsearch-study-notes.html)
+[Elasticsearch 读书笔记](https://neway6655.github.io/elasticsearch/2015/09/11/elasticsearch-study-notes.html)

@@ -5,6 +5,11 @@ date: 2019-08-01 11:20:12
 
 \#\#\#\# Programmer
 
+\#\#\#\# Industry Experience
+
+\- ERP
+\- PaaS
+
 \#\#\#\# Skills
 
 \- Java, Golang, C#, JavaScript, Python

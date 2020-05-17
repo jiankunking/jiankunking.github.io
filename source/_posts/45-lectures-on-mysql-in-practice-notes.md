@@ -1,5 +1,5 @@
 ---
-title: MySQL实战45讲 学习笔记
+title: MySQL实战45讲 笔记
 abbrlink: 18379
 date: 2020-02-06 15:15:11
 categories:
@@ -10,7 +10,7 @@ tags:
   - 原创
 ---
 
-MySQL实战45讲 学习笔记
+MySQL实战45讲 笔记
 作者： 林晓斌
 
 <!-- more -->
