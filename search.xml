@@ -268,7 +268,31 @@
 <p>你应该常常问自己:如果断言所指示的约束条件不能满足,代码是否仍能正常运行?如果可以,就把断言拿掉。</p>
 <p>另外,还需要注意断言中的重复代码。它们和其他任何地方的重复代码一样不好闻。你可以大胆使用Extract Method去掉那些重复代码。</p>
 <h1 id="简化函数调用"><a href="#简化函数调用" class="headerlink" title="简化函数调用"></a>简化函数调用</h1><p>关于缩减参数列的重构手法, Doug Lea对我提出了一个警告:并发编程往往需要使用较长的参数列,因为这样你可以保证传递给函数的参数都是不可被修改的, 例如内置型对象和值对象一定是不可变的。通常,你可以使用不可变对象取代这样的长参数列,但另一方面你也必须对此类重构保持谨慎。</p>
-]]></content>
+<h2 id="Separate-Query-from-Modifier-将查询函数和修改函数分离"><a href="#Separate-Query-from-Modifier-将查询函数和修改函数分离" class="headerlink" title="Separate Query from Modifier 将查询函数和修改函数分离"></a>Separate Query from Modifier 将查询函数和修改函数分离</h2><p>某个函数既返回对象状态值,又修改对象状态。<br>建立两个不同的函数,其中一个负责查询,另一个负责修改。</p>
+<p><img src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%B0%86%E6%9F%A5%E8%AF%A2%E5%87%BD%E6%95%B0%E5%92%8C%E4%BF%AE%E6%94%B9%E5%87%BD%E6%95%B0%E5%88%86%E7%A6%BB.png" alt></p>
+<h3 id="动机-8"><a href="#动机-8" class="headerlink" title="动机"></a>动机</h3><p>如果某个函数只是向你提供一个值,没有任何看得到的副作用,那么这是个很有价值的东西。你可以任意调用这个函数,也可以把调用动作搬到函数的其他地方。</p>
+<p>简而言之,需要操心的事情少多了。明确表现出“有副作用”与“无副作用”两种函数之间的差异,是个很好的想法。下面是一条好规则:<font color="DeepPink"><strong>任何有返回值的函数,都不应该有看得到的副作用。</strong></font>有些程序员甚至将此作为一条必须遵守的规则。就像对待任何东西一样,我并不绝对遵守它,不过我总是尽量遵守,而它也回报我很好的效果。</p>
+<p><font color="DeepPink"><strong>如果你遇到一个“既有返回值又有副作用”的函数,就应该试着将查询动作从修改动作中分割出来。</strong></font></p>
+<h3 id="并发问题"><a href="#并发问题" class="headerlink" title="并发问题"></a>并发问题</h3><p>如果你在一个多线程系统中工作,肯定知道这样一个重要的惯用手法:在同一个动作中完成检查和赋值。这是否和Separate Query from Modifier互相矛盾呢?我曾经和Doug Lea讨论过这个问题,并得出结论:两者并不矛盾,但你需要做一些额外工作。将查询动作和修改动作分开来仍然是很有价值的。但你需要保留第三个函数来同时做这两件事。这个“查询一修改”函数将调用各自独立的查询函数和修改函数,并被声明为synchronized。如果查询函数和修改函数未被声明为synchronized,那么你还应该将它们的可见范围限制在包级别或private级别。这样,你就可以拥有一个安全、同步的操作,它由两个较易理解的函数组成。这两个较低层函数也可以用于其他场合。</p>
+<h2 id="Replace-Constructor-with-Factory-Method-以工厂函数取代构造函数"><a href="#Replace-Constructor-with-Factory-Method-以工厂函数取代构造函数" class="headerlink" title="Replace Constructor with Factory Method 以工厂函数取代构造函数"></a>Replace Constructor with Factory Method 以工厂函数取代构造函数</h2><p>你希望在创建对象时不仅仅是做简单的建构动作。<br>将构造函数替换为工厂函数。</p>
+<p><img src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%B7%A5%E5%8E%82%E5%87%BD%E6%95%B0%E5%8F%96%E4%BB%A3%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0.png" alt></p>
+<h3 id="动机-9"><a href="#动机-9" class="headerlink" title="动机"></a>动机</h3><p>使用Replace Constructor with Factory Method的最显而易见的动机,就是在派生子类的过程中以工厂函数取代类型码。你可能常常需要根据类型码创建相应的对象,现在,创建名单中还得加上子类,那些子类也是根据类型码来创建。然而由于构造函数只能返回单一类型的对象,因此你需要将构造函数替换为工厂函数。此外,如果构造函数的功能不能满足你的需要,也可以使用工厂函数来代替它。工厂函数也是Change Value to Reference的基础。你也可以令你的工厂函数根据参数的个数和类型,选择不同的创建行为。</p>
+<h2 id="Replace-Error-Code-with-Exception-以异常取代错误码"><a href="#Replace-Error-Code-with-Exception-以异常取代错误码" class="headerlink" title="Replace Error Code with Exception 以异常取代错误码"></a>Replace Error Code with Exception 以异常取代错误码</h2><p>某个函数返回一个特定的代码,用以表示某种错误情况。<br>改用异常。</p>
+<p><img src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%BC%82%E5%B8%B8%E4%BB%A3%E6%9B%BF%E9%94%99%E8%AF%AF%E7%A0%81.png" alt></p>
+<h3 id="做法-5"><a href="#做法-5" class="headerlink" title="做法"></a>做法</h3><ul>
+<li><font color="DeepPink"><strong>决定应该抛出受控(checked)异常还是非受控(unchecked)异常。</strong></font><ul>
+<li>→如果调用者有责任在调用前检查必要状态,就抛出非受控异常。</li>
+<li>→如果想拋出受控异常,你可以新建一个异常类,也可以使用现有的异常类。</li>
+</ul>
+</li>
+<li>找到该函数的所有调用者,对它们进行相应调整,让它们使用异常。<ul>
+<li>→如果函数抛出非受控异常,那么就调整调用者,使其在调用函数前做适当检查。每次修改后,编译并测试。</li>
+<li>→如果函数拋出受控异常,那么就调整调用者,使其在try区段中调用该函数。</li>
+</ul>
+</li>
+<li>修改该函数的签名,令它反映出新用法。</li>
+</ul>
+<h1 id="处理概括关系"><a href="#处理概括关系" class="headerlink" title="处理概括关系"></a>处理概括关系</h1>]]></content>
       <categories>
         <category>Refactoring</category>
       </categories>
@@ -744,8 +768,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>原创</tag>
+        <tag>Performance</tag>
         <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Size</tag>
@@ -1483,8 +1507,8 @@
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>原创</tag>
       </tags>
   </entry>
@@ -1893,8 +1917,8 @@
         <category>Interview</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>读书笔记</tag>
+        <tag>Performance</tag>
       </tags>
   </entry>
   <entry>
@@ -3900,8 +3924,8 @@ use one vs other -->
         <category>Network</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>读书笔记</tag>
+        <tag>Performance</tag>
       </tags>
   </entry>
   <entry>
@@ -4011,8 +4035,8 @@ use one vs other -->
         <category>Linux</category>
       </categories>
       <tags>
-        <tag>Linux</tag>
         <tag>Network</tag>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -7858,8 +7882,8 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>Design</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
@@ -8147,8 +8171,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>读书笔记</tag>
+        <tag>Performance</tag>
         <tag>Java</tag>
         <tag>JVM</tag>
         <tag>GC</tag>
@@ -9009,9 +9033,9 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Architecture</tag>
-        <tag>Distributed</tag>
         <tag>Fescar</tag>
         <tag>Seata</tag>
+        <tag>Distributed</tag>
         <tag>Transaction</tag>
       </tags>
   </entry>
@@ -9724,8 +9748,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9798,8 +9822,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9850,8 +9874,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9873,8 +9897,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9915,8 +9939,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
