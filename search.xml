@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Go net/http 超时解析（图）</title>
+    <url>/go-net-http-timeout-sequence-diagram.html</url>
+    <content><![CDATA[<p>服务器超时</p>
+<p><img src="/images/go-net-http-timeout-sequence-diagram/%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%B6%85%E6%97%B6.png" alt></p>
+<p>客户端超时</p>
+<p><img src="/images/go-net-http-timeout-sequence-diagram/%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B6%85%E6%97%B6.png" alt></p>
+<p>图片来自：<a href="https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/" target="_blank" rel="noopener">https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>重构：改善既有代码的设计 笔记</title>
     <url>/refactoring-improving-the-design-of-existing-code-notes.html</url>
     <content><![CDATA[<p>本文整理自：《重构改善既有代码的设计》 </p>
@@ -292,7 +302,32 @@
 </li>
 <li>修改该函数的签名,令它反映出新用法。</li>
 </ul>
-<h1 id="处理概括关系"><a href="#处理概括关系" class="headerlink" title="处理概括关系"></a>处理概括关系</h1>]]></content>
+<h1 id="处理概括关系"><a href="#处理概括关系" class="headerlink" title="处理概括关系"></a>处理概括关系</h1><p>有一批重构手法专门用来处理类的概括关系(generalization,即继承关系),其中主要是将函数上下移动于继承体系之中。Pull Up Field和Pull Up Method都用于将特性向继承体系的上端移动,Push Down Method和Push Down Field则将特性向继承体系的下端移动。构造函数比较难以向上拉动,因此专门有一个Pull Up Constructor Body处理它。我们不会将构造函数往下推,因为Replace Constructor with Factory Method通常更管用。</p>
+<p>Pull Up Method过程中最麻烦的一点就是:<font color="DeepPink"><strong>被提升的函数可能会引用只出现于子类而不出现于超类的特性。如果被引用的是个函数,你可以将该函数也一同提升到超类,或者在超类中建立一个抽象函数。在此过程中,你可能需要修改某个函数的签名,或建立一个委托函数。</strong></font></p>
+<p><font color="DeepPink"><strong>如果两个函数相似但不相同,你或许可以先借助Form Template Method构造出相同的函数,然后再提升它们。</strong></font></p>
+<h2 id="Form-Template-Method-塑造模板函数"><a href="#Form-Template-Method-塑造模板函数" class="headerlink" title="Form Template Method 塑造模板函数"></a>Form Template Method 塑造模板函数</h2><p>你有一些子类,其中相应的某些函数以相同顺序执行类似的操作,但各个操作的细节上有所不同。<br>将这些操作分别放进独立函数中,并保持它们都有相同的签名,于是原函数也就变得相同了。然后将原函数上移至超类。</p>
+<p><img src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%A1%91%E9%80%A0%E6%A8%A1%E6%9D%BF%E5%87%BD%E6%95%B0.png" alt></p>
+<h3 id="动机-10"><a href="#动机-10" class="headerlink" title="动机"></a>动机</h3><p>继承是避免重复行为的一个强大工具。无论何时,只要你看见两个子类之中有类似的函数,就可以把它们提升到超类。但是如果这些函数并不完全相同该怎么办?我们仍有必要尽量避免重复,但又必须保持这些函数之间的实质差异。</p>
+<p>常见的一种情况是:<font color="DeepPink"><strong>两个函数以相同顺序执行大致相近的操作,但是各操作不完全相同。这种情况下我们可以将执行操作的序列移至超类,并借助多态保证各操作仍得以保持差异性。这样的函数被称为Template Method(模板函数）</strong></font></p>
+<h2 id="Replace-Inheritance-with-Delegation-以委托取代继承"><a href="#Replace-Inheritance-with-Delegation-以委托取代继承" class="headerlink" title="Replace Inheritance with Delegation 以委托取代继承"></a>Replace Inheritance with Delegation 以委托取代继承</h2><p>某个子类只使用超类接口中的一部分,或是根本不需要继承而来的数据。<br>在子类中新建一个字段用以保存超类;调整子类函数,令它改而委托超类;然后去掉两者之间的继承关系。</p>
+<p><img src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%A7%94%E6%89%98%E5%8F%96%E4%BB%A3%E7%BB%A7%E6%89%BF.png" alt></p>
+<h3 id="动机-11"><a href="#动机-11" class="headerlink" title="动机"></a>动机</h3><p>继承是个好东西,但有时候它并不是你要的。你常常会遇到这样的情况:一开始继承了一个类,随后发现超类中的许多操作并不真正适用于子类。这种情况下,你所拥有的接口并未真正反映出子类的功能。或者,你可能发现你从超类中继承了大堆子类并不需要的数据,抑或你可能发现超类中的某些protected函数对子类并没有什么意义。</p>
+<p>你可以选择容忍,并接受传统说法:子类可以只使用超类功能的一部分。但这样做的结果是:代码传达的信息与你的意图南辕北辙—这是一种混淆,你应该将它去除。</p>
+<p><font color="DeepPink"><strong>如果以委托取代继承,你可以更清楚地表明:你只需要受托类的一部分功能。接口中的哪一部分应该被使用,哪一部分应该被忽略,完全由你主导控制。</strong></font>这样做的成本则是需要额外写出委托函数,但这些函数都非常简单,极少可能出错。</p>
+<h2 id="Replace-Delegation-with-Inheritance-以继承取代委托"><a href="#Replace-Delegation-with-Inheritance-以继承取代委托" class="headerlink" title="Replace Delegation with Inheritance 以继承取代委托"></a>Replace Delegation with Inheritance 以继承取代委托</h2><p>你在两个类之间使用委托关系,并经常为整个接口编写许多极简单的委托函数。<br>让委托类继承受托类。</p>
+<h3 id="动机-12"><a href="#动机-12" class="headerlink" title="动机"></a>动机</h3><p>本重构与Replace Inheritance with Delegation恰恰相反。如果你发现自己需要使用受托类中的所有函数,并且费了很大力气编写所有极简的委托函数,本重构可以帮助你轻松回头使用继承。</p>
+<p>两条告诫需牢记于心。首先,<font color="DeepPink"><strong>如果你并没有使用受托类的所有函数,那么就不应该使用Replace Delegation With Inheritance,因为子类应该总是遵循超类的接口。</strong></font>如果过多的委托函数让你烦心,你有别的选择:你可以通过Remove Middle Man让客户端自己调用受托函数,也可以使用Extract Superclass将两个类接口相同的部分提炼到超类中,然后让两个类都继承这个新的超类;你还可以用类似的手法使用Extract Interface。</p>
+<p>另一种需要当心的情况是:受托对象被不止一个其他对象共享,而且受托对象是可变的。在这种情况下,你就不能将委托关系替换为继承关系,因为这样就无法再共享数据了。数据共享是必须由委托关系承担的一种责任,你无法把它转给继承关系。如果受托对象是不可变的,数据共享就不成问题,因为你大可放心地复制对象,谁都不会知道。</p>
+<h1 id="大型重构"><a href="#大型重构" class="headerlink" title="大型重构"></a>大型重构</h1><p>要指出继承体系是否承担了两项不同的责任并不困难:<font color="DeepPink"><strong>如果继承体系中的某一特定层级上的所有类,其子类名称都以相同的形容词开始,那么这个体系很可能就是承担着两项不同的责任。</strong></font></p>
+<h1 id="重构，复用与现实"><a href="#重构，复用与现实" class="headerlink" title="重构，复用与现实"></a>重构，复用与现实</h1><p>关于研究,Ralph Johnson给我上了重要的一课:如果有人(文章读者或是演讲会听众)说“我不懂”或者不打算接受它,那就是我们的失败。我们有责任努力发展自己的思想,并将它清楚表达出来。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>正如我所说,这是一种可以学习的技术。那么,应该如何学习呢?</p>
+<ul>
+<li>随时挑一个目标。某个地方的代码开始发臭了,你就应该将问题解决掉。你应该朝目标前进,达成目标后就停止。你之所以重构,不是为了探索真善美(至少不全是),而是为了让你的系统更容易被人理解,为了防止程序变得散乱。</li>
+<li><font color="DeepPink"><strong>没把握就停下来。朝目标前进的过程中,可能会有这样的时候:你无法证明自己所做的一切能够保持程序原本的语义。此时你就应该停下来。如果代码已经改善了一些,就发布你的成果;如果没有,就撤销所有修改。</strong></font></li>
+<li>学习原路返回。重构的原则不好学,而且很容易遗失准头。就连我自己,也经常忘记这些原则。我有时会连续做两三项甚至四项重构,而没有每次执行测试用例。当然那是因为我完全相信,即使没有测试的帮助,我也不会出错。于是我就放手干了。然后,“砰”的一声,某个测试失败,我却无法找到究竟哪一次修改造成了这个问题。</li>
+<li>二重奏。和别人一起重构,可以收到更好的效果。两人结对,对于任何一种软件开发都有很多好处,对于重构也不例外。重构时,小心谨慎、按部就班的态度是有好处的。如果两人结伴,你的搭档能够帮助你一步一步前进,你也能够帮助他。重构时,时刻留意远景目标是有好处的。如果两人结伴,你的搭档可能看到你没看到的东西,能想到你没想到的事情。重构时,明智结束是有好处的。如果你的搭档不知道你在干什么,那就意味你肯定也不知道自己在干什么,此时你就应该结束重构。最重要的是,重构时,拥有绝对自信是绝对有好处的。如果两人结伴,你的搭档能够给你温柔的鼓励,让你不至于灰心丧气。</li>
+</ul>
+]]></content>
       <categories>
         <category>Refactoring</category>
       </categories>
@@ -768,8 +803,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Performance</tag>
+        <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Size</tag>
@@ -1507,8 +1542,8 @@
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>原创</tag>
       </tags>
   </entry>
@@ -1917,8 +1952,8 @@
         <category>Interview</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -3924,8 +3959,8 @@ use one vs other -->
         <category>Network</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -3960,8 +3995,8 @@ use one vs other -->
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
-        <tag>JVM</tag>
         <tag>GC</tag>
+        <tag>JVM</tag>
         <tag>ZGC</tag>
       </tags>
   </entry>
@@ -4035,8 +4070,8 @@ use one vs other -->
         <category>Linux</category>
       </categories>
       <tags>
-        <tag>Network</tag>
         <tag>Linux</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -4268,8 +4303,8 @@ use one vs other -->
       </categories>
       <tags>
         <tag>读书笔记</tag>
-        <tag>JVM</tag>
         <tag>GC</tag>
+        <tag>JVM</tag>
       </tags>
   </entry>
   <entry>
@@ -5850,8 +5885,8 @@ use one vs other -->
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>ElasticSearch</tag>
+        <tag>Java</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
         <tag>Encrypted</tag>
@@ -7299,8 +7334,8 @@ use one vs other -->
       <tags>
         <tag>读书笔记</tag>
         <tag>Java</tag>
-        <tag>JVM</tag>
         <tag>GC</tag>
+        <tag>JVM</tag>
         <tag>JRockit</tag>
       </tags>
   </entry>
@@ -7601,9 +7636,9 @@ use one vs other -->
       <tags>
         <tag>读书笔记</tag>
         <tag>Java</tag>
-        <tag>JVM</tag>
         <tag>GC</tag>
         <tag>G1</tag>
+        <tag>JVM</tag>
       </tags>
   </entry>
   <entry>
@@ -7882,8 +7917,8 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>Design</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
@@ -8171,11 +8206,11 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
         <tag>Java</tag>
-        <tag>JVM</tag>
         <tag>GC</tag>
+        <tag>JVM</tag>
       </tags>
   </entry>
   <entry>
@@ -8412,10 +8447,10 @@ use one vs other -->
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
-        <tag>JVM</tag>
         <tag>翻译</tag>
+        <tag>Java</tag>
         <tag>GC</tag>
+        <tag>JVM</tag>
         <tag>ZGC</tag>
       </tags>
   </entry>
@@ -9495,9 +9530,9 @@ table th:nth-of-type(2) {
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
-        <tag>JVM</tag>
         <tag>GC</tag>
         <tag>G1</tag>
+        <tag>JVM</tag>
       </tags>
   </entry>
   <entry>
@@ -9748,8 +9783,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9822,8 +9857,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9874,8 +9909,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9897,8 +9932,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -9939,8 +9974,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
