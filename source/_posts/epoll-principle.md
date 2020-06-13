@@ -5,6 +5,7 @@ categories:
 tags:
   - Linux
   - Epoll
+  - 转载
 abbrlink: 13352
 date: 2019-05-24 18:30:48
 ---

@@ -5,10 +5,10 @@ date: 2019-08-01 11:20:12
 
 \#\#\#\# Programmer
 
-\#\#\#\# Industry Experience
+<!-- \#\#\#\# Industry Experience
 
 \- ERP
-\- PaaS
+\- PaaS -->
 
 \#\#\#\# Skills
 

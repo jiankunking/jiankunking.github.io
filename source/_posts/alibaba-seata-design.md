@@ -10,6 +10,7 @@ tags:
   - Seata
   - Distributed
   - Transaction
+  - 转载
 ---
 
 > 通过Fescar（Seata）了解分布式事务框架设计思路

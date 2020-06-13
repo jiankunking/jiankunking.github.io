@@ -5,6 +5,7 @@ categories:
 tags:
   - Go
   - Channel
+  - 转载
 abbrlink: 60299
 date: 2018-01-18 09:14:06
 ---

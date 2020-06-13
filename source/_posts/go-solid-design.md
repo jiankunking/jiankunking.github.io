@@ -7,6 +7,7 @@ categories:
 tags:
   - Go
   - Design
+  - 转载
 ---
 
 > Golang 代码设计及规范
