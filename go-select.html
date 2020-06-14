@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/go-select/golang-oselect-and-ocases.png">
 <meta property="og:image" content="https://jiankunking.com/images/go-select/golang-runtime-selectgo.png">
 <meta property="og:image" content="https://jiankunking.com/images/go-select/Golang-Select-Waiting.png">
-<meta property="og:updated_time" content="2020-06-13T10:47:30.045Z">
+<meta property="og:updated_time" content="2020-06-14T06:52:52.823Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Go Select 实现分析">
 <meta name="twitter:description" content="Go Select">
@@ -236,10 +236,16 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-06-13 12:40:52 / 修改时间：18:47:30" itemprop="dateCreated datePublished" datetime="2020-06-13T12:40:52+08:00">2020-06-13</time>
+              <time title="创建时间：2020-06-13 12:40:52" itemprop="dateCreated datePublished" datetime="2020-06-13T12:40:52+08:00">2020-06-13</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-06-14 14:52:52" itemprop="dateModified" datetime="2020-06-14T14:52:52+08:00">2020-06-14</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
@@ -337,7 +343,7 @@
 <h2 id="随机执行"><a href="#随机执行" class="headerlink" title="随机执行"></a>随机执行</h2><p>另一个使用 <code>select</code> 遇到的情况是同时有多个 <code>case</code> 就绪时，<code>select</code> 会选择那个 <code>case</code> 执行的问题，我们通过下面的代码可以简单了解一下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">func main() &#123;</span><br><span class="line">	ch := make(chan int)</span><br><span class="line">	go func() &#123;</span><br><span class="line">		for range time.Tick(1 * time.Second) &#123;</span><br><span class="line">			ch &lt;- 0</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	for &#123;</span><br><span class="line">		select &#123;</span><br><span class="line">		case &lt;-ch:</span><br><span class="line">			println(&quot;case1&quot;)</span><br><span class="line">		case &lt;-ch:</span><br><span class="line">			println(&quot;case2&quot;)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$ go run main.go</span><br><span class="line">case1</span><br><span class="line">case2</span><br><span class="line">case1</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 
-<p>从上述代码输出的结果中我们可以看到，<code>select</code> 在遇到多个 <code>&lt;-ch 同时满足可读或者可写条件时会随机选择一个 <code>case</code> 执行其中的代码。</code></p>
+<p>从上述代码输出的结果中我们可以看到，<code>select</code> 在遇到多个 <code>&lt;-ch</code> 同时满足可读或者可写条件时会随机选择一个 <code>case</code> 执行其中的代码。</p>
 <p>这个设计是在十多年前被 <a href="https://github.com/golang/go/commit/cb9b1038db77198c2b0961634cf161258af2374d" target="_blank" rel="noopener">select</a> 提交<a href="#fnref:5"><sup>5</sup></a>引入并一直保留到现在的，虽然中间经历过一些修改<a href="#fnref:6"><sup>6</sup></a>，但是语义一直都没有改变。在上面的代码中，两个 <code>case</code> 都是同时满足执行条件的，如果我们按照顺序依次判断，那么后面的条件永远都会得不到执行，而随机的引入就是为了避免饥饿问题的发生。</p>
 <h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><p><code>select</code> 在 Go 语言的源代码中不存在对应的结构体，但是 <code>select</code> 控制结构中的 <code>case</code> 却使用 <a href="https://github.com/golang/go/blob/d1969015b4ac29be4f518b94817d3f525380639d/src/runtime/select.go#L28-L34" target="_blank" rel="noopener">runtime.scase</a> 结构体来表示：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">type scase struct &#123;</span><br><span class="line">	c           *hchan</span><br><span class="line">	elem        unsafe.Pointer</span><br><span class="line">	kind        uint16</span><br><span class="line">	pc          uintptr</span><br><span class="line">	releasetime int64</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -348,7 +354,7 @@
 <p>这四种常量分别表示不同类型的 <code>case</code>，相信它们的命名已经能够充分帮助我们理解它们的作用了，所以这里也不一一介绍了。</p>
 <h1 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h1><p><code>select</code> 语句在编译期间会被转换成 <code>OSELECT</code> 节点。每一个 <code>OSELECT</code> 节点都会持有一组 <code>OCASE</code> 节点，如果 <code>OCASE</code> 的执行条件是空，那就意味着这是一个 <code>default</code> 节点:</p>
 <p><img src="/images/go-select/golang-oselect-and-ocases.png" alt></p>
-<p>上图展示的就是 <code>select 语句在编译期间的结构，每一个 OCASE 既包含执行条件也包含满足条件后执行的代码。</code></p>
+<p>上图展示的就是 <code>select</code> 语句在编译期间的结构，每一个 OCASE 既包含执行条件也包含满足条件后执行的代码。</p>
 <p>编译器在中间代码生成期间会根据 <code>select</code> 中 <code>case</code> 的不同对控制语句进行优化，这一过程都发生在 <a href="https://github.com/golang/go/blob/c729116332ffb66a21dd587e3ee003cb8d0b16fe/src/cmd/compile/internal/gc/select.go#L108-L370" target="_blank" rel="noopener">cmd/compile/internal/gc.walkselectcases</a> 函数中，我们在这里会分四种情况介绍处理的过程和结果：</p>
 <ul>
 <li><code>select</code> 不存在任何的 <code>case</code>；</li>
@@ -368,7 +374,7 @@
 <h2 id="单一管道"><a href="#单一管道" class="headerlink" title="单一管道"></a>单一管道</h2><p>如果当前的 <code>select</code> 条件只包含一个 <code>case</code>，那么就会将 <code>select</code> 改写成 <code>if</code> 条件语句。下面展示了原始的 <code>select</code> 语句和被改写、优化后的代码：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">// 改写前</span><br><span class="line">select &#123;</span><br><span class="line">case v, ok &lt;-ch: // case ch &lt;- v</span><br><span class="line">    ...    </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 改写后</span><br><span class="line">if ch == nil &#123;</span><br><span class="line">    block()</span><br><span class="line">&#125;</span><br><span class="line">v, ok := &lt;-ch // case ch &lt;- v</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 
-<p><a href="https://github.com/golang/go/blob/c729116332ffb66a21dd587e3ee003cb8d0b16fe/src/cmd/compile/internal/gc/select.go#L108-L370" target="_blank" rel="noopener">cmd/compile/internal/gc.walkselectcases</a> 在处理单操作 <code>select 语句时，会根据 Channel 的收发情况生成不同的语句。当 <code>case</code> 中的 Channel 是空指针时，就会直接挂起当前 Goroutine 并永久休眠。</code></p>
+<p><a href="https://github.com/golang/go/blob/c729116332ffb66a21dd587e3ee003cb8d0b16fe/src/cmd/compile/internal/gc/select.go#L108-L370" target="_blank" rel="noopener">cmd/compile/internal/gc.walkselectcases</a> 在处理单操作 <code>select</code> 语句时，会根据 Channel 的收发情况生成不同的语句。当 <code>case</code> 中的 Channel 是空指针时，就会直接挂起当前 Goroutine 并永久休眠。</p>
 <h2 id="非阻塞操作"><a href="#非阻塞操作" class="headerlink" title="非阻塞操作"></a>非阻塞操作</h2><p>当 <code>select</code> 中仅包含两个 <code>case</code>，并且其中一个是 <code>default</code> 时，Go 语言的编译器就会认为这是一次非阻塞的收发操作。<a href="https://github.com/golang/go/blob/c729116332ffb66a21dd587e3ee003cb8d0b16fe/src/cmd/compile/internal/gc/select.go#L108-L370" target="_blank" rel="noopener">cmd/compile/internal/gc.walkselectcases</a> 函数会对这种情况单独处理，不过在正式优化之前，该函数会将 <code>case</code> 中的所有 Channel 都转换成指向 Channel 的地址。我们会分别介绍非阻塞发送和非阻塞接收时，编译器进行的不同优化。</p>
 <h3 id="发送"><a href="#发送" class="headerlink" title="发送"></a>发送</h3><p>首先是 Channel 的发送过程，当 <code>case</code> 中表达式的类型是 <code>OSEND</code> 时，编译器会使用 <code>if/else</code> 语句和 <a href="https://github.com/golang/go/blob/d1969015b4ac29be4f518b94817d3f525380639d/src/runtime/chan.go#L662-L664" target="_blank" rel="noopener">runtime.selectnbsend</a> 函数改写代码：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">select &#123;</span><br><span class="line">case ch &lt;- i:</span><br><span class="line">    ...</span><br><span class="line">default:</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">if selectnbsend(ch, i) &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125; else &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -516,19 +522,19 @@
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\go-channels.html" rel="bookmark">理解 Go Channels</a></div>
+      <div class="popular-posts-title"><a href="\golang-for-crypto-developers.html" rel="bookmark">Go 密码学应用</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\go-solid-design.html" rel="bookmark">Go 设计模式</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\golang-practice-advice-for-go-library-authors.html" rel="bookmark">给 Go 库作者的建议</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\golang-for-crypto-developers.html" rel="bookmark">Go 密码学应用</a></div>
+      <div class="popular-posts-title"><a href="\go-channels.html" rel="bookmark">理解 Go Channels</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\golang-grpc-from-tutorial-to-production.html" rel="bookmark">gRPC 从学习到生产</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\golang-practice-advice-for-go-library-authors.html" rel="bookmark">给 Go 库作者的建议</a></div>
     </li>
   </ul>
 
