@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/go-select/golang-oselect-and-ocases.png">
 <meta property="og:image" content="https://jiankunking.com/images/go-select/golang-runtime-selectgo.png">
 <meta property="og:image" content="https://jiankunking.com/images/go-select/Golang-Select-Waiting.png">
-<meta property="og:updated_time" content="2020-06-14T06:52:52.823Z">
+<meta property="og:updated_time" content="2020-06-14T06:55:21.228Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Go Select 实现分析">
 <meta name="twitter:description" content="Go Select">
@@ -244,7 +244,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-06-14 14:52:52" itemprop="dateModified" datetime="2020-06-14T14:52:52+08:00">2020-06-14</time>
+                <time title="修改时间：2020-06-14 14:55:21" itemprop="dateModified" datetime="2020-06-14T14:55:21+08:00">2020-06-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -308,7 +308,7 @@
 <a id="more"></a>
 
 <p>很多 C 语言或者 Unix 开发者听到 <code>select</code> 想到的都是系统调用，而谈到 I/O 模型时最终大都会提到基于 <code>select</code>、<code>poll</code> 和 <code>epoll</code> 等函数构建的 IO 多路复用模型。Go 语言的 <code>select</code> 与 C 语言中的 <code>select</code> 有着比较相似的功能。本节会介绍 Go 语言 <code>select</code> 常见的现象、数据结构以及四种不同情况下的实现原理。</p>
-<p>C 语言中的 <code>select</code> 关键字可以同时监听多个文件描述符的可读或者可写的状态，Go 语言中的 <code>select</code> 关键字也能够让 Goroutine 同时等待多个 Channel 的可读或者可写，在多个文件或者 Channel 发生状态改变之前，<code>select</code> 会一直阻塞当前线程或者 Goroutine。</p>
+<p><font color="DeepPink"><strong>C 语言中的 <code>select</code> 关键字可以同时监听多个文件描述符的可读或者可写的状态，Go 语言中的 <code>select</code> 关键字也能够让 Goroutine 同时等待多个 Channel 的可读或者可写，在多个文件或者 Channel 发生状态改变之前，<code>select</code> 会一直阻塞当前线程或者 Goroutine。</strong></font></p>
 <p><img src="/images/go-select/Golang-Select-Channels.png" alt></p>
 <p><code>select</code> 是一种与 <code>switch</code> 相似的控制结构，与 <code>switch</code> 不同的是，<code>select</code> 中虽然也有多个 <code>case</code>，但是这些 <code>case</code> 中的表达式必须都是 Channel 的收发操作。下面的代码就展示了一个包含 Channel 收发操作的 <code>select</code> 结构：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">func fibonacci(c, quit chan int) &#123;</span><br><span class="line">	x, y := 0, 1</span><br><span class="line">	for &#123;</span><br><span class="line">		select &#123;</span><br><span class="line">		case c &lt;- x:</span><br><span class="line">			x, y = y, x+y</span><br><span class="line">		case &lt;-quit:</span><br><span class="line">			fmt.Println(&quot;quit&quot;)</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -522,19 +522,19 @@
   <div class="popular-posts-header">推荐阅读</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\golang-for-crypto-developers.html" rel="bookmark">Go 密码学应用</a></div>
+      <div class="popular-posts-title"><a href="\go-channels.html" rel="bookmark">理解 Go Channels</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\go-solid-design.html" rel="bookmark">Go 设计模式</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\go-channels.html" rel="bookmark">理解 Go Channels</a></div>
+      <div class="popular-posts-title"><a href="\golang-for-crypto-developers.html" rel="bookmark">Go 密码学应用</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\golang-grpc-from-tutorial-to-production.html" rel="bookmark">gRPC 从学习到生产</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\golang-practice-advice-for-go-library-authors.html" rel="bookmark">给 Go 库作者的建议</a></div>
+      <div class="popular-posts-title"><a href="\how-to-correctly-use-package-context.html" rel="bookmark">Golang 如何正确使用 Context</a></div>
     </li>
   </ul>
 
@@ -611,7 +611,10 @@
     <a href="/go-concurrency-patterns-context.html" rel="prev" title="Go 并发 : Context">
       <i class="fa fa-chevron-left"></i> Go 并发 : Context
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/spring-graalvm-native.html" rel="next" title="云原生时代的Spring Boot">
+      云原生时代的Spring Boot <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -688,7 +691,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">90</span>
+          <span class="site-state-item-count">91</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -701,7 +704,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">127</span>
+        <span class="site-state-item-count">129</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -756,7 +759,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">645k</span>
+    <span title="站点总字数">647k</span>
 </div>
 
         
