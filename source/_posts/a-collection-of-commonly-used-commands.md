@@ -500,6 +500,8 @@ ctrl + alt + f7
 ctrl + alt +B
 5、查看类或接口的继承关系
 ctrl + h
+6、查看一个方法的调用
+Ctrl + Alt + H
 
 # Kafka
 

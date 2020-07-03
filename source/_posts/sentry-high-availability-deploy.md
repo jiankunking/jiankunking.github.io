@@ -78,6 +78,22 @@ https://github.com/jiankunking/onpremise/blob/master/sentry/Dockerfile#L10
 
 总的来说，将sentry部署到kubernetes中，需要注意的点还是挺多的，很多细节需要看代码来排查。
 
+2020-06-17 更新
+
+Sentry 社区版不支持高可用的ClickHouse分布式表，已得到官方回复。
+
+```
+Distributed tables are not officially supported. 
+DATASET_MODE would switch to distributed table names, but bootstrap won't work. 
+You would have to manage your tables (create and all DDL operations) manually. 
+This is not a support process, I can give you some hints, but you would be doing it at your own risk.
+
+On the other hand, we are working on this support though we cannot commit to a timeline at this time.
+```
+
+[The environment variable DATASET_MODE does not work](https://github.com/getsentry/snuba/issues/847)
+
+
 
 
 

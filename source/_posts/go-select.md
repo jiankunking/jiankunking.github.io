@@ -16,7 +16,7 @@ tags:
 
 很多 C 语言或者 Unix 开发者听到 <code>select</code> 想到的都是系统调用，而谈到 I/O 模型时最终大都会提到基于 <code>select</code>、<code>poll</code> 和 <code>epoll</code> 等函数构建的 IO 多路复用模型。Go 语言的 <code>select</code> 与 C 语言中的 <code>select</code> 有着比较相似的功能。本节会介绍 Go 语言 <code>select</code> 常见的现象、数据结构以及四种不同情况下的实现原理。
 
-C 语言中的 <code>select</code> 关键字可以同时监听多个文件描述符的可读或者可写的状态，Go 语言中的 <code>select</code> 关键字也能够让 Goroutine 同时等待多个 Channel 的可读或者可写，在多个文件或者 Channel 发生状态改变之前，<code>select</code> 会一直阻塞当前线程或者 Goroutine。
+<font color=DeepPink>**C 语言中的 <code>select</code> 关键字可以同时监听多个文件描述符的可读或者可写的状态，Go 语言中的 <code>select</code> 关键字也能够让 Goroutine 同时等待多个 Channel 的可读或者可写，在多个文件或者 Channel 发生状态改变之前，<code>select</code> 会一直阻塞当前线程或者 Goroutine。**</font>
 
 ![](/images/go-select/Golang-Select-Channels.png)
 
@@ -134,7 +134,7 @@ case2
 case1
 ...
 ```
-从上述代码输出的结果中我们可以看到，<code>select</code> 在遇到多个 <code>\<-ch 同时满足可读或者可写条件时会随机选择一个 <code>case</code> 执行其中的代码。
+从上述代码输出的结果中我们可以看到，<code>select</code> 在遇到多个 <code>\<-ch</code> 同时满足可读或者可写条件时会随机选择一个 <code>case</code> 执行其中的代码。
 
 这个设计是在十多年前被 [select](https://github.com/golang/go/commit/cb9b1038db77198c2b0961634cf161258af2374d) 提交[<sup>5</sup>](#fnref:5)引入并一直保留到现在的，虽然中间经历过一些修改[<sup>6</sup>](#fnref:6)，但是语义一直都没有改变。在上面的代码中，两个 <code>case</code> 都是同时满足执行条件的，如果我们按照顺序依次判断，那么后面的条件永远都会得不到执行，而随机的引入就是为了避免饥饿问题的发生。
 
@@ -169,7 +169,7 @@ const (
 
 ![](/images/go-select/golang-oselect-and-ocases.png)
 
-上图展示的就是 <code>select 语句在编译期间的结构，每一个 OCASE 既包含执行条件也包含满足条件后执行的代码。
+上图展示的就是 <code>select</code> 语句在编译期间的结构，每一个 OCASE 既包含执行条件也包含满足条件后执行的代码。
 
 编译器在中间代码生成期间会根据 <code>select</code> 中 <code>case</code> 的不同对控制语句进行优化，这一过程都发生在 [cmd/compile/internal/gc.walkselectcases](https://github.com/golang/go/blob/c729116332ffb66a21dd587e3ee003cb8d0b16fe/src/cmd/compile/internal/gc/select.go#L108-L370) 函数中，我们在这里会分四种情况介绍处理的过程和结果：
 
@@ -223,7 +223,7 @@ v, ok := <-ch // case ch <- v
 ...
 ```
 
-[cmd/compile/internal/gc.walkselectcases](https://github.com/golang/go/blob/c729116332ffb66a21dd587e3ee003cb8d0b16fe/src/cmd/compile/internal/gc/select.go#L108-L370) 在处理单操作 <code>select 语句时，会根据 Channel 的收发情况生成不同的语句。当 <code>case</code> 中的 Channel 是空指针时，就会直接挂起当前 Goroutine 并永久休眠。
+[cmd/compile/internal/gc.walkselectcases](https://github.com/golang/go/blob/c729116332ffb66a21dd587e3ee003cb8d0b16fe/src/cmd/compile/internal/gc/select.go#L108-L370) 在处理单操作 <code>select</code> 语句时，会根据 Channel 的收发情况生成不同的语句。当 <code>case</code> 中的 Channel 是空指针时，就会直接挂起当前 Goroutine 并永久休眠。
 
 ## 非阻塞操作
 当 <code>select</code> 中仅包含两个 <code>case</code>，并且其中一个是 <code>default</code> 时，Go 语言的编译器就会认为这是一次非阻塞的收发操作。[cmd/compile/internal/gc.walkselectcases](https://github.com/golang/go/blob/c729116332ffb66a21dd587e3ee003cb8d0b16fe/src/cmd/compile/internal/gc/select.go#L108-L370) 函数会对这种情况单独处理，不过在正式优化之前，该函数会将 <code>case</code> 中的所有 Channel 都转换成指向 Channel 的地址。我们会分别介绍非阻塞发送和非阻塞接收时，编译器进行的不同优化。
