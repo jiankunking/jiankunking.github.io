@@ -27,19 +27,19 @@
 <meta name="keywords" content="原创,翻译,Sentry,Stronger,Consistency,Datastore">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Sentry：如何从数据存储中获得更强的一致性">
-<meta property="og:url" content="https://jiankunking.com/how-to-get-stronger-consistency-out-of-a-datastore.html">
+<meta property="og:url" content="https://jiankunking.com/sentry-how-to-get-stronger-consistency-out-of-a-datastore.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="翻译自：How to Get Stronger Consistency Out of a Datastore地址：https://blog.sentry.io/2019/09/17/how-to-get-stronger-consistency-out-of-a-datastore">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://jiankunking.com/images/how-to-get-stronger-consistency-out-of-a-datastore/post_process.png">
 <meta property="og:image" content="https://jiankunking.com/images/how-to-get-stronger-consistency-out-of-a-datastore/sync_consumer.png">
-<meta property="og:updated_time" content="2020-07-03T22:36:00.953Z">
+<meta property="og:updated_time" content="2020-07-06T02:09:52.298Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Sentry：如何从数据存储中获得更强的一致性">
 <meta name="twitter:description" content="翻译自：How to Get Stronger Consistency Out of a Datastore地址：https://blog.sentry.io/2019/09/17/how-to-get-stronger-consistency-out-of-a-datastore">
 <meta name="twitter:image" content="https://jiankunking.com/images/how-to-get-stronger-consistency-out-of-a-datastore/post_process.png">
 
-<link rel="canonical" href="https://jiankunking.com/how-to-get-stronger-consistency-out-of-a-datastore.html">
+<link rel="canonical" href="https://jiankunking.com/sentry-how-to-get-stronger-consistency-out-of-a-datastore.html">
 
 
 <script id="page-configurations">
@@ -212,7 +212,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/how-to-get-stronger-consistency-out-of-a-datastore.html">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/sentry-how-to-get-stronger-consistency-out-of-a-datastore.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar/avatar.png">
@@ -234,10 +234,16 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-07-04 05:58:05 / 修改时间：06:36:00" itemprop="dateCreated datePublished" datetime="2020-07-04T05:58:05+08:00">2020-07-04</time>
+              <time title="创建时间：2020-07-04 05:58:05" itemprop="dateCreated datePublished" datetime="2020-07-04T05:58:05+08:00">2020-07-04</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-06 10:09:52" itemprop="dateModified" datetime="2020-07-06T10:09:52+08:00">2020-07-06</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
@@ -264,8 +270,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/how-to-get-stronger-consistency-out-of-a-datastore.html#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/how-to-get-stronger-consistency-out-of-a-datastore.html" itemprop="commentCount"></span>
+    <a title="valine" href="/sentry-how-to-get-stronger-consistency-out-of-a-datastore.html#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/sentry-how-to-get-stronger-consistency-out-of-a-datastore.html" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -306,7 +312,10 @@
 <li>Sentry用户必须近实时地可以看到异常信息。</li>
 </ul>
 <p>为了能够应对流量高峰，Sentry从客户端接收事件，并异步执行一系列处理。 因此，这些处理不一定客户端接收到HTTP响应之前完成。</p>
-<p>其中两个阶段包括在Sentry主存储器(ClickHouse)上保存事件和发送通知、调用插件等的后处理任务。</p>
+<p>其中两个阶段包括在Sentry主存储器(ClickHouse)上保存事件和发送通知、调用插件等的后处理任务（post process task）。</p>
+<blockquote>
+<p>下文中的后处理指的都是post process</p>
+</blockquote>
 <p><img src="/images/how-to-get-stronger-consistency-out-of-a-datastore/post_process.png" alt></p>
 <p>在事件保存到ClickHouse之前，我们先将事件插入到Kafka主题中。一些消费者从该主题中读取并以批量插入的方式写入到ClickHouse中。</p>
 <p>在保存了事件之后，我们触发了上面讨论的后处理任务，它需要从ClickHouse读取最新的事件(比如历史数据和我们刚刚处理的事件)才能正常工作。</p>
@@ -374,10 +383,10 @@
       <div class="popular-posts-title"><a href="\elasticsearch-cluster-sizing-and-performance-tuning.html" rel="bookmark">Elasticsearch集群规模和性能调优</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\go-concurrency-patterns-context.html" rel="bookmark">Go 并发 : Context</a></div>
+      <div class="popular-posts-title"><a href="\go-net-http-timeout-sequence-diagram.html" rel="bookmark">关于Go net/http 超时完全指南</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\go-net-http-timeout-sequence-diagram.html" rel="bookmark">关于Go net/http 超时完全指南</a></div>
+      <div class="popular-posts-title"><a href="\go-concurrency-patterns-context.html" rel="bookmark">Go 并发 : Context</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\sentry-high-availability-deploy.html" rel="bookmark">Sentry 高可用部署</a></div>
@@ -416,7 +425,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://jiankunking.com/how-to-get-stronger-consistency-out-of-a-datastore.html" title="Sentry：如何从数据存储中获得更强的一致性">https://jiankunking.com/how-to-get-stronger-consistency-out-of-a-datastore.html</a>
+    <a href="https://jiankunking.com/sentry-how-to-get-stronger-consistency-out-of-a-datastore.html" title="Sentry：如何从数据存储中获得更强的一致性">https://jiankunking.com/sentry-how-to-get-stronger-consistency-out-of-a-datastore.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -608,7 +617,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">651k</span>
+    <span title="站点总字数">652k</span>
 </div>
 
         
