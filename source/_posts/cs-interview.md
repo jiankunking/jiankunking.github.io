@@ -72,6 +72,11 @@ date: 2017-02-02 08:22:15
 60. LRU如何实现？
 61. 为什么Concurrenthashmap扩容是安全的？
 62. LinkedHashMap和HashMap 区别？
+63. CompletableFuture get(long timeout, TimeUnit unit) throws TimeoutException, ExecutionException实现
+[https://medium.com/@sergeykuptsov/how-it-works-in-java-completablefuture-3031dbbca66d](https://medium.com/@sergeykuptsov/how-it-works-in-java-completablefuture-3031dbbca66d)
+64、Java time-based map/cache with expiring keys
+[https://stackoverflow.com/questions/3802370/java-time-based-map-cache-with-expiring-keys](https://stackoverflow.com/questions/3802370/java-time-based-map-cache-with-expiring-keys)
+
 
 # MySQL部分
 1. mysql 时间 比较无效 原因？

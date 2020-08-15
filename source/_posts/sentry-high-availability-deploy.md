@@ -80,7 +80,7 @@ https://github.com/jiankunking/onpremise/blob/master/sentry/Dockerfile#L10
 
 2020-06-17 更新
 
-Sentry 社区版不支持高可用的ClickHouse分布式表，已得到官方回复。
+Sentry 社区版不支持高可用的ClickHouse分布式表。
 
 ```
 Distributed tables are not officially supported. 

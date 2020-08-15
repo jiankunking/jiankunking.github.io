@@ -392,6 +392,16 @@ sed -i "s/10.133.0.86/10.138.25.214/g"  lishan.txt
 yum install java-1.8.0-openjdk* -y
 sudo apt-get install default-jdk -y
 ```
+
+69、 CentOS7 查看开机启动项和程序服务
+```
+systemctl list-unit-files  (查看开机启动项)
+
+systemctl list-unit-files  |  grep 程序名称   （查看某些服务开机启动状态）
+
+systemctl  list-unit-files |  grep enable （查看哪些为开机启动服务）
+```
+
 # Vi/Vim
 1、 粘贴时行首出现很多缩进和空格
 在拷贝前输入:set paste (这样的话，vim就不会启动自动缩进，而只是纯拷贝粘贴）
@@ -502,6 +512,8 @@ ctrl + alt +B
 ctrl + h
 6、查看一个方法的调用
 Ctrl + Alt + H
+7、重复代码快速重构(抽取重复代码)
+Alt+Shift+M
 
 # Kafka
 
@@ -618,6 +630,12 @@ mvn clean package  -Dmaven.test.skip=true
 ```
 nginx -t
 ```
+3、nginx 重启
+
+查找当前nginx进程号，然后输入命令：kill -HUP 进程号 实现重启nginx服务
+
+
+
 # MySQL
 
 1、查看mysql表分区
