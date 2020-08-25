@@ -208,6 +208,113 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/Elasticsearch-java-RestClient-SocketTimeoutException-12-000-milliseconds-timeout-on-connection-http-outgoing-12.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Elasticsearch-java-RestClient-SocketTimeoutException-12-000-milliseconds-timeout-on-connection-http-outgoing-12.html" class="post-title-link" itemprop="url">Elasticsearch java RestClient SocketTimeoutException: 12,000 milliseconds timeout on connection http-outgoing-12</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-08-25 12:05:43 / 修改时间：12:19:12" itemprop="dateCreated datePublished" datetime="2020-08-25T12:05:43+08:00">2020-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ElasticSearch/" itemprop="url" rel="index"><span itemprop="name">ElasticSearch</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/Elasticsearch-java-RestClient-SocketTimeoutException-12-000-milliseconds-timeout-on-connection-http-outgoing-12.html#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/Elasticsearch-java-RestClient-SocketTimeoutException-12-000-milliseconds-timeout-on-connection-http-outgoing-12.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>13k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>12 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在网上交流的时候，发现很多朋友在用es client查询的时候，会出现平时很快，但会间歇性出现超时，而且超时时间都是一样的。</p>
+<p>后端出现的异常有可能有是这样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">2020-01-20 17:48:12.330 [http-nio-8080-exec-10] INFO  c.j.logsearch.aspect.ServiceTimeConsumeAspect - Service：ESClients.getInstance(..)，cost：0ms</span><br><span class="line">java.net.SocketTimeoutException: 12,000 milliseconds timeout on connection http-outgoing-12 [ACTIVE]</span><br><span class="line">        at org.elasticsearch.client.RestClient$SyncResponseListener.get(RestClient.java:944)</span><br><span class="line">        at org.elasticsearch.client.RestClient.performRequest(RestClient.java:233)</span><br><span class="line">        at com.jiankunking.logsearch.util.ESQueryUtils.performRequest(ESQueryUtils.java:91)</span><br><span class="line">        at com.jiankunking.logsearch.util.ESQueryUtils.performRequest(ESQueryUtils.java:70)</span><br><span class="line">        at com.jiankunking.logsearch.util.ESQueryUtils$$FastClassBySpringCGLIB$$233350d5.invoke(&lt;generated&gt;)</span><br><span class="line">        at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:769)</span><br><span class="line">        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:747)</span><br><span class="line">        at org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint.proceed(MethodInvocationProceedingJoinPoint.java:88)</span><br><span class="line">        at com.jiankunking.logsearch.aspect.ServiceTimeConsumeAspect.doAround(ServiceTimeConsumeAspect.java:28)</span><br><span class="line">        at jdk.internal.reflect.GeneratedMethodAccessor79.invoke(Unknown Source)</span><br><span class="line">        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)</span><br><span class="line">        at java.base/java.lang.reflect.Method.invoke(Method.java:567)</span><br><span class="line">        at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethodWithGivenArgs(AbstractAspectJAdvice.java:644)</span><br><span class="line">        at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethod(AbstractAspectJAdvice.java:633)</span><br><span class="line">        at org.springframework.aop.aspectj.AspectJAroundAdvice.invoke(AspectJAroundAdvice.java:70)</span><br><span class="line">        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:175)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:747)</span><br><span class="line">        at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:93)</span><br><span class="line">        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:747)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:689)</span><br><span class="line">        at com.jiankunking.logsearch.util.ESQueryUtils$$EnhancerBySpringCGLIB$$e5bf21cb.performRequest(&lt;generated&gt;)</span><br><span class="line">        at com.jiankunking.logsearch.service.caicloud.LogBusinessService.getApps(LogBusinessService.java:111)</span><br><span class="line">        at com.jiankunking.logsearch.controller.caicloud.LogBusinessController.getAppNames(LogBusinessController.java:78)</span><br><span class="line">        at com.jiankunking.logsearch.controller.caicloud.LogBusinessController$$FastClassBySpringCGLIB$$6c6f7900.invoke(&lt;generated&gt;)</span><br><span class="line">        at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:769)</span><br><span class="line">        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:747)</span><br><span class="line">        at org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint.proceed(MethodInvocationProceedingJoinPoint.java:88)</span><br><span class="line">        at com.jiankunking.logsearch.aspect.ControllerTimeConsumeAspect.doAround(ControllerTimeConsumeAspect.java:34)</span><br><span class="line">        at jdk.internal.reflect.GeneratedMethodAccessor76.invoke(Unknown Source)</span><br><span class="line">        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)</span><br><span class="line">        at java.base/java.lang.reflect.Method.invoke(Method.java:567)</span><br><span class="line">        at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethodWithGivenArgs(AbstractAspectJAdvice.java:644)</span><br><span class="line">        at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethod(AbstractAspectJAdvice.java:633)</span><br><span class="line">        at org.springframework.aop.aspectj.AspectJAroundAdvice.invoke(AspectJAroundAdvice.java:70)</span><br><span class="line">        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:175)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:747)</span><br><span class="line">        at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:93)</span><br><span class="line">        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:747)</span><br><span class="line">        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:689)</span><br><span class="line">        at com.jiankunking.logsearch.controller.caicloud.LogBusinessController$$EnhancerBySpringCGLIB$$ff6c8d2c.getAppNames(&lt;generated&gt;)</span><br><span class="line">        at jdk.internal.reflect.GeneratedMethodAccessor125.invoke(Unknown Source)</span><br><span class="line">        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)</span><br><span class="line">        at java.base/java.lang.reflect.Method.invoke(Method.java:567)</span><br><span class="line">        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:190)</span><br><span class="line">        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:138)</span><br><span class="line">        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:106)</span><br><span class="line">        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:888)</span><br><span class="line">        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:793)</span><br><span class="line">        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)</span><br><span class="line">        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1040)</span><br><span class="line">        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:943)</span><br><span class="line">        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1006)</span><br><span class="line">        at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:898)</span><br><span class="line">        at javax.servlet.http.HttpServlet.service(HttpServlet.java:634)</span><br><span class="line">        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:883)</span><br><span class="line">        at javax.servlet.http.HttpServlet.service(HttpServlet.java:741)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br><span class="line">        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br><span class="line">        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)</span><br><span class="line">        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br><span class="line">        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)</span><br><span class="line">        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br><span class="line">        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)</span><br><span class="line">        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)</span><br><span class="line">        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br><span class="line">        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:202)</span><br><span class="line">        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96)</span><br><span class="line">        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:526)</span><br><span class="line">        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:139)</span><br><span class="line">        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:92)</span><br><span class="line">        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)</span><br><span class="line">        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:343)</span><br><span class="line">        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:367)</span><br></pre></td></tr></table></figure>
+
+<p>我的代码如下(jdk 11)：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line">public String performRequest(String cluster, String project, String method, String endpoint, String query, String keyword)</span><br><span class="line">            throws IOException &#123;</span><br><span class="line">        Response response;</span><br><span class="line">        if (StringUtils.isEmpty(method)) &#123;</span><br><span class="line">            method = HttpMethod.GET.name();</span><br><span class="line">        &#125;</span><br><span class="line">        query = clearType(query);</span><br><span class="line">        log.info(query);</span><br><span class="line">        Request request = new Request(</span><br><span class="line">                method,</span><br><span class="line">                endpoint);</span><br><span class="line">        request.setEntity(new NStringEntity(</span><br><span class="line">                query,</span><br><span class="line">                ContentType.APPLICATION_JSON));</span><br><span class="line">        RestClient restClient = null;</span><br><span class="line">        try &#123;</span><br><span class="line">            restClient = esClients.getInstance(project, cluster);</span><br><span class="line">            response = restClient.performRequest(request);</span><br><span class="line">        &#125; catch (IOException ex) &#123;</span><br><span class="line">            if (ex.getMessage().contains(&quot;400 Bad Request&quot;) &amp;&amp; ex.getMessage().contains(&quot;parse_exception&quot;)) &#123;</span><br><span class="line">                if (StringUtils.isNotEmpty(keyword)) &#123;</span><br><span class="line">                    throw new ESParseException(&quot;elasticsearch无法解析:&quot; + keyword + &quot; 请参考query_string语法&quot;);</span><br><span class="line">                &#125;</span><br><span class="line">                throw new ESParseException(ex.getMessage());</span><br><span class="line">            &#125;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">            throw ex;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">        &#125;</span><br><span class="line">        String result = EntityUtils.toString(response.getEntity());</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">private HashMap&lt;String, RestClient&gt; clients = new HashMap&lt;&gt;();</span><br><span class="line">    @Autowired</span><br><span class="line">    private ConfigService configService;</span><br><span class="line">    public RestClient getInstance(String project, String cluster) &#123;</span><br><span class="line">        if (clients.containsKey(cluster)) &#123;</span><br><span class="line">            return clients.get(cluster);</span><br><span class="line">        &#125;</span><br><span class="line">        String esAddress = &quot;&quot;;</span><br><span class="line">        List&lt;ESCluster&gt; esClusters = configService.getESClusters(project);</span><br><span class="line">        for (ESCluster esCluster : esClusters) &#123;</span><br><span class="line">            if (esCluster.getName().equals(cluster)) &#123;</span><br><span class="line">                esAddress = esCluster.getAddress();</span><br><span class="line">                break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        if (clients.containsKey(cluster)) &#123;</span><br><span class="line">            return clients.get(cluster);</span><br><span class="line">        &#125;</span><br><span class="line">        synchronized (clients) &#123;</span><br><span class="line">            if (clients.containsKey(cluster)) &#123;</span><br><span class="line">                return clients.get(cluster);</span><br><span class="line">            &#125;</span><br><span class="line">            RestClient restClient = getNewRestClient(esAddress);</span><br><span class="line">            clients.put(cluster, restClient);</span><br><span class="line">            return restClient;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private RestClient getNewRestClient(String esAddress) &#123;</span><br><span class="line">        RestClient restClient = RestClient</span><br><span class="line">                .builder(EnvionmentVariables.getHttpHostArray(esAddress))</span><br><span class="line">                .setRequestConfigCallback(requestConfigBuilder -&gt;</span><br><span class="line">                        requestConfigBuilder</span><br><span class="line">                                .setConnectTimeout(1 * 1000)</span><br><span class="line">                                //.setConnectionRequestTimeout(0)</span><br><span class="line">                                .setSocketTimeout(12 * 1000))</span><br><span class="line">                .build();</span><br><span class="line">        return restClient;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>pom文件如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"> &lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.elasticsearch.client&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;elasticsearch-rest-high-level-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;7.4.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.elasticsearch&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;elasticsearch&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;7.4.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>其实原因很简单就是es client持有的http连接断开了(因为es用的http client默认keepalive的时间是永远)，当这时请求来的时候请求会一直没有返回，从而触发了超时。</p>
+<p>知道了原因，问题就好解决了</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">// https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/_timeouts.html</span><br><span class="line">// setConnectTimeout 默认是 1秒 setSocketTimeout 默认30秒</span><br><span class="line">private RestClient getNewRestClient(String esAddress) &#123;</span><br><span class="line">    RestClient restClient = RestClient</span><br><span class="line">            .builder(EnvionmentVariables.getHttpHostArray(esAddress))</span><br><span class="line">            .setHttpClientConfigCallback(httpClientBuilder -&gt; httpClientBuilder</span><br><span class="line">                    .setKeepAliveStrategy(getConnectionKeepAliveStrategy())</span><br><span class="line">                    .setMaxConnPerRoute(10))</span><br><span class="line">            .setRequestConfigCallback(requestConfigBuilder -&gt;</span><br><span class="line">                    requestConfigBuilder</span><br><span class="line">                            .setConnectTimeout(1 * 1000)</span><br><span class="line">                            .setConnectionRequestTimeout(2 * 1000)</span><br><span class="line">                            .setSocketTimeout(12 * 1000))</span><br><span class="line">            .build();</span><br><span class="line">    return restClient;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private ConnectionKeepAliveStrategy getConnectionKeepAliveStrategy() &#123;</span><br><span class="line">    return (response, context) -&gt; &#123;</span><br><span class="line">        //HeaderElementIterator it = new BasicHeaderElementIterator</span><br><span class="line">        //        (response.headerIterator(HTTP.CONN_KEEP_ALIVE));</span><br><span class="line">        //while (it.hasNext()) &#123;</span><br><span class="line">        //    HeaderElement he = it.nextElement();</span><br><span class="line">        //    String param = he.getName();</span><br><span class="line">        //    String value = he.getValue();</span><br><span class="line">        //    if (value != null &amp;&amp; param.equalsIgnoreCase</span><br><span class="line">        //            (&quot;timeout&quot;)) &#123;</span><br><span class="line">        //        return Long.parseLong(value) * 1000;</span><br><span class="line">        //    &#125;</span><br><span class="line">        //&#125;</span><br><span class="line">        //return 60 * 1000;//如果没有约定，则默认定义时长为60s</span><br><span class="line">        return 2 * 60 * 1000;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-volatile-keyword.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1169,117 +1276,6 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/refactoring-improving-the-design-of-existing-code-notes.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar/avatar.png">
-      <meta itemprop="name" content="jiankunking">
-      <meta itemprop="description" content="愿我所遇之人，所历之事，哪怕因为我有一点点变好，我就心满意足了。">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="衣舞晨风">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/refactoring-improving-the-design-of-existing-code-notes.html" class="post-title-link" itemprop="url">重构：改善既有代码的设计 笔记</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-05-16 10:51:15" itemprop="dateCreated datePublished" datetime="2020-05-16T10:51:15+08:00">2020-05-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-05-23 14:11:29" itemprop="dateModified" datetime="2020-05-23T14:11:29+08:00">2020-05-23</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Refactoring/" itemprop="url" rel="index"><span itemprop="name">Refactoring</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/refactoring-improving-the-design-of-existing-code-notes.html#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/refactoring-improving-the-design-of-existing-code-notes.html" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>23k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>21 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文整理自：《重构改善既有代码的设计》 </p>
-<p>作者：MartinFowler</p>
-<p>出版时间：2015-08</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/refactoring-improving-the-design-of-existing-code-notes.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -1352,7 +1348,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">94</span>
+          <span class="site-state-item-count">95</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1365,7 +1361,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">133</span>
+        <span class="site-state-item-count">135</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1420,7 +1416,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">659k</span>
+    <span title="站点总字数">672k</span>
 </div>
 
         
