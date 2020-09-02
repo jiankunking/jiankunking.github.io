@@ -402,6 +402,16 @@ systemctl list-unit-files  |  grep 程序名称   （查看某些服务开机启
 systemctl  list-unit-files |  grep enable （查看哪些为开机启动服务）
 ```
 
+70、ldd
+ldd命令 用于打印程序或者库文件所依赖的共享库列表。
+可以用来查看golang编译的二进制程序的依赖。
+
+71、iptables 放开某个端口
+
+```
+/sbin/iptables -I INPUT -p tcp --dport 3306 -j ACCEPT
+```
+
 # Vi/Vim
 1、 粘贴时行首出现很多缩进和空格
 在拷贝前输入:set paste (这样的话，vim就不会启动自动缩进，而只是纯拷贝粘贴）
@@ -546,12 +556,12 @@ bin/kafka-topics.sh --list --zookeeper localhost:2181
 
 7、获取kafka中所有组
 ```
-./kafka-consumer-groups.sh  --bootstrap-server 10.138.16.189:9092 --list
+./kafka-consumer-groups.sh  --bootstrap-server 127.0.0.1:9092 --list
 ```
 
 8、查看kafka消费端堆积量
 ```
-./kafka-consumer-groups.sh  --bootstrap-server 10.138.16.189:9092 --group interconn --describe
+./kafka-consumer-groups.sh  --bootstrap-server 127.0.0.1:9092 --group interconn --describe
 ```
 
 9、查看kafka版本
@@ -660,6 +670,36 @@ SET FOREIGN_KEY_CHECKS=0;
 ```
 SET FOREIGN_KEY_CHECKS=1;
 ```
+
+3、Mysql统计所有表数据量
+```
+SELECT
+  TABLE_NAME,
+  TABLE_ROWS
+FROM
+  `information_schema`.`tables`
+WHERE
+  `table_schema` = 'YOUR_DB_NAME'
+ORDER BY
+  TABLE_ROWS DESC;
+```
+
+4、MySQL查询表中重复字段和重复的次数
+
+```
+SELECT
+  user_name,
+  count(*) AS count
+FROM
+  USER
+GROUP BY
+  user_name
+HAVING
+  count > 1
+ORDER BY
+  count DESC;
+```
+
 # MongoDB
 
 1、登陆MongoDB
@@ -679,9 +719,15 @@ kubectl exec -it g-lsb-proxy-nginx-r7zfl-2522744936-9tz5k -n kube-system  /bin/b
 ```
 2、查看k8s pod详情
 ```
-kubectl describe pods -n  console gateway-7d89b6f6fb-dj4qp
+kubectl describe pods -n jiankunking gateway-7d89b6f6fb-dj4qp
 kubectl get pod logging-filebeat-filebeat-v1-0-5565m -n kube-system -o json
 ```
+
+3、 指定api版本查看
+```
+kubectl get hpa.v2beta2.autoscaling -n jiankunking app-hpa-331087943  -oyaml
+```
+
 # Elasticsearch
 1、索引备份
 https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html
