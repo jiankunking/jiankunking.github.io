@@ -31,7 +31,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="个人常用命令集锦 持续更新">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2020-08-31T00:45:15.883Z">
+<meta property="og:updated_time" content="2020-09-02T01:39:31.125Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="个人常用命令集锦">
 <meta name="twitter:description" content="个人常用命令集锦 持续更新">
@@ -239,7 +239,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-31 08:45:15" itemprop="dateModified" datetime="2020-08-31T08:45:15+08:00">2020-08-31</time>
+                <time title="修改时间：2020-09-02 09:39:31" itemprop="dateModified" datetime="2020-09-02T09:39:31+08:00">2020-09-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -508,6 +508,9 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">systemctl list-unit-files  (查看开机启动项)</span><br><span class="line"></span><br><span class="line">systemctl list-unit-files  |  grep 程序名称   （查看某些服务开机启动状态）</span><br><span class="line"></span><br><span class="line">systemctl  list-unit-files |  grep enable （查看哪些为开机启动服务）</span><br></pre></td></tr></table></figure>
 
 <p>70、ldd<br>ldd命令 用于打印程序或者库文件所依赖的共享库列表。<br>可以用来查看golang编译的二进制程序的依赖。</p>
+<p>71、iptables 放开某个端口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/sbin/iptables -I INPUT -p tcp --dport 3306 -j ACCEPT</span><br></pre></td></tr></table></figure>
+
 <h1 id="Vi-Vim"><a href="#Vi-Vim" class="headerlink" title="Vi/Vim"></a>Vi/Vim</h1><p>1、 粘贴时行首出现很多缩进和空格<br>在拷贝前输入:set paste (这样的话，vim就不会启动自动缩进，而只是纯拷贝粘贴）</p>
 <blockquote>
 <p>vi 打开文件后，直接输入:set paste，然后再按i</p>
@@ -640,7 +643,10 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl exec -it --namespace=kube-system  g-lsb-proxy-nginx-r7zfl-2522744936-11rld /bin/sh</span><br><span class="line">kubectl exec -it g-lsb-proxy-nginx-r7zfl-2522744936-9tz5k -n kube-system  /bin/bash</span><br></pre></td></tr></table></figure>
 
 <p>2、查看k8s pod详情</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe pods -n  console gateway-7d89b6f6fb-dj4qp</span><br><span class="line">kubectl get pod logging-filebeat-filebeat-v1-0-5565m -n kube-system -o json</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe pods -n jiankunking gateway-7d89b6f6fb-dj4qp</span><br><span class="line">kubectl get pod logging-filebeat-filebeat-v1-0-5565m -n kube-system -o json</span><br></pre></td></tr></table></figure>
+
+<p>3、 指定api版本查看</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get hpa.v2beta2.autoscaling -n jiankunking app-hpa-331087943  -oyaml</span><br></pre></td></tr></table></figure>
 
 <h1 id="Elasticsearch"><a href="#Elasticsearch" class="headerlink" title="Elasticsearch"></a>Elasticsearch</h1><p>1、索引备份<br><a href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html</a></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">curl -XPOST &apos;localhost:9200/_reindex?pretty&apos; -H &apos;Content-Type: application/json&apos; -d&apos;</span><br><span class="line">&#123;</span><br><span class="line">  &quot;source&quot;: &#123;</span><br><span class="line">    &quot;index&quot;: &quot;twitter&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;dest&quot;: &#123;</span><br><span class="line">    &quot;index&quot;: &quot;new_twitter&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">&apos;</span><br></pre></td></tr></table></figure>
@@ -844,7 +850,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">95</span>
+          <span class="site-state-item-count">96</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -912,7 +918,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">672k</span>
+    <span title="站点总字数">673k</span>
 </div>
 
         
