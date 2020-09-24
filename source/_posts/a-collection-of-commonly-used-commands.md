@@ -536,6 +536,9 @@ bin/kafka-topics.sh --zookeeper 10.138.22.194:2181 --describe --topic count_test
 ./kafka-console-consumer.sh --zookeeper localhost:2181 --topic count_test_one --from-beginning
 ./kafka-console-consumer.sh --zookeeper localhost:2181 --topic count_test_one
 ./kafka-console-consumer.sh --bootstrap-server 10.119.37.115:9092,10.119.37.147:9092,10.119.37.148:9092   --topic dubbo |grep xiaoneng
+
+// 2.0 
+bin/kafka-console-consumer.sh --bootstrap-server 10.163.111.195:9092 --topic qd-aliyun --from-beginning
 ```
 3、kafka启动
 ```
@@ -571,7 +574,7 @@ find ./libs/ -name 'kafka_*.jar.asc' |head -n1 | cut -d'/' -f3
 
 10、查看kafka某个topic下partition信息
 ```
-./kafka-topics.sh --zookeeper 10.138.16.188:2181  --topic dubbo --describe 
+./kafka-topics.sh --zookeeper 10.138.1.1:2181  --topic dubbo --describe 
 ```
 
 # Git
@@ -629,6 +632,16 @@ mvn clean package  -Dmaven.test.skip=true
 ```
 ./zkCli.sh -timeout 5000 -r -server localhost:2181
 ```
+
+2、查看zk集群状态
+```
+echo mntr | nc localhost 2181
+```
+
+解决办法,修改 conf/zoo.cfg 添加以下属性
+#开启四字命令
+4lw.commands.whitelist=*
+
 
 # Nginx
 
@@ -750,11 +763,15 @@ sh bin/elasticsearch -d
 ```
 3、elasticsearch 查看集群所有设置（包含默认的）
 ```
-http://10.138.16.191:9200/_cluster/settings?include_defaults=true
+http://10.138.1.1:9200/_cluster/settings?include_defaults=true
 ```
 4、elasticsearch设置密码
 ```
 ./bin/elasticsearch-setup-passwords interactive
+```
+5、查看es集群恢复情况
+```
+http://10.138.1.1:9200/_cluster/allocation/explain?pretty
 ```
 # Prometheus
 
