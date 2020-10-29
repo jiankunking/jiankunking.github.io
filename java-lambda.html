@@ -16,11 +16,12 @@
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="本文分析基于JDK 9">
@@ -31,15 +32,10 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文分析基于JDK 9">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javap.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javac-FunctionTest.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javac-LambdaTest.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/dumpProxyClasses.png">
 <meta property="og:updated_time" content="2019-09-07T02:25:48.527Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java Lambda表达式 实现原理分析">
 <meta name="twitter:description" content="本文分析基于JDK 9">
-<meta name="twitter:image" content="https://jiankunking.com/images/java-lambda/javap.png">
 
 <link rel="canonical" href="https://jiankunking.com/java-lambda.html">
 
@@ -49,12 +45,22 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : true
+    isPost : true,
+    lang   : 'zh-CN'
   };
 </script>
 
   <title>Java Lambda表达式 实现原理分析 | 衣舞晨风</title>
   
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121070942-1');
+      }
+    </script>
 
 
   <script>
@@ -111,13 +117,11 @@
 
   <div class="site-meta">
 
-    <div>
-      <a href="/" class="brand" rel="start">
-        <span class="logo-line-before"><i></i></span>
-        <span class="site-title">衣舞晨风</span>
-        <span class="logo-line-after"><i></i></span>
-      </a>
-    </div>
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">衣舞晨风</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
   </div>
 
   <div class="site-nav-right">
@@ -128,32 +132,33 @@
 </div>
 
 
+
+
 <nav class="site-nav">
-  
-  <ul id="menu" class="menu">
+  <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -161,17 +166,18 @@
         </a>
       </li>
   </ul>
-
 </nav>
-  <div class="site-search">
-    <div class="search-pop-overlay">
-  <div class="popup search-popup">
-      <div class="search-header">
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
   <span class="search-icon">
     <i class="fa fa-search"></i>
   </span>
   <div class="search-input-container">
-    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+    <input autocomplete="off" autocapitalize="off"
            placeholder="搜索..." spellcheck="false"
            type="search" class="search-input">
   </div>
@@ -185,10 +191,9 @@
   </div>
 </div>
 
+    </div>
   </div>
-</div>
 
-  </div>
 </div>
     </header>
 
@@ -197,6 +202,7 @@
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
+  <div class="reading-progress-bar"></div>
 
   <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
 
@@ -206,14 +212,13 @@
         <div class="content-wrap">
           
 
-          <div class="content">
+          <div class="content post posts-expand">
             
 
-  <div class="posts-expand">
-      
+    
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-lambda.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -226,14 +231,14 @@
       <meta itemprop="name" content="衣舞晨风">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
+        <h1 class="post-title" itemprop="name headline">
           Java Lambda表达式 实现原理分析
-        </h2>
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
+                <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
 
@@ -241,14 +246,14 @@
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
+                  <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
                 <time title="修改时间：2019-09-07 10:25:48" itemprop="dateModified" datetime="2019-09-07T10:25:48+08:00">2019-09-07</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
+                <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
@@ -266,14 +271,14 @@
             </span><br>
             <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
+                <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
               <span>12k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
+                <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               <span>11 分钟</span>
@@ -297,7 +302,7 @@
 <p>1、函数式接口 到底是什么？ </p>
 <p>2、Lambda表达式是怎么实现的？</p>
 <p>先介绍一个jdk的bin目录下的一个字节码查看工具及反编译工具：javap</p>
-<p><img src="/images/java-lambda/javap.png" alt></p>
+<p><img data-src="/images/java-lambda/javap.png" alt></p>
 <h1 id="二、函数式接口"><a href="#二、函数式接口" class="headerlink" title="二、函数式接口"></a>二、函数式接口</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@FunctionalInterface</span><br><span class="line">interface IFunctionTest&lt;T&gt; &#123;</span><br><span class="line">    public void print(T x);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>通过javap 反编译IFunctionTest.class 可以看到如下信息:</p>
@@ -307,7 +312,7 @@
 <p>为什么说需要是唯一一个抽象方法？</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@FunctionalInterface</span><br><span class="line">interface IFunctionTest&lt;T&gt; &#123;</span><br><span class="line">    public void print(T x);</span><br><span class="line">    public void print22(T x,int rr);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/java-lambda/javac-FunctionTest.png" alt></p>
+<p><img data-src="/images/java-lambda/javac-FunctionTest.png" alt></p>
 <p>虽然不能在函数式接口中定义多个方法，但可以定义默认方法、静态方法、定义java.lang.Object里的public方法：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">@FunctionalInterface</span><br><span class="line">interface Print&lt;T&gt; &#123;</span><br><span class="line">    public void print(T x);</span><br><span class="line">    default void doSomeMoreWork1()&#123;</span><br><span class="line">        // Method body</span><br><span class="line">    &#125;</span><br><span class="line">    static void printHello()&#123;</span><br><span class="line">        System.out.println(&quot;Hello&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    @Override</span><br><span class="line">    boolean equals(Object obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -319,7 +324,7 @@
 <p>通过javac编译LambdaTest.java文件，会生成LambdaTest.class、Print.class两个class文件。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">javac LambdaTest.java</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/java-lambda/javac-LambdaTest.png" alt></p>
+<p><img data-src="/images/java-lambda/javac-LambdaTest.png" alt></p>
 <h2 id="3-2-对于lambda实现的猜测"><a href="#3-2-对于lambda实现的猜测" class="headerlink" title="3.2 对于lambda实现的猜测"></a>3.2 对于lambda实现的猜测</h2><p>那么编译器对Lambda 都做了什么？反编译一下代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\Code\Java\study&gt;javap -p LambdaTest.class</span><br><span class="line">Compiled from &quot;LambdaTest.java&quot;</span><br><span class="line">public class LambdaTest &#123;</span><br><span class="line">  public LambdaTest();</span><br><span class="line">  public static void printString(java.lang.String, Print&lt;java.lang.String&gt;);</span><br><span class="line">  public static void main(java.lang.String[]);</span><br><span class="line">  private static void lambda$main$0(java.lang.String);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -417,7 +422,7 @@
 <p>可以在运行时加上-Djdk.internal.lambda.dumpProxyClasses，加上这个参数后，运行时，会将生成的内部类class码输出到一个文件中。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -Djdk.internal.lambda.dumpProxyClasses LambdaTest</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/java-lambda/dumpProxyClasses.png" alt><br>通过jad反编译LambdaTest$$Lambda$1.class文件，内容如下：</p>
+<p><img data-src="/images/java-lambda/dumpProxyClasses.png" alt><br>通过jad反编译LambdaTest$$Lambda$1.class文件，内容如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.</span><br><span class="line">// Jad home page: http://www.kpdus.com/jad.html</span><br><span class="line">// Decompiler options: packimports(3) </span><br><span class="line">final class LambdaTest$$Lambda$1 implements Print &#123;</span><br><span class="line">    private LambdaTest$$Lambda$1() &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void print(Object obj) &#123;</span><br><span class="line">        LambdaTest.lambda$main$0((String) obj);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="3-3-5-代码还原"><a href="#3-3-5-代码还原" class="headerlink" title="3.3.5 代码还原"></a>3.3.5 代码还原</h3><p>至此，我们可以推断出最终执行代码应该是这样的：</p>
@@ -442,7 +447,7 @@
     
     
       
-  <div class="popular-posts-header">推荐阅读</div>
+  <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\arthas-learning-notes.html" rel="bookmark">Arthas 笔记</a></div>
@@ -454,7 +459,7 @@
       <div class="popular-posts-title"><a href="\java-final.html" rel="bookmark">Java Final</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">译 Java Concurrent Atomic Package详解</a></div>
+      <div class="popular-posts-title"><a href="\java-aqs.html" rel="bookmark">Java AQS 实现原理（图文）分析</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\java-false-sharing.html" rel="bookmark">Java 伪共享</a></div>
@@ -493,7 +498,7 @@
     <a href="https://jiankunking.com/java-lambda.html" title="Java Lambda表达式 实现原理分析">https://jiankunking.com/java-lambda.html</a>
   </li>
   <li class="post-copyright-license">
-    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
   </li>
 </ul>
 </div>
@@ -508,7 +513,7 @@
         <div class="social-item">
           <a target="_blank" class="social-link" href="https://twitter.com/jiankunking">
             <span class="icon">
-              <i class="fa fa-fab fa-twitter"></i>
+              <i class="fab fa-twitter"></i>
             </span>
 
             <span class="label">Twitter</span>
@@ -518,7 +523,7 @@
         <div class="social-item">
           <a target="_blank" class="social-link" href="/images/wechat/wechat.jpg">
             <span class="icon">
-              <i class="fa fa-fab fa-weixin"></i>
+              <i class="fab fa-weixin"></i>
             </span>
 
             <span class="label">WeChat</span>
@@ -556,7 +561,6 @@
   
   
 
-  </div>
 
 
           </div>
@@ -644,10 +648,10 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/jiankunking" title="Twitter → https://twitter.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/jiankunking" title="Twitter → https://twitter.com/jiankunking" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
       </span>
   </div>
   <div class="cc-license motion-element" itemprop="license">
@@ -656,9 +660,8 @@
 
 
   <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-book"></i>
-      推荐阅读
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
     </div>
     <ul class="links-of-blogroll-list">
         <li class="links-of-blogroll-item">
@@ -680,20 +683,22 @@
     <footer class="footer">
       <div class="footer-inner">
         
-  <div class="beian"><a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
   </div>
 
 <div class="copyright">
   
-  &copy; 2019 – 
+  &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">jiankunking</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
-      <i class="fa fa-area-chart"></i>
+      <i class="fa fa-chart-area"></i>
     </span>
     <span title="站点总字数">691k</span>
 </div>
@@ -733,6 +738,9 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 <script src="/js/utils.js"></script><script src="/js/motion.js"></script>
@@ -744,12 +752,28 @@
   
   <script>
     (function(){
-      var bp = document.createElement('script');
-      var curProtocol = window.location.protocol.split(':')[0];
-      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(bp, s);
-    })();
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
   </script>
 
 

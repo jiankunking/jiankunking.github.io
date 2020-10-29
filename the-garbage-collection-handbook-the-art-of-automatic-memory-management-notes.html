@@ -16,11 +16,12 @@
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
@@ -31,13 +32,10 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https://jiankunking.com/images/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note/12.5%E6%8C%89%E5%BA%8F%E7%BB%88%E7%BB%93.png">
-<meta property="og:image" content="https://jiankunking.com/images/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note/13.1%E5%86%85%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%8F%AF%E8%83%BD%E7%9A%84%E9%87%8D%E6%8E%92%E5%88%97%E6%96%B9%E5%BC%8F.png">
 <meta property="og:updated_time" content="2019-11-18T02:07:46.039Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="垃圾回收算法手册：自动内存管理的艺术 笔记">
 <meta name="twitter:description" content="本文整理自：《垃圾回收算法手册：自动内存管理的艺术》作者：Richard Jones、Antony Hosking、Eliot Moss">
-<meta name="twitter:image" content="https://jiankunking.com/images/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note/12.5%E6%8C%89%E5%BA%8F%E7%BB%88%E7%BB%93.png">
 
 <link rel="canonical" href="https://jiankunking.com/the-garbage-collection-handbook-the-art-of-automatic-memory-management-notes.html">
 
@@ -47,12 +45,22 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : true
+    isPost : true,
+    lang   : 'zh-CN'
   };
 </script>
 
   <title>垃圾回收算法手册：自动内存管理的艺术 笔记 | 衣舞晨风</title>
   
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121070942-1');
+      }
+    </script>
 
 
   <script>
@@ -109,13 +117,11 @@
 
   <div class="site-meta">
 
-    <div>
-      <a href="/" class="brand" rel="start">
-        <span class="logo-line-before"><i></i></span>
-        <span class="site-title">衣舞晨风</span>
-        <span class="logo-line-after"><i></i></span>
-      </a>
-    </div>
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">衣舞晨风</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
   </div>
 
   <div class="site-nav-right">
@@ -126,32 +132,33 @@
 </div>
 
 
+
+
 <nav class="site-nav">
-  
-  <ul id="menu" class="menu">
+  <ul id="menu" class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -159,17 +166,18 @@
         </a>
       </li>
   </ul>
-
 </nav>
-  <div class="site-search">
-    <div class="search-pop-overlay">
-  <div class="popup search-popup">
-      <div class="search-header">
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
   <span class="search-icon">
     <i class="fa fa-search"></i>
   </span>
   <div class="search-input-container">
-    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+    <input autocomplete="off" autocapitalize="off"
            placeholder="搜索..." spellcheck="false"
            type="search" class="search-input">
   </div>
@@ -183,10 +191,9 @@
   </div>
 </div>
 
+    </div>
   </div>
-</div>
 
-  </div>
 </div>
     </header>
 
@@ -195,6 +202,7 @@
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
+  <div class="reading-progress-bar"></div>
 
   <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
 
@@ -204,14 +212,13 @@
         <div class="content-wrap">
           
 
-          <div class="content">
+          <div class="content post posts-expand">
             
 
-  <div class="posts-expand">
-      
+    
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://jiankunking.com/the-garbage-collection-handbook-the-art-of-automatic-memory-management-notes.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -224,14 +231,14 @@
       <meta itemprop="name" content="衣舞晨风">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
+        <h1 class="post-title" itemprop="name headline">
           垃圾回收算法手册：自动内存管理的艺术 笔记
-        </h2>
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
+                <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
 
@@ -239,14 +246,14 @@
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
+                  <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
                 <time title="修改时间：2019-11-18 10:07:46" itemprop="dateModified" datetime="2019-11-18T10:07:46+08:00">2019-11-18</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
+                <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
@@ -264,14 +271,14 @@
             </span><br>
             <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
+                <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
               <span>36k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
+                <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
               <span>33 分钟</span>
@@ -426,7 +433,7 @@
 </ul>
 <p>Java语言中不同强度的引用并没有我们此处描述的这么多,但此处的每种语义却与语言规范所定义的每种弱引用相关联。软引用允许系统对可调整的缓存进行收缩;弱引用可以用于规范化表或者其他场景;虚引用允许开发者控制回收的顺序以及时间。</p>
 <p>多强度引用的实现需要在回收过程中增加额外的遍历,但这些操作通常可以很快完成。下面我们以Java的4种强度为例来描述复制式回收器对不同强度引用的处理方式。标记清扫回收器也可以通过类似的方式实现,同时也会更加简单。回收器应当以如下方式执行堆遍历过程：<br>1)从根开始,仅对强可达对象进行追踪并复制,同时找出所有的软对象、弱对象、虚对象(但不对这些对象进行追踪)。<br>2)如果必要,则自动将所有软引用置空。如果无需将软引用置空,则需对其进行追踪和复制,并找出所有的软可达对象。对软可达对象进行追踪时可能会发现新的弱可达或虚可达对象。<br>3)如果弱引用的目标对象已被复制到目标空间,则更新该引用,否则将该引用置空。<br>4)如果尚未复制的对象中存在需要终结的对象,则将其加入终结队列,然后回到第1步,并以终结队列作为新的根进行追踪。需要注意的是,在第二轮执行过程中将不会再有需要终结的对象产生。<br>5)如果虚引用的目标对象并未得到复制,则将其加入ReferenceQueue里。然后回收器将从该对象开始完成虚可达对象的追踪与复制。需要注意的是,回收器不会将任何虚引用置空,这一操作必须由开发者显式操作。</p>
-<h3 id="使用虚对象控制终结顺序"><a href="#使用虚对象控制终结顺序" class="headerlink" title="使用虚对象控制终结顺序"></a>使用虚对象控制终结顺序</h3><p>假设有两个对象,A和B,我们希望它们的终结顺序是先A后B。一种实现策略是创建虚对象A来持有对象A的虚引用。除此之外,A的类型应该是对Java的PhantomReference的扩展,其将持有一个指向对象B的强引用,以避免对象B被提早终结。图12.5演示了这一情况。<br><img src="/images/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note/12.5%E6%8C%89%E5%BA%8F%E7%BB%88%E7%BB%93.png" alt><br>一旦对象A’(即对象A的虚引用来源)加入到用户指定的队列,意味着对象A已经从应用程序不可达,并且A对应的终结方法已经运行过,这是因为终结队列可达要比虚可达的强度更高。然后我们将虚对象A指向A的虚引用图12.5按序终结。我们希望在对象A和B置空,再将其指向B的强引用置空,如此一来,对象B的终结方法将在下一轮回收中得到调用最后我们再把虚对象从全局对象表中删除,则虚对象本身也将得到回收。我们很容易将该策略进行推广,进而实现三个或者更多对象的终结顺序控制,所付出的代价是在两两对象之间通过虚对象来施加终结顺序限制。</p>
+<h3 id="使用虚对象控制终结顺序"><a href="#使用虚对象控制终结顺序" class="headerlink" title="使用虚对象控制终结顺序"></a>使用虚对象控制终结顺序</h3><p>假设有两个对象,A和B,我们希望它们的终结顺序是先A后B。一种实现策略是创建虚对象A来持有对象A的虚引用。除此之外,A的类型应该是对Java的PhantomReference的扩展,其将持有一个指向对象B的强引用,以避免对象B被提早终结。图12.5演示了这一情况。<br><img data-src="/images/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note/12.5%E6%8C%89%E5%BA%8F%E7%BB%88%E7%BB%93.png" alt><br>一旦对象A’(即对象A的虚引用来源)加入到用户指定的队列,意味着对象A已经从应用程序不可达,并且A对应的终结方法已经运行过,这是因为终结队列可达要比虚可达的强度更高。然后我们将虚对象A指向A的虚引用图12.5按序终结。我们希望在对象A和B置空,再将其指向B的强引用置空,如此一来,对象B的终结方法将在下一轮回收中得到调用最后我们再把虚对象从全局对象表中删除,则虚对象本身也将得到回收。我们很容易将该策略进行推广,进而实现三个或者更多对象的终结顺序控制,所付出的代价是在两两对象之间通过虚对象来施加终结顺序限制。</p>
 <p>终结顺序的控制只能通过虚对象完成,弱对象无法胜任。对于图12.5所示的状态,如果我们将虚对象替换为弱对象,则当对象A不可达时,A中的弱引用将被置空,且A’将被添加到用户指定的队列中。此时我们可以将A中指向B的强引用置空,但不幸的是,置空A中弱引用的操作将发生在A的终结方法执行之前(因为弱引用的强度高于终结方法引用——译者注),此时我们将很难知道A的终结方法何时执行完毕,因此对象B的终结方法可能会先得到执行。故意将虚引用的强度设计得比终结方法引用更低,目的正在于确保只有当对象的终结方法执行完毕之后,其虚引用来源才会被加入到用户指定的队列。</p>
 <h3 id="弱指针置空时的通知"><a href="#弱指针置空时的通知" class="headerlink" title="弱指针置空时的通知"></a>弱指针置空时的通知</h3><p>在弱引用机制之上,某些应用程序可能需要在特定的弱引用被清空时得到通知(虚引用可以通知应用程序对象已被终结,而弱引用则可以通知应用程序对象可能将要终结),然后再执行某些适当的动作。因此,弱引用机制通常也会支持通知,其实现策略一般是将弱对象添加到开发者指定的队列中。例如,Java的ReferenceQueue内建类便是以此为目的设计的,应用程序既可以对其进行轮询,也可使用阻塞式的操作来获取元素(或者附加额外的超时时间)。应用程序也可以检测某个给定的弱对象是否已经加入到某个队列中(Java只允许弱对象最多被加入到一个队列中)。回收器在对弱指针的多次遍历过程中可以很轻松地实现弱对象的人队。许多语言都增加了类似的通知机制。</p>
 <h1 id="并发算法预备知识"><a href="#并发算法预备知识" class="headerlink" title="并发算法预备知识"></a>并发算法预备知识</h1><h2 id="硬件"><a href="#硬件" class="headerlink" title="硬件"></a>硬件</h2><h3 id="处理器与线程"><a href="#处理器与线程" class="headerlink" title="处理器与线程"></a>处理器与线程</h3><p>处理器(processor)是硬件执行指令的单元。线程(thread)是单一顺序控制流,是软件执行的具体化。线程的状态可以是运行中(running)(也称调度中(scheduled))、可运行(ready to run),或者是为等待某些条件而被阻塞(blocked),例如等待消息的到来、输入/输出的完成,或者到达特定的时间。调度器(scheduler)通常是操作系统组件,其功能是确定在任意时刻哪些线程应当在哪些处理器上执行。如果某个线程被调度器从某个处理器换出(其状态从运行中转变为可运行或者被阻塞),则当其下一次被调度时很可能会在另一个不同的处理器上运行。当然,调度器也允许线程和处理器之间存在一定的亲和性(affinity)。</p>
@@ -466,7 +473,7 @@
 <h3 id="内存屏障与先于关系"><a href="#内存屏障与先于关系" class="headerlink" title="内存屏障与先于关系"></a>内存屏障与先于关系</h3><p><font color="DeepPink"><strong>内存屏障(memory fence)是一种处理器操作,它可以阻止处理器对某些内存访问进行重排序。</strong></font>特别地,它可以避免某些访问指令在屏障之前发送(issue),也可以避免某些访问指令被延迟到屏障之后发送,或者两者皆可。例如,完全读内存屏障可以确保屏障之前的所有读操作都能先于屏障之后的读操作执行。</p>
 <p>先于关系(happens- before)这一概念则更加规范化,它是指内存访问操作在存储中所应遵从的发生顺序。完全读内存屏障相当于是在每两个相邻读操作之间施加了先于关系。<font color="DeepPink"><strong>原子操作通常会为其内部的所有子操作施加完全内存屏障:所有较早的读、写、原子操作都必须先于较晚的读、写、原子操作发生。</strong></font>在先于关系之外还存在其他一些模型,例如获取一释放(acquire-release)语义。在该模型下,获取操作(acquire operation)(可以将其看作是获取锁)能够阻止较晚操作在该操作之前发生,但较早的读写操作则可以在获取操作之后发生;释放操作(release operation)与之完全对称:它能够阻止较早的操作在释放操作之后发生,但是较晩的操作则可以在释放操作之前发生。简而言之,处理器可以将获取一释放操作对之外的操作移动到其内部,但却不能将其内部的操作移动到外部。临界区(critical section)便可使用获取一释放模型来实现。</p>
 <h3 id="内存一致性模型"><a href="#内存一致性模型" class="headerlink" title="内存一致性模型"></a>内存一致性模型</h3><p>最强的内存一致性模型当属严格一致性(strict consitency),即所有的读、写、原子操作在整个系统中的任意位置都以相同的顺序发生(occur)。严格一致性意味着所有操作的发生顺序都满足先于关系,且这一顺序是由某一全局时钟决定的。严格一致性是最容易理解的种模型,这可能也是大多数开发者以为硬件系统所遵从的顺序,但这一模型很难高效地实现。稍弱的一种模型是顺序一致性(sequential consistency)模型,在该模型中,全局先于顺序只需要与每个处理器的程序顺序保持一致即可。相对于其他更加宽松的一致性模型,顺序一致性模型下的编程更加简单,因而规模较小的处理器通常会尝试达到或者接近顺序一致性的要求。弱一致性(weak consitency)会将所有原子操作当作完全屏障。上文所描述的获取释放模型通常被称为释放一致性(release consitency)模型。因果一致性(causal consistency)模型的强度介于顺序一致性和弱一致性之间,该模型要求程序所发起的读操作与其后续的写操作之间必须满足先于关系,其目的在于避免读操作对写操作所写入的值造成影响,即对于先读取某个值然后再将其写入内存的操作,因果一致性会确保它们之间的先于关系。宽松一致性(relaxed consistency)模型泛指所有比顺序一致性模型更弱的模型。</p>
-<p><img src="/images/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note/13.1%E5%86%85%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%8F%AF%E8%83%BD%E7%9A%84%E9%87%8D%E6%8E%92%E5%88%97%E6%96%B9%E5%BC%8F.png" alt></p>
+<p><img data-src="/images/the-garbage-collection-handbook-the-art-of-automatic-memory-management-note/13.1%E5%86%85%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%8F%AF%E8%83%BD%E7%9A%84%E9%87%8D%E6%8E%92%E5%88%97%E6%96%B9%E5%BC%8F.png" alt></p>
 <h2 id="硬件原语"><a href="#硬件原语" class="headerlink" title="硬件原语"></a>硬件原语</h2><h3 id="比较并交换"><a href="#比较并交换" class="headerlink" title="比较并交换"></a>比较并交换</h3><p>即先判断内存地址的当前值,然后再尝试原子性地将其更新,该操作通常被称为“比较一比较并交换”(compare-then- compare-and-swap)。CompareAndSwap原语潜藏着一个微妙的陷阱,即在调用CompareAndSwap时,目标内存地址的值改变了数次,但该地址的当前值却与调用者之前获取到的值相等。某些情况下这可能不会出现问题,但在其他情况下,相同的值并不意味着相同的状态。例如在垃圾回收中,在经历两次半区复制回收之后,某一指针的目标对象很可能与其最初的目标对象完全不同。CompareAndswap原语无法探测到“某个值被修改,然后再被改回原值”的情况,即所谓的ABA问题(ABA problem)。</p>
 <h3 id="加载链接-条件存储"><a href="#加载链接-条件存储" class="headerlink" title="加载链接/条件存储"></a>加载链接/条件存储</h3><p>在LoadLinked和StoreConditionally原语中,处理器会记录LoadLinked原语所访问的地址,并使用处理器的一致性机制来探测所有针对该地址的更新操作,从而解决ABA问题。</p>
 <p>LoadLinked/StoreConditionally原语还有另外一个特征需要注意:即使任何处理器都没有更新过保留地址的值, StoreConditionally原语也有可能出现假性失败。多种低级硬件状况可能导致假性失败,其中值得注意的是中断的出现,包括缺页陷阱、溢出陷阱、时钟中断、IO中断等,这些中断均需要由内核进行处理。这种失败通常不会成为问题,但是如果Loadlinked和StoreConditiona11y之间的某段代码总是引发陷阱,则StoreConditionallsy操作可能始终都会失败。</p>
@@ -513,7 +520,7 @@
     
     
       
-  <div class="popular-posts-header">推荐阅读</div>
+  <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\java-jrockit-notes.html" rel="bookmark">JRockit权威指南深入理解JVM 笔记</a></div>
@@ -528,7 +535,7 @@
       <div class="popular-posts-title"><a href="\java-gc-g1.html" rel="bookmark">Java 垃圾回收算法之G1</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\zgc-a-scalable-low-latency-garbage-collector.html" rel="bookmark">[译]ZGC: 一个可伸缩的低延迟垃圾收集器</a></div>
+      <div class="popular-posts-title"><a href="\zgc-uncommit-unused-memory.html" rel="bookmark">[译]ZGC: 未使用堆内存归还操作系统</a></div>
     </li>
   </ul>
 
@@ -564,7 +571,7 @@
     <a href="https://jiankunking.com/the-garbage-collection-handbook-the-art-of-automatic-memory-management-notes.html" title="垃圾回收算法手册：自动内存管理的艺术 笔记">https://jiankunking.com/the-garbage-collection-handbook-the-art-of-automatic-memory-management-notes.html</a>
   </li>
   <li class="post-copyright-license">
-    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
   </li>
 </ul>
 </div>
@@ -579,7 +586,7 @@
         <div class="social-item">
           <a target="_blank" class="social-link" href="https://twitter.com/jiankunking">
             <span class="icon">
-              <i class="fa fa-fab fa-twitter"></i>
+              <i class="fab fa-twitter"></i>
             </span>
 
             <span class="label">Twitter</span>
@@ -589,7 +596,7 @@
         <div class="social-item">
           <a target="_blank" class="social-link" href="/images/wechat/wechat.jpg">
             <span class="icon">
-              <i class="fa fa-fab fa-weixin"></i>
+              <i class="fab fa-weixin"></i>
             </span>
 
             <span class="label">WeChat</span>
@@ -627,7 +634,6 @@
   
   
 
-  </div>
 
 
           </div>
@@ -715,10 +721,10 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/jiankunking" title="Twitter → https://twitter.com/jiankunking" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/jiankunking" title="Twitter → https://twitter.com/jiankunking" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
       </span>
   </div>
   <div class="cc-license motion-element" itemprop="license">
@@ -727,9 +733,8 @@
 
 
   <div class="links-of-blogroll motion-element">
-    <div class="links-of-blogroll-title">
-      <i class="fa fa-fw fa-book"></i>
-      推荐阅读
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
     </div>
     <ul class="links-of-blogroll-list">
         <li class="links-of-blogroll-item">
@@ -751,20 +756,22 @@
     <footer class="footer">
       <div class="footer-inner">
         
-  <div class="beian"><a href="http://www.beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
   </div>
 
 <div class="copyright">
   
-  &copy; 2019 – 
+  &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">jiankunking</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
-      <i class="fa fa-area-chart"></i>
+      <i class="fa fa-chart-area"></i>
     </span>
     <span title="站点总字数">691k</span>
 </div>
@@ -804,6 +811,9 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 <script src="/js/utils.js"></script><script src="/js/motion.js"></script>
@@ -815,12 +825,28 @@
   
   <script>
     (function(){
-      var bp = document.createElement('script');
-      var curProtocol = window.location.protocol.split(':')[0];
-      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(bp, s);
-    })();
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
   </script>
 
 
