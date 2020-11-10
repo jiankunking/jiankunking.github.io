@@ -282,7 +282,7 @@ chmod 777 /data/hlht/data/elasticsearch
 
 51、查看磁盘剩余空间
 ```
-df -hl ./*
+df -hl /*
 ```
 52、查看某个目录下文件资源占用大小
 ```
@@ -410,6 +410,12 @@ ldd命令 用于打印程序或者库文件所依赖的共享库列表。
 
 ```
 /sbin/iptables -I INPUT -p tcp --dport 3306 -j ACCEPT
+```
+
+72、
+
+```
+ps -eo pid,lstart,etime | grep 5176
 ```
 
 # Vi/Vim

@@ -3,7 +3,7 @@ title: jiankunking
 date: 2019-08-01 11:20:12
 ---
 
-\#\#\#\# Programmer
+\#\#\#\# Software Engineer
 
 <!-- \#\#\#\# Industry Experience
 
@@ -13,9 +13,12 @@ date: 2019-08-01 11:20:12
 \#\#\#\# Skills
 
 \- Java, Golang, C#, JavaScript, Python
-\- MySQL, ElasticSearch, Kafka, Prometheus
+\- MySQL, ElasticSearch, Kafka, RocketMQ, Prometheus
 \- Linux, Windows
 \- Docker, Kubernetes
+
+\#\#\#\#  Domain Knowledge
+![](/images/about-me/工作领域.png)
 
 \#\#\#\# Contact
 ![](/images/wechat/wechat.jpg)
