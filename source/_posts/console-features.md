@@ -1,9 +1,9 @@
 ---
 title: 控制台
 categories:
-  - Architecture
-tags:
-  - Architecture
+  - Console
+tags:	
+  - Console
   - Design
   - 原创
 abbrlink: 21273
@@ -15,4 +15,7 @@ date: 2020-09-25 16:41:40
 
 <!-- more -->
 
-![](/images/console-architecture/控制台.png)
+![](/images/console-features/控制台.png)
+
+[集成容器云部分](https://www.jiankunking.com/integrated-container-cloud.html)
+

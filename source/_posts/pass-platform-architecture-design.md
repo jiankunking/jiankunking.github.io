@@ -10,7 +10,7 @@ tags:
   - 原创
 ---
 
-> 构建一个PaaS平台
+> 构建一个PaaS平台（原生Docker已逐步下线，目前主要使用[Kubernetes](https://www.jiankunking.com/docking-container-cloud.html)）
 
 <!-- more -->
 

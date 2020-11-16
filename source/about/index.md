@@ -21,7 +21,12 @@ date: 2019-08-01 11:20:12
 ![](/images/about-me/工作领域.png)
 
 \#\#\#\# Contact
+
+<code> If you have any questions about the blog post, please leave a message on the blog. </code>
+
+\#\#\#\# WeChat Official Accounts
 ![](/images/wechat/wechat.jpg)
+
 
 
 

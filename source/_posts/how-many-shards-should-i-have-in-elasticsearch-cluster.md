@@ -11,10 +11,6 @@ tags:
   - 转载
 ---
 
-> 原文地址：https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster
-
-<!-- more -->
-
 Elasticsearch 是一个功能十分丰富的平台，支持各种用例，能够在数据整理和复制战略方面提供很大的灵活性。然而这一灵活性有时也会带来困扰，让您在前期难以确定如何最好地将数据整理为索引和分片，如果您刚上手使用 Elastic Stack，这一点可能更明显。如果未能做出最佳选择，尽管这在开始的时候可能不会造成问题，但随着数据量越来越大，便有可能会引发性能问题。集群中的数据越多，要纠正这一问题就越难，这是因为有时必须对大量数据进行重新索引。
 
 据我们了解，当用户遇到性能问题时，原因通常都可回溯至数据的索引方式以及集群中的分片数量。对于涉及多租户和/或用到时序型索引的用例，这一点尤为突出。与用户讨论这一问题时，无论是在活动或聚会中面对面讨论，还是在论坛上讨论，<font color=DeepPink>**我们遇到的一些最常见问题就是“我应该设置多少个分片？”以及“我应该设置多大的分片？”。**</font>
@@ -90,3 +86,6 @@ Elasticsearch 中的数据会整理为[索引](https://www.elastic.co/guide/en/e
 本篇博文针对在 Elasticsearch 中管理数据的最佳方法提供了一些建议和使用指南。如想深入了解，可以参阅“Elasticsearch：权威指南”中的[扩容设计](https://www.elastic.co/guide/en/elasticsearch/guide/2.x/scale.html)一节，尽管此部分内容已经发布一段时间了，但却仍然值得一读。
 
 虽讲了这么多，关于如何最好地在索引和分片之间分配数据，很多决策仍取决于用例的具体情况，有时的确很难确定如何最好地应用现有建议。
+
+
+> 原文地址：https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster

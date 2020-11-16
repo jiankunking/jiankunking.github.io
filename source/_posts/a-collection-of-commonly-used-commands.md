@@ -280,9 +280,13 @@ chmod 777 /data/hlht/data/elasticsearch
 ```
 查看当前用户所属组：groups
 
-51、查看磁盘剩余空间
+51、查看进程启动及运行时间
+
 ```
-df -hl /*
+# ps -eo lstart 启动时间
+# ps -eo etime   运行多长时间
+
+ps -eo pid,lstart,etime | grep 5176
 ```
 52、查看某个目录下文件资源占用大小
 ```
@@ -406,17 +410,14 @@ systemctl  list-unit-files |  grep enable （查看哪些为开机启动服务�
 ldd命令 用于打印程序或者库文件所依赖的共享库列表。
 可以用来查看golang编译的二进制程序的依赖。
 
+> Golang 在编译的时候，可以关闭CGO（CGO_ENABLED=0），从而移除依赖。
+
 71、iptables 放开某个端口
 
 ```
 /sbin/iptables -I INPUT -p tcp --dport 3306 -j ACCEPT
 ```
 
-72、
-
-```
-ps -eo pid,lstart,etime | grep 5176
-```
 
 # Vi/Vim
 1、 粘贴时行首出现很多缩进和空格
