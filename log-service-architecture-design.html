@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。">
-<meta name="keywords" content="原创,Architecture,Log,Elasticsearch,Filebeat">
+<meta name="keywords" content="Architecture,原创,Log,Elasticsearch,Filebeat">
 <meta property="og:type" content="article">
 <meta property="og:title" content="日志服务架构设计">
 <meta property="og:url" content="https://jiankunking.com/log-service-architecture-design.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2020-04-27T12:36:34.649Z">
+<meta property="og:updated_time" content="2020-11-16T01:39:10.645Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="日志服务架构设计">
 <meta name="twitter:description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。">
@@ -249,7 +249,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-04-27 20:36:34" itemprop="dateModified" datetime="2020-04-27T20:36:34+08:00">2020-04-27</time>
+                <time title="修改时间：2020-11-16 09:39:10" itemprop="dateModified" datetime="2020-11-16T09:39:10+08:00">2020-11-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -274,7 +274,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3.3k</span>
+              <span>3.1k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -303,14 +303,14 @@
 <ul>
 <li>机器直接部署</li>
 <li>通过原生docker部署</li>
-<li>通过kubernates集群部署</li>
+<li>通过kubernetes集群部署</li>
 </ul>
 <p>部署环境不统一，导致查看应用日志很不方便。</p>
 <h1 id="业务需求"><a href="#业务需求" class="headerlink" title="业务需求"></a>业务需求</h1><p>与部署环境对应，对于日志收集需求分为以下几类：</p>
 <ul>
 <li>机器上的文本日志（直接运行在物理机或者虚拟机中的应用日志）</li>
 <li>运行在docker容器中的应用日志</li>
-<li>运行在kubernates集群中的应用日志</li>
+<li>运行在kubernetes集群中的应用日志</li>
 </ul>
 <p>具体业务需求可以拆分为：</p>
 <ul>
@@ -385,23 +385,27 @@
 <li>kibana对于业务开发人员有一定的学习成本</li>
 <li>kibana界面没有很好的将日志内容与业务意义关联起来（界面选择总比一次次的输入要好，这也是我们将日志的项目、应用、实例等业务信息解析出来的原因）</li>
 <li><a href="https://github.com/jiankunking/log-search" target="_blank" rel="noopener">log-search</a>支持Query String，因此对于熟悉kibana的开发人员来说，在我们自己开发的前端界面检索效果是一样的。</li>
+<li>kibana无法查看某条日志的上下文</li>
 </ol>
 <p><a href="https://github.com/jiankunking/log-search" target="_blank" rel="noopener">log-search</a>提供的功能可以参见github：<a href="https://github.com/jiankunking/log-search" target="_blank" rel="noopener">https://github.com/jiankunking/log-search</a></p>
 <blockquote>
 <p>如果日志需要清洗的比较多，可以采用方案1，或者先不清洗，先把数据落到Elasticsearch，然后在查询的时候，进行处理。比如在我们的场景中，可以先把日志落到Elasticsearch中，然后在需要检索应用名称的时候，通过代码来处理并获取app名字。</p>
 </blockquote>
-<h1 id="监控、告警"><a href="#监控、告警" class="headerlink" title="监控、告警"></a>监控、告警</h1><p>其实基于日志可以做很多事情，比如：</p>
-<ul>
-<li>基于日志做监控（Google Dapper）</li>
-<li>基于日志做告警</li>
-<li>基于日志做Machine Learning</li>
-</ul>
-<p>具体思路，可以参见下图：</p>
-<p><img data-src="/images/log-service-architecture-design/%E5%9F%BA%E4%BA%8E%E6%97%A5%E5%BF%97%E7%9A%84%E7%9B%91%E6%8E%A7%E3%80%81%E5%91%8A%E8%AD%A6.png" alt></p>
-<blockquote>
-<p>前提：能要求使用方，按照某种规则打印日志。<br>监控发展：监控基本就是先打通链路trace，然后再在上报信息或者日志信息中，加强业务方面标识，即给监控添加业务维度方面的视角。</p>
-</blockquote>
-<h1 id="演进"><a href="#演进" class="headerlink" title="演进"></a>演进</h1><p><img data-src="/images/log-service-architecture-design/%E6%97%A5%E5%BF%97%E8%A7%A3%E6%9E%90.png" alt></p>
+<!-- # 监控、告警
+其实基于日志可以做很多事情，比如：
+
+* 基于日志做监控（Google Dapper）
+* 基于日志做告警
+* 基于日志做Machine Learning
+
+具体思路，可以参见下图：
+
+![](/images/log-service-architecture-design/基于日志的监控、告警.png)
+
+> 前提：能要求使用方，按照某种规则打印日志。
+> 监控发展：监控基本就是先打通链路trace，然后再在上报信息或者日志信息中，加强业务方面标识，即给监控添加业务维度方面的视角。 -->
+
+<h1 id="演进（二期）"><a href="#演进（二期）" class="headerlink" title="演进（二期）"></a>演进（二期）</h1><p><img data-src="/images/log-service-architecture-design/%E6%97%A5%E5%BF%97%E8%A7%A3%E6%9E%90.png" alt></p>
 <h1 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h1><h2 id="DaemonSet"><a href="#DaemonSet" class="headerlink" title="DaemonSet"></a>DaemonSet</h2><p>以DaemonSet方式部署Filebeat来收集日志，其实收集也是宿主机/var/lib/docker/containers目录下的日志。<br>Running Filebeat on Kubernetes</p>
 <h2 id="Sidecar"><a href="#Sidecar" class="headerlink" title="Sidecar"></a>Sidecar</h2><p>一个POD中运行一个sidecar的日志agent容器，用于采集该POD主容器产生的日志。</p>
 <p>莫名想起了istio。</p>
@@ -503,8 +507,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/Architecture/" rel="tag"># Architecture</a>
+              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/Log/" rel="tag"># Log</a>
               <a href="/tags/Elasticsearch/" rel="tag"># Elasticsearch</a>
               <a href="/tags/Filebeat/" rel="tag"># Filebeat</a>
@@ -582,7 +586,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#业务需求"><span class="nav-number">2.</span> <span class="nav-text">业务需求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#业界日志系统架构"><span class="nav-number">3.</span> <span class="nav-text">业界日志系统架构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#组件选择"><span class="nav-number">4.</span> <span class="nav-text">组件选择</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Agent"><span class="nav-number">4.1.</span> <span class="nav-text">Agent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Collector、MQ"><span class="nav-number">4.2.</span> <span class="nav-text">Collector、MQ</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ETL"><span class="nav-number">4.3.</span> <span class="nav-text">ETL</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#具体实现"><span class="nav-number">5.</span> <span class="nav-text">具体实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#监控、告警"><span class="nav-number">6.</span> <span class="nav-text">监控、告警</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#演进"><span class="nav-number">7.</span> <span class="nav-text">演进</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">8.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#DaemonSet"><span class="nav-number">8.1.</span> <span class="nav-text">DaemonSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sidecar"><span class="nav-number">8.2.</span> <span class="nav-text">Sidecar</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#业务需求"><span class="nav-number">2.</span> <span class="nav-text">业务需求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#业界日志系统架构"><span class="nav-number">3.</span> <span class="nav-text">业界日志系统架构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#组件选择"><span class="nav-number">4.</span> <span class="nav-text">组件选择</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Agent"><span class="nav-number">4.1.</span> <span class="nav-text">Agent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Collector、MQ"><span class="nav-number">4.2.</span> <span class="nav-text">Collector、MQ</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ETL"><span class="nav-number">4.3.</span> <span class="nav-text">ETL</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#具体实现"><span class="nav-number">5.</span> <span class="nav-text">具体实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#演进（二期）"><span class="nav-number">6.</span> <span class="nav-text">演进（二期）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">7.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#DaemonSet"><span class="nav-number">7.1.</span> <span class="nav-text">DaemonSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sidecar"><span class="nav-number">7.2.</span> <span class="nav-text">Sidecar</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
