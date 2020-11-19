@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="MySQL实战45讲 笔记作者： 林晓斌">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2020-05-16T03:36:22.333Z">
+<meta property="og:updated_time" content="2020-11-19T01:29:02.287Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL实战45讲 笔记">
 <meta name="twitter:description" content="MySQL实战45讲 笔记作者： 林晓斌">
@@ -249,7 +249,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-05-16 11:36:22" itemprop="dateModified" datetime="2020-05-16T11:36:22+08:00">2020-05-16</time>
+                <time title="修改时间：2020-11-19 09:29:02" itemprop="dateModified" datetime="2020-11-19T09:29:02+08:00">2020-11-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -311,7 +311,7 @@
 <p>write pos是当前记录的位置，一边写一边后移，写到第3号文件末尾后就回到0号文件开头。checkpoint是当前要擦除的位置，也是往后推移并且循环的，擦除记录前要把记录更新到数据文件。</p>
 <p>如果write pos追上checkpoint，这时候不能再执行新的更新，得停下来先擦掉一些记录，把checkpoint推进一下。</p>
 <p>有了redo log，InnoDB就可以保证即使数据库发生异常重启，之前提交的记录都不会丢失，这个能力称为crash-safe。</p>
-<h2 id="重要的日志模块：binlog"><a href="#重要的日志模块：binlog" class="headerlink" title="重要的日志模块：binlog"></a>重要的日志模块：binlog</h2><p>MySQL整体来看，其实就有两块：一块是Server层，它主要做的是MySQL功能层面的事情；还有一块是引擎层，负责存储相关的具体事宜。上面我们聊到的redo log是InnoDB引擎特有的日志，而Server层也有自己的日志，称为binlog（归档日志）。</p>
+<h2 id="重要的日志模块：binlog"><a href="#重要的日志模块：binlog" class="headerlink" title="重要的日志模块：binlog"></a>重要的日志模块：binlog</h2><p>MySQL整体来看，其实就有两块：一块是Server层，它主要做的是MySQL功能层面的事情；还有一块是引擎层，负责存储相关的具体事宜。上面我们聊到的redo log是InnoDB引擎特有的日志，而Server层也有自己的日志，称为binlog(归档日志)。</p>
 <p>我想你肯定会问，为什么会有两份日志呢？</p>
 <p>因为最开始MySQL里并没有InnoDB引擎。MySQL自带的引擎是MyISAM，但是MyISAM没有crash-safe的能力，binlog日志只能用于归档。而InnoDB是另一个公司以插件形式引入MySQL的，既然只依靠binlog是没有crash-safe能力的，所以InnoDB使用另外一套日志系统-也就是redo log来实现crash-safe能力。</p>
 <p>这两种日志有以下三点不同。</p>
@@ -326,7 +326,7 @@
 <li>执行器拿到引擎给的行数据，把这个值加上1，比如原来是N，现在就是N+1，得到新的一行数据，再调用引擎接口写入这行新数据。</li>
 <li>引擎将这行新数据更新到内存中，同时将这个更新操作记录到redo log里面，此时redo log处于prepare状态。然后告知执行器执行完成了，随时可以提交事务。</li>
 <li>执行器生成这个操作的binlog，并把binlog写入磁盘。</li>
-<li>执行器调用引擎的提交事务接口，引擎把刚刚写入的redo log改成提交（commit）状态，更新完成。</li>
+<li>执行器调用引擎的提交事务接口，引擎把刚刚写入的redo log改成提交(commit)状态，更新完成。</li>
 </ol>
 <p>最后三步看上去有点“绕”，将redo log的写入拆成了两个步骤：prepare和commit，这就是”两阶段提交”。</p>
 <h2 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h2><p>为什么必须有“两阶段提交”呢？这是为了让两份日志之间的逻辑一致。要说明这个问题，我们得从文章开头的那个问题说起：怎样让数据库恢复到半个月内任意一秒的状态？</p>
@@ -352,7 +352,7 @@
 <li>读未提交是指，一个事务还没提交时，它做的变更就能被别的事务看到。</li>
 <li>读提交是指，一个事务提交之后，它做的变更才会被其他事务看到。</li>
 <li><strong>可重复读是指，一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。当然在可重复读隔离级别下，未提交变更对其他事务也是不可见的。</strong></li>
-<li>串行化，顾名思义是对于同一行记录，“写”会加“写锁”，“读”会加“读锁”。当出现读写锁冲突的时候，后访问的事务必须等前<br>一个事务执行完成，才能继续执行。</li>
+<li>串行化，顾名思义是对于同一行记录，“写”会加“写锁”，“读”会加“读锁”。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。</li>
 </ul>
 <p>在实现上，数据库里面会创建一个视图，访问的时候以视图的逻辑结果为准。在“可重复读”隔离级别下，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图。在“读提交”隔离级别下，这个视图是在每个SQL语句开始执行的时候创建的。这里需要注意的是，“读未提交”隔离级别下直接返回记录上的最新值，没有视图概念；而“串行化”隔离级别下直接用加锁的方式来避免并行访问。</p>
 <p>总结来说，存在即合理，哪个隔离级别都有它自己的使用场景，你要根据自己的业务情况来定。我想你可能会问那什么时候需要“可重复读”的场景呢？我们来看一个数据校对逻辑的案例。</p>
@@ -362,15 +362,15 @@
 <p>在MySQL中，实际上每条记录在更新的时候都会同时记录一条回滚操作。记录上的最新值，通过回滚操作，都可以得到前一个状态的值。</p>
 <p>假设一个值从1被按顺序改成了2、3、4，在回滚日志里面就会有类似下面的记录。</p>
 <p><img data-src="/images/45-lectures-on-mysql-in-practice-notes/read-view.png" alt></p>
-<p>当前值是4，但是在查询这条记录的时候，不同时刻启动的事务会有不同的read-view。如图中看到的，<strong>在视图A、B、C里面，这一个记录的值分别是1、2、4</strong>，同一条记录在系统中可以存在多个版本，就是数据库的多版本并发控制（MVCC）。对于read-view A，要得到1，就必须将当前值依次执行图中所有的回滚操作得到。</p>
+<p>当前值是4，但是在查询这条记录的时候，不同时刻启动的事务会有不同的read-view。如图中看到的，<strong>在视图A、B、C里面，这一个记录的值分别是1、2、4</strong>，同一条记录在系统中可以存在多个版本，就是数据库的多版本并发控制(MVCC)。对于read-view A，要得到1，就必须将当前值依次执行图中所有的回滚操作得到。</p>
 <p>同时你会发现，即使现在有另外一个事务正在将4改成5，这个事务跟read-view A、B、C对应的事务是不会冲突的。</p>
-<h1 id="深入浅出索引（上）"><a href="#深入浅出索引（上）" class="headerlink" title="深入浅出索引（上）"></a>深入浅出索引（上）</h1><p>为了让一个查询尽量少地读磁盘，就必须让查询过程访问尽量少的数据块。那么，我们就不应该使用二叉树，而是要使用“N叉”树。这里，“N叉”树中的“N”取决于数据块的大小。</p>
+<h1 id="深入浅出索引-上"><a href="#深入浅出索引-上" class="headerlink" title="深入浅出索引(上)"></a>深入浅出索引(上)</h1><p>为了让一个查询尽量少地读磁盘，就必须让查询过程访问尽量少的数据块。那么，我们就不应该使用二叉树，而是要使用“N叉”树。这里，“N叉”树中的“N”取决于数据块的大小。</p>
 <p><font color="DeepPink"><strong>以InnoDB的一个整数字段索引为例，这个N差不多是1200。这棵树高是4的时候，就可以存1200的3次方个值，这已经17亿了。考虑到树根的数据块总是在内存中的，一个10亿行的表上一个整数字段的索引，查找一个值最多只需要访问3次磁盘。其实，树的第二层也有很大概率在内存中，那么访问磁盘的平均次数就更少了。</strong></font></p>
 <p>N叉树由于在读写上的性能优点，以及适配磁盘的访问模式，已经被⼴泛应用在数据库引擎中了。</p>
 <p>不管是哈希还是有序数组，或者N叉树，它们都是不断迭代、不断优化的产物或者解决方案。数据库技术发展到今天，跳表、LSM树等数据结构也被用于引擎设计中，这里我就不再一一展开了。</p>
-<p><font color="DeepPink"><strong>你⼼里要有个概念，数据库底层存储的核⼼就是基于这些数据模型的。每碰到一个新数据库，我们需要先关注它的数据模型，这样才能从理论上分析出这个数据库的适用场景。</strong></font></p>
-<p>在MySQL中，索引是在存储引擎层实现的，所以并没有统一的索引标准，即不同存储引擎的索引的⼯作方式并不一样。而即使多个存储引擎支持同一种类型的索引，其底层的实现也可能不同。</p>
-<h2 id="InnoDB-的索引模型"><a href="#InnoDB-的索引模型" class="headerlink" title="InnoDB 的索引模型"></a>InnoDB 的索引模型</h2><p><strong>主键索引的叶子节点存的是整行数据。</strong>在InnoDB里，主键索引也被称为聚簇索引（clustered index）。<br><strong>非主键索引的叶子节点内容是主键的值。</strong>在InnoDB里，非主键索引也被称为二级索引（secondary index）。<br>根据上面的索引结构说明，我们来讨论一个问题：基于主键索引和普通索引的查询有什么区别？</p>
+<p><font color="DeepPink"><strong>你心里要有个概念，数据库底层存储的核心就是基于这些数据模型的。每碰到一个新数据库，我们需要先关注它的数据模型，这样才能从理论上分析出这个数据库的适用场景。</strong></font></p>
+<p>在MySQL中，索引是在存储引擎层实现的，所以并没有统一的索引标准，即不同存储引擎的索引的工作方式并不一样。而即使多个存储引擎支持同一种类型的索引，其底层的实现也可能不同。</p>
+<h2 id="InnoDB-的索引模型"><a href="#InnoDB-的索引模型" class="headerlink" title="InnoDB 的索引模型"></a>InnoDB 的索引模型</h2><p><strong>主键索引的叶子节点存的是整行数据。</strong>在InnoDB里，主键索引也被称为聚簇索引(clustered index)。<br><strong>非主键索引的叶子节点内容是主键的值。</strong>在InnoDB里，非主键索引也被称为二级索引(secondary index)。<br>根据上面的索引结构说明，我们来讨论一个问题：基于主键索引和普通索引的查询有什么区别？</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// 主键列为ID的表，表中有字段k，并且在k上有索引。</span><br><span class="line">create table T(</span><br><span class="line">id int primary key,</span><br><span class="line">k int not null,</span><br><span class="line">name varchar(16),</span><br><span class="line">index (k))engine=InnoDB;</span><br></pre></td></tr></table></figure>
 
 <ul>
@@ -387,7 +387,7 @@
 <p>也就是说，<font color="DeepPink"><strong>自增主键的插入数据模式，正符合了我们前面提到的递增插入的场景。每次插入一条新记录，都是追加操作，都不涉及到挪动其他记录，也不会触发叶子节点的分裂。</strong></font></p>
 <p>而有业务逻辑的字段做主键，则往往不容易保证有序插入，这样写数据成本相对较高。</p>
 <p>除了考虑性能外，我们还可以从存储空间的⻆度来看。假设你的表中确实有一个唯一字段，比如字符串类型的身份证号，那应该用身份证号做主键，还是用自增字段做主键呢？</p>
-<p>由于每个非主键索引的叶子节点上都是主键的值。如果用身份证号做主键，那么每个二级索引的叶子节点占用约20个字节，而如果用整型做主键，则只要4个字节，如果是长整型（bigint）则是8个字节。</p>
+<p>由于每个非主键索引的叶子节点上都是主键的值。如果用身份证号做主键，那么每个二级索引的叶子节点占用约20个字节，而如果用整型做主键，则只要4个字节，如果是长整型(bigint)则是8个字节。</p>
 <p>显然，主键长度越小，普通索引的叶子节点就越小，普通索引占用的空间也就越小。</p>
 <p>所以，从性能和存储空间方面考量，自增主键往往是更合理的选择。</p>
 <p>有没有什么场景适合用业务字段直接做主键的呢？还是有的。比如，有些业务的场景需求是这样的：</p>
@@ -398,7 +398,7 @@
 <p>你一定看出来了，这就是典型的KV场景。</p>
 <p>由于没有其他索引，所以也就不用考虑其他索引的叶子节点大小的问题。</p>
 <p>这时候我们就要优先考虑上一段提到的“尽量使用主键查询”原则，直接将这个索引设置为主键，可以避免每次查询需要搜索两棵树。</p>
-<h1 id="深入浅出索引（下）"><a href="#深入浅出索引（下）" class="headerlink" title="深入浅出索引（下）"></a>深入浅出索引（下）</h1><p>在下面这个表T中，如果我执行 select * from T where k between 3 and 5，需要执行几次树的搜索操作，会扫描多少行？</p>
+<h1 id="深入浅出索引-下"><a href="#深入浅出索引-下" class="headerlink" title="深入浅出索引(下)"></a>深入浅出索引(下)</h1><p>在下面这个表T中，如果我执行 select * from T where k between 3 and 5，需要执行几次树的搜索操作，会扫描多少行？</p>
 <p>下面是这个表的初始化语句。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">create table T (</span><br><span class="line">ID int primary key,</span><br><span class="line">k int NOT NULL DEFAULT 0,</span><br><span class="line">s varchar(16) NOT NULL DEFAULT &apos;&apos;,</span><br><span class="line">index k(k))</span><br><span class="line">engine=InnoDB;</span><br><span class="line">insert into T values(100,1, &apos;aa&apos;),(200,2,&apos;bb&apos;),(300,3,&apos;cc&apos;),(500,5,&apos;ee&apos;),(600,6,&apos;ff&apos;),(700,7,&apos;gg&apos;);</span><br></pre></td></tr></table></figure>
 
@@ -411,13 +411,13 @@
 <li>再回到ID索引树查到ID=500对应的R4；</li>
 <li>在k索引树取下一个值k=6，不满足条件，循环结束。</li>
 </ol>
-<p>在这个过程中，<strong>回到主键索引树搜索的过程，我们称为回表</strong>。可以看到，这个查询过程读了k索引树的3条记录（步骤1、3和5），回表了两次（步骤2和4）。</p>
+<p>在这个过程中，<strong>回到主键索引树搜索的过程，我们称为回表</strong>。可以看到，这个查询过程读了k索引树的3条记录(步骤1、3和5)，回表了两次(步骤2和4)。</p>
 <h2 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h2><p>如果执行的语句是select ID from T where k between 3 and 5，这时只需要查ID的值，而ID的值已经在k索引树上了，因此可以直接提供查询结果，不需要回表。也就是说，在这个查询里面，索引k已经“覆盖了”我们的查询需求，我们称为覆盖索引。</p>
-<h2 id="索引下推"><a href="#索引下推" class="headerlink" title="索引下推"></a>索引下推</h2><p>而MySQL 5.6 引入的索引下推优化（index condition pushdown)， 可以在索引遍历过程中，对索引中包含的字段先做判断，直接过滤掉不满足条件的记录，减少回表次数。</p>
+<h2 id="索引下推"><a href="#索引下推" class="headerlink" title="索引下推"></a>索引下推</h2><p>而MySQL 5.6 引入的索引下推优化(index condition pushdown)， 可以在索引遍历过程中，对索引中包含的字段先做判断，直接过滤掉不满足条件的记录，减少回表次数。</p>
 <h1 id="全局锁和表锁"><a href="#全局锁和表锁" class="headerlink" title="全局锁和表锁"></a>全局锁和表锁</h1><p>根据加锁的范围，MySQL里面的锁大致可以分成全局锁、表级锁和行锁三类。</p>
-<h2 id="全局锁"><a href="#全局锁" class="headerlink" title="全局锁"></a>全局锁</h2><p>顾名思义，全局锁就是对整个数据库实例加锁。MySQL提供了一个加全局读锁的方法，命令是 Flush tables with read lock(FTWRL)。当你需要让整个库处于只读状态的时候，可以使用这个命令，之后其他线程的以下语句会被阻塞：数据更新语句（数据的增删改）、数据定义语句（包括建表、修改表结构等）和更新类事务的提交语句。</p>
+<h2 id="全局锁"><a href="#全局锁" class="headerlink" title="全局锁"></a>全局锁</h2><p>顾名思义，全局锁就是对整个数据库实例加锁。MySQL提供了一个加全局读锁的方法，命令是 Flush tables with read lock(FTWRL)。当你需要让整个库处于只读状态的时候，可以使用这个命令，之后其他线程的以下语句会被阻塞：数据更新语句(数据的增删改)、数据定义语句(包括建表、修改表结构等)和更新类事务的提交语句。</p>
 <p><strong>全局锁的典型使用场景是，做全库逻辑备份。</strong>也就是把整库每个表都select出来存成文本。</p>
-<p>官方自带的逻辑备份⼯具是mysqldump。当mysqldump使用参数–single-transaction的时候，导数据之前就会启动一个事务，来确保拿到一致性视图。而由于MVCC的支持，这个过程中数据是可以正常更新的。</p>
+<p>官方自带的逻辑备份工具是mysqldump。当mysqldump使用参数–single-transaction的时候，导数据之前就会启动一个事务，来确保拿到一致性视图。而由于MVCC的支持，这个过程中数据是可以正常更新的。</p>
 <p>你一定在疑惑，有了这个功能，为什么还需要FTWRL呢？<strong>一致性读是好，但前提是引擎要支持这个隔离级别</strong>。比如，对于MyISAM这种不支持事务的引擎，如果备份过程中有更新，总是只能取到最新的数据，那么就破坏了备份的一致性。这时，我们就需要使用FTWRL命令了。</p>
 <p>所以，<strong>single-transaction方法只适用于所有的表使用事务引擎的库</strong>。如果有的表使用了不支持事务的引擎，那么备份就只能通过FTWRL方法。这往往是DBA要求业务开发⼈员使用InnoDB替代MyISAM的原因之一。</p>
 <p>你也许会问，既然要全库只读，为什么不使用set global readonly=true的方式呢？确实readonly方式也可以让全库进入只读状态，但我还是会建议你用FTWRL方式，主要有两个原因：</p>
@@ -425,17 +425,17 @@
 <li>一是，在有些系统中，readonly的值会被用来做其他逻辑，比如用来判断一个库是主库还是备库。因此，修改global变量的方式影响面更大，我不建议你使用。</li>
 <li>二是，在异常处理机制上有差异。如果执行FTWRL命令之后由于客户端发生异常断开，那么MySQL会自动释放这个全局锁，整个库回到可以正常更新的状态。而将整个库设置为readonly之后，如果客户端发生异常，则数据库就会一直保持readonly状态，这样会导致整个库长时间处于不可写状态，风险较高。</li>
 </ul>
-<h2 id="表级锁"><a href="#表级锁" class="headerlink" title="表级锁"></a>表级锁</h2><p>MySQL里面表级别的锁有两种：一种是表锁，一种是元数据锁（meta data lock，MDL)。</p>
+<h2 id="表级锁"><a href="#表级锁" class="headerlink" title="表级锁"></a>表级锁</h2><p>MySQL里面表级别的锁有两种：一种是表锁，一种是元数据锁(meta data lock，MDL)。</p>
 <p><strong>表锁的语法是 lock tables … read/write</strong>。与FTWRL类似，可以用unlock tables主动释放锁，也可以在客户端断开的时候自动释放。需要注意，lock tables语法除了会限制别的线程的读写外，也限定了本线程接下来的操作对象。</p>
 <p>举个例子, 如果在某个线程A中执行lock tables t1 read, t2 write; 这个语句，则其他线程写t1、读写t2的语句都会被阻塞。同时，线程A在执行unlock tables之前，也只能执行读t1、读写t2的操作。连写t1都不允许，自然也不能访问其他表。</p>
 <p>在还没有出现更细粒度的锁的时候，表锁是最常用的处理并发的方式。而对于InnoDB这种支持行锁的引擎，一般不使用lock tables命令来控制并发，毕竟锁住整个表的影响面还是太大。</p>
-<p><strong>另一类表级的锁是MDL（metadata lock)</strong>。MDL不需要显式使用，在访问一个表的时候会被自动加上。MDL的作用是，保证读写的正确性。你可以想象一下，如果一个查询正在遍历一个表中的数据，而执行期间另一个线程对这个表结构做变更，删了一列，那么查询线程拿到的结果跟表结构对不上，肯定是不行的。</p>
+<p><strong>另一类表级的锁是MDL(metadata lock)</strong>。MDL不需要显式使用，在访问一个表的时候会被自动加上。MDL的作用是，保证读写的正确性。你可以想象一下，如果一个查询正在遍历一个表中的数据，而执行期间另一个线程对这个表结构做变更，删了一列，那么查询线程拿到的结果跟表结构对不上，肯定是不行的。</p>
 <p>因此，在MySQL 5.5版本中引入了MDL，当对一个表做增删改查操作的时候，加MDL读锁；当要对表做结构变更操作的时候，加MDL写锁。</p>
 <ul>
 <li>读锁之间不互斥，因此你可以有多个线程同时对一张表增删改查。</li>
 <li>读写锁之间、写锁之间是互斥的，用来保证变更表结构操作的安全性。因此，如果有两个线程要同时给一个表加字段，其中一个要等另一个执行完才能开始执行。</li>
 </ul>
-<p>你肯定知道，给一个表加字段，或者修改字段，或者加索引，需要扫描全表的数据。在对大表操作的时候，你肯定会特别小⼼，以免对线上服务造成影响。而实际上，即使是小表，操作不慎也会出问题。我们来看一下下面的操作序列，假设表t是一个小表。</p>
+<p>你肯定知道，给一个表加字段，或者修改字段，或者加索引，需要扫描全表的数据。在对大表操作的时候，你肯定会特别小心，以免对线上服务造成影响。而实际上，即使是小表，操作不慎也会出问题。我们来看一下下面的操作序列，假设表t是一个小表。</p>
 <blockquote>
 <p>备注：这里的实验环境是MySQL 5.6。</p>
 </blockquote>
@@ -455,21 +455,21 @@
 <p>也就是说，要完成这个交易，我们需要update两条记录，并insert一条记录。当然，为了保证交易的原子性，我们要把这三个操作放在一个事务中。那么，你会怎样安排这三个语句在事务中的顺序呢？</p>
 <p>试想如果同时有另外一个顾客C要在影院B买票，那么这两个事务冲突的部分就是语句2了。因为它们要更新同一个影院账户的余额，需要修改同一行数据。</p>
 <p>根据两阶段锁协议，不论你怎样安排语句顺序，所有的操作需要的行锁都是在事务提交的时候才释放的。所以，如果你把语句2安排在最后，比如按照3、1、2这样的顺序，那么影院账户余额这一行的锁时间就最少。这就最大程度地减少了事务之间的锁等待，提升了并发度。</p>
-<h1 id="事务到底是隔离的还是不隔离的？"><a href="#事务到底是隔离的还是不隔离的？" class="headerlink" title="事务到底是隔离的还是不隔离的？"></a>事务到底是隔离的还是不隔离的？</h1><p>begin/start transaction 命令并不是一个事务的起点，在执行到它们之后的第一个操作InnoDB表的语句（第一个快照读语句），事务才真正启动。如果你想要马上启动一个事务，可以使用start transaction with consistent snapshot 这个命令。</p>
+<h1 id="事务到底是隔离的还是不隔离的？"><a href="#事务到底是隔离的还是不隔离的？" class="headerlink" title="事务到底是隔离的还是不隔离的？"></a>事务到底是隔离的还是不隔离的？</h1><p>begin/start transaction 命令并不是一个事务的起点，在执行到它们之后的第一个操作InnoDB表的语句(第一个快照读语句)，事务才真正启动。如果你想要马上启动一个事务，可以使用start transaction with consistent snapshot 这个命令。</p>
 <p>在MySQL里，有两个“视图”的概念：</p>
 <ul>
 <li>一个是view。它是一个用查询语句定义的虚拟表，在调用的时候执行查询语句并生成结果。创建视图的语法是create view… ，而它的查询方法与表一样。</li>
-<li>另一个是InnoDB在实现MVCC时用到的一致性读视图，即consistent read view，用于支持RC（Read Committed，读提交）和RR（Repeatable Read，可重复读）隔离级别的实现。</li>
+<li>另一个是InnoDB在实现MVCC时用到的一致性读视图，即consistent read view，用于支持RC(Read Committed，读提交)和RR(Repeatable Read，可重复读)隔离级别的实现。</li>
 </ul>
 <p>它没有物理结构，作用是事务执行期间用来定义“我能看到什么数据”。</p>
-<h2 id="“快照”在MVCC里是怎么⼯作的？"><a href="#“快照”在MVCC里是怎么⼯作的？" class="headerlink" title="“快照”在MVCC里是怎么⼯作的？"></a>“快照”在MVCC里是怎么⼯作的？</h2><p>在可重复读隔离级别下，事务在启动的时候就“拍了个快照”。注意，这个快照是基于整库的。</p>
+<h2 id="“快照”在MVCC里是怎么工作的？"><a href="#“快照”在MVCC里是怎么工作的？" class="headerlink" title="“快照”在MVCC里是怎么工作的？"></a>“快照”在MVCC里是怎么工作的？</h2><p>在可重复读隔离级别下，事务在启动的时候就“拍了个快照”。注意，这个快照是基于整库的。</p>
 <p>一个数据版本，对于一个事务视图来说，除了自己的更新总是可见以外，有三种情况：</p>
 <ol>
 <li>版本未提交，不可见；</li>
 <li>版本已提交，但是是在视图创建后提交的，不可见；</li>
 <li>版本已提交，而且是在视图创建前提交的，可见。</li>
 </ol>
-<p>更新数据都是先读后写的，而这个读，只能读当前的值，称为“当前读”（current read）。</p>
+<p>更新数据都是先读后写的，而这个读，只能读当前的值，称为“当前读”(current read)。</p>
 <blockquote>
 <p><font color="DeepPink"><strong>当前读的规则，就是要能读到所有已经提交的记录的最新值。</strong></font></p>
 </blockquote>
@@ -494,7 +494,7 @@
 <p>但是，我们之前计算过，对于整型字段，一个数据页可以放近千个key，因此出现这种情况的概率会很低。所以，我们计算平均性能差异时，仍可以认为这个操作成本对于现在的CPU来说可以忽略不计。</p>
 <h2 id="更新过程"><a href="#更新过程" class="headerlink" title="更新过程"></a>更新过程</h2><p>当需要更新一个数据页时，如果数据页在内存中就直接更新，而如果这个数据页还没有在内存中的话，在不影响数据一致性的前提下，InooDB会将这些更新操作缓存在change buffer中，这样就不需要从磁盘中读入这个数据页了。在下次查询需要访问这个数据页的时候，将数据页读入内存，然后执行change buffer中与这个页有关的操作。通过这种方式就能保证这个数据逻辑的正确性。</p>
 <p>需要说明的是，虽然名字叫作change buffer，实际上它是可以持久化的数据。也就是说，change buffer在内存中有拷贝，也会被写入到磁盘上。</p>
-<p>将change buffer中的操作应用到原数据页，得到最新结果的过程称为merge。除了访问这个数据页会触发merge外，系统有后台线程会定期merge。在数据库正常关闭（shutdown）的过程中，也会执行merge操作。</p>
+<p>将change buffer中的操作应用到原数据页，得到最新结果的过程称为merge。除了访问这个数据页会触发merge外，系统有后台线程会定期merge。在数据库正常关闭(shutdown)的过程中，也会执行merge操作。</p>
 <p>显然，如果能够将更新操作先记录在change buffer，减少读磁盘，语句的执行速度会得到明显的提升。而且，数据读入内存是需要占用buffer pool的，所以这种方式还能够避免占用内存，提高内存利用率。</p>
 <p>那么，什么条件下可以使用change buffer呢？</p>
 <p>对于唯一索引来说，所有的更新操作都要先判断这个操作是否违反唯一性约束。比如，要插入(4,400)这个记录，就要先判断现在表中是否已经存在k=4的记录，而这必须要将数据页读入内存才能判断。如果都已经读入到内存了，那直接更新内存会更快，就没必要使用change buffer了。</p>
@@ -509,7 +509,7 @@
 <li>倒序存储，再创建前缀索引，用于绕过字符串本身前缀的区分度不够的问题；</li>
 <li>创建hash字段索引，查询性能稳定，有额外的存储和计算消耗，跟第三种方式一样，都不支持范围扫描。</li>
 </ol>
-<h1 id="为什么我的MySQL会“抖”一下？"><a href="#为什么我的MySQL会“抖”一下？" class="headerlink" title="为什么我的MySQL会“抖”一下？"></a>为什么我的MySQL会“抖”一下？</h1><p>MySQL偶尔“抖”一下的那个瞬间，可能就是在刷脏页（flush）。</p>
+<h1 id="为什么我的MySQL会“抖”一下？"><a href="#为什么我的MySQL会“抖”一下？" class="headerlink" title="为什么我的MySQL会“抖”一下？"></a>为什么我的MySQL会“抖”一下？</h1><p>MySQL偶尔“抖”一下的那个瞬间，可能就是在刷脏页(flush)。</p>
 <p>那么，什么情况会引发数据库的flush过程呢？</p>
 <p>第一种场景是，InnoDB的redo log写满了。这时候系统会停止所有更新操作，把checkpoint往前推进，redo log留出空间可以继续写。</p>
 <p><img data-src="/images/45-lectures-on-mysql-in-practice-notes/redo_log%E7%8A%B6%E6%80%81%E5%9B%BE.png" alt></p>
@@ -539,13 +539,13 @@
 <li>而InnoDB引擎就麻烦了，它执行count(*)的时候，需要把数据一行一行地从引擎里面读出来，然后累积计数。</li>
 </ul>
 <p>这里需要注意的是，我们在这篇文章里讨论的是没有过滤条件的count(*)，如果加了where 条件的话，MyISAM表也是不能返回得这么快的。</p>
-<p>那为什么<strong>InnoDB不跟MyISAM一样，也把数字存起来呢？</strong><br>这是因为即使是在同一个时刻的多个查询，由于多版本并发控制（MVCC）的原因，InnoDB表“应该返回多少行”也是不确定的。</p>
+<p>那为什么<strong>InnoDB不跟MyISAM一样，也把数字存起来呢？</strong><br>这是因为即使是在同一个时刻的多个查询，由于多版本并发控制(MVCC)的原因，InnoDB表“应该返回多少行”也是不确定的。</p>
 <p>由于InnoDB要支持事务，从而导致InnoDB表不能把count(*)直接存起来，然后查询的时候直接返回形成的。</p>
 <p>所谓以子之矛攻子之盾，现在我们就利用“事务”这个特性，把问题解决掉。</p>
 <p><img data-src="/images/45-lectures-on-mysql-in-practice-notes/%E4%BC%9A%E8%AF%9DA%E3%80%81B%E7%9A%84%E6%89%A7%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE.png" alt></p>
 <p>我们来看下现在的执行结果。虽然会话B的读操作仍然是在T3执行的，但是因为这时候更新事务还没有提交，所以计数值加1这个操作对会话B还不可见。</p>
 <p>因此，会话B看到的结果里， 查计数值和“最近100条记录”看到的结果，逻辑上就是一致的。</p>
-<h2 id="不同的count用法"><a href="#不同的count用法" class="headerlink" title="不同的count用法"></a>不同的count用法</h2><p>count(*)、count(主键id)和count(1) 都表示返回满足条件的结果集的总行数；而count(字段），则表示返回满足条件的数据行里面，参数“字段”不为NULL的总个数。</p>
+<h2 id="不同的count用法"><a href="#不同的count用法" class="headerlink" title="不同的count用法"></a>不同的count用法</h2><p>count(*)、count(主键id)和count(1) 都表示返回满足条件的结果集的总行数；而count(字段)，则表示返回满足条件的数据行里面，参数“字段”不为NULL的总个数。</p>
 <p>至于分析性能差别的时候，你可以记住这么几个原则：</p>
 <ol>
 <li>server层要什么就给什么；</li>
@@ -575,8 +575,8 @@
 <li>正常运行中的实例，数据写入后的最终落盘，是从redo log更新过来的还是从buffer pool更新过来的呢？</li>
 <li>redo log buffer是什么？是先修改内存，还是先写redo log文件？</li>
 </ul>
-<p>详细解答参见：<a href="/attachments/MySQL实战45讲/15讲答疑文章（一）：日志和索引相关问题.pdf" target="_blank">答疑：日志和索引相关问题?</a></p>
-<h1 id="“order-by”是怎么工作的？"><a href="#“order-by”是怎么工作的？" class="headerlink" title="“order by”是怎么工作的？"></a>“order by”是怎么工作的？</h1><p>sort_buffer_size，就是MySQL为排序开辟的内存（sort_buffer）的大小。如果要排序的数据量小于sort_buffer_size，排序就在内存中完成。但如果排序数据量太大，内存放不下，则不得不利用磁盘临时文件辅助排序。</p>
+<p>详细解答参见：<a href="/attachments/MySQL实战45讲/15讲答疑文章(一)：日志和索引相关问题.pdf" target="_blank">答疑：日志和索引相关问题?</a></p>
+<h1 id="“order-by”是怎么工作的？"><a href="#“order-by”是怎么工作的？" class="headerlink" title="“order by”是怎么工作的？"></a>“order by”是怎么工作的？</h1><p>sort_buffer_size，就是MySQL为排序开辟的内存(sort_buffer)的大小。如果要排序的数据量小于sort_buffer_size，排序就在内存中完成。但如果排序数据量太大，内存放不下，则不得不利用磁盘临时文件辅助排序。</p>
 <p>optimizer_trace 可支持把MySQL查询执行计划树打印出来。</p>
 <p><a href="/attachments/MySQL实战45讲/16讲“orderby”是怎么工作的.pdf" target="_blank">“order by”是怎么工作的？</a></p>
 <h1 id="为什么这些SQL语句逻辑相同，性能却差异巨大？"><a href="#为什么这些SQL语句逻辑相同，性能却差异巨大？" class="headerlink" title="为什么这些SQL语句逻辑相同，性能却差异巨大？"></a>为什么这些SQL语句逻辑相同，性能却差异巨大？</h1><h2 id="隐式类型转换"><a href="#隐式类型转换" class="headerlink" title="隐式类型转换"></a>隐式类型转换</h2><p>数据库里面类型这么多，这种数据类型转换规则更多，我记不住，应该怎么办呢？</p>
@@ -606,7 +606,7 @@
 <p>间隙锁、行锁、next-key lock案例分析：<a href="/attachments/MySQL实战45讲/21讲为什么我只改一行的语句，锁这么多.pdf" target="_blank">为什么我只改一行的语句，锁这么多？</a></p>
 <h1 id="MySQL有哪些“饮鸩止渴”提高性能的方法"><a href="#MySQL有哪些“饮鸩止渴”提高性能的方法" class="headerlink" title="MySQL有哪些“饮鸩止渴”提高性能的方法"></a>MySQL有哪些“饮鸩止渴”提高性能的方法</h1><ul>
 <li>短连接风暴<ul>
-<li>先处理掉那些占着连接但是不⼯作的线程</li>
+<li>先处理掉那些占着连接但是不工作的线程</li>
 <li>减少连接过程的消耗</li>
 </ul>
 </li>
@@ -724,7 +724,7 @@
 <li>如果两个表的 join 包含多个条件的等值匹配，是都要写到 on 里面呢，还是只把一个条件写到on 里面，其他条件写到 where 部分？</li>
 </ol>
 <p>使用 left join 时，左边的表不一定是驱动表。<br>如果需要 left join 的语义，就不能把被驱动表的字段放在 where 条件里面做等值判断或不等值判断，必须都写在 on 里面。</p>
-<h2 id="Simple-Nested-Loop-Join-的性能问题"><a href="#Simple-Nested-Loop-Join-的性能问题" class="headerlink" title="Simple Nested Loop Join 的性能问题"></a>Simple Nested Loop Join 的性能问题</h2><p>虽然 BNL(Block Nested-Loop Join)算法和 Simple Nested Loop Join  算法都是要判断 M*N 次（ M 和 N 分别是 join 的两个表的行数），但是 Simple Nested Loop Join  算法的每轮判断都要走全表扫描，因此性能上 BNL 算法执行起来会快很多。<br>为了便于说明，我还是先为你简单描述一下这两个算法。<br>BNL 算法的执行逻辑是：</p>
+<h2 id="Simple-Nested-Loop-Join-的性能问题"><a href="#Simple-Nested-Loop-Join-的性能问题" class="headerlink" title="Simple Nested Loop Join 的性能问题"></a>Simple Nested Loop Join 的性能问题</h2><p>虽然 BNL(Block Nested-Loop Join)算法和 Simple Nested Loop Join  算法都是要判断 M*N 次( M 和 N 分别是 join 的两个表的行数)，但是 Simple Nested Loop Join  算法的每轮判断都要走全表扫描，因此性能上 BNL 算法执行起来会快很多。<br>为了便于说明，我还是先为你简单描述一下这两个算法。<br>BNL 算法的执行逻辑是：</p>
 <ol>
 <li>首先，<font color="DeepPink"><strong>将驱动表的数据全部读入内存 join_buffer 中，这里 join_buffer 是无序数组</strong></font>；</li>
 <li>然后，顺序遍历被驱动表的所有行，每一行数据都跟 join_buffer 中的数据进行匹配，匹配成功则作为结果集的一部分返回。</li>
@@ -737,7 +737,7 @@
 <li>即使被驱动表数据都在内存中，每次查找 “ 下一个记录的操作 ” ，都是类似指针操作。而join_buffer中是数组，遍历的成本更低。</li>
 </ol>
 <p>所以说， BNL 算法的性能会更好。</p>
-<h2 id="distinct-和-group-by-的性能"><a href="#distinct-和-group-by-的性能" class="headerlink" title="distinct  和 group by 的性能"></a>distinct  和 group by 的性能</h2><p>具体举例描述可以参见：<a href="/attachments/MySQL实战45讲/44答疑文章（三）：说一说这些好问题.pdf" target="_blank">答疑文章：说一说这些好问题</a></p>
+<h2 id="distinct-和-group-by-的性能"><a href="#distinct-和-group-by-的性能" class="headerlink" title="distinct  和 group by 的性能"></a>distinct  和 group by 的性能</h2><p>具体举例描述可以参见：<a href="/attachments/MySQL实战45讲/44答疑文章(三)：说一说这些好问题.pdf" target="_blank">答疑文章：说一说这些好问题</a></p>
 <h1 id="自增id用完怎么办？"><a href="#自增id用完怎么办？" class="headerlink" title="自增id用完怎么办？"></a>自增id用完怎么办？</h1><p>每种自增 id 有各自的应用场景，在达到上限后的表现也不同：</p>
 <ol>
 <li>表的自增 id 达到上限后，再申请时它的值就不会改变，进而导致继续插入数据时报主键冲突的错误。</li>
@@ -757,19 +757,19 @@
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
+    </li>
+    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\mysql-innodb-consistent-locking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性锁定读</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\mysql-innodb-partition-table.html" rel="bookmark">MySQL InnoDB存储引擎：分区表</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\mysql-innodb-consistent-nonlocking-read.html" rel="bookmark">MySQL InnoDB存储引擎：一致性非锁定读</a></div>
-    </li>
-    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\mysql-innodb-row-lock-algorithm.html" rel="bookmark">MySQL InnoDB存储引擎：行锁的3种算法</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\mysql-innodb-foreign-key-lock.html" rel="bookmark">MySQL InnoDB存储引擎：外键与锁</a></div>
     </li>
   </ul>
 
@@ -919,7 +919,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#基础架构：一条SQL查询语句是如何执行的？"><span class="nav-number">1.</span> <span class="nav-text">基础架构：一条SQL查询语句是如何执行的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#日志系统：一条SQL更新语句是如何执行的？"><span class="nav-number">2.</span> <span class="nav-text">日志系统：一条SQL更新语句是如何执行的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#重要的日志模块：redo-log"><span class="nav-number">2.1.</span> <span class="nav-text">重要的日志模块：redo log</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重要的日志模块：binlog"><span class="nav-number">2.2.</span> <span class="nav-text">重要的日志模块：binlog</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#两阶段提交"><span class="nav-number">2.3.</span> <span class="nav-text">两阶段提交</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#事务隔离：为什么你改了我还看不见？"><span class="nav-number">3.</span> <span class="nav-text">事务隔离：为什么你改了我还看不见？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#事务隔离的实现"><span class="nav-number">3.1.</span> <span class="nav-text">事务隔离的实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#深入浅出索引（上）"><span class="nav-number">4.</span> <span class="nav-text">深入浅出索引（上）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#InnoDB-的索引模型"><span class="nav-number">4.1.</span> <span class="nav-text">InnoDB 的索引模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引维护"><span class="nav-number">4.2.</span> <span class="nav-text">索引维护</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#深入浅出索引（下）"><span class="nav-number">5.</span> <span class="nav-text">深入浅出索引（下）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#覆盖索引"><span class="nav-number">5.1.</span> <span class="nav-text">覆盖索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引下推"><span class="nav-number">5.2.</span> <span class="nav-text">索引下推</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#全局锁和表锁"><span class="nav-number">6.</span> <span class="nav-text">全局锁和表锁</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#全局锁"><span class="nav-number">6.1.</span> <span class="nav-text">全局锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#表级锁"><span class="nav-number">6.2.</span> <span class="nav-text">表级锁</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#行锁"><span class="nav-number">7.</span> <span class="nav-text">行锁</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#事务到底是隔离的还是不隔离的？"><span class="nav-number">8.</span> <span class="nav-text">事务到底是隔离的还是不隔离的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#“快照”在MVCC里是怎么⼯作的？"><span class="nav-number">8.1.</span> <span class="nav-text">“快照”在MVCC里是怎么⼯作的？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#普通索引和唯一索引，应该怎么选择"><span class="nav-number">9.</span> <span class="nav-text">普通索引和唯一索引，应该怎么选择?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#查询过程"><span class="nav-number">9.1.</span> <span class="nav-text">查询过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#更新过程"><span class="nav-number">9.2.</span> <span class="nav-text">更新过程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL为什么有时候会选错索引"><span class="nav-number">10.</span> <span class="nav-text">MySQL为什么有时候会选错索引?</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么给字符串字段加索引？"><span class="nav-number">11.</span> <span class="nav-text">怎么给字符串字段加索引？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么我的MySQL会“抖”一下？"><span class="nav-number">12.</span> <span class="nav-text">为什么我的MySQL会“抖”一下？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#InnoDB刷脏页的控制策略"><span class="nav-number">12.1.</span> <span class="nav-text">InnoDB刷脏页的控制策略</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么表数据删掉一半，表文件大小不变？"><span class="nav-number">13.</span> <span class="nav-text">为什么表数据删掉一半，表文件大小不变？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#count-这么慢，我该怎么办？"><span class="nav-number">14.</span> <span class="nav-text">count()这么慢，我该怎么办？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#count-的实现方式"><span class="nav-number">14.1.</span> <span class="nav-text">count(*)的实现方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#不同的count用法"><span class="nav-number">14.2.</span> <span class="nav-text">不同的count用法</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#答疑：日志和索引相关问题"><span class="nav-number">15.</span> <span class="nav-text">答疑：日志和索引相关问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#“order-by”是怎么工作的？"><span class="nav-number">16.</span> <span class="nav-text">“order by”是怎么工作的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么这些SQL语句逻辑相同，性能却差异巨大？"><span class="nav-number">17.</span> <span class="nav-text">为什么这些SQL语句逻辑相同，性能却差异巨大？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#隐式类型转换"><span class="nav-number">17.1.</span> <span class="nav-text">隐式类型转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#隐式字符编码转换"><span class="nav-number">17.2.</span> <span class="nav-text">隐式字符编码转换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么我只查一行的语句，也执行这么慢？"><span class="nav-number">18.</span> <span class="nav-text">为什么我只查一行的语句，也执行这么慢？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#查询长时间不返回"><span class="nav-number">18.1.</span> <span class="nav-text">查询长时间不返回</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查询慢"><span class="nav-number">18.2.</span> <span class="nav-text">查询慢</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#幻读是什么，幻读有什么问题？"><span class="nav-number">19.</span> <span class="nav-text">幻读是什么，幻读有什么问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#如何解决幻读？"><span class="nav-number">19.1.</span> <span class="nav-text">如何解决幻读？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么我只改一行的语句，锁这么多？"><span class="nav-number">20.</span> <span class="nav-text">为什么我只改一行的语句，锁这么多？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL有哪些“饮鸩止渴”提高性能的方法"><span class="nav-number">21.</span> <span class="nav-text">MySQL有哪些“饮鸩止渴”提高性能的方法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL是怎么保证数据不丢的？"><span class="nav-number">22.</span> <span class="nav-text">MySQL是怎么保证数据不丢的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL是怎么保证主备一致的？"><span class="nav-number">23.</span> <span class="nav-text">MySQL是怎么保证主备一致的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL是怎么保证高可用的？"><span class="nav-number">24.</span> <span class="nav-text">MySQL是怎么保证高可用的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#备库为什么会延迟好几个小时？"><span class="nav-number">25.</span> <span class="nav-text">备库为什么会延迟好几个小时？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#主库出问题了从库怎么办？"><span class="nav-number">26.</span> <span class="nav-text">主库出问题了从库怎么办？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#读写分离有哪些坑？"><span class="nav-number">27.</span> <span class="nav-text">读写分离有哪些坑？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何判断一个数据库是不是出问题了？"><span class="nav-number">28.</span> <span class="nav-text">如何判断一个数据库是不是出问题了？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#误删数据后除了跑路还能怎么办？"><span class="nav-number">29.</span> <span class="nav-text">误删数据后除了跑路还能怎么办？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么还有kill不掉的语句？"><span class="nav-number">30.</span> <span class="nav-text">为什么还有kill不掉的语句？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#关于Join"><span class="nav-number">31.</span> <span class="nav-text">关于Join</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自增主键为什么不是连续的？"><span class="nav-number">32.</span> <span class="nav-text">自增主键为什么不是连续的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#insert语句的锁为什么这么多？"><span class="nav-number">33.</span> <span class="nav-text">insert语句的锁为什么这么多？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么最快地复制一张表？"><span class="nav-number">34.</span> <span class="nav-text">怎么最快地复制一张表？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#grant之后要跟着flush-privileges吗？"><span class="nav-number">35.</span> <span class="nav-text">grant之后要跟着flush privileges吗？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#要不要使用分区表？"><span class="nav-number">36.</span> <span class="nav-text">要不要使用分区表？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分区表是什么？"><span class="nav-number">36.1.</span> <span class="nav-text">分区表是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分区表的-server-层行为"><span class="nav-number">36.2.</span> <span class="nav-text">分区表的 server 层行为</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分区表的应用场景"><span class="nav-number">36.3.</span> <span class="nav-text">分区表的应用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">36.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#答疑文章：说一说这些好问题"><span class="nav-number">37.</span> <span class="nav-text">答疑文章：说一说这些好问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#join-的写法"><span class="nav-number">37.1.</span> <span class="nav-text">join 的写法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Simple-Nested-Loop-Join-的性能问题"><span class="nav-number">37.2.</span> <span class="nav-text">Simple Nested Loop Join 的性能问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#distinct-和-group-by-的性能"><span class="nav-number">37.3.</span> <span class="nav-text">distinct  和 group by 的性能</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自增id用完怎么办？"><span class="nav-number">38.</span> <span class="nav-text">自增id用完怎么办？</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#基础架构：一条SQL查询语句是如何执行的？"><span class="nav-number">1.</span> <span class="nav-text">基础架构：一条SQL查询语句是如何执行的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#日志系统：一条SQL更新语句是如何执行的？"><span class="nav-number">2.</span> <span class="nav-text">日志系统：一条SQL更新语句是如何执行的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#重要的日志模块：redo-log"><span class="nav-number">2.1.</span> <span class="nav-text">重要的日志模块：redo log</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重要的日志模块：binlog"><span class="nav-number">2.2.</span> <span class="nav-text">重要的日志模块：binlog</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#两阶段提交"><span class="nav-number">2.3.</span> <span class="nav-text">两阶段提交</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#事务隔离：为什么你改了我还看不见？"><span class="nav-number">3.</span> <span class="nav-text">事务隔离：为什么你改了我还看不见？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#事务隔离的实现"><span class="nav-number">3.1.</span> <span class="nav-text">事务隔离的实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#深入浅出索引-上"><span class="nav-number">4.</span> <span class="nav-text">深入浅出索引(上)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#InnoDB-的索引模型"><span class="nav-number">4.1.</span> <span class="nav-text">InnoDB 的索引模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引维护"><span class="nav-number">4.2.</span> <span class="nav-text">索引维护</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#深入浅出索引-下"><span class="nav-number">5.</span> <span class="nav-text">深入浅出索引(下)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#覆盖索引"><span class="nav-number">5.1.</span> <span class="nav-text">覆盖索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引下推"><span class="nav-number">5.2.</span> <span class="nav-text">索引下推</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#全局锁和表锁"><span class="nav-number">6.</span> <span class="nav-text">全局锁和表锁</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#全局锁"><span class="nav-number">6.1.</span> <span class="nav-text">全局锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#表级锁"><span class="nav-number">6.2.</span> <span class="nav-text">表级锁</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#行锁"><span class="nav-number">7.</span> <span class="nav-text">行锁</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#事务到底是隔离的还是不隔离的？"><span class="nav-number">8.</span> <span class="nav-text">事务到底是隔离的还是不隔离的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#“快照”在MVCC里是怎么工作的？"><span class="nav-number">8.1.</span> <span class="nav-text">“快照”在MVCC里是怎么工作的？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#普通索引和唯一索引，应该怎么选择"><span class="nav-number">9.</span> <span class="nav-text">普通索引和唯一索引，应该怎么选择?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#查询过程"><span class="nav-number">9.1.</span> <span class="nav-text">查询过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#更新过程"><span class="nav-number">9.2.</span> <span class="nav-text">更新过程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL为什么有时候会选错索引"><span class="nav-number">10.</span> <span class="nav-text">MySQL为什么有时候会选错索引?</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么给字符串字段加索引？"><span class="nav-number">11.</span> <span class="nav-text">怎么给字符串字段加索引？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么我的MySQL会“抖”一下？"><span class="nav-number">12.</span> <span class="nav-text">为什么我的MySQL会“抖”一下？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#InnoDB刷脏页的控制策略"><span class="nav-number">12.1.</span> <span class="nav-text">InnoDB刷脏页的控制策略</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么表数据删掉一半，表文件大小不变？"><span class="nav-number">13.</span> <span class="nav-text">为什么表数据删掉一半，表文件大小不变？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#count-这么慢，我该怎么办？"><span class="nav-number">14.</span> <span class="nav-text">count()这么慢，我该怎么办？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#count-的实现方式"><span class="nav-number">14.1.</span> <span class="nav-text">count(*)的实现方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#不同的count用法"><span class="nav-number">14.2.</span> <span class="nav-text">不同的count用法</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#答疑：日志和索引相关问题"><span class="nav-number">15.</span> <span class="nav-text">答疑：日志和索引相关问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#“order-by”是怎么工作的？"><span class="nav-number">16.</span> <span class="nav-text">“order by”是怎么工作的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么这些SQL语句逻辑相同，性能却差异巨大？"><span class="nav-number">17.</span> <span class="nav-text">为什么这些SQL语句逻辑相同，性能却差异巨大？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#隐式类型转换"><span class="nav-number">17.1.</span> <span class="nav-text">隐式类型转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#隐式字符编码转换"><span class="nav-number">17.2.</span> <span class="nav-text">隐式字符编码转换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么我只查一行的语句，也执行这么慢？"><span class="nav-number">18.</span> <span class="nav-text">为什么我只查一行的语句，也执行这么慢？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#查询长时间不返回"><span class="nav-number">18.1.</span> <span class="nav-text">查询长时间不返回</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查询慢"><span class="nav-number">18.2.</span> <span class="nav-text">查询慢</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#幻读是什么，幻读有什么问题？"><span class="nav-number">19.</span> <span class="nav-text">幻读是什么，幻读有什么问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#如何解决幻读？"><span class="nav-number">19.1.</span> <span class="nav-text">如何解决幻读？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么我只改一行的语句，锁这么多？"><span class="nav-number">20.</span> <span class="nav-text">为什么我只改一行的语句，锁这么多？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL有哪些“饮鸩止渴”提高性能的方法"><span class="nav-number">21.</span> <span class="nav-text">MySQL有哪些“饮鸩止渴”提高性能的方法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL是怎么保证数据不丢的？"><span class="nav-number">22.</span> <span class="nav-text">MySQL是怎么保证数据不丢的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL是怎么保证主备一致的？"><span class="nav-number">23.</span> <span class="nav-text">MySQL是怎么保证主备一致的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL是怎么保证高可用的？"><span class="nav-number">24.</span> <span class="nav-text">MySQL是怎么保证高可用的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#备库为什么会延迟好几个小时？"><span class="nav-number">25.</span> <span class="nav-text">备库为什么会延迟好几个小时？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#主库出问题了从库怎么办？"><span class="nav-number">26.</span> <span class="nav-text">主库出问题了从库怎么办？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#读写分离有哪些坑？"><span class="nav-number">27.</span> <span class="nav-text">读写分离有哪些坑？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#如何判断一个数据库是不是出问题了？"><span class="nav-number">28.</span> <span class="nav-text">如何判断一个数据库是不是出问题了？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#误删数据后除了跑路还能怎么办？"><span class="nav-number">29.</span> <span class="nav-text">误删数据后除了跑路还能怎么办？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么还有kill不掉的语句？"><span class="nav-number">30.</span> <span class="nav-text">为什么还有kill不掉的语句？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#关于Join"><span class="nav-number">31.</span> <span class="nav-text">关于Join</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自增主键为什么不是连续的？"><span class="nav-number">32.</span> <span class="nav-text">自增主键为什么不是连续的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#insert语句的锁为什么这么多？"><span class="nav-number">33.</span> <span class="nav-text">insert语句的锁为什么这么多？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么最快地复制一张表？"><span class="nav-number">34.</span> <span class="nav-text">怎么最快地复制一张表？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#grant之后要跟着flush-privileges吗？"><span class="nav-number">35.</span> <span class="nav-text">grant之后要跟着flush privileges吗？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#要不要使用分区表？"><span class="nav-number">36.</span> <span class="nav-text">要不要使用分区表？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分区表是什么？"><span class="nav-number">36.1.</span> <span class="nav-text">分区表是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分区表的-server-层行为"><span class="nav-number">36.2.</span> <span class="nav-text">分区表的 server 层行为</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分区表的应用场景"><span class="nav-number">36.3.</span> <span class="nav-text">分区表的应用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">36.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#答疑文章：说一说这些好问题"><span class="nav-number">37.</span> <span class="nav-text">答疑文章：说一说这些好问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#join-的写法"><span class="nav-number">37.1.</span> <span class="nav-text">join 的写法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Simple-Nested-Loop-Join-的性能问题"><span class="nav-number">37.2.</span> <span class="nav-text">Simple Nested Loop Join 的性能问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#distinct-和-group-by-的性能"><span class="nav-number">37.3.</span> <span class="nav-text">distinct  和 group by 的性能</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自增id用完怎么办？"><span class="nav-number">38.</span> <span class="nav-text">自增id用完怎么办？</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
