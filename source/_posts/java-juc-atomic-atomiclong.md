@@ -26,8 +26,7 @@ value）相加，并返回结果。
 * compareAndSet(long expectedValue, long newValue)：如果输入的数值等于预期值，则以原子方
 式将该值设置为输入的值。
 * long getAndIncrement()：以原子方式将当前值加1，注意，这里返回的是自增前的值。
-* void lazySet(long newValue)：最终会设置成newValue，<font color=DeepPink>**使用lazySet设置值后，可能导致其他
-线程在之后的一小段时间内还是可以读到旧的值**</font>。
+* void lazySet(long newValue)：最终会设置成newValue，<font color=DeepPink>**使用lazySet设置值后，可能导致其他线程在之后的一小段时间内还是可以读到旧的值**</font>。
 * long getAndSet(long newValue)：以原子方式设置为newValue的值，并返回旧值。
 
 AtomicLong示例代码如下：

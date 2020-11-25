@@ -131,6 +131,8 @@ mysql通过innodb引擎的话，是通过表锁还是行锁？
 5. es Scroll 原理？ Search After原理？
 6. es 副本作用？
 7. mysql elasticsearch 查询对比？（比如整个搜索流程）
+8. elasticsearch match filter 差异点？
+9. es 评分机制/原理
 
 # OpenTSDB
 1. OpenTSDB与HBase 关系

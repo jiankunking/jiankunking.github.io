@@ -324,7 +324,7 @@ HotSpot VM转换这个值为一个百分比，公式是100/(1+GCTimeRatio)，默
 
 > 获取full GC前后的heap dump
 
-### -XX:InitiatingHeapOccypancyPercent
+### -XX:InitiatingHeapOccupancyPercent
 
 该选项的默认值是45，表示G1 GC并行循环初始设置的堆大小值，这个值决定了一个并行循环是不是要开始执行。它的逻辑是在一次GC完成后，比较老年代占用的空间和整个Java堆之间的比例。如果大于这个值，则预约下一次GC开始一个并行循环回收垃圾，从初始标记阶段开始。这个值越小，GC越频繁，反之，值越大，可以让应用程序执行时间更长。不过在内存消耗很快的情况下，我认为早运行并行循环比晚运行要好，看病要趁早。
 
