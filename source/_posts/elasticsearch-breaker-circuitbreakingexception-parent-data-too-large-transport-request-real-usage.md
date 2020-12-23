@@ -66,8 +66,8 @@ tags:
 ```
 
 经过一顿Google之后，发现该问题是由于：
-[es 7.x之后引入了indices.breaker.total.use_real_memory](https://www.elastic.co/guide/en/elasticsearch/reference/7.0/breaking-changes-7.0.html#_parent_circuit_breaker_changes)
-后引起的，从文档来看indices.breaker.total.use_real_memory控制的是jvm实际使用的内存。
+[es 7.x之后引入了indices.breaker.total.use_real_memory造成的](https://www.elastic.co/guide/en/elasticsearch/reference/7.0/breaking-changes-7.0.html#_parent_circuit_breaker_changes)
+，从文档来看indices.breaker.total.use_real_memory控制的是jvm实际使用的内存。
 
 那么jvm内存用到多少的时候，会触发该熔断呢？
 
@@ -134,7 +134,7 @@ curl --location --request GET 'http://127.0.0.1:9200/_cluster/settings?include_d
 
 简单来说就是：es jvm.options之前的默认配置会导致老年代+年轻代的内存占用超过95%（理论上内存阈值会达到60+75=135），从而导致频繁的熔断。
 
-修复该问题最有效的方式是：
+修复该问题最有效的方式是根据不同版本JDK调整GC算法：
 ```
 # GC configuration
 8-13:-XX:+UseConcMarkSweepGC

@@ -645,9 +645,58 @@ mvn clean package  -Dmaven.test.skip=true
 echo mntr | nc localhost 2181
 ```
 
+leader节点返回示例：
+```
+Zookeeper version: 3.5.7-f0fdd52973d373ffd9c86b81d99842dc2c7f660e, built on 02/10/2020 11:30 GMT
+Clients:
+ /127.0.0.1:39436[1](queued=0,recved=493,sent=493)
+ /127.0.0.1:39526[1](queued=0,recved=479,sent=479)
+ /127.0.0.1:39510[1](queued=0,recved=507,sent=507)
+ /127.0.0.1:39410[1](queued=0,recved=459,sent=459)
+ /127.0.0.1:39424[1](queued=0,recved=517,sent=517)
+ /0:0:0:0:0:0:0:1:41446[0](queued=0,recved=1,sent=0)
+ /127.0.0.1:39416[1](queued=0,recved=494,sent=494)
+ /127.0.0.1:39404[1](queued=0,recved=491,sent=491)
+ /127.0.0.1:39514[1](queued=0,recved=486,sent=486)
+ /127.0.0.1:39496[1](queued=0,recved=490,sent=490)
+
+Latency min/avg/max: 0/0/12
+Received: 4770
+Sent: 4453
+Connections: 10
+Outstanding: 0
+Zxid: 0x5000000f4
+Mode: leader
+Node count: 313
+Proposal sizes last/min/max: 36/32/36
+You have mail in /var/spool/mail/root
+```
+
+follower节点返回：
+```
+zk_version      3.5.7-f0fdd52973d373ffd9c86b81d99842dc2c7f660e, built on 02/10/2020 11:30 GMT
+zk_avg_latency  0
+zk_max_latency  12
+zk_min_latency  0
+zk_packets_received     190
+zk_packets_sent 189
+zk_num_alive_connections        7
+zk_outstanding_requests 0
+zk_server_state follower
+zk_znode_count  313
+zk_watch_count  2
+zk_ephemerals_count     4
+zk_approximate_data_size        25605
+zk_open_file_descriptor_count   106
+zk_max_file_descriptor_count    65536
+```
+
+如果提示：mntr is not executed because it is not in the whitelist.
 解决办法,修改 conf/zoo.cfg 添加以下属性
+```
 #开启四字命令
 4lw.commands.whitelist=*
+```
 
 
 # Nginx
