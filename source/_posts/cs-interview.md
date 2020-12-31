@@ -76,6 +76,7 @@ date: 2017-02-02 08:22:15
 [https://medium.com/@sergeykuptsov/how-it-works-in-java-completablefuture-3031dbbca66d](https://medium.com/@sergeykuptsov/how-it-works-in-java-completablefuture-3031dbbca66d)
 64、Java time-based map/cache with expiring keys
 [https://stackoverflow.com/questions/3802370/java-time-based-map-cache-with-expiring-keys](https://stackoverflow.com/questions/3802370/java-time-based-map-cache-with-expiring-keys)
+65、jmap 其实是多个线程 他们之间是怎么通信 dump出数据的？（jmap命令的实现原理）
 
 
 # MySQL部分
@@ -122,6 +123,11 @@ mysql通过innodb引擎的话，是通过表锁还是行锁？
 7. kafka增加. 删除节点时如何迁移数据？新的数据如何分配？
 8. kafka写入消息 如何保证回滚或者保证不被消费
 9. kafka 如何确保消息消费且只消费一次？
+10. kafka 大批量写入 是怎么传输的？
+对象缓存池
+https://www.sohu.com/a/346950666_100123073
+11. Kafka和RocketMQ存储区别
+https://www.cnblogs.com/lewis09/p/11168902.html
 
 # ElasticSearch
 1. 在ElasticSearch中，集群(Cluster),节点(Node),分片(Shard),Indices(索引),replicas(备份)之间是什么关系？

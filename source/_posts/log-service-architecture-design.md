@@ -13,7 +13,7 @@ date: 2018-10-10 19:34:56
 ---
 
 > 在满足业务需求的前提下，代码、架构，越简单，越稳定。
-
+> 集群规模：Elasticsearch集群数10+，单集群数据量30T左右。
 <!-- more -->
 
 最近想把之前做过的日志项目及个人的思考梳理一下，于是有了本文。
@@ -148,6 +148,10 @@ Elasticsearch集群在部署的时候，一般都是提前估计好容量、机�
 # 演进（二期）
 
 ![](/images/log-service-architecture-design/日志解析.png)
+
+# 集群规模
+
+Elasticsearch集群10+，单集群数据量30T左右。
 
 # 其它
 ## DaemonSet

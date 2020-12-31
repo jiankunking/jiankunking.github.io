@@ -19,6 +19,14 @@ date: 2020-11-10 16:17:27
 
 > 还有一个原因就是Compass的日志、打包、权限等功能做的不好，导致对于开发者来说，Compass的主要作用是用来部署。 -->
 
+# 功能分析
+
 图中虚线框是直接对接Compass的api，其余的都是对接的Kubernetes，但兼容了Compass。
 
 ![](/images/integrated-container-cloud/集成容器云.png)
+
+# 集群规模
+
+Kubernetes 集群数 10+，单集群机器30+。
+
+

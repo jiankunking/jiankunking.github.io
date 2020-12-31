@@ -98,6 +98,10 @@ On the other hand, we are working on this support though we cannot commit to a t
 
 ![](/images/sentry-high-availability-deploy/Sentry重构.png)
 
+## 具体分析
+
+![](/images/sentry-high-availability-deploy/Sentry重构技术分析.png)
+
 # 关于本文的一些交流
 
 [https://forum.sentry.io/t/sentry-high-availability-deploy/11838/4](https://forum.sentry.io/t/sentry-high-availability-deploy/11838/4)

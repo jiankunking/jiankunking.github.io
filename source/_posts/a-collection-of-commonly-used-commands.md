@@ -584,6 +584,78 @@ find ./libs/ -name 'kafka_*.jar.asc' |head -n1 | cut -d'/' -f3
 ./kafka-topics.sh --zookeeper 10.138.1.1:2181  --topic dubbo --describe 
 ```
 
+11、修改partition数量
+```
+./kafka-topics.sh --alter  --zookeeper 10.230.204.83:2181,10.230.204.84:2181,10.230.204.85:2181 --topic cdc --partitions 6
+```
+12、修改副本数
+
+配置文件：
+
+83 84 85是kafka broker id
+
+```
+{
+  "version": 1,
+  "partitions": [
+    {
+      "topic": "cdc",
+      "partition": 0,
+      "replicas": [
+        83,
+        84
+      ]
+    },
+    {
+      "topic": "cdc",
+      "partition": 1,
+      "replicas": [
+        84,
+        85
+      ]
+    },
+    {
+      "topic": "cdc",
+      "partition": 2,
+      "replicas": [
+        83,
+        85
+      ]
+    },
+    {
+      "topic": "cdc",
+      "partition": 3,
+      "replicas": [
+        84,
+        85
+      ]
+    },
+    {
+      "topic": "cdc",
+      "partition": 4,
+      "replicas": [
+        83,
+        84
+      ]
+    },
+    {
+      "topic": "cdc",
+      "partition": 5,
+      "replicas": [
+        83,
+        85
+      ]
+    }
+  ]
+}
+```
+
+执行脚本：
+```
+./kafka-reassign-partitions.sh --zookeeper 10.230.204.83:2181,10.230.204.84:2181,10.230.204.85:2181 --reassignment-json-file reassignment.json --execute
+```
+
+
 # Git
 
 1、 git忽略文件命令

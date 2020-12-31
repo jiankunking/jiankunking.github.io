@@ -168,3 +168,14 @@ tags:
 /=latest_producer_id_block={"version":1,"broker":190,"block_start":"5000","block_end":"5999"}
 /=log_dir_event_notification=
 ```
+
+需要注意的是：
+
+> \_\_consumer\_offsets这个topic是由kafka自动创建的，默认50个partition，但每个partition没有副本，存在单点故障。当出现\_\_consumer\_offsets丢失的时候，所有的消费者都就停止消费了。
+
+![](/images/kafka-data-stored-in-zookeeper/consuming.png)
+
+推荐阅读：
+
+[looking-at-kafka-s-consumers-offsets](https://www.sderosiaux.com/articles/2017/08/07/looking-at-kafka-s-consumers-offsets/#tip-listing-all-the-active-groups)
+
