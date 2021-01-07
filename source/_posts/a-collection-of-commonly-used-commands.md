@@ -851,6 +851,25 @@ sudo docker exec -it 83aa14b64901 /bin/bash
 mongo
 ```
 
+2、基础查询
+```
+rs0:PRIMARY> show dbs
+admin               0.000GB
+console-web         0.452GB
+
+
+rs0:PRIMARY> use console-web
+switched to db console-web
+rs0:PRIMARY> show collections
+clusters
+fileuploads
+
+rs0:PRIMARY> 
+rs0:PRIMARY> 
+rs0:PRIMARY> db.clusters.find().pretty()
+```
+
+
 # Kubernetes
 
 1、进入指定namespace pod

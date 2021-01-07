@@ -339,7 +339,113 @@ JDK中AQS被广泛使用，基于AQS实现的同步器包括：
 * [AQS 应用案例 ReentrantReadWriteLock解析](https://www.jiankunking.com/java-reentrantreadwritelock.html)
 * [Java Volatile的内存语义与AQS锁内存可见性](https://www.jiankunking.com/java-volatile-aqs.html)
 
-# 8.感谢
+# 8.思考
+
+## 多人抢锁
+
+多个线程同时取争取一个锁（在争取之前资源未被锁定），这时候如何保证，只有一个人能获取到？
+下面以非公平锁来看一下
+```
+        /**
+         * Performs non-fair tryLock.  tryAcquire is implemented in
+         * subclasses, but both need nonfair try for trylock method.
+         */
+        @ReservedStackAccess
+        final boolean nonfairTryAcquire(int acquires) {
+            final Thread current = Thread.currentThread();
+            int c = getState();
+            if (c == 0) {
+                if (compareAndSetState(0, acquires)) {
+                    setExclusiveOwnerThread(current);
+                    return true;
+                }
+            }
+            else if (current == getExclusiveOwnerThread()) {
+                int nextc = c + acquires;
+                if (nextc < 0) // overflow
+                    throw new Error("Maximum lock count exceeded");
+                setState(nextc);
+                return true;
+            }
+            return false;
+        }
+
+     /**
+     * Atomically sets synchronization state to the given updated
+     * value if the current state value equals the expected value.
+     * This operation has memory semantics of a {@code volatile} read
+     * and write.
+     *
+     * @param expect the expected value
+     * @param update the new value
+     * @return {@code true} if successful. False return indicates that the actual
+     *         value was not equal to the expected value.
+     */
+    protected final boolean compareAndSetState(int expect, int update) {
+        return STATE.compareAndSet(this, expect, update);
+    }
+
+     /**
+     * Atomically sets the value of a variable to the {@code newValue} with the
+     * memory semantics of {@link #setVolatile} if the variable's current value,
+     * referred to as the <em>witness value</em>, {@code ==} the
+     * {@code expectedValue}, as accessed with the memory semantics of
+     * {@link #getVolatile}.
+     *
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code
+     * compareAndSet} must match the access mode type that is the result of
+     * calling {@code accessModeType(VarHandle.AccessMode.COMPARE_AND_SET)} on
+     * this VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
+     * , statically represented using varargs.
+     * @return {@code true} if successful, otherwise {@code false} if the
+     * witness value was not the same as the {@code expectedValue}.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
+     * @see #setVolatile(Object...)
+     * @see #getVolatile(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    boolean compareAndSet(Object... args);
+```
+
+从代码中可以看出通过compareAndSetState来保证只会有一个线程获取到锁。
+
+## LockSupport(park/unpark)
+
+### 实现
+Unsafe.park和Unsafe.unpark的底层实现原理
+在Linux系统下，是用的Posix线程库pthread中的mutex（互斥量），condition（条件变量）来实现的。
+mutex和condition保护了一个_counter的变量，当park时，这个变量被设置为0，当unpark时，这个变量被设置为1。
+
+### Object类的wait/notify和LockSupport(park/unpark)s的区别
+park函数是将当前调用Thread阻塞，而unpark函数则是将指定线程Thread唤醒。
+
+与Object类的wait/notify机制相比，park/unpark有两个优点：
+
+* 以thread为操作对象更符合阻塞线程的直观定义
+* 操作更精准，可以准确地唤醒某一个线程。
+
+区别是:notify随机唤醒一个线程，notifyAll唤醒所有等待的线程,增加了灵活性
+
+### synchronized 实现
+
+可以参考下这个：
+
+https://xiaomi-info.github.io/2020/03/24/synchronized/
+
+
+# 9.感谢
 本文很多内容整理自网络，参考文献：
 https://segmentfault.com/a/1190000011376192
 https://segmentfault.com/a/1190000011391092

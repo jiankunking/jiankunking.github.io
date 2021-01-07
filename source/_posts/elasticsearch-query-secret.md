@@ -143,7 +143,7 @@ Elasticsearch为了能快速找到某个term，将所有的term排个序，二�
 
 ##### Term Index
 
-B-Tree通过减少磁盘寻道次数来提高查询性能，Elasticsearch也是采用同样的思路，直接通过内存查找term，不读磁盘，但是如果term太多，term dictionary也会很大，放内存不现实，于是有了**Term Index**，就像字典里的索引页一样，A开头的有哪些term，分别在哪页，可以理解term index是一颗树：
+<code>B-Tree通过减少磁盘寻道次数来提高查询性能，Elasticsearch也是采用同样的思路，直接通过内存查找term，不读磁盘，但是如果term太多，term dictionary也会很大，放内存不现实，于是有了**Term Index**，就像字典里的索引页一样，A开头的有哪些term，分别在哪页，可以理解term index是一颗树</code>：
 ![](/images/elasticsearch-query-secret/term-index.png)
 
 这棵树不会包含所有的term，它包含的是term的一些前缀。通过term index可以快速地定位到term dictionary的某个offset，然后从这个位置再往后顺序查找。  
@@ -273,6 +273,24 @@ Elasticsearch的索引思路:
 后续再结合实际开发及调优工作分享更多内容，敬请期待！
 
 ----------
+
+## 思考
+
+### 为什么Elasticsearch比MySql的检索快？
+
+对比MySQL的B+Tree索引原理，可以发现：
+
+1. <code>Lucene的Term index和Term Dictionary其实对应的就是MySQL的B+Tree的功能，为关键字key提供索引。Lucene的inverted index可以比MySQL的b-tree检索更快。</code>
+
+2. <code>Term index在内存中是以FST（finite state transducers）的形式保存的，其特点是非常节省内存。所以Lucene搜索一个关键字key的速度是非常快的，而MySQL的B+Tree需要读磁盘比较。</code>
+
+3. <code>Term dictionary在磁盘上是以分block的方式保存的，一个block内部利用公共前缀压缩，比如都是Ab开头的单词就可以把Ab省去。这样Term dictionary可以比B-tree更节约磁盘空间。</code>
+
+4. <code>Lucene对不同的数据类型采用了不同的索引方式，上面分析是针对field为字符串的，比如针对int，有TrieIntField类型，针对经纬度，就可以用GeoHash编码。</code>
+
+5. <code>在 Mysql中给两个字段独立建立的索引无法联合起来使用，必须对联合查询的场景建立复合索引，而Lucene可以任何AND或者OR组合使用索引进行检索。</code>
+
+> 摘自：https://www.cnblogs.com/luxiaoxun/p/5452502.html
 
 ## 原文
 

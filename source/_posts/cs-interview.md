@@ -77,7 +77,9 @@ date: 2017-02-02 08:22:15
 64、Java time-based map/cache with expiring keys
 [https://stackoverflow.com/questions/3802370/java-time-based-map-cache-with-expiring-keys](https://stackoverflow.com/questions/3802370/java-time-based-map-cache-with-expiring-keys)
 65、jmap 其实是多个线程 他们之间是怎么通信 dump出数据的？（jmap命令的实现原理）
-
+66、GC的年轻代Survivor区，为什么是2个，而不是1个？
+[https://stackoverflow.com/questions/10695298/java-gc-why-two-survivor-regions](https://stackoverflow.com/questions/10695298/java-gc-why-two-survivor-regions)
+简单来说2个Survivor区，就是整理内存碎片的时候方便。
 
 # MySQL部分
 1. mysql 时间 比较无效 原因？
