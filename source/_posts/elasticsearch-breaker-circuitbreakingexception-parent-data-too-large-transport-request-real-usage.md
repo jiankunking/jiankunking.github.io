@@ -3,7 +3,11 @@ title: Elasticsearch Breaker CircuitBreakingException Parent Data Too Large Real
   Usage
 abbrlink: 34826
 date: 2020-11-24 20:02:21
+categories:
+  - ElasticSearch
 tags:
+  - ElasticSearch
+  - 原创
 ---
 
 > indices.breaker.total.use_real_memory 引发的问题
