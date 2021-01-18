@@ -13,17 +13,20 @@ date: 2021-01-16 11:30:37
 ---
 
 > Elasticsearch 源码学习第一篇：写入
-> 代码分析基于：https://github.com/jiankunking/elasticsearch
+> 代码分析基于：https://github.com/jiankunking/elasticsearch 
+> Elasticsearch 7.10.2+
 
 <!-- more -->
 
 # 目的
 在看源码之前先梳理一下，自己对于写入流程疑惑的点：
-* wait_for 是等待所有副本都写入完成了才返回还是ISR写入了就返回？副本写入成功的标准是什么？是内存写入？Translog写入？完整的落盘？
-* es默认配置，写入成功是写入主shard就返回还是等副本同步完成就返回？
-* 写入主shard后，副本同步成功的标志是什么？
+Elasticsearch写入是等待所有副本都写入完成了才返回还是只要主副本写入了就返回？
+副本写入成功的标准是什么？
+wait_for_active_shard参数的作用是啥？
 
-# 源码
+# 源码分析
+
+<font color=DeepPink>**第二部分是代码分析的过程，不想看的朋友可以跳过直接看第三部分总结。**</font>
 
 分析的话，咱们就以_bulk操作为主线。
 
@@ -644,7 +647,7 @@ void retry(Exception failure) {
         }
 ```
 
-在TransportReplicationAction构造函数中，注册了主分片、负分片的处理函数：
+在TransportReplicationAction构造函数中，注册了主分片、副本分片的处理函数：
 
 ```
         transportService.registerRequestHandler(transportPrimaryAction, executor, forceExecutionOnPrimary, true,
@@ -671,20 +674,22 @@ protected void handlePrimaryRequest(final ConcreteShardRequest<Request> request,
     }
 ```
 
-> 往主分片写入、负分片写入操作分别在：
+> 往主分片写入、副本分片写入操作分别在：
 [TransportReplicationAction](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/support/replication/TransportReplicationAction.java)的[AsyncPrimaryAction](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/support/replication/TransportReplicationAction.java#L314)、[AsyncReplicaAction](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/support/replication/TransportReplicationAction.java#L550)中。
 
 调用：
 ```
-handlePrimaryResult =>
+TransportReplicationAction handlePrimaryRequest =>
 AsyncPrimaryAction doRun()=>
-// 注意runWithPrimaryShardReference，该函数会在处理完主分片后
+// 注意：runWithPrimaryShardReference，该函数会在处理完主分片后
 // 开始处理分片副本
 AsyncPrimaryAction runWithPrimaryShardReference(final PrimaryShardReference primaryShardReference)
 ReplicationOperation execute()=>
 PrimaryShardReference perform(Request request, ActionListener<PrimaryResult<ReplicaRequest, Response>> listener)=>
 TransportWriteAction shardOperationOnPrimary =>
 TransportShardBulkAction dispatchedShardOperationOnPrimary =>
+// 注意：performOnPrimary会调用shardOperationOnPrimary注册监听器
+// 当ReplicationOperation handlePrimaryResult完成时 会调用maybeSyncTranslog 进行flush translog
 TransportShardBulkAction performOnPrimary =>
 TransportShardBulkAction executeBulkItemRequest =>
 IndexShard applyIndexOperationOnPrimary =>
@@ -862,6 +867,31 @@ public void execute() throws Exception {
         // 主副本写入完成 回调ReplicationOperation handlePrimaryResult
         primary.perform(request, ActionListener.wrap(this::handlePrimaryResult, resultListener::onFailure));
     }
+
+     /**
+     * Checks whether we can perform a write based on the required active shard count setting.
+     * Returns **null* if OK to proceed, or a string describing the reason to stop
+     * wait_for_active_shards 参数 真正起作用的地方
+     */
+    protected String checkActiveShardCount() {
+        final ShardId shardId = primary.routingEntry().shardId();
+        final ActiveShardCount waitForActiveShards = request.waitForActiveShards();
+        if (waitForActiveShards == ActiveShardCount.NONE) {
+            return null;  // not waiting for any shards
+        }
+        final IndexShardRoutingTable shardRoutingTable = primary.getReplicationGroup().getRoutingTable();
+        if (waitForActiveShards.enoughShardsActive(shardRoutingTable)) {
+            return null;
+        } else {
+            final String resolvedShards = waitForActiveShards == ActiveShardCount.ALL ? Integer.toString(shardRoutingTable.shards().size())
+                                              : waitForActiveShards.toString();
+            logger.trace("[{}] not enough active copies to meet shard count of [{}] (have {}, needed {}), scheduling a retry. op [{}], " +
+                         "request [{}]", shardId, waitForActiveShards, shardRoutingTable.activeShards().size(),
+                         resolvedShards, opType, request);
+            return "Not enough active copies to meet shard count of [" + waitForActiveShards + "] (have " +
+                       shardRoutingTable.activeShards().size() + ", needed " + resolvedShards + ").";
+        }
+    }
 ```
 下面看下[ReplicationOperation](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationOperation.java)中的[handlePrimaryResult](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationOperation.java#L115):
 
@@ -940,13 +970,10 @@ public void execute() throws Exception {
                         shard.shardId(), shard.currentNodeId(), replicaException, restStatus, false));
                 }
                 String message = String.format(Locale.ROOT, "failed to perform %s on replica %s", opType, shard);
-                // 注意 如果写入副本节点失败，则主节点将问题报告给主节点，
-                // 然后主节点更新Meta中索引的InSyncAllocations配置并删除副本节点。
-                // 也就是说 之后，它将不再处理读取请求。 
-                // 在Meta更新到达每个节点之前，用户仍然可以在此副本节点上读取数据，
-                // 但是在Meta更新完成之后不会发生。 
-                // 这个解决方案并不严格。 考虑到ES是近乎实时的系统，因此在写入数据后，需要刷新才能使其可见。
-                // 因此，一般而言，可以在短时间内读取旧数据是可以接受的。
+                
+                // failShardIfNeeded 具体执行何种操作要看 replicasProxy的真正实现类:
+                // 如果是WriteActionReplicasProxy,则会报告shard错误。
+                // 在写入场景中replicasProxy的真正实现类就是WriteActionReplicasProxy。
                 replicasProxy.failShardIfNeeded(shard, primaryTerm, message, replicaException,
                     ActionListener.wrap(r -> decPendingAndFinishIfNeeded(), ReplicationOperation.this::onNoLongerPrimary));
             }
@@ -956,16 +983,82 @@ public void execute() throws Exception {
                 return "[" + replicaRequest + "][" + shard + "]";
             }
         };
+
+
+     /**
+     * A proxy for <b>write</b> operations that need to be performed on the
+     * replicas, where a failure to execute the operation should fail
+     * the replica shard and/or mark the replica as stale.
+     *
+     * This extends {@code TransportReplicationAction.ReplicasProxy} to do the
+     * failing and stale-ing.
+     */
+    class WriteActionReplicasProxy extends ReplicasProxy {
+
+        // 注意 如果写入副本节点失败，则主节点将问题报告给主节点，
+        // 然后主节点更新Meta中索引的InSyncAllocations配置并删除副本节点。
+        // 也就是说 之后，它将不再处理读取请求。 
+        // 在Meta更新到达每个节点之前，用户仍然可以在此副本节点上读取数据，
+        // 但是在Meta更新完成之后不会发生。 
+        // 这个解决方案并不严格。 考虑到ES是近乎实时的系统，因此在写入数据后，需要刷新才能使其可见。
+        // 因此，一般而言，可以在短时间内读取旧数据是可以接受的。
+        @Override
+        public void failShardIfNeeded(ShardRouting replica, long primaryTerm, String message, Exception exception,
+                                      ActionListener<Void> listener) {
+            if (TransportActions.isShardNotAvailableException(exception) == false) {
+                logger.warn(new ParameterizedMessage("[{}] {}", replica.shardId(), message), exception);
+            }
+            shardStateAction.remoteShardFailed(
+                replica.shardId(), replica.allocationId().getId(), primaryTerm, true, message, exception, listener);
+        }
+
+        @Override
+        public void markShardCopyAsStaleIfNeeded(ShardId shardId, String allocationId, long primaryTerm, ActionListener<Void> listener) {
+            shardStateAction.remoteShardFailed(shardId, allocationId, primaryTerm, true, "mark copy as stale", null, listener);
+        }
+    }
+
+    /**
+     * A proxy for <b>write</b> operations that need to be performed on the
+     * replicas, where a failure to execute the operation should fail
+     * the replica shard and/or mark the replica as stale.
+     *
+     * This extends {@code TransportReplicationAction.ReplicasProxy} to do the
+     * failing and stale-ing.
+     */
+    class WriteActionReplicasProxy extends ReplicasProxy {
+
+        @Override
+        public void failShardIfNeeded(ShardRouting replica, long primaryTerm, String message, Exception exception,
+                                      ActionListener<Void> listener) {
+            if (TransportActions.isShardNotAvailableException(exception) == false) {
+                logger.warn(new ParameterizedMessage("[{}] {}", replica.shardId(), message), exception);
+            }
+            shardStateAction.remoteShardFailed(
+                replica.shardId(), replica.allocationId().getId(), primaryTerm, true, message, exception, listener);
+        }
+
+        @Override
+        public void markShardCopyAsStaleIfNeeded(ShardId shardId, String allocationId, long primaryTerm, ActionListener<Void> listener) {
+            shardStateAction.remoteShardFailed(shardId, allocationId, primaryTerm, true, "mark copy as stale", null, listener);
+        }
+    }
 ```
 
 # 总结
 
-## 问题一
-> wait_for 是等待所有副本都写入完成了才返回还是ISR写入了就返回？副本写入成功的标准是什么？是内存写入？Translog写入？完整的落盘？
+> Elasticsearch写入是等待所有副本都写入完成了才返回还是只要主副本写入了就返回？副本写入成功的标准是什么？wait_for_active_shard参数的作用是啥？
 
-wait_for是等所有的副本写入之后才返回，这里的所有副本其实也就是类似ISR，只是es中这个概念是Active Shard。
+Elasticsearch写入是等待所有副本都写入完成（完成不一定是成功，也有可能是失败）了才返回；
+副本写入成功的标志是Translog写入完成；
 
+既然<code>Elasticsearch写入是等待所有副本都写入完成了才返回</code>,那么wait_for_active_shards参数的作用是什么？
 
-shardOperationOnPrimary
+其实，wait_for_active_shards参数（该值默认为1）作用：
+是在[ReplicationOperation](https://github.com/elastic/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationOperation.java)中[checkActiveShardCount()](https://github.com/elastic/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationOperation.java#L305)起作用的。
 
-maybeSyncTranslog
+**wait_for_active_shards的作用是在写入数据之前检查正常的副本数。**
+
+例如，假设我们有一个由三个节点A，B和C组成的集群，并创建了一个索引，其副本数设置为3（产生4个分片副本，副本数比节点数多）。如果我们进行写入操作，则默认情况下，该操作将仅确保每个分片的主副本可用，然后再继续操作。这意味着，如果A托管了主分片副本，即使B和C崩溃了，索引操作仍将仅对数据的一个副本进行。如果在请求上将wait_for_active_shards设置为3（并且3个节点都已启动），则索引操作将需要3个活动的分片副本，然后才能继续进行，因为集群中有3个活动的节点，每个节点保持分片的副本。但是，如果将wait_for_active_shards设置为全部（或设置为4，则相同），则索引操作将不会继续进行，因为我们在索引中没有每个活动的分片的所有4个副本。除非在群集中调出新节点来托管分片的第四副本，否则该操作将超时。
+
+重要的是要注意，此设置大大减少了写操作未写入所需数量的分片副本的机会，但并不能完全消除这种可能性，因为此检查发生在写操作开始之前。 一旦执行写操作，仍然有可能在任何数量的分片副本上失败，但在主副本上仍然成功。 写入操作响应的_shards部分显示复制成功/失败的分片副本数。
