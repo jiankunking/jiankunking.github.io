@@ -33,7 +33,7 @@ tags:
 
 Elasticsearch非常灵活，可以根据每个搜索请求控制执行的搜索类型。可以通过设置查询字符串中的search_type参数来配置类型。类型是:
 
-## Query Then Fetchedit
+## Query Then Fetch
 参数值： query_then_fetch。
 
 请求分两个阶段处理。 在第一阶段，查询被转发到所有涉及的分片。 每个分片执行搜索并生成对该分片本地的结果的排序列表。 <font color=DeepPink>**每个分片只向协调节点返回足够的信息，以允许其合并并将分片级结果重新排序为全局排序的最大长度大小的结果集。**</font>

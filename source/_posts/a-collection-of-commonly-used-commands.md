@@ -888,6 +888,77 @@ kubectl get pod logging-filebeat-filebeat-v1-0-5565m -n kube-system -o json
 kubectl get hpa.v2beta2.autoscaling -n jiankunking app-hpa-331087943  -oyaml
 ```
 
+4、工作负载异常：结束中，解决Terminating状态的Pod删不掉的问题
+```
+kubectl delete pod es-remote-cluster-5757595946-vtzsh -n dev1 --grace-period=0 --force
+```
+
+5、查看cron job运行情况
+```
+kubectl describe job -n console  k8s-sync-1611306600
+```
+具体信息：
+```
+Name:                     k8s-sync-1611306600
+Namespace:                console
+Selector:                 controller-uid=9b6edd8d-5c91-11eb-90b0-e4434b7c486d
+Labels:                   app=k8s-sync
+                          controller.jiankunking.io/chart=app
+                          controller.jiankunking.io/release=k8s-sync
+                          version=v1
+Annotations:              helm.sh/namespace: console
+                          helm.sh/path: app
+                          helm.sh/release: k8s-sync
+Controlled By:            CronJob/k8s-sync
+Parallelism:              1
+Completions:              1
+Active Deadline Seconds:  1800s
+Pods Statuses:            0 Running / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:       app=k8s-sync
+                controller-uid=9b6edd8d-5c91-11eb-90b0-e4434b7c486d
+                controller.jiankunking.io/chart=app
+                controller.jiankunking.io/name=k8s-sync
+                controller.jiankunking.io/release=k8s-sync
+                job-name=k8s-sync-1611306600
+                version=v1
+  Annotations:  helm.sh/namespace: console
+                helm.sh/path: app
+                helm.sh/release: k8s-sync
+                v1.multus-cni.io/default-network: k8s-pod-network
+  Containers:
+   c0:
+    Image:      registry.jiankunking.net/k8s/k8s-sync:v0.0.18-cli
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      k8s-sync
+      namespace
+    Limits:
+      cpu:     300m
+      memory:  50Mi
+    Requests:
+      cpu:     100m
+      memory:  20Mi
+    Environment:
+      POD_NAMESPACE:       (v1:metadata.namespace)
+      POD_NAME:            (v1:metadata.name)
+      POD_IP:              (v1:status.podIP)
+      NODE_NAME:           (v1:spec.nodeName)
+    Mounts:               <none>
+  Volumes:                <none>
+Events:
+  Type     Reason        Age    From            Message
+  ----     ------        ----   ----            -------
+  Warning  FailedCreate  14m    job-controller  Error creating: pods "k8s-sync-1611306600-khfng" is forbidden: exceeded quota: console, requested: limits.cpu=300m,requests.cpu=100m, used: limits.cpu=60,requests.cpu=25, limited: limits.cpu=60,requests.cpu=25
+  Warning  FailedCreate  14m    job-controller  Error creating: pods "k8s-sync-1611306600-klpt2" is forbidden: exceeded quota: console, requested: limits.cpu=300m,requests.cpu=100m, used: limits.cpu=60,requests.cpu=25, limited: limits.cpu=60,requests.cpu=25
+  Warning  FailedCreate  13m    job-controller  Error creating: pods "k8s-sync-1611306600-vqk6v" is forbidden: exceeded quota: console, requested: limits.cpu=300m,requests.cpu=100m, used: limits.cpu=60,requests.cpu=25, limited: limits.cpu=60,requests.cpu=25
+  Warning  FailedCreate  13m    job-controller  Error creating: pods "k8s-sync-1611306600-tmq2r" is forbidden: exceeded quota: console, requested: limits.cpu=300m,requests.cpu=100m, used: limits.cpu=60,requests.cpu=25, limited: limits.cpu=60,requests.cpu=25
+  Warning  FailedCreate  11m    job-controller  Error creating: pods "k8s-sync-1611306600-7z6rf" is forbidden: exceeded quota: console, requested: limits.cpu=300m,requests.cpu=100m, used: limits.cpu=60,requests.cpu=25, limited: limits.cpu=60,requests.cpu=25
+  Warning  FailedCreate  9m16s  job-controller  Error creating: pods "k8s-sync-1611306600-lsg25" is forbidden: exceeded quota: console, requested: limits.cpu=300m,requests.cpu=100m, used: limits.cpu=60,requests.cpu=25, limited: limits.cpu=60,requests.cpu=25
+  Warning  FailedCreate  3m56s  job-controller  Error creating: pods "k8s-sync-1611306600-8rldr" is forbidden: exceeded quota: console, requested: limits.cpu=300m,requests.cpu=100m, used: limits.cpu=60,requests.cpu=25, limited: limits.cpu=60,requests.cpu=25
+```
+
 # Elasticsearch
 1、索引备份
 https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html
@@ -976,4 +1047,26 @@ etcdctl del /cmdb/hsirrfw/apps/备品备件
 1、go mod获取最新commit
 ```
 go get github.com/jiankunking-interx/osin@75f6b6f1f2f8ad9472c1a209e91625bef7f57cc3
+```
+
+# PostgreSQL
+1、PG统计所有表的基本信息(如行数、大小等)
+```
+SELECT
+  relname AS TABLE_NAME,
+  reltuples AS rowCounts
+FROM
+  pg_class
+WHERE
+  relkind = 'r'
+AND relnamespace = (
+  SELECT
+    oid
+  FROM
+    pg_namespace
+  WHERE
+    nspname = 'public'
+)
+ORDER BY
+  rowCounts DESC;
 ```

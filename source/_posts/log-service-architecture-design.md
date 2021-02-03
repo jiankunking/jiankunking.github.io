@@ -16,6 +16,13 @@ date: 2018-10-10 19:34:56
 > 集群规模：Elasticsearch集群数10+，单集群数据量30T左右。
 <!-- more -->
 
+
+# NOW
+
+![](/images/log-service-architecture-design/now-architecture.png)
+
+# 前言
+
 最近想把之前做过的日志项目及个人的思考梳理一下，于是有了本文。
 
 # 背景

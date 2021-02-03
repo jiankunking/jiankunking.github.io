@@ -12,7 +12,7 @@ abbrlink: 5645
 date: 2021-01-16 11:30:37
 ---
 
-> Elasticsearch 源码学习第一篇：写入
+> 带着疑问学源码，第一篇：Elasticsearch写入
 > 代码分析基于：https://github.com/jiankunking/elasticsearch 
 > Elasticsearch 7.10.2+
 
@@ -698,6 +698,16 @@ IndexShard index =>
 InternalEngine index =>
 InternalEngine indexIntoLucene =>
 ......
+```
+
+maybeSyncTranslog:
+```
+    private void maybeSyncTranslog(final IndexShard indexShard) throws IOException {
+        if (indexShard.getTranslogDurability() == Translog.Durability.REQUEST &&
+            indexShard.getLastSyncedGlobalCheckpoint() < indexShard.getLastKnownGlobalCheckpoint()) {
+            indexShard.sync();
+        }
+    }
 ```
 
 下面仔细看看index函数：
