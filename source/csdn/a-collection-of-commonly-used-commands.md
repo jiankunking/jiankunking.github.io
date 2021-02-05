@@ -515,6 +515,36 @@ sudo sh docker-netstat.sh demo
 
 13、当 OOM 发生时，系统会把相关的 OOM 信息，记录到日志中。所以，我们可以在终端中执行 dmesg 命令，查看系统日志，并定位 OOM 相关的日志。（即使docker容器OOM后，也可以查看）
 
+14、docker的/var/lib/docker目录迁移
+
+```
+1 停止docker服务
+
+systemctl stop docker
+2 创建新的docker目录
+
+mkdir -p /data/docker/lib
+3 迁移/var/lib/docker
+
+rsync -avzH /var/lib/docker /data/docker/lib/
+
+4 修改配置路径
+
+ln  -s /data/docker/lib /var/lib/docker
+
+5 重新加载 docker
+
+systemctl daemon-reload
+systemctl restart docker
+systemctl enable docker
+
+6 删除 /var/lib/docker
+
+rm -rf /var/lib/docker
+
+```
+
+
 # Idea
 
 1、 idea 类中函数全部折叠
@@ -960,37 +990,9 @@ Events:
 ```
 
 # Elasticsearch
-1、索引备份
-https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html
-```
-curl -XPOST 'localhost:9200/_reindex?pretty' -H 'Content-Type: application/json' -d'
-{
-  "source": {
-    "index": "twitter"
-  },
-  "dest": {
-    "index": "new_twitter"
-  }
-}
-'
-```
-2、es重启
-先kill 杀死es
-```
-sh bin/elasticsearch -d
-```
-3、elasticsearch 查看集群所有设置（包含默认的）
-```
-http://10.138.1.1:9200/_cluster/settings?include_defaults=true
-```
-4、elasticsearch设置密码
-```
-./bin/elasticsearch-setup-passwords interactive
-```
-5、查看es集群恢复情况
-```
-http://10.138.1.1:9200/_cluster/allocation/explain?pretty
-```
+
+[Elasticsearch 常用命令](https://jiankunking.com/common-commands-for-elasticsearch-operation-and-maintenance.html)
+
 # Prometheus
 
 1、重新加载文件
