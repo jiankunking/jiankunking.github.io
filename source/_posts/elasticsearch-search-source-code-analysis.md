@@ -1207,20 +1207,19 @@ searchWithCollectorManager与searchWithCollector都是调用[ContextIndexSearche
 
 到目前为止都没发现，针对-\*查询都没有任何优化。
 
-唯一有希望进行优化的地方就是通过luece检索shard的时候，会进行优化，事实上会的：
+唯一有希望进行优化的地方就是通过luece检索shard的时候，会进行优化，事实上会进行一定的优化，比如借助Lucene的PointValues来优化IntField，LongField，FloatField，DoubleField。
 
-> 数据节点判断某个 Range 查询与分片是否存在交集，依赖于 Lucene 的一个重要特性：PointValues 。在早期的版本中，数值类型在 Lucene 中被转换成字符串存入倒排索引，但是由于范围查询效率比较低，从 Lucene 6.0开始，对于数值类型使用 BKD-Tree 来建立索引，内部实现为 PointValues。PointValues原本用于地理位置场景，但它在多维、一维数值查询上的表现也很出色，因此原先的数值字段(IntField，LongField，FloatField，DoubleField)被替换为（IntPoint，LongPoint，FloatPoint，DoublePoint）
-
-> 关于 BKD-Tree 的性质请参阅其他资料，暂且只需要知道 Lucene为每个字段单独建立索引，对于数值字段生成 BKD-Tree，一个新的 segment 生成时会产生一个新的.dim和.dii文件。最重要的，可以获取到这个 segment 中数值字段的最大值和最小值，为 pre-filter 提供了基础。当 segment 被 reader 打开的时候，Lucene 内部的 BKDReader 会将最大值和最小值读取出来保存到类成员变量，因此每个 segment 中，每个数值字段的最大最小值都是常驻 JVM 内存的。
-
-> 既然每个 segment 记录了数值字段的取值范围，获取shard 级别的范围就轻而易举：PointValues.getMaxPackedValue()，PointValues.getMinPackedValue(),函数遍历全部的 segment 分别计算最大值和最小值，然后根据查询条件判断是否存在交集。
-
-> 题外话：BKD-Tree 的每个节点都记录了节点自己的maxPackedValue、minPackedValue。
-
-> 摘自:https://www.easyice.cn/archives/350
+但不管怎么优化，对于搜索而言，还是能缩小范围就缩小，不管怎么优化，都不是一点成本没有的。
 
 # 总结
 
-elasticsearch针对-\*检索不会在索引、shard层面优化，但会在检索具体shard的时候，通过luece的特性来快速调过一些不符合条件的shard。因此在shard数不是很多的情况下使用-\*消耗的是一些RPC调用，对于性能影响不大。
+elasticsearch针对-\*检索不会在索引、shard层面优化，但会在检索具体shard的时候，通过luece的特性来快速调过一些不符合条件的shard。但这些特性不能保证一定会快速检索某些shard，因为很有可能你的检索条件位于shard的上下限之间。
 
-对于luece部分我也不熟悉，后面有时间学习一下。
+所以说，还是在数据入es时，拆分到合适的索引，效果最好。
+
+推荐阅读：
+
+https://www.easyice.cn/archives/350
+
+https://www.elastic.co/guide/en/elasticsearch/reference/7.11/range.html
+
