@@ -1219,7 +1219,9 @@ elasticsearch针对-\*检索不会在索引、shard层面优化，但会在检�
 
 推荐阅读：
 
-https://www.easyice.cn/archives/350
+* https://jiankunking.com/elasticsearch-performance-tuning-practice-at-ebay.html
 
-https://www.elastic.co/guide/en/elasticsearch/reference/7.11/range.html
+* https://www.easyice.cn/archives/350
+
+* https://www.elastic.co/guide/en/elasticsearch/reference/7.11/range.html
 

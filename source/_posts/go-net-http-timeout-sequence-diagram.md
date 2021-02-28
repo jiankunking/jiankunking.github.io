@@ -1,5 +1,5 @@
 ---
-title: 关于Go net/http 超时完全指南
+title: '[译]关于Go net/http 超时完全指南'
 abbrlink: 848
 date: 2020-05-23 14:32:23
 categories:

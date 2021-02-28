@@ -1,6 +1,6 @@
 ---
 layout: w
-title: Elasticsearch集群规模和性能调优
+title: '[译]Elasticsearch集群规模和性能调优'
 date: 2020-04-07 16:22:48
 categories:
   - ElasticSearch

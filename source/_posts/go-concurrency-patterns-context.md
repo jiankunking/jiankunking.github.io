@@ -1,5 +1,5 @@
 ---
-title: 'Go 并发 : Context'
+title: '[译]Go 并发 : Context'
 categories:
   - Go
 tags:

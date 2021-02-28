@@ -1,6 +1,6 @@
 ---
 layout: w
-title: Java Volatile Keyword
+title: '[译]Java Volatile Keyword'
 date: 2020-08-15 07:34:59
 categories:
   - JUC

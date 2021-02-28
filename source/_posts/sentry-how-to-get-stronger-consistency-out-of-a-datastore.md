@@ -1,5 +1,5 @@
 ---
-title: Sentry：如何从数据存储中获得更强的一致性
+title: '[译]Sentry：如何从数据存储中获得更强的一致性'
 abbrlink: 26295
 date: 2020-07-04 05:58:05
 categories:
