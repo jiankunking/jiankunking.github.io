@@ -36,8 +36,8 @@
 
 ]]></content>
       <tags>
-        <tag>原创</tag>
         <tag>Performance</tag>
+        <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Update</tag>
         <tag>源码</tag>
@@ -189,8 +189,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Performance</tag>
+        <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Tuning</tag>
@@ -780,10 +780,10 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
+        <tag>转载</tag>
         <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
         <tag>Score</tag>
-        <tag>转载</tag>
       </tags>
   </entry>
   <entry>
@@ -893,8 +893,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Shard</tag>
       </tags>
@@ -914,9 +914,9 @@
         <category>Console</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Console</tag>
         <tag>Design</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -959,7 +959,7 @@
 
 <p>该功能的核心就是实现kubernetes executor接口</p>
 <p>exec.go</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package pod</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;context&quot;</span><br><span class="line">	&quot;errors&quot;</span><br><span class="line">	&quot;log&quot;</span><br><span class="line">	&quot;net/http&quot;</span><br><span class="line">	&quot;sync&quot;</span><br><span class="line"></span><br><span class="line">	&quot;github.com/gorilla/websocket&quot;</span><br><span class="line">	corev1 &quot;k8s.io/api/core/v1&quot;</span><br><span class="line">	&quot;k8s.io/client-go/kubernetes/scheme&quot;</span><br><span class="line">	&quot;k8s.io/client-go/tools/remotecommand&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">// 封装websocket连接</span><br><span class="line">type WsConnection struct &#123;</span><br><span class="line">	wsSocket  *websocket.Conn // 底层websocket</span><br><span class="line">	inChan    chan *WsMessage // 读取队列</span><br><span class="line">	outChan   chan *WsMessage // 发送队列</span><br><span class="line">	mutex     sync.Mutex      // 避免重复关闭管道</span><br><span class="line">	isClosed  bool</span><br><span class="line">	closeChan chan byte // 关闭通知</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// web终端发来的包</span><br><span class="line">type xtermMessage struct &#123;</span><br><span class="line">	MsgType string `json:&quot;type&quot;`  // 类型:resize客户端调整终端, input客户端输入</span><br><span class="line">	Input   string `json:&quot;input&quot;` // msgtype=input情况下使用</span><br><span class="line">	Rows    uint16 `json:&quot;rows&quot;`  // msgtype=resize情况下使用</span><br><span class="line">	Cols    uint16 `json:&quot;cols&quot;`  // msgtype=resize情况下使用</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// websocket消息</span><br><span class="line">type WsMessage struct &#123;</span><br><span class="line">	MessageType int</span><br><span class="line">	Data        []byte</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 关闭连接</span><br><span class="line">func (wsConn *WsConnection) WsClose() &#123;</span><br><span class="line">	wsConn.wsSocket.Close()</span><br><span class="line">	wsConn.mutex.Lock()</span><br><span class="line">	defer wsConn.mutex.Unlock()</span><br><span class="line">	if !wsConn.isClosed &#123;</span><br><span class="line">		wsConn.isClosed = true</span><br><span class="line">		close(wsConn.closeChan)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// ssh流式处理器</span><br><span class="line">type streamHandler struct &#123;</span><br><span class="line">	wsConn      *WsConnection</span><br><span class="line">	resizeEvent chan remotecommand.TerminalSize</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// executor回调获取web是否resize</span><br><span class="line">func (handler *streamHandler) Next() (size *remotecommand.TerminalSize) &#123;</span><br><span class="line">	ret := &lt;-handler.resizeEvent</span><br><span class="line">	size = &amp;ret</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 发送返回消息到协程</span><br><span class="line">func (wsConn *WsConnection) WsWrite(messageType int, data []byte) (err error) &#123;</span><br><span class="line">	select &#123;</span><br><span class="line">	case wsConn.outChan &lt;- &amp;WsMessage&#123;messageType, data&#125;:</span><br><span class="line">	case &lt;-wsConn.closeChan:</span><br><span class="line">		err = errors.New(&quot;WsWrite websocket closed&quot;)</span><br><span class="line">		break</span><br><span class="line">	&#125;</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 读取协程</span><br><span class="line">func (wsConn *WsConnection) wsReadLoop() &#123;</span><br><span class="line">	for &#123;</span><br><span class="line">		// 读一条message</span><br><span class="line">		// ReadMessage返回的messageType只可能是：TextMessage BinaryMessage</span><br><span class="line">		msgType, data, err := wsConn.wsSocket.ReadMessage()</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			log.Println(err)</span><br><span class="line">			break</span><br><span class="line">		&#125;</span><br><span class="line">		//log.Print(string(data))</span><br><span class="line">		// 放入请求队列</span><br><span class="line">		wsConn.inChan &lt;- &amp;WsMessage&#123;</span><br><span class="line">			msgType,</span><br><span class="line">			data,</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 发送协程</span><br><span class="line">func (wsConn *WsConnection) wsWriteLoop() &#123;</span><br><span class="line">	// 服务端返回给页面的数据</span><br><span class="line">	for &#123;</span><br><span class="line">		select &#123;</span><br><span class="line">		// 取一个应答</span><br><span class="line">		case msg := &lt;-wsConn.outChan:</span><br><span class="line">			//log.Print(string(msg.Data))</span><br><span class="line">			// 写给web  websocket</span><br><span class="line">			if err := wsConn.wsSocket.WriteMessage(msg.MessageType, msg.Data); err != nil &#123;</span><br><span class="line">				log.Println(err)</span><br><span class="line">				break</span><br><span class="line">			&#125;</span><br><span class="line">		case &lt;-wsConn.closeChan:</span><br><span class="line">			wsConn.WsClose()</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (wsConn *WsConnection) onContextCancel(ctx context.Context) &#123;</span><br><span class="line">	for &#123;</span><br><span class="line">		select &#123;</span><br><span class="line">		case &lt;-ctx.Done():</span><br><span class="line">			log.Println(&quot;web cancel context or time out..........&quot;)</span><br><span class="line">			wsConn.WsClose()</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 读取 页面消息到协程</span><br><span class="line">func (wsConn *WsConnection) WsRead() (msg *WsMessage, err error) &#123;</span><br><span class="line">	select &#123;</span><br><span class="line">	case msg = &lt;-wsConn.inChan:</span><br><span class="line">		return</span><br><span class="line">	case &lt;-wsConn.closeChan:</span><br><span class="line">		err = errors.New(&quot;WsRead websocket closed&quot;)</span><br><span class="line">		break</span><br><span class="line">	&#125;</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// executor回调读取web端的输入</span><br><span class="line">func (handler *streamHandler) Read(p []byte) (size int, err error) &#123;</span><br><span class="line">	// 读web发来的输入</span><br><span class="line">	msg, err := handler.wsConn.WsRead()</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		handler.wsConn.WsClose()</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	xtermMsg := &amp;xtermMessage&#123;</span><br><span class="line">		//MsgType: string(msg.MessageType),</span><br><span class="line">		Input: string(msg.Data),</span><br><span class="line">	&#125;</span><br><span class="line">	// 放到channel里，等remotecommand executor调用我们的Next取走</span><br><span class="line">	handler.resizeEvent &lt;- remotecommand.TerminalSize&#123;Width: xtermMsg.Cols, Height: xtermMsg.Rows&#125;</span><br><span class="line">	size = len(xtermMsg.Input)</span><br><span class="line">	copy(p, xtermMsg.Input)</span><br><span class="line">	return</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// executor回调向web端输出</span><br><span class="line">func (handler *streamHandler) Write(p []byte) (size int, err error) &#123;</span><br><span class="line">	// 产生副本</span><br><span class="line">	copyData := make([]byte, len(p))</span><br><span class="line">	copy(copyData, p)</span><br><span class="line">	size = len(p)</span><br><span class="line">	err = handler.wsConn.WsWrite(websocket.TextMessage, copyData)</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func ContainerExec(ctx context.Context, r *http.Request, w http.ResponseWriter, cluster, namespace, podID, container string) error &#123;</span><br><span class="line"></span><br><span class="line">	// todo 获取k8s信息部分 需要替换成自己的</span><br><span class="line">	ctxName := meta.GetContextName(cluster)</span><br><span class="line">	kclient, err := k8s.GetClient(ctxName)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Println(err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	cmds := []string&#123;&quot;sh&quot;, &quot;-c&quot;, &quot;test -f /bin/bash &amp;&amp; bash || sh&quot;&#125;</span><br><span class="line">	option := &amp;corev1.PodExecOptions&#123;</span><br><span class="line">		Command:   cmds,</span><br><span class="line">		Stdin:     true,</span><br><span class="line">		Stdout:    true,</span><br><span class="line">		Stderr:    true,</span><br><span class="line">		TTY:       true,</span><br><span class="line">		Container: container,</span><br><span class="line">	&#125;</span><br><span class="line">	subCtx, cancel := context.WithTimeout(ctx, models.READ_LOG_TIMEOUT)</span><br><span class="line">	defer cancel()</span><br><span class="line">	req := kclient.CoreV1().RESTClient().</span><br><span class="line">		Post().</span><br><span class="line">		Resource(&quot;pods&quot;).</span><br><span class="line">		Name(podID).</span><br><span class="line">		Namespace(namespace).</span><br><span class="line">		SubResource(&quot;exec&quot;).</span><br><span class="line">		VersionedParams(option, scheme.ParameterCodec).Timeout(models.READ_LOG_TIMEOUT)</span><br><span class="line">	wsSocket, err := upGrader.Upgrade(w, r, nil)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Println(err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	wsConn := &amp;WsConnection&#123;</span><br><span class="line">		wsSocket:  wsSocket,</span><br><span class="line">		inChan:    make(chan *WsMessage, 1000),</span><br><span class="line">		outChan:   make(chan *WsMessage, 1000),</span><br><span class="line">		closeChan: make(chan byte),</span><br><span class="line">		isClosed:  false,</span><br><span class="line">	&#125;</span><br><span class="line">	// 获取kube config配置</span><br><span class="line">	config, err := k8s.GetClientConfig(ctxName)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		wsConn.WsClose()</span><br><span class="line">		log.Println(err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	// 创建到容器的连接</span><br><span class="line">	executor, err := remotecommand.NewSPDYExecutor(config, http.MethodPost, req.URL())</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		wsConn.WsClose()</span><br><span class="line">		log.Println(err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	// 页面读入输入 协程</span><br><span class="line">	go wsConn.wsReadLoop()</span><br><span class="line">	// 服务端返回数据 协程</span><br><span class="line">	go wsConn.wsWriteLoop()</span><br><span class="line"></span><br><span class="line">	// 监听前端请求</span><br><span class="line">	go wsConn.onContextCancel(subCtx)</span><br><span class="line"></span><br><span class="line">	// 配置与容器之间的数据流处理回调</span><br><span class="line">	handler := &amp;streamHandler&#123;wsConn: wsConn, resizeEvent: make(chan remotecommand.TerminalSize)&#125;</span><br><span class="line">	if err = executor.Stream(remotecommand.StreamOptions&#123;</span><br><span class="line">		Stdin:             handler,</span><br><span class="line">		Stdout:            handler,</span><br><span class="line">		Stderr:            handler,</span><br><span class="line">		TerminalSizeQueue: handler,</span><br><span class="line">		Tty:               true,</span><br><span class="line">	&#125;); err != nil &#123;</span><br><span class="line">		log.Println(&quot;handler&quot;, err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package pod</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;context&quot;</span><br><span class="line">	&quot;errors&quot;</span><br><span class="line">	&quot;log&quot;</span><br><span class="line">	&quot;net/http&quot;</span><br><span class="line">	&quot;sync&quot;</span><br><span class="line"></span><br><span class="line">	&quot;github.com/gorilla/websocket&quot;</span><br><span class="line">	corev1 &quot;k8s.io/api/core/v1&quot;</span><br><span class="line">	&quot;k8s.io/client-go/kubernetes/scheme&quot;</span><br><span class="line">	&quot;k8s.io/client-go/tools/remotecommand&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">// 封装websocket连接</span><br><span class="line">type WsConnection struct &#123;</span><br><span class="line">	wsSocket  *websocket.Conn // 底层websocket</span><br><span class="line">	inChan    chan *WsMessage // 读取队列</span><br><span class="line">	outChan   chan *WsMessage // 发送队列</span><br><span class="line">	mutex     sync.Mutex      // 避免重复关闭管道</span><br><span class="line">	isClosed  bool</span><br><span class="line">	closeChan chan byte // 关闭通知</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// web终端发来的包</span><br><span class="line">type xtermMessage struct &#123;</span><br><span class="line">	MsgType string `json:&quot;type&quot;`  // 类型:resize客户端调整终端, input客户端输入</span><br><span class="line">	Input   string `json:&quot;input&quot;` // msgtype=input情况下使用</span><br><span class="line">	Rows    uint16 `json:&quot;rows&quot;`  // msgtype=resize情况下使用</span><br><span class="line">	Cols    uint16 `json:&quot;cols&quot;`  // msgtype=resize情况下使用</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// websocket消息</span><br><span class="line">type WsMessage struct &#123;</span><br><span class="line">	MessageType int</span><br><span class="line">	Data        []byte</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 关闭连接</span><br><span class="line">func (wsConn *WsConnection) WsClose() &#123;</span><br><span class="line">	wsConn.wsSocket.Close()</span><br><span class="line">	wsConn.mutex.Lock()</span><br><span class="line">	defer wsConn.mutex.Unlock()</span><br><span class="line">	if !wsConn.isClosed &#123;</span><br><span class="line">		wsConn.isClosed = true</span><br><span class="line">		close(wsConn.closeChan)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// ssh流式处理器</span><br><span class="line">type streamHandler struct &#123;</span><br><span class="line">	wsConn      *WsConnection</span><br><span class="line">	resizeEvent chan remotecommand.TerminalSize</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// executor回调获取web是否resize</span><br><span class="line">func (handler *streamHandler) Next() (size *remotecommand.TerminalSize) &#123;</span><br><span class="line">	ret := &lt;-handler.resizeEvent</span><br><span class="line">	size = &amp;ret</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 发送返回消息到协程</span><br><span class="line">func (wsConn *WsConnection) WsWrite(messageType int, data []byte) (err error) &#123;</span><br><span class="line">	select &#123;</span><br><span class="line">	case wsConn.outChan &lt;- &amp;WsMessage&#123;messageType, data&#125;:</span><br><span class="line">	case &lt;-wsConn.closeChan:</span><br><span class="line">		err = errors.New(&quot;WsWrite websocket closed&quot;)</span><br><span class="line">		break</span><br><span class="line">	&#125;</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 读取协程</span><br><span class="line">func (wsConn *WsConnection) wsReadLoop() &#123;</span><br><span class="line">	for &#123;</span><br><span class="line">		// 读一条message</span><br><span class="line">		// ReadMessage返回的messageType只可能是：TextMessage BinaryMessage</span><br><span class="line">		msgType, data, err := wsConn.wsSocket.ReadMessage()</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			log.Println(err)</span><br><span class="line">			break</span><br><span class="line">		&#125;</span><br><span class="line">		//log.Print(string(data))</span><br><span class="line">		// 放入请求队列</span><br><span class="line">		wsConn.inChan &lt;- &amp;WsMessage&#123;</span><br><span class="line">			msgType,</span><br><span class="line">			data,</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 发送协程</span><br><span class="line">func (wsConn *WsConnection) wsWriteLoop() &#123;</span><br><span class="line">	// 服务端返回给页面的数据</span><br><span class="line">	for &#123;</span><br><span class="line">		select &#123;</span><br><span class="line">		// 取一个应答</span><br><span class="line">		case msg := &lt;-wsConn.outChan:</span><br><span class="line">			//log.Print(string(msg.Data))</span><br><span class="line">			// 写给web  websocket</span><br><span class="line">			if err := wsConn.wsSocket.WriteMessage(msg.MessageType, msg.Data); err != nil &#123;</span><br><span class="line">				log.Println(err)</span><br><span class="line">				break</span><br><span class="line">			&#125;</span><br><span class="line">		case &lt;-wsConn.closeChan:</span><br><span class="line">			wsConn.WsClose()</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (wsConn *WsConnection) onContextCancel(ctx context.Context) &#123;</span><br><span class="line">	for &#123;</span><br><span class="line">		select &#123;</span><br><span class="line">		case &lt;-ctx.Done():</span><br><span class="line">			log.Println(&quot;web cancel context or time out..........&quot;)</span><br><span class="line">			wsConn.WsClose()</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 读取 页面消息到协程</span><br><span class="line">func (wsConn *WsConnection) WsRead() (msg *WsMessage, err error) &#123;</span><br><span class="line">	select &#123;</span><br><span class="line">	case msg = &lt;-wsConn.inChan:</span><br><span class="line">		return</span><br><span class="line">	case &lt;-wsConn.closeChan:</span><br><span class="line">		err = errors.New(&quot;WsRead websocket closed&quot;)</span><br><span class="line">		break</span><br><span class="line">	&#125;</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// executor回调读取web端的输入</span><br><span class="line">func (handler *streamHandler) Read(p []byte) (size int, err error) &#123;</span><br><span class="line">	// 读web发来的输入</span><br><span class="line">	msg, err := handler.wsConn.WsRead()</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		handler.wsConn.WsClose()</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	xtermMsg := &amp;xtermMessage&#123;</span><br><span class="line">		//MsgType: string(msg.MessageType),</span><br><span class="line">		Input: string(msg.Data),</span><br><span class="line">	&#125;</span><br><span class="line">	// 放到channel里，等remotecommand executor调用我们的Next取走</span><br><span class="line">	handler.resizeEvent &lt;- remotecommand.TerminalSize&#123;Width: xtermMsg.Cols, Height: xtermMsg.Rows&#125;</span><br><span class="line">	size = len(xtermMsg.Input)</span><br><span class="line">	copy(p, xtermMsg.Input)</span><br><span class="line">	return</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// executor回调向web端输出</span><br><span class="line">func (handler *streamHandler) Write(p []byte) (size int, err error) &#123;</span><br><span class="line">	// 产生副本</span><br><span class="line">	copyData := make([]byte, len(p))</span><br><span class="line">	copy(copyData, p)</span><br><span class="line">	size = len(p)</span><br><span class="line">	err = handler.wsConn.WsWrite(websocket.TextMessage, copyData)</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func ContainerExec(ctx context.Context, r *http.Request, w http.ResponseWriter, cluster, namespace, podID, container string) error &#123;</span><br><span class="line"></span><br><span class="line">	// todo 获取k8s信息部分 需要替换成自己的</span><br><span class="line">	ctxName := meta.GetContextName(cluster)</span><br><span class="line">	kclient, err := k8s.GetClient(ctxName)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Println(err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	cmds := []string&#123;&quot;sh&quot;, &quot;-c&quot;, &quot;test -f /bin/bash &amp;&amp; bash || sh&quot;&#125;</span><br><span class="line">	option := &amp;corev1.PodExecOptions&#123;</span><br><span class="line">		Command:   cmds,</span><br><span class="line">		Stdin:     true,</span><br><span class="line">		Stdout:    true,</span><br><span class="line">		Stderr:    true,</span><br><span class="line">		TTY:       true,</span><br><span class="line">		Container: container,</span><br><span class="line">	&#125;</span><br><span class="line">	subCtx, cancel := context.WithTimeout(ctx, models.READ_LOG_TIMEOUT)</span><br><span class="line">	defer cancel()</span><br><span class="line">	req := kclient.CoreV1().RESTClient().</span><br><span class="line">		Post().</span><br><span class="line">		Resource(&quot;pods&quot;).</span><br><span class="line">		Name(podID).</span><br><span class="line">		Namespace(namespace).</span><br><span class="line">		SubResource(&quot;exec&quot;).</span><br><span class="line">		VersionedParams(option, scheme.ParameterCodec).Timeout(models.READ_LOG_TIMEOUT)</span><br><span class="line">	wsSocket, err := upGrader.Upgrade(w, r, nil)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Println(err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	wsConn := &amp;WsConnection&#123;</span><br><span class="line">		wsSocket:  wsSocket,</span><br><span class="line">		inChan:    make(chan *WsMessage, 1000),</span><br><span class="line">		outChan:   make(chan *WsMessage, 1000),</span><br><span class="line">		closeChan: make(chan byte),</span><br><span class="line">		isClosed:  false,</span><br><span class="line">	&#125;</span><br><span class="line">	// 获取kube config配置</span><br><span class="line">	config, err := k8s.GetClientConfig(ctxName)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		wsConn.WsClose()</span><br><span class="line">		log.Println(err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	// 创建到容器的连接</span><br><span class="line">	executor, err := remotecommand.NewSPDYExecutor(config, http.MethodPost, req.URL())</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		wsConn.WsClose()</span><br><span class="line">		log.Println(err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	// 页面读入输入 协程</span><br><span class="line">	go wsConn.wsReadLoop()</span><br><span class="line">	// 服务端返回数据 协程</span><br><span class="line">	go wsConn.wsWriteLoop()</span><br><span class="line"></span><br><span class="line">	// 监听前端请求</span><br><span class="line">	go wsConn.onContextCancel(subCtx)</span><br><span class="line"></span><br><span class="line">	// 配置与容器之间的数据流处理回调</span><br><span class="line">	handler := &amp;streamHandler&#123;wsConn: wsConn, resizeEvent: make(chan remotecommand.TerminalSize)&#125;</span><br><span class="line">	if err = executor.Stream(remotecommand.StreamOptions&#123;</span><br><span class="line">		Stdin:             handler,</span><br><span class="line">		Stdout:            handler,</span><br><span class="line">		Stderr:            handler,</span><br><span class="line">		TerminalSizeQueue: handler,</span><br><span class="line">		Tty:               true,</span><br><span class="line">	&#125;); err != nil &#123;</span><br><span class="line">		log.Println(&quot;handler&quot;, err)</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>参考资料：</p>
 <p><a href="https://github.com/jiankunking/k8-web-terminal" target="_blank" rel="noopener">https://github.com/jiankunking/k8-web-terminal</a></p>
@@ -2065,8 +2065,8 @@
       </categories>
       <tags>
         <tag>读书笔记</tag>
-        <tag>原创</tag>
         <tag>Design</tag>
+        <tag>原创</tag>
         <tag>Refactoring</tag>
         <tag>Code</tag>
       </tags>
@@ -2148,8 +2148,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Performance</tag>
+        <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Tuning</tag>
@@ -2896,9 +2896,9 @@
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
         <tag>原创</tag>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -3304,8 +3304,8 @@
         <category>Interview</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -4543,8 +4543,8 @@ use one vs other -->
         <category>编码规范</category>
       </categories>
       <tags>
-        <tag>编码规范</tag>
         <tag>转载</tag>
+        <tag>编码规范</tag>
         <tag>Go</tag>
         <tag>Uber</tag>
         <tag>Style</tag>
@@ -4688,8 +4688,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Microservice</tag>
       </tags>
   </entry>
@@ -4955,8 +4955,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>OAuth</tag>
         <tag>Login</tag>
       </tags>
@@ -5207,8 +5207,8 @@ use one vs other -->
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>原创</tag>
+        <tag>MySQL</tag>
         <tag>UNION</tag>
         <tag>OR</tag>
       </tags>
@@ -5315,8 +5315,8 @@ use one vs other -->
         <category>Network</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -8117,8 +8117,8 @@ use one vs other -->
         <tag>读书笔记</tag>
         <tag>Network</tag>
         <tag>TCP</tag>
-        <tag>UDP</tag>
         <tag>HTTP</tag>
+        <tag>UDP</tag>
         <tag>SSL</tag>
       </tags>
   </entry>
@@ -9279,9 +9279,9 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
         <tag>Design</tag>
+        <tag>MySQL</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
         <tag>SQL Server</tag>
@@ -9568,8 +9568,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Performance</tag>
+        <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>GC</tag>
         <tag>JVM</tag>
@@ -9889,8 +9889,8 @@ use one vs other -->
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Query</tag>
       </tags>
   </entry>
@@ -10298,12 +10298,12 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>转载</tag>
         <tag>Architecture</tag>
         <tag>Fescar</tag>
         <tag>Seata</tag>
         <tag>Distributed</tag>
         <tag>Transaction</tag>
+        <tag>转载</tag>
       </tags>
   </entry>
   <entry>
@@ -10427,8 +10427,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Multi-Live</tag>
         <tag>High-Available</tag>
       </tags>
@@ -10759,9 +10759,9 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>Architecture</tag>
         <tag>Distributed</tag>
+        <tag>读书笔记</tag>
         <tag>Cache</tag>
         <tag>Consistent</tag>
       </tags>
@@ -10979,8 +10979,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -11053,8 +11053,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -11105,8 +11105,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -11128,8 +11128,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -11170,8 +11170,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>MySQL</tag>
         <tag>读书笔记</tag>
+        <tag>MySQL</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
