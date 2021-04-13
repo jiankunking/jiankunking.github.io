@@ -832,7 +832,7 @@ FetchSearchPhase(SearchPhaseResults<SearchPhaseResult> resultConsumer,
 
 看到这里还是没有发现针对-\*有什么特殊的优化，还是会根据检索条件遍历符合条件的所有索引及其shard。那下面看那一下具体获取数据的时候有没有什么特殊处理，也就是data node 在Query、Fetch阶段有没有什么特殊的优化？
 
-下面看一下[SearchTransportService](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java)下的[sendExecuteQuery]https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java#L139)
+下面看一下[SearchTransportService](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java)下的[sendExecuteQuery](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java#L139)
 
 ```
 public void sendExecuteQuery(Transport.Connection connection, final ShardSearchRequest request, SearchTask task,

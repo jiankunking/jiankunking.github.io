@@ -148,6 +148,10 @@ tags:
      * Prepares an update request by converting it into an index or delete request or an update response (no action).
      */
     public Result prepare(UpdateRequest request, IndexShard indexShard, LongSupplier nowInMillis) {
+        // 这里是实时获取
+        // 获取结果最终会到InternalEngine 
+        // get(Get get, DocumentMapper mapper, Function<Engine.Searcher, Engine.Searcher> searcherWrapper)
+        // 后面会附上 代码
         final GetResult getResult = indexShard.getService().getForUpdate(
             request.id(), request.ifSeqNo(), request.ifPrimaryTerm());
         return prepare(indexShard.shardId(), request, getResult, nowInMillis);
@@ -181,15 +185,77 @@ tags:
 * 获取待更新文档的数据
 * 执行更新文档的操作
 
-第1步最终会调用[InternalEngine](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java)中的[get](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java#L643)方法。
+第1步最终会调用[InternalEngine](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java)中的[get](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java#L643)方法。代码如下：
+
+```
+    @Override
+    public GetResult get(Get get, DocumentMapper mapper, Function<Engine.Searcher, Engine.Searcher> searcherWrapper) {
+        assert Objects.equals(get.uid().field(), IdFieldMapper.NAME) : get.uid().field();
+        try (ReleasableLock ignored = readLock.acquire()) {
+            ensureOpen();
+            // 是否实时获取
+            if (get.realtime()) {
+                final VersionValue versionValue;
+                try (Releasable ignore = versionMap.acquireLock(get.uid().bytes())) {
+                    // we need to lock here to access the version map to do this truly in RT
+                    versionValue = getVersionFromMap(get.uid().bytes());
+                }
+                if (versionValue != null) {
+                    if (versionValue.isDelete()) {
+                        return GetResult.NOT_EXISTS;
+                    }
+                    if (get.versionType().isVersionConflictForReads(versionValue.version, get.version())) {
+                        throw new VersionConflictEngineException(shardId, get.id(),
+                            get.versionType().explainConflictForReads(versionValue.version, get.version()));
+                    }
+                    if (get.getIfSeqNo() != SequenceNumbers.UNASSIGNED_SEQ_NO && (
+                        get.getIfSeqNo() != versionValue.seqNo || get.getIfPrimaryTerm() != versionValue.term
+                        )) {
+                        throw new VersionConflictEngineException(shardId, get.id(),
+                            get.getIfSeqNo(), get.getIfPrimaryTerm(), versionValue.seqNo, versionValue.term);
+                    }
+                    // 是否从Translog获取
+                    if (get.isReadFromTranslog()) {
+                        // this is only used for updates - API _GET calls will always read form a reader for consistency
+                        // the update call doesn't need the consistency since it's source only + _parent but parent can go away in 7.0
+                        if (versionValue.getLocation() != null) {
+                            try {
+                                final Translog.Operation operation = translog.readOperation(versionValue.getLocation());
+                                if (operation != null) {
+                                    return getFromTranslog(get, (Translog.Index) operation, mapper, searcherWrapper);
+                                }
+                            } catch (IOException e) {
+                                maybeFailEngine("realtime_get", e); // lets check if the translog has failed with a tragic event
+                                throw new EngineException(shardId, "failed to read operation from translog", e);
+                            }
+                        } else {
+                            trackTranslogLocation.set(true);
+                        }
+                    }
+                    assert versionValue.seqNo >= 0 : versionValue;
+                    refreshIfNeeded("realtime_get", versionValue.seqNo);
+                }
+                return getFromSearcher(get, acquireSearcher("realtime_get", SearcherScope.INTERNAL, searcherWrapper));
+            } else {
+                // we expose what has been externally expose in a point in time snapshot via an explicit refresh
+                return getFromSearcher(get, acquireSearcher("get", SearcherScope.EXTERNAL, searcherWrapper));
+            }
+        }
+    }
+```
 
 # 总结
 
-update操作需要先获取原始文档，然后再更新。
+update操作需要先获取原始文档，如果查询不到，会新增；如果存在，会根据原始文档更新。
 
-其实原因也很简单，因为这里是允许用户做部分更新的，而es底层每次更新时要求必须是完整的文档（因为lucene的更新实际是删除老文档，新增新文档），如果不拿到原始数据的话，就不能组装出更新后的完整文档了。
+虽然更新操作最终调用的方法也是[InternalEngine](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java)中的[index](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java#L854)，但在更新时调用[lucene](https://github.com/jiankunking/lucene) [softUpdateDocuments](https://github.com/jiankunking/lucene/blob/master/core/src/java/org/apache/lucene/index/IndexWriter.java#L1519)，会包含两个操作：标记删除、新增。
 
+相对于新增而言:
+* 多了一次完整的查询
+* 多了一个标记删除
 
-todo：
-- [ ] luece中是如何识别是更新还是新增的，因为更新操作最终调用的方法也是[InternalEngine](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java)中的[index](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java#L854)。
+如果数据量比较大，操作又比较频繁的情况下，update这种操作还是要慎重。
+
+<!-- 其实原因也很简单，因为这里是允许用户做部分更新的，而es底层每次更新时要求必须是完整的文档（因为lucene的更新实际是删除老文档，新增新文档），如果不拿到原始数据的话，就不能组装出更新后的完整文档了。 -->
+
 

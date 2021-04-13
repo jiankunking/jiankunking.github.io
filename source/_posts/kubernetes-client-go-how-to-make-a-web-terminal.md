@@ -128,6 +128,18 @@ func (wsConn *WsConnection) wsWriteLoop() {
 			}
 		case <-wsConn.closeChan:
 			wsConn.WsClose()
+			return
+		}
+	}
+}
+
+func (wsConn *WsConnection) onContextCancel(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("web cancel context or time out..........")
+			wsConn.WsClose()
+			return
 		}
 	}
 }
@@ -193,8 +205,8 @@ func ContainerExec(ctx context.Context, r *http.Request, w http.ResponseWriter, 
 		TTY:       true,
 		Container: container,
 	}
-	//subCtx, cancel := context.WithTimeout(ctx, models.READ_LOG_TIMEOUT)
-	//defer cancel()
+	subCtx, cancel := context.WithTimeout(ctx, models.READ_LOG_TIMEOUT)
+	defer cancel()
 	req := kclient.CoreV1().RESTClient().
 		Post().
 		Resource("pods").
@@ -232,6 +244,9 @@ func ContainerExec(ctx context.Context, r *http.Request, w http.ResponseWriter, 
 	go wsConn.wsReadLoop()
 	// 服务端返回数据 协程
 	go wsConn.wsWriteLoop()
+
+	// 监听前端请求
+	go wsConn.onContextCancel(subCtx)
 
 	// 配置与容器之间的数据流处理回调
 	handler := &streamHandler{wsConn: wsConn, resizeEvent: make(chan remotecommand.TerminalSize)}
