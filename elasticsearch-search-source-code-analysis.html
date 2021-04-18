@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="带着疑问学源码，第二篇：Elasticsearch 搜索代码分析基于：https://github.com/jiankunking/elasticsearchElasticsearch 7.10.2+">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2021-02-26T01:21:01.861Z">
+<meta property="og:updated_time" content="2021-04-13T09:55:54.212Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="【Elasticsearch源码】 检索分析">
 <meta name="twitter:description" content="带着疑问学源码，第二篇：Elasticsearch 搜索代码分析基于：https://github.com/jiankunking/elasticsearchElasticsearch 7.10.2+">
@@ -148,12 +148,12 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">108</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">110</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">144</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">148</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-02-26 09:21:01" itemprop="dateModified" datetime="2021-02-26T09:21:01+08:00">2021-02-26</time>
+                <time title="修改时间：2021-04-13 17:55:54" itemprop="dateModified" datetime="2021-04-13T17:55:54+08:00">2021-04-13</time>
               </span>
 
           
@@ -335,7 +335,7 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">// 主要判断是否启用字段折叠（field collapsing），根据需要实现字段折叠，</span><br><span class="line">// 如果没有实现，直接返回给客户端。</span><br><span class="line">   @Override</span><br><span class="line">   public void run() &#123;</span><br><span class="line">       if (isCollapseRequest() &amp;&amp; searchResponse.hits().getHits().length &gt; 0) &#123;</span><br><span class="line">           SearchRequest searchRequest = context.getRequest();</span><br><span class="line">           CollapseBuilder collapseBuilder = searchRequest.source().collapse();</span><br><span class="line">           final List&lt;InnerHitBuilder&gt; innerHitBuilders = collapseBuilder.getInnerHits();</span><br><span class="line">           MultiSearchRequest multiRequest = new MultiSearchRequest();</span><br><span class="line">           if (collapseBuilder.getMaxConcurrentGroupRequests() &gt; 0) &#123;</span><br><span class="line">               multiRequest.maxConcurrentSearchRequests(collapseBuilder.getMaxConcurrentGroupRequests());</span><br><span class="line">           &#125;</span><br><span class="line">           for (SearchHit hit : searchResponse.hits().getHits()) &#123;</span><br><span class="line">               BoolQueryBuilder groupQuery = new BoolQueryBuilder();</span><br><span class="line">               Object collapseValue = hit.field(collapseBuilder.getField()).getValue();</span><br><span class="line">               if (collapseValue != null) &#123;</span><br><span class="line">                   groupQuery.filter(QueryBuilders.matchQuery(collapseBuilder.getField(), collapseValue));</span><br><span class="line">               &#125; else &#123;</span><br><span class="line">                   groupQuery.mustNot(QueryBuilders.existsQuery(collapseBuilder.getField()));</span><br><span class="line">               &#125;</span><br><span class="line">               QueryBuilder origQuery = searchRequest.source().query();</span><br><span class="line">               if (origQuery != null) &#123;</span><br><span class="line">                   groupQuery.must(origQuery);</span><br><span class="line">               &#125;</span><br><span class="line">               for (InnerHitBuilder innerHitBuilder : innerHitBuilders) &#123;</span><br><span class="line">                   CollapseBuilder innerCollapseBuilder = innerHitBuilder.getInnerCollapseBuilder();</span><br><span class="line">                   SearchSourceBuilder sourceBuilder = buildExpandSearchSourceBuilder(innerHitBuilder, innerCollapseBuilder)</span><br><span class="line">                       .query(groupQuery)</span><br><span class="line">                       .postFilter(searchRequest.source().postFilter())</span><br><span class="line">                       .runtimeMappings(searchRequest.source().runtimeMappings());</span><br><span class="line">                   SearchRequest groupRequest = new SearchRequest(searchRequest);</span><br><span class="line">                   groupRequest.source(sourceBuilder);</span><br><span class="line">                   multiRequest.add(groupRequest);</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">           context.getSearchTransport().sendExecuteMultiSearch(multiRequest, context.getTask(),</span><br><span class="line">               ActionListener.wrap(response -&gt; &#123;</span><br><span class="line">                   Iterator&lt;MultiSearchResponse.Item&gt; it = response.iterator();</span><br><span class="line">                   for (SearchHit hit : searchResponse.hits.getHits()) &#123;</span><br><span class="line">                       for (InnerHitBuilder innerHitBuilder : innerHitBuilders) &#123;</span><br><span class="line">                           MultiSearchResponse.Item item = it.next();</span><br><span class="line">                           if (item.isFailure()) &#123;</span><br><span class="line">                               context.onPhaseFailure(this, &quot;failed to expand hits&quot;, item.getFailure());</span><br><span class="line">                               return;</span><br><span class="line">                           &#125;</span><br><span class="line">                           SearchHits innerHits = item.getResponse().getHits();</span><br><span class="line">                           if (hit.getInnerHits() == null) &#123;</span><br><span class="line">                               hit.setInnerHits(new HashMap&lt;&gt;(innerHitBuilders.size()));</span><br><span class="line">                           &#125;</span><br><span class="line">                           hit.getInnerHits().put(innerHitBuilder.getName(), innerHits);</span><br><span class="line">                       &#125;</span><br><span class="line">                   &#125;</span><br><span class="line">                   context.sendSearchResponse(searchResponse, queryResults);</span><br><span class="line">               &#125;, context::onFailure)</span><br><span class="line">           );</span><br><span class="line">       &#125; else &#123;</span><br><span class="line">           context.sendSearchResponse(searchResponse, queryResults);</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
 
 <p>看到这里还是没有发现针对-*有什么特殊的优化，还是会根据检索条件遍历符合条件的所有索引及其shard。那下面看那一下具体获取数据的时候有没有什么特殊处理，也就是data node 在Query、Fetch阶段有没有什么特殊的优化？</p>
-<p>下面看一下<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java" target="_blank" rel="noopener">SearchTransportService</a>下的[sendExecuteQuery]<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java#L139" target="_blank" rel="noopener">https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java#L139</a>)</p>
+<p>下面看一下<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java" target="_blank" rel="noopener">SearchTransportService</a>下的<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/search/SearchTransportService.java#L139" target="_blank" rel="noopener">sendExecuteQuery</a></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public void sendExecuteQuery(Transport.Connection connection, final ShardSearchRequest request, SearchTask task,</span><br><span class="line">                                 final SearchActionListener&lt;SearchPhaseResult&gt; listener) &#123;</span><br><span class="line">        // we optimize this and expect a QueryFetchSearchResult if we only have a single shard in the search request</span><br><span class="line">        // this used to be the QUERY_AND_FETCH which doesn&apos;t exist anymore.</span><br><span class="line">        final boolean fetchDocuments = request.numberOfShards() == 1;</span><br><span class="line">        Writeable.Reader&lt;SearchPhaseResult&gt; reader = fetchDocuments ? QueryFetchSearchResult::new : QuerySearchResult::new;</span><br><span class="line"></span><br><span class="line">        final ActionListener handler = responseWrapper.apply(connection, listener);</span><br><span class="line">        transportService.sendChildRequest(connection, QUERY_ACTION_NAME, request, task,</span><br><span class="line">                new ConnectionCountingHandler&lt;&gt;(handler, reader, clientConnections, connection.getNode().getId()));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 
 <p>通过请求路径QUERY_ACTION_NAME可以在SearchTransportService中找到对应的处理函数searchService.executeQueryPhase：</p>
@@ -517,7 +517,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">108</span>
+          <span class="site-state-item-count">110</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -529,7 +529,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">144</span>
+        <span class="site-state-item-count">148</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -588,7 +588,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">795k</span>
+    <span title="站点总字数">837k</span>
 </div>
 
         
