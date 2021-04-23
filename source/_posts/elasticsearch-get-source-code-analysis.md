@@ -11,7 +11,7 @@ abbrlink: 63108
 date: 2021-04-11 16:16:15
 ---
 
-> 带着疑问学源码，第四篇：Elasticsearch GET流程
+> 带着疑问学源码，第四篇：Elasticsearch GET
 > 代码分析基于：https://github.com/jiankunking/elasticsearch 
 > Elasticsearch 7.10.2+
 
@@ -29,8 +29,8 @@ date: 2021-04-11 16:16:15
 
 # 目的
 在看源码之前先梳理一下，自己对于GET流程疑惑的点：
-* 是不是根据document id通过hash找到对应的shard？
-* 根据document id查询如何做到实时可见的？
+* 是不是根据Document _id通过hash找到对应的Shard？
+* 根据Document _id查询如何做到实时可见的？
 
 # 源码分析
 
@@ -72,8 +72,8 @@ date: 2021-04-11 16:16:15
             }
             this.internalRequest = new InternalRequest(request, concreteSingleIndex);
 
-            // 解析请求，更新指定routing
             // TransportGetAction中resolveRequest
+            // 解析请求，更新指定routing
             resolveRequest(clusterState, internalRequest);
 
             blockException = checkRequestBlock(clusterState, internalRequest);
@@ -142,7 +142,7 @@ private static int calculateScaledShardId(IndexMetadata indexMetadata, String ef
     }        
 ```
 
-到这里可以知道es就是通过document idhash找到对应的shard。
+到这里可以知道ES就是通过Document _id hash找到对应的shard。
 
 下面看一下是如何做到实时可见的？
 
@@ -227,7 +227,6 @@ private GetResult innerGet(String id, String[] gFields, boolean realtime, long v
     }
 
 
-    //根据type、id、DocumentMapper等信息从刚刚获取的信息中获取数据，
     //对指定的field、source进行过滤(source过滤只支持对字段)，
     //把结果存于GetResult对象中
     private GetResult innerGetLoadFromStoredFields(String id, String[] storedFields, FetchSourceContext fetchSourceContext,
@@ -364,8 +363,10 @@ InternalEngine#get过程会加读锁。处理realtime选项，如果为true，�
         assert Objects.equals(get.uid().field(), IdFieldMapper.NAME) : get.uid().field();
         try (ReleasableLock ignored = readLock.acquire()) {
             ensureOpen();
+            // 处理realtime选项，判断是否需要刷盘
             if (get.realtime()) {
                 final VersionValue versionValue;
+                // versionMap中的值是写入索引的时候添加的，不会写到磁盘中
                 try (Releasable ignore = versionMap.acquireLock(get.uid().bytes())) {
                     // we need to lock here to access the version map to do this truly in RT
                     versionValue = getVersionFromMap(get.uid().bytes());
@@ -402,8 +403,10 @@ InternalEngine#get过程会加读锁。处理realtime选项，如果为true，�
                         }
                     }
                     assert versionValue.seqNo >= 0 : versionValue;
+                    //执行刷盘操作
                     refreshIfNeeded("realtime_get", versionValue.seqNo);
                 }
+                // 调用Searcher读取数据
                 return getFromSearcher(get, acquireSearcher("realtime_get", SearcherScope.INTERNAL, searcherWrapper));
             } else {
                 // we expose what has been externally expose in a point in time snapshot via an explicit refresh
@@ -416,8 +419,8 @@ InternalEngine#get过程会加读锁。处理realtime选项，如果为true，�
 
 # 小结
 
-* GET是根据document id 哈希找到对应的shard的。
-* 根据document id查询的实时可见是通过依靠refresh实现的。
+* GET是根据Document _id 哈希找到对应的shard的。
+* 根据Document _id查询的实时可见是通过依靠refresh实现的。
 
 
 参考资料：

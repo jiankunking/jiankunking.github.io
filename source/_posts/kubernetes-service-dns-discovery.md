@@ -1,6 +1,6 @@
 ---
 title: Kubernetes Service
-date: 2021-03-26 13:38:26
+date: 2021-03-27 13:38:26
 categories:
   - Kubernetes
 tags:
@@ -12,6 +12,8 @@ abbrlink: 40485
 ---
 
 Kubernetes Service、DNS与服务发现
+
+TODO 未写完
 
 <!-- more -->
 
