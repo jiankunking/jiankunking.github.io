@@ -1,5 +1,5 @@
 ---
-title: 分布式缓存的一致性Hash算法
+title: '[转]分布式缓存的一致性Hash算法'
 abbrlink: 49970
 date: 2018-12-20 20:40:57
 categories:

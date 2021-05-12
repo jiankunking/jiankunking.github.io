@@ -1,5 +1,5 @@
 ---
-title: 当你在浏览器中输入 google.com 并且按下回车之后发生了什么？
+title: '[转]当你在浏览器中输入 google.com 并且按下回车之后发生了什么？'
 categories:
   - Network
 tags:

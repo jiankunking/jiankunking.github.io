@@ -1,5 +1,5 @@
 ---
-title: Go 设计模式
+title: '[转]Go 设计模式'
 abbrlink: 5324
 date: 2019-09-05 09:00:37
 categories:

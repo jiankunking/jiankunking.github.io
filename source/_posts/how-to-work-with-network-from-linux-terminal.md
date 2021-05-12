@@ -1,5 +1,5 @@
 ---
-title: 如何用Linux命令行管理网络：11个你必须知道的命令
+title: '[转]如何用Linux命令行管理网络：11个你必须知道的命令'
 categories:
   - Linux
 tags:

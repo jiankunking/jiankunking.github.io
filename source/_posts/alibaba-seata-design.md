@@ -1,5 +1,5 @@
 ---
-title: 阿里分布式事务解决方案 Fescar 解析
+title: '[转]阿里分布式事务解决方案 Fescar 解析'
 abbrlink: 3845
 date: 2019-03-01 20:01:06
 categories:

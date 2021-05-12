@@ -1,6 +1,6 @@
 ---
 layout: w
-title: Otter数据一致性
+title: '[转]Otter数据一致性'
 date: 2019-02-05 21:24:20
 categories:
   - MySQL

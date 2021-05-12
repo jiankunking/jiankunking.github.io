@@ -157,6 +157,63 @@ tags:
         return prepare(indexShard.shardId(), request, getResult, nowInMillis);
     }
 
+    public GetResult getForUpdate(String id, long ifSeqNo, long ifPrimaryTerm) {
+        // realtime是true
+        return get(id, new String[]{RoutingFieldMapper.NAME}, true,
+            Versions.MATCH_ANY, VersionType.INTERNAL, ifSeqNo, ifPrimaryTerm, FetchSourceContext.FETCH_SOURCE);
+    }
+
+    private GetResult get(String id, String[] gFields, boolean realtime, long version, VersionType versionType,
+                          long ifSeqNo, long ifPrimaryTerm, FetchSourceContext fetchSourceContext) {
+        currentMetric.inc();
+        try {
+            long now = System.nanoTime();
+            GetResult getResult =
+                innerGet(id, gFields, realtime, version, versionType, ifSeqNo, ifPrimaryTerm, fetchSourceContext);
+
+            if (getResult.isExists()) {
+                existsMetric.inc(System.nanoTime() - now);
+            } else {
+                missingMetric.inc(System.nanoTime() - now);
+            }
+            return getResult;
+        } finally {
+            currentMetric.dec();
+        }
+    }
+
+    private GetResult innerGet(String id, String[] gFields, boolean realtime, long version, VersionType versionType,
+                               long ifSeqNo, long ifPrimaryTerm, FetchSourceContext fetchSourceContext) {
+        fetchSourceContext = normalizeFetchSourceContent(fetchSourceContext, gFields);
+
+        Engine.GetResult get = indexShard.get(new Engine.Get(realtime, realtime, id)
+            .version(version).versionType(versionType).setIfSeqNo(ifSeqNo).setIfPrimaryTerm(ifPrimaryTerm));
+        assert get.isFromTranslog() == false || realtime : "should only read from translog if realtime enabled";
+        if (get.exists() == false) {
+            get.close();
+        }
+
+        if (get == null || get.exists() == false) {
+            return new GetResult(shardId.getIndexName(), id, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, -1, false, null, null, null);
+        }
+
+        try {
+            // break between having loaded it from translog (so we only have _source), and having a document to load
+            return innerGetLoadFromStoredFields(id, gFields, fetchSourceContext, get, mapperService);
+        } finally {
+            get.close();
+        }
+    }
+
+    public Engine.GetResult get(Engine.Get get) {
+        readAllowed();
+        DocumentMapper mapper = mapperService.documentMapper();
+        if (mapper == null) {
+            return GetResult.NOT_EXISTS;
+        }
+        return getEngine().get(get, mapper, this::wrapSearcher);
+    }
+
      /**
      * Prepares an update request by converting it into an index or delete request or an update response (no action, in the event of a
      * noop).
@@ -251,7 +308,7 @@ update操作需要先获取原始文档，如果查询不到，会新增；如�
 虽然更新操作最终调用的方法也是[InternalEngine](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java)中的[index](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java#L854)，但在更新时调用[lucene](https://github.com/jiankunking/lucene) [softUpdateDocuments](https://github.com/jiankunking/lucene/blob/master/core/src/java/org/apache/lucene/index/IndexWriter.java#L1519)，会包含两个操作：标记删除、新增。
 
 相对于新增而言:
-* 多了一次完整的查询
+* 多了一次完整的查询(为了保证一致性，update调用GET时将realtime选项设置为true，并且不 可配置。因此update操作可能会导致refresh生成新的Lucene分段。)
 * 多了一个标记删除
 
 如果数据量比较大，操作又比较频繁的情况下，update这种操作还是要慎重。

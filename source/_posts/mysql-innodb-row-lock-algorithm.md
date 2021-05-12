@@ -107,7 +107,7 @@ INSERT INTO Z SELECT 2,0;
 在默认的事务隔离级别下，即REPEATABLE READ下，InnoDB存储引擎采用
 Next-Key Locking机制来避免Phantom Problem (幻像问题）。这点可能不同于与其他的数据库，如Oracle数据库，因为其可能需要在SERIALIZABLE的事务隔离级别下才能解决 Phantom Problem。
 
-**Phantom Problem是指在<font color=DeepPink>**同一事务**</font>下，连续执行两次同样的SQL语句可能导致不同的结果，第二次的SQL语句可能会返回之前不存在的行。**
+**Phantom Problem是指在<font color=DeepPink>同一事务</font>下，连续执行两次同样的SQL语句可能导致不同的结果，第二次的SQL语句可能会返回之前不存在的行。**
 
 下面将演示这个例子，使用前一小节所创建的表t。表t由1、2、5这三个值组成：
 ```

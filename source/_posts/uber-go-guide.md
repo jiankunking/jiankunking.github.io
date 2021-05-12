@@ -1,5 +1,5 @@
 ---
-title: Uber Go 语言编码规范
+title: '[转]Uber Go 语言编码规范'
 abbrlink: 1237
 date: 2019-11-15 09:01:40
 categories:

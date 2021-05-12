@@ -1,5 +1,5 @@
 ---
-title: 译 Java Concurrent Atomic Package详解
+title: '[译]Java Concurrent Atomic Package详解'
 abbrlink: 55741
 date: 2019-08-04 16:51:43
 categories:

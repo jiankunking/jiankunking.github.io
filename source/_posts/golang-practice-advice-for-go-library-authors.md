@@ -1,5 +1,5 @@
 ---
-title: 给 Go 库作者的建议
+title: '[转]给 Go 库作者的建议'
 categories:
   - Go
 tags:

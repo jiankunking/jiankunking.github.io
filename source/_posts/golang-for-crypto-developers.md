@@ -1,5 +1,5 @@
 ---
-title: Go 密码学应用
+title: '[转]Go 密码学应用'
 categories:
   - Go
 tags:

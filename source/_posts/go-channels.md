@@ -1,5 +1,5 @@
 ---
-title: 理解 Go Channels
+title: '[转]理解 Go Channels'
 categories:
   - Go
 tags:
