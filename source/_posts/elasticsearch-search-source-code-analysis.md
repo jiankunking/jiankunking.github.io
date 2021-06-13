@@ -2,7 +2,13 @@
 title: 【Elasticsearch源码】 检索分析
 abbrlink: 1378
 date: 2021-01-29 10:32:33
+categories:
+  - ElasticSearch
 tags:
+  - ElasticSearch
+  - Search
+  - 源码
+  - 原创
 ---
 
 > 带着疑问学源码，第二篇：Elasticsearch 搜索
