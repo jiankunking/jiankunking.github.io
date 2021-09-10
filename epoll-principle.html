@@ -27,14 +27,14 @@
   <meta name="description" content="从事服务端开发，少不了要接触网络编程。epoll 作为 Linux 下高性能网络服务器的必备技术至关重要，nginx、Redis、Skynet 和大部分游戏服务器都使用到这一多路复用技术。 epoll 很重要，但是 epoll 与 select 的区别是什么呢？epoll 高效的原因是什么？  网上虽然也有不少讲解 epoll的文章，但要么是过于浅显，或者陷入源码解析，很少能有通俗易懂的。笔者于是">
 <meta name="keywords" content="转载,Linux,Epoll">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Epoll 的本质是什么？">
+<meta property="og:title" content="[转]Epoll 的本质是什么？">
 <meta property="og:url" content="https://jiankunking.com/epoll-principle.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="从事服务端开发，少不了要接触网络编程。epoll 作为 Linux 下高性能网络服务器的必备技术至关重要，nginx、Redis、Skynet 和大部分游戏服务器都使用到这一多路复用技术。 epoll 很重要，但是 epoll 与 select 的区别是什么呢？epoll 高效的原因是什么？  网上虽然也有不少讲解 epoll的文章，但要么是过于浅显，或者陷入源码解析，很少能有通俗易懂的。笔者于是">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2020-06-13T10:48:20.137Z">
+<meta property="og:updated_time" content="2021-09-10T08:14:43.545Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Epoll 的本质是什么？">
+<meta name="twitter:title" content="[转]Epoll 的本质是什么？">
 <meta name="twitter:description" content="从事服务端开发，少不了要接触网络编程。epoll 作为 Linux 下高性能网络服务器的必备技术至关重要，nginx、Redis、Skynet 和大部分游戏服务器都使用到这一多路复用技术。 epoll 很重要，但是 epoll 与 select 的区别是什么呢？epoll 高效的原因是什么？  网上虽然也有不少讲解 epoll的文章，但要么是过于浅显，或者陷入源码解析，很少能有通俗易懂的。笔者于是">
 
 <link rel="canonical" href="https://jiankunking.com/epoll-principle.html">
@@ -50,7 +50,7 @@
   };
 </script>
 
-  <title>Epoll 的本质是什么？ | 衣舞晨风</title>
+  <title>[转]Epoll 的本质是什么？ | 衣舞晨风</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
     <script>
@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">113</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">114</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
@@ -227,7 +227,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Epoll 的本质是什么？
+          [转]Epoll 的本质是什么？
         </h1>
 
         <div class="post-meta">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-06-13 18:48:20" itemprop="dateModified" datetime="2020-06-13T18:48:20+08:00">2020-06-13</time>
+                <time title="修改时间：2021-09-10 16:14:43" itemprop="dateModified" datetime="2021-09-10T16:14:43+08:00">2021-09-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -399,6 +399,9 @@
       <div class="popular-posts-title"><a href="\how-to-work-with-network-from-linux-terminal.html" rel="bookmark">[转]如何用Linux命令行管理网络：11个你必须知道的命令</a></div>
     </li>
     <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\significantly-decrease-your-elasticsearch-heap-memory-usage.html" rel="bookmark">[转]7.7 版本中的新改进：显著降低 Elasticsearch 堆内存使用量</a></div>
+    </li>
+    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\how-to-perform-better-in-anxious-situations.html" rel="bookmark">怎样在焦虑的情况下表现更好</a></div>
     </li>
     <li class="popular-posts-item">
@@ -406,9 +409,6 @@
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\how-many-shards-should-i-have-in-elasticsearch-cluster.html" rel="bookmark">Elasticsearch 集群内应该设置多少个分片(shard)？</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\go-select.html" rel="bookmark">[转]Go Select 实现分析</a></div>
     </li>
   </ul>
 
@@ -441,7 +441,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://jiankunking.com/epoll-principle.html" title="Epoll 的本质是什么？">https://jiankunking.com/epoll-principle.html</a>
+    <a href="https://jiankunking.com/epoll-principle.html" title="[转]Epoll 的本质是什么？">https://jiankunking.com/epoll-principle.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -486,8 +486,8 @@
       <i class="fa fa-chevron-left"></i> Java 原子操作的实现原理
     </a></div>
       <div class="post-nav-item">
-    <a href="/elasticsearch-query-secret.html" rel="next" title="ElasticSearch 查询的秘密">
-      ElasticSearch 查询的秘密 <i class="fa fa-chevron-right"></i>
+    <a href="/elasticsearch-query-secret.html" rel="next" title="[转]ElasticSearch 查询的秘密">
+      [转]ElasticSearch 查询的秘密 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -564,7 +564,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">113</span>
+          <span class="site-state-item-count">114</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -635,7 +635,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">850k</span>
+    <span title="站点总字数">852k</span>
 </div>
 
         
