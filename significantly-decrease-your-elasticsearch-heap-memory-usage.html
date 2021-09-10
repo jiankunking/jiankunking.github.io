@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="原文地址：https://www.elastic.co/cn/blog/significantly-decrease-your-elasticsearch-heap-memory-usage">
-<meta name="keywords" content="ElasticSearch,转载,Heap,Index">
+<meta name="keywords" content="转载,ElasticSearch,Heap,Index">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[转]7.7 版本中的新改进：显著降低 Elasticsearch 堆内存使用量">
 <meta property="og:url" content="https://jiankunking.com/significantly-decrease-your-elasticsearch-heap-memory-usage.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="原文地址：https://www.elastic.co/cn/blog/significantly-decrease-your-elasticsearch-heap-memory-usage">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2021-09-10T08:15:02.948Z">
+<meta property="og:updated_time" content="2021-09-10T08:33:47.246Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[转]7.7 版本中的新改进：显著降低 Elasticsearch 堆内存使用量">
 <meta name="twitter:description" content="原文地址：https://www.elastic.co/cn/blog/significantly-decrease-your-elasticsearch-heap-memory-usage">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-09-10 16:15:02" itemprop="dateModified" datetime="2021-09-10T16:15:02+08:00">2021-09-10</time>
+                <time title="修改时间：2021-09-10 16:33:47" itemprop="dateModified" datetime="2021-09-10T16:33:47+08:00">2021-09-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -304,8 +304,9 @@
 <p><img data-src="/images/significantly-decrease-your-elasticsearch-heap-memory-usage/heap-reduction-7-7-nightly-http-logs-blog.png" alt></p>
 <p>它是如何工作的，有什么缺陷？随着时间的推移，同样的方法已经应用到 Lucene 索引的多个组件中：将数据结构从 JVM 堆移动到磁盘，并依赖文件系统缓存（通常称为页面缓存或 OS 缓存）将热数据保存在内存中。这可能会被误以为这些内存仍然在使用，只不过是分配到了其他地方，但实际情况是，根据您的用例，很大一部分内存根本没有使用。例如，Terms 的最后一次删除操作是因为移动了磁盘上 _id 字段的术语索引，这只在使用 GET API 或使用显式 ID 索引文档时有用。那些绝大多数将日志和指标索引到 Elasticsearch 中的用户从来都不会执行此类操作，所以这只会让他们的资源出现净增长。</p>
 <blockquote>
-<p>这个内存降低主要是lucene更新到8.5.0 release，将FST等移到了堆外。<br><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/release-notes-7.7.0.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/release-notes-7.7.0.html</a><br>具体可以参见 <a href="https://zhuanlan.zhihu.com/p/146083622" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/146083622</a></p>
+<p>这个内存降低主要是Elasticsearch 7.7.0的lucene更新到8.5.0 release，将FST等移到了堆外,具体可以看下lucene 8.5.0 的变更。<br>拓展阅读 <a href="https://zhuanlan.zhihu.com/p/146083622" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/146083622</a><br>拓展阅读 <a href="https://www.easyice.cn/archives/346" target="_blank" rel="noopener">https://www.easyice.cn/archives/346</a></p>
 </blockquote>
+<p>在线：<a href="/attachments/lucene-8.5.0-CHANGES.txt" target="_blank">lucene 8.5.0 CHANGES</a></p>
 
     </div>
 
@@ -316,9 +317,6 @@
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-write-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 写入分析</a></div>
-    </li>
-    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\apache-lucene-scoring-introduction.html" rel="bookmark">Apache Lucene 评分简介</a></div>
     </li>
     <li class="popular-posts-item">
@@ -328,7 +326,10 @@
       <div class="popular-posts-title"><a href="\elasticsearch-query-secret.html" rel="bookmark">[转]ElasticSearch 查询的秘密</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-node-stop-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 节点关闭分析</a></div>
+      <div class="popular-posts-title"><a href="\elasticsearch-write-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 写入分析</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\how-to-perform-better-in-anxious-situations.html" rel="bookmark">怎样在焦虑的情况下表现更好</a></div>
     </li>
   </ul>
 
@@ -391,8 +392,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/ElasticSearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/转载/" rel="tag"># 转载</a>
+              <a href="/tags/ElasticSearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/Heap/" rel="tag"># Heap</a>
               <a href="/tags/Index/" rel="tag"># Index</a>
           </div>
