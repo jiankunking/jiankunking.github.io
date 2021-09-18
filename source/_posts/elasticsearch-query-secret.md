@@ -1,5 +1,5 @@
 ---
-title: ElasticSearch 查询的秘密
+title: '[转]ElasticSearch 查询的秘密'
 categories:
   - ElasticSearch
 tags:
@@ -174,6 +174,16 @@ FST以字节的方式存储所有的term，这种压缩方式可以有效的缩�
 后面的更精彩，看累了的同学可以喝杯咖啡……
 
 ----------
+
+> http://examples.mikemccandless.com/fst.py
+> Amazon DynamoDB
+Cassandra
+Elasticsearch
+Hive
+MongoDB
+MySQL
+PostgreSQL
+SQLite
 
 #### 压缩技巧
 

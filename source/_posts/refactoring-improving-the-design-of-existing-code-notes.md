@@ -297,7 +297,7 @@ Replace Temp with Query往往是你运用Extract Method之前必不可少的个�
 
 首先是简单情况:
 * 找出只被赋值一次的临时变量。
-	* →如果莱个临时变量被赋值超过一次,考虑使用Split Temporary Variable将它分割成多个变量。
+	* →如果某个临时变量被赋值超过一次,考虑使用Split Temporary Variable将它分割成多个变量。
 * 将该临时变量声明为final。
 * 编译。
 * 这可确保该临时变量的确只被赋值一次。

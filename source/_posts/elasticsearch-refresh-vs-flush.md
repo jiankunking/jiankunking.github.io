@@ -34,7 +34,7 @@ date: 2021-01-23 16:19:04
 
 使用flush API也可以在一个或多个索引上触发刷新，尽管用户很少需要直接调用这个API。如果在对一些文档建立索引之后调用flush API，那么成功的响应表明Elasticsearch已经flush了所有在调用flush API之前建立索引的文档。
 
-translog的[Flush](https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html)是Elasticsearch在后台自动运行的。默认情况下Elasticsearch每隔5s会去检测要不要[Flush](https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html) translog，默认条件是:每30分钟主动进行一次[Flush](https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html#flush-api-desc)或者当translog文件大小大于512MB主动进行一次[Flush](https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html)。<font color=DeepPink>**每次index、bulk、delete、update完成的时候，会触发Flush translog到磁盘上,然后才返回200 OK。**</font>这个提高了数据安全性，但是会对写入的性能造成不小的影响。
+translog的[Flush](https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html)是Elasticsearch在后台自动运行的。默认情况下Elasticsearch每隔5s会去检测要不要[Flush](https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html) translog，默认条件是:每30分钟主动进行一次[Flush](https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html#flush-api-desc)或者当translog文件大小大于512MB主动进行一次[Flush](https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html)。<font color=DeepPink>**默认配置下，每次index、bulk、delete、update完成的时候，会触发Flush translog到磁盘上,然后才返回200 OK。**</font>这个提高了数据安全性，但是会对写入的性能造成不小的影响。
 
 在写入效率优先的情况下，可以在index template里设置如下参数：
 ```
