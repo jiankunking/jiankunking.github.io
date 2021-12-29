@@ -10,6 +10,10 @@ abbrlink: 13544
 date: 2021-12-22 19:38:21
 ---
 
+> ElasticSearch 限制
+
+<!-- more -->
+
 1、 数组字段，数组大小无限制。
 [There is no hard limit but it's definitely recommended to keep those arrays "reasonable". When performing an update, Elasticsearch needs to fetch the entire doc, apply the update, then index the updated document and replicate the entire updated document to the replica, so very large arrays would come with a performance penalty indeed.](https://discuss.elastic.co/t/what-are-the-limitations-of-array-size-in-elastic-search/108413)
 
