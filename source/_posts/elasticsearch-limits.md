@@ -1,12 +1,13 @@
 ---
 title: ElasticSearch的一些限制
-date: 2021-12-22 19:38:21
 categories:
   - ElasticSearch
 tags:
   - ElasticSearch
   - 限制
   - 原创
+abbrlink: 13544
+date: 2021-12-22 19:38:21
 ---
 
 1、 数组字段，数组大小无限制。

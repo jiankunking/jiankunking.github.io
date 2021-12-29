@@ -11,6 +11,12 @@ abbrlink: 16311
 date: 2021-11-17 18:19:49
 ---
 
+
+What do you want Sentry to do in this case? Turn itself off?
+
+<!-- more -->
+
+
 最近Sentry的Redis一直报内存占用高，看Sentry日志能看到:
 ```
 OOM command not allowed when used memory > 'maxmemory'
