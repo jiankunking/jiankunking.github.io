@@ -1316,7 +1316,18 @@ Bootstrap static void init(
   }
 ```
 
-## 选举
+# 总结
+Node启动过程这种做的检查、初始化、加入集群都梳理清楚了，但节点加入集群后同步数据，在该部分没有找到。
+
+这个后续在看集群管理的时候，再找一下这个问题的答案。
+
+
+
+# 参考
+https://www.modb.pro/db/33681
+https://easyice.cn/archives/332
+
+<!-- ## 选举
 
 [discovery.startInitialJoin()](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/cluster/coordination/Coordinator.java#L700)
 
@@ -1715,10 +1726,37 @@ this::updateMaxTermSeen,
 electionStrategy,
 nodeHealthService);
 ```
-startElection.run()其实调用的就是Coordinator中的startElection：
+ -->
+
+
+
+
+<!-- startElection.run()其实调用的就是Coordinator中的startElection：
 * 节点会构造StartJoinRequest,StartJoinRequest中的term的值取节点当前term与maxTermSeen的最大值并加1。
 * 并将该请求发送给discoveredNodes
 * 该节点的discoveredNodes在接收到StartJoinRequest后会使用handleStartJoin(StartJoinRequest startJoinRequest)方法来处理该请求：如果StartJoinRequest中的term大于discoveredNodes的currentTerm，就会构造Join来为节点投票。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 > 暂未找到transportService.registerRequestHandler接受StartJoinRequest的方法入口
 > 该部分以下，都是整理自：[https://www.modb.pro/db/33681](https://www.modb.pro/db/33681)，后续自己再梳理一下。
@@ -1905,15 +1943,5 @@ private void processJoinRequest(
       }
     }
   }
-```
+``` -->
 
-# 总结
-Node启动过程这种做的检查、初始化、加入集群都梳理清楚了，但节点加入集群后同步数据，在该部分没有找到。
-
-这个后续在看集群管理的时候，再找一下这个问题的答案。
-
-
-
-# 参考
-https://www.modb.pro/db/33681
-https://easyice.cn/archives/332
