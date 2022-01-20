@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="带着疑问学源码，第三篇：Elasticsearch 更新性能代码分析基于：https://github.com/jiankunking/elasticsearchElasticsearch 7.10.2+">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2021-04-29T02:15:36.547Z">
+<meta property="og:updated_time" content="2022-01-20T10:11:36.472Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="【Elasticsearch源码】 更新性能分析">
 <meta name="twitter:description" content="带着疑问学源码，第三篇：Elasticsearch 更新性能代码分析基于：https://github.com/jiankunking/elasticsearchElasticsearch 7.10.2+">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-04-29 10:15:36" itemprop="dateModified" datetime="2021-04-29T10:15:36+08:00">2021-04-29</time>
+                <time title="修改时间：2022-01-20 18:11:36" itemprop="dateModified" datetime="2022-01-20T18:11:36+08:00">2022-01-20</time>
               </span>
 
           
@@ -303,7 +303,7 @@
 <p>虽然更新操作最终调用的方法也是<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java" target="_blank" rel="noopener">InternalEngine</a>中的<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java#L854" target="_blank" rel="noopener">index</a>，但在更新时调用<a href="https://github.com/jiankunking/lucene" target="_blank" rel="noopener">lucene</a> <a href="https://github.com/jiankunking/lucene/blob/master/core/src/java/org/apache/lucene/index/IndexWriter.java#L1519" target="_blank" rel="noopener">softUpdateDocuments</a>，会包含两个操作：标记删除、新增。</p>
 <p>相对于新增而言:</p>
 <ul>
-<li>多了一次完整的查询(为了保证一致性，update调用GET时将realtime选项设置为true，并且不 可配置。因此update操作可能会导致refresh生成新的Lucene分段。)</li>
+<li>多了一次完整的查询(为了保证一致性，update调用GET时将realtime选项设置为true，并且不可配置。因此update操作可能会导致refresh生成新的Lucene分段。)</li>
 <li>多了一个标记删除</li>
 </ul>
 <p>如果数据量比较大，操作又比较频繁的情况下，update这种操作还是要慎重。</p>
