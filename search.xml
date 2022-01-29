@@ -4,7 +4,43 @@
     <title>编程高手必学的内存知识 笔记</title>
     <url>/memory-knowledge-that-programming-masters-must-learn.html</url>
     <content><![CDATA[<p>编程高手必学的内存知识 笔记<br>作者： 海纳</p>
-<a id="more"></a>]]></content>
+<a id="more"></a>
+
+
+<h1 id="为什么可用内存会远超物理内存？"><a href="#为什么可用内存会远超物理内存？" class="headerlink" title="为什么可用内存会远超物理内存？"></a>为什么可用内存会远超物理内存？</h1><p>虚拟内存的出现，是为了解决直接操作物理内存的系统无法支持多进程的问题。这里的难点主要是进程的地址空间非常小，而且多个进程的地址很容易发生冲突。所以在局部性原理的基础上，CPU设计者提出虚拟内存的方案将多个进程的地址空间隔离开，并且提供了巨大的内存空间。</p>
+<p>我们可以总结一下，虚拟内存主要有下面两个特点：<br>第一，由于每个进程都有自己的页表，所以每个进程的虚拟内存空间就是相互独立的。进程也没有办法访问其他进程的页表，所以这些页表是私有的。这就解决了多进程之间地址冲突的问题。<br>第二，PTE中除了物理地址之外，还有一些标记属性的比特，比如控制一个页的读写权限，标记该页是否存在等。在内存访问方面，操作系统提供了更好的安全性。</p>
+<p>另外，虚拟内存可以充分使用CPU提供的机制来完成很多重要的任务。例如，fork借用写保护来实现写时复制，JVM中借用改变某一个页的读权限来实现safepoint查询等等。</p>
+<p>由于CPU对内存提供了更多保护的能力，所以X86架构的CPU把这种工作模式称为保护模式，与可以直接访问物理内存的实模式形成了对比。</p>
+<p><a href="/attachments/编程高手必学的内存知识/01为什么可用内存会远超物理内存？.pdf" target="_blank">为什么可用内存会远超物理内存？</a></p>
+<h1 id="X86体系结构中的实模式和保护模式"><a href="#X86体系结构中的实模式和保护模式" class="headerlink" title="X86体系结构中的实模式和保护模式"></a>X86体系结构中的实模式和保护模式</h1><p>8086是16位的CPU，我们称8086的工作模式为实模式，它的特点是直接操作物理内存，内存管理容易出错，要十分小心，代码编写和调试都很困难。</p>
+<p>之后出现的i386，则采用了和实模式不同的保护模式。相比实模式，i386中的保护模式，采用了页式管理，但它没有彻底放弃8086的段式管理，而是将段寄存器中的值由段基址变成了段选择子。段选择子本质是GDT表的下标值，段基址都转移到GDT中去了。</p>
+<p>段式管理负责将逻辑地址转换为线性地址，或者称为虚拟地址，页式管理负责将线性地址映射到物理地址。i386的保护模式采用了段页式混合管理的模式，兼具了段式管理和页式管理的优点。</p>
+<p>除了段页式内存管理这个不同之外，保护模式和实模式的区别还体现在中断描述符表（IDT）上。IDT是保护模式的一个重要组成部分，它保存着 i386 中断服务程序的入口地址。</p>
+<p>8086和i386对X86架构的CPU影响巨大。直到今天，X86架构的CPU在上电以后，为了与8086保持兼容，还是运行在16位实模式下，也就是说所有访存指令访问的都是物理内存地址。在启动操作系统后，才会切换到保护模式下进行工作。</p>
+<p><a href="/attachments/编程高手必学的内存知识/02X86体系结构中的实模式和保护模式.pdf.pdf" target="_blank">X86体系结构中的实模式和保护模式</a></p>
+<h1 id="内存布局：应用程序是如何安排数据的？"><a href="#内存布局：应用程序是如何安排数据的？" class="headerlink" title="内存布局：应用程序是如何安排数据的？"></a>内存布局：应用程序是如何安排数据的？</h1><h2 id="IA-32机器上的Linux进程内存布局"><a href="#IA-32机器上的Linux进程内存布局" class="headerlink" title="IA-32机器上的Linux进程内存布局"></a>IA-32机器上的Linux进程内存布局</h2><p>在32位机器上，每个进程都具有4GB的寻址能力。Linux系统会默认将高地址的1GB空间分配给内核，剩余的低3GB是用户可以使用的用户空间。下图是32位机器上Linux进程的一个典型的内存布局。在实践中，我们可以通过cat /proc/pid/maps来查看某个进程的实际虚拟内存布局。</p>
+<p><img data-src="/images/memory-knowledge-that-programming-masters-must-learn/1.png" alt></p>
+<blockquote>
+<p>BSS 段这个缩写名字是Block Started by Symbol，但很多人可能更喜欢把它记作Better Save Space的缩写。</p>
+</blockquote>
+<blockquote>
+<p>我们上述的布局分析都是基于Linux系统下关闭了进程地址随机化的选项。如果打开进程地址随机化的模式，其中的堆空间、栈空间和共享库映射的地址，在每次程序运行下都会不一样。这是因为内核在加载的过程中，会对这些区域的起始地址增加一些随机的偏移值，这能增加缓冲区溢出的难度。</p>
+</blockquote>
+<h2 id="Intel-64机器上的Linux进程内存布局"><a href="#Intel-64机器上的Linux进程内存布局" class="headerlink" title="Intel 64机器上的Linux进程内存布局"></a>Intel 64机器上的Linux进程内存布局</h2><p><img data-src="/images/memory-knowledge-that-programming-masters-must-learn/2.png" alt></p>
+<p>从图中你可以看到，在用户空间和内核空间之间有一个巨大的内存空洞。这块空间之所以用更深颜色来区分，是因为这块空间的不可访问是由CPU来保证的（这里的地址都不满足Intel 64的Canonical form）。</p>
+<p><a href="/attachments/编程高手必学的内存知识/03内存布局：应用程序是如何安排数据的？.pdf" target="_blank">内存布局：应用程序是如何安排数据的？</a></p>
+<h1 id="深入理解栈：从CPU和函数的视角看栈的管理"><a href="#深入理解栈：从CPU和函数的视角看栈的管理" class="headerlink" title="深入理解栈：从CPU和函数的视角看栈的管理"></a>深入理解栈：从CPU和函数的视角看栈的管理</h1><p><a href="/attachments/编程高手必学的内存知识/04深入理解栈：从CPU和函数的视角看栈的管理.pdf" target="_blank">深入理解栈：从CPU和函数的视角看栈的管理</a></p>
+<h1 id="栈的魔法：从栈切换的角度理解进程和协程"><a href="#栈的魔法：从栈切换的角度理解进程和协程" class="headerlink" title="栈的魔法：从栈切换的角度理解进程和协程"></a>栈的魔法：从栈切换的角度理解进程和协程</h1><p>栈切换的核心就是栈指针rsp寄存器的切换，只要我们想办法把rsp切换了就相当于换了执行单元的上下文环境。</p>
+<p><a href="/attachments/编程高手必学的内存知识/05栈的魔法：从栈切换的角度理解进程和协程.pdf" target="_blank">栈的魔法：从栈切换的角度理解进程和协程</a></p>
+<h1 id="静态链接：变量与内存地址是如何映射的？"><a href="#静态链接：变量与内存地址是如何映射的？" class="headerlink" title="静态链接：变量与内存地址是如何映射的？"></a>静态链接：变量与内存地址是如何映射的？</h1><p>在GNU/linux 下，GNU的binutils提供了一系列编程语言的工具程序，用来查看不同格式下的目标文件。今天我要给你重点介绍两个工具：readelf和objdump，这两个工具可以用来解析和读取上一节编译阶段生成的目标文件信息。</p>
+<p>一般情况下，我在对二进制文件进行反汇编时会使用objdump工具，因为readelf工具没有提供反汇编的能力，它更多是用来解析二进制文件信息。</p>
+<p>从源文件生成二进制可执行文件，这一过程主要包含了编译和链接两个步骤。其中，编译的作用是生成性能优越的机器码。对于编译单元内部的静态函数，可以在编译时通过相对地址的办法，生成call指令，因为无论将来调用者和被调用者被安置到什么地方，它们之间的相对距离不会发生变化。</p>
+<p>而其他类型的变量和函数在编译时，编译器并不知道它们的最终地址，所以只能使用占位符（比如 0）来临时代替目标地址。</p>
+<p>而链接器的任务是为所有变量和函数分配地址，并把被分配到的地址回写到调用者处。链接的过程主要分为两步，第一步是多文件合并，同时为符号分配地址，第二步则是将符号的地址回写到引用它的地方。其中，地址回写有一个专门的名字叫做重定位。重定位的过程依赖目标文件中的重定位表。</p>
+<p><a href="/attachments/编程高手必学的内存知识/06静态链接：变量与内存地址是如何映射的？.pdf" target="_blank">静态链接：变量与内存地址是如何映射的？</a></p>
+<h1 id="动态链接（上）：地址无关代码是如何生成的？"><a href="#动态链接（上）：地址无关代码是如何生成的？" class="headerlink" title="动态链接（上）：地址无关代码是如何生成的？"></a>动态链接（上）：地址无关代码是如何生成的？</h1><p><a href="/attachments/编程高手必学的内存知识/07动态链接（上）：地址无关代码是如何生成的？.pdf" target="_blank">动态链接（上）：地址无关代码是如何生成的？</a></p>
+<h1 id="动态链接（下）：延迟绑定与动态链接器是什么？"><a href="#动态链接（下）：延迟绑定与动态链接器是什么？" class="headerlink" title="动态链接（下）：延迟绑定与动态链接器是什么？"></a>动态链接（下）：延迟绑定与动态链接器是什么？</h1><p><a href="/attachments/编程高手必学的内存知识/08动态链接（下）：延迟绑定与动态链接器是什么？.pdf" target="_blank">动态链接（下）：延迟绑定与动态链接器是什么？</a></p>
+]]></content>
       <categories>
         <category>Memory</category>
       </categories>
@@ -47,7 +83,7 @@
 <h1 id="索引：如何用哈希表管理亿级对象"><a href="#索引：如何用哈希表管理亿级对象" class="headerlink" title="索引：如何用哈希表管理亿级对象?"></a>索引：如何用哈希表管理亿级对象?</h1><h2 id="内存结构与序列化方案"><a href="#内存结构与序列化方案" class="headerlink" title="内存结构与序列化方案"></a>内存结构与序列化方案</h2><p>事实上对于动态（元素是变化的）哈希表，我们无法避免哈希冲突。有两种方法解决哈希冲突：</p>
 <ol>
 <li>链接法，落到数组同一个位置中的多个数据，通过链表串在一起。使用哈希函数查找到这个位置后，再使用链表遍历的方式查找数据。Java标准库中的哈希表就使用链接法解决冲突。</li>
-<li>开放寻址法，插入时若发现对应的位置已经占用，或者查询时发现该位置上的数据与查询关键字不同，开放寻址法会按既定规则变换哈希函数（例如哈希函数设为 H(key,i)，顺序地把参数 i 加 1），计算出下一个数组下标，继续在哈希表中探查正确的位置。</li>
+<li>开放寻址法，插入时若发现对应的位置已经占用，或者查询时发现该位置上的数据与查询关键字不同，开放寻址法会按既定规则变换哈希函数（例如哈希函数设为 H(key,i)，顺序地把参数i加1），计算出下一个数组下标，继续在哈希表中探查正确的位置。</li>
 </ol>
 <p>我们该选择哪种方法呢？</p>
 <p>链接法虽然实现简单，还允许存放元素个数大于数组的大小（也叫装载因子大于1），但链接法序列化数据的代价很大，因为使用了指针后，内存是不连续的。</p>
@@ -81,6 +117,30 @@
 
 <p>如果你能够明确区分出读和写两种场景，可以选择读写锁。</p>
 <p>用队列把请求锁的线程排队，按照先来后到的顺序加锁即可，当然读线程仍然可以并发，只不过不能插队到写线程之前。Java中的ReentrantReadWriteLock读写锁，就支持这种排队的公平读写锁。</p>
+<h1 id="如何提升TCP三次握手的性能？"><a href="#如何提升TCP三次握手的性能？" class="headerlink" title="如何提升TCP三次握手的性能？"></a>如何提升TCP三次握手的性能？</h1><p>当客户端通过发送SYN发起握手时，可以通过tcp_syn_retries控制重发次数。当服务器的SYN半连接队列溢出后，SYN报文会丢失从而导致连接建立失败。我们可以通过netstat -s给出的统计结果判断队列长度是否合适，进而通过tcp_max_syn_backlog参数调整队列的长度。服务器回复SYN+ACK报文的重试次数由tcp_synack_retries参数控<br>制，网络稳定时可以调小它。为了应对 SYN 泛洪攻击，应将 tcp_syncookies 参数设置为1，它仅在 SYN 队列满后开启 syncookie 功能，保证连接成功建立。</p>
+<p>服务器收到客户端返回的ACK后，会把连接移入accept队列，等待进程调用accept函数取出连接。如果accept队列溢出，默认系统会丢弃 ACK，也可以通过tcp_abort_on_overflow参数用RST通知客户端连接建立失败。如果netstat统计信息显示，大量的ACK被丢弃后，可以通过listen函数的backlog参数和somaxconn系统参数提高队列上限。</p>
+<p>TFO技术绕过三次握手，使得HTTP请求减少了1个RTT的时间。Linux下可以通过tcp_fastopen参数开启该功能。</p>
+<p><a href="/attachments/系统性能调优必知必会/09如何提升TCP三次握手的性能？" target="_blank">如何提升TCP三次握手的性能？</a></p>
+<h1 id="如何提升TCP四次挥手的性能？"><a href="#如何提升TCP四次挥手的性能？" class="headerlink" title="如何提升TCP四次挥手的性能？"></a>如何提升TCP四次挥手的性能？</h1><p>我们把先关闭连接的一方叫做主动方，后关闭连接的一方叫做被动方。</p>
+<p><img data-src="/images/system-performance-tuning-must-know-and-must-know/7.png" alt></p>
+<p><a href="/attachments/系统性能调优必知必会/10如何提升TCP四次挥手的性能？" target="_blank">如何提升TCP四次挥手的性能？</a></p>
+<h1 id="如何修改TCP缓冲区才能兼顾并发数量与传输速度？"><a href="#如何修改TCP缓冲区才能兼顾并发数量与传输速度？" class="headerlink" title="如何修改TCP缓冲区才能兼顾并发数量与传输速度？"></a>如何修改TCP缓冲区才能兼顾并发数量与传输速度？</h1><p>如果你在Linux系统中用free命令查看内存占用情况，会发现一栏叫做buff/cache，它是系统内存，似乎与应用进程无关。但每当进程新建一个TCP连接，buff/cache中的内存都会上升4K左右。而且，当连接传输数据时，就远不止增加4K内存了。</p>
+<p>这是因为TCP连接是由内核维护的，内核为每个连接建立的内存缓冲区，既要为网络传输服务，也要充当进程与网络间的缓冲桥梁。如果连接的内存配置过小，就无法充分使用网络带宽，TCP传输速度就会很慢；如果连接的内存配置过大，那么服务器内存会很快用尽，新连接就无法建立成功。因此，只有深入理解Linux下TCP内存的用途，才能正确地配置内存大小。</p>
+<p><img data-src="/images/system-performance-tuning-must-know-and-must-know/8.png" alt></p>
+<p>实现高并发服务时，由于必须把大部分内存用在网络传输上，所以除了关注应用内存的使用，还必须关注TCP内核缓冲区的内存使用情况。</p>
+<p>TCP使用ACK确认报文实现了可靠性，又依赖滑动窗口既提升了发送速度也兼顾了接收方的处理能力。然而，默认的滑动窗口最大只能到65KB，要想提升发送速度必须提升滑动窗口的上限，在Linux下是通过设置tcp_window_scaling为1做到的。</p>
+<p>滑动窗口定义了飞行报文的最大字节数，当它超过带宽时延积时，就会发生丢包。而当它小于带宽时延积时，就无法让TCP的传输速度达到网络允许的最大值。因此，滑动窗口的设计，必须参考带宽时延积。</p>
+<p>内核缓冲区决定了滑动窗口的上限，但我们不能通过socket的SO_SNFBUF等选项直接把缓冲区大小设置为带宽时延积，因为TCP不会一直维持在最高速上，过大的缓冲区会减少并发连接数。Linux带来的缓冲区自动调节功能非常有效，我们应当把缓冲区的上限设置为带宽时延积。其中，发送缓冲区的调节功能是自动打开的，而接收缓冲区需要把tcp_moderate_rcvbuf设置为1来开启，其中调节的依据根据tcp_mem而定。</p>
+<p><a href="/attachments/系统性能调优必知必会/11如何修改TCP缓冲区才能兼顾并发数量与传输速度？.pdf" target="_blank">如何修改TCP缓冲区才能兼顾并发数量与传输速度？</a></p>
+<h1 id="如何调整TCP拥塞控制的性能？"><a href="#如何调整TCP拥塞控制的性能？" class="headerlink" title="如何调整TCP拥塞控制的性能？"></a>如何调整TCP拥塞控制的性能？</h1><p>当TCP连接建立成功后，拥塞控制算法就会发生作用，首先进入慢启动阶段。决定连接此时网速的是初始拥塞窗口，Linux上可以通过route ip change命令修改它。通常，在带宽时延积较大的网络中，应当调高初始拥塞窗口。</p>
+<p>丢包以及重复的ACK都是明确的拥塞信号，此时，发送方就会调低拥塞窗口减速，同时修正慢启动阈值。这样，将来再次到达这个速度时，就会自动进入拥塞避免阶段，用线性速度代替慢启动阶段的指数速度提升窗口大小。</p>
+<p>当然，重复ACK意味着发送方可以提前重发丢失报文，快速重传算法定义了这一行为。同时，为了使得重发报文的过程中，发送速度不至于出现断崖式下降，TCP又定义了快速恢复算法，发送方在报文重新变得有序后，结束快速恢复进入拥塞避免阶段。但以丢包作为网络拥塞的信号往往为时已晚，于是以BBR算法为代表的测量型拥塞控制算法应运而生。当飞行中报文数量不变，而网络时延升高时，就说明网络中的缓冲队列出现了积压，这是进行拥塞控制的最好时机。Linux高版本支持BBR算法，你可以通过tcp_congestion_control配置更改拥塞控制算法。</p>
+<p><a href="/attachments/系统性能调优必知必会/12如何调整TCP拥塞控制的性能？.pdf" target="_blank">如何调整TCP拥塞控制的性能？</a></p>
+<h1 id="实战：单机如何实现管理百万主机的心跳服务？"><a href="#实战：单机如何实现管理百万主机的心跳服务？" class="headerlink" title="实战：单机如何实现管理百万主机的心跳服务？"></a>实战：单机如何实现管理百万主机的心跳服务？</h1><p><a href="/attachments/系统性能调优必知必会/13实战：单机如何实现管理百万主机的心跳服务？.pdf" target="_blank">实战：单机如何实现管理百万主机的心跳服务？</a></p>
+<h1 id="优化TLS-SSL性能该从何下手？"><a href="#优化TLS-SSL性能该从何下手？" class="headerlink" title="优化TLS=SSL性能该从何下手？"></a>优化TLS=SSL性能该从何下手？</h1><p><a href="/attachments/系统性能调优必知必会/14优化TLS=SSL性能该从何下手？.pdf" target="_blank">优化TLS=SSL性能该从何下手？</a></p>
+<h1 id="如何提升HTTP-1-1性能？"><a href="#如何提升HTTP-1-1性能？" class="headerlink" title="如何提升HTTP-1.1性能？"></a>如何提升HTTP-1.1性能？</h1><p><a href="/attachments/系统性能调优必知必会/15如何提升HTTP-1.1性能？.pdf" target="_blank">如何提升HTTP-1.1性能？</a></p>
+<h1 id="HTTP-2是怎样提升性能的？"><a href="#HTTP-2是怎样提升性能的？" class="headerlink" title="HTTP-2是怎样提升性能的？"></a>HTTP-2是怎样提升性能的？</h1><p><a href="/attachments/系统性能调优必知必会/16HTTP-2是怎样提升性能的？.pdf" target="_blank">HTTP-2是怎样提升性能的？</a></p>
+<h1 id="一致性哈希：如何高效地均衡负载？"><a href="#一致性哈希：如何高效地均衡负载？" class="headerlink" title="一致性哈希：如何高效地均衡负载？"></a>一致性哈希：如何高效地均衡负载？</h1><p><a href="/attachments/系统性能调优必知必会/24一致性哈希：如何高效地均衡负载？.pdf" target="_blank">一致性哈希：如何高效地均衡负载？</a></p>
 <h1 id="与程序员相关的SSD性能知识"><a href="#与程序员相关的SSD性能知识" class="headerlink" title="与程序员相关的SSD性能知识"></a>与程序员相关的SSD性能知识</h1><p><a href="/attachments/系统性能调优必知必会/大咖助场｜庄振运：与程序员相关的SSD性能知识.pdf" target="_blank">与程序员相关的SSD性能知识</a></p>
 <h1 id="加餐与分享"><a href="#加餐与分享" class="headerlink" title="加餐与分享"></a>加餐与分享</h1><h2 id="留言"><a href="#留言" class="headerlink" title="留言"></a>留言</h2><p>鲤鲤鱼：我们集群有一个问题，某一台物理机的CPU会被Hadoop yarn的查询任务打满，并且占用最多的pid在不停的变化，我查看了TIME_WAIT的个数好像也不是很多，在顶峰的时候还没达到一万，能够持续一两个小时。这个问题您有没有什么思路呢？</p>
 <p>作者：解决性能问题，一般有两种方法：经验派和“理论”派。前者就是基于自己的经验概率，将能想到的优化方法都试一遍，这种方式通常又有效又快速，但无法解决复杂的问题。而所谓理论派，就是沿着固定的思路，使用二分法，从高至低慢慢下沉到细节。具体到你的问题，我建议你先看看，CPU占用的是用户态还是系统态，用户态的话就要分析代码了，系统态还要进一步分析。火焰图通常是个很好的办法，虽然搭能画火焰图的环境很麻烦，但这种底层方法很有效。</p>
@@ -120,8 +180,7 @@
 <p>响应结果：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">kube-node-1 (127.0.0.1)                                                                                                                                         2022-01-27T20:06:22+0800</span><br><span class="line">Keys:  Help   Display mode   Restart statistics   Order of fields   quit</span><br><span class="line">                                                                                                                                                                 s</span><br><span class="line"> Host                                                                                                                                                           Loss%   Snt   Last   Avg  Best  Wrst StDev</span><br><span class="line"> 1. 11.247.18.30                                                                                                                                                 0.0%    10    1.3   1.4   1.2   1.7   0.1</span><br><span class="line"> 2. 11.73.0.125                                                                                                                                                  0.0%    10    2.4   3.1   2.4   5.5   0.9</span><br><span class="line"> 3. 10.54.229.78                                                                                                                                                 0.0%    10    7.0   5.8   0.9  15.4   5.4</span><br><span class="line"> 4. 45.112.219.26                                                                                                                                                0.0%    10    1.5   1.2   1.1   1.5   0.1</span><br><span class="line"> 5. 103.41.143.46                                                                                                                                                0.0%    10    1.7   1.4   1.3   1.7   0.1</span><br><span class="line"> 6. 120.221.68.25                                                                                                                                                0.0%    10    2.0   1.9   1.8   2.0   0.1</span><br><span class="line"> 7. 211.137.177.81                                                                                                                                               0.0%    10    6.8   6.9   6.7   7.2   0.1</span><br><span class="line"> 8. 221.183.48.61                                                                                                                                                0.0%    10    6.8   7.0   6.5   8.7   0.6</span><br><span class="line"> 9. 221.183.37.173                                                                                                                                              37.5%     9   20.6  21.5  20.6  25.3   2.1</span><br><span class="line">10. (waiting for reply)</span><br><span class="line">11. 39.156.27.1                                                                                                                                                  0.0%     9   17.4  17.9  17.2  22.7   1.8</span><br><span class="line">12. (waiting for reply)</span><br><span class="line">13. (waiting for reply)</span><br><span class="line">14. (waiting for reply)</span><br><span class="line">15. (waiting for reply)</span><br><span class="line">16. 39.156.66.10                                                                                                                                                 0.0%     9   17.1  17.1  17.1  17.2   0.1</span><br></pre></td></tr></table></figure>
 
-<h3 id="百万并发下Nginx的优化之道"><a href="#百万并发下Nginx的优化之道" class="headerlink" title="百万并发下Nginx的优化之道"></a>百万并发下Nginx的优化之道</h3><p><a href="/attachments/系统性能调优必知必会/加餐3｜百万并发下Nginx的优化之道.pdf" target="_blank">百万并发下Nginx的优化之道</a></p>
-<p># </p>
+<h3 id="百万并发下Nginx的优化之道"><a href="#百万并发下Nginx的优化之道" class="headerlink" title="百万并发下Nginx的优化之道"></a>百万并发下Nginx的优化之道</h3><p><a href="/attachments/系统性能调优必知必会/加餐3百万并发下Nginx的优化之道.pdf" target="_blank">百万并发下Nginx的优化之道</a></p>
 ]]></content>
       <categories>
         <category>Performance</category>
@@ -866,8 +925,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Heap</tag>
         <tag>Index</tag>
       </tags>
@@ -1927,8 +1986,8 @@
       </categories>
       <tags>
         <tag>读书笔记</tag>
-        <tag>Storage</tag>
         <tag>原创</tag>
+        <tag>Storage</tag>
       </tags>
   </entry>
   <entry>
@@ -2075,10 +2134,10 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
+        <tag>转载</tag>
         <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
         <tag>Score</tag>
-        <tag>转载</tag>
       </tags>
   </entry>
   <entry>
@@ -2188,9 +2247,9 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
+        <tag>转载</tag>
         <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
-        <tag>转载</tag>
         <tag>Shard</tag>
       </tags>
   </entry>
@@ -4167,8 +4226,8 @@
       </categories>
       <tags>
         <tag>读书笔记</tag>
-        <tag>原创</tag>
         <tag>MySQL</tag>
+        <tag>原创</tag>
       </tags>
   </entry>
   <entry>
@@ -6477,8 +6536,8 @@ use one vs other -->
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>MySQL</tag>
+        <tag>原创</tag>
         <tag>UNION</tag>
         <tag>OR</tag>
       </tags>
@@ -10269,8 +10328,8 @@ use one vs other -->
         <tag>读书笔记</tag>
         <tag>Java</tag>
         <tag>GC</tag>
-        <tag>G1</tag>
         <tag>JVM</tag>
+        <tag>G1</tag>
       </tags>
   </entry>
   <entry>
@@ -11162,8 +11221,8 @@ use one vs other -->
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Query</tag>
       </tags>
   </entry>
@@ -11572,11 +11631,11 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Architecture</tag>
-        <tag>Distributed</tag>
-        <tag>转载</tag>
         <tag>Fescar</tag>
         <tag>Seata</tag>
+        <tag>Distributed</tag>
         <tag>Transaction</tag>
+        <tag>转载</tag>
       </tags>
   </entry>
   <entry>
@@ -12000,8 +12059,8 @@ table th:nth-of-type(2) {
         <tag>原创</tag>
         <tag>Java</tag>
         <tag>GC</tag>
-        <tag>G1</tag>
         <tag>JVM</tag>
+        <tag>G1</tag>
       </tags>
   </entry>
   <entry>

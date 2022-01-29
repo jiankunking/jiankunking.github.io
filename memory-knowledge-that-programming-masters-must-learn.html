@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="编程高手必学的内存知识 笔记作者： 海纳">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2022-01-26T06:30:06.737Z">
+<meta property="og:updated_time" content="2022-01-29T06:27:35.902Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="编程高手必学的内存知识 笔记">
 <meta name="twitter:description" content="编程高手必学的内存知识 笔记作者： 海纳">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-01-26 14:30:06" itemprop="dateModified" datetime="2022-01-26T14:30:06+08:00">2022-01-26</time>
+                <time title="修改时间：2022-01-29 14:27:35" itemprop="dateModified" datetime="2022-01-29T14:27:35+08:00">2022-01-29</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -269,14 +269,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>18</span>
+              <span>2.3k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>2 分钟</span>
             </span>
 
         </div>
@@ -290,6 +290,42 @@
       
         <p>编程高手必学的内存知识 笔记<br>作者： 海纳</p>
 <a id="more"></a>
+
+
+<h1 id="为什么可用内存会远超物理内存？"><a href="#为什么可用内存会远超物理内存？" class="headerlink" title="为什么可用内存会远超物理内存？"></a>为什么可用内存会远超物理内存？</h1><p>虚拟内存的出现，是为了解决直接操作物理内存的系统无法支持多进程的问题。这里的难点主要是进程的地址空间非常小，而且多个进程的地址很容易发生冲突。所以在局部性原理的基础上，CPU设计者提出虚拟内存的方案将多个进程的地址空间隔离开，并且提供了巨大的内存空间。</p>
+<p>我们可以总结一下，虚拟内存主要有下面两个特点：<br>第一，由于每个进程都有自己的页表，所以每个进程的虚拟内存空间就是相互独立的。进程也没有办法访问其他进程的页表，所以这些页表是私有的。这就解决了多进程之间地址冲突的问题。<br>第二，PTE中除了物理地址之外，还有一些标记属性的比特，比如控制一个页的读写权限，标记该页是否存在等。在内存访问方面，操作系统提供了更好的安全性。</p>
+<p>另外，虚拟内存可以充分使用CPU提供的机制来完成很多重要的任务。例如，fork借用写保护来实现写时复制，JVM中借用改变某一个页的读权限来实现safepoint查询等等。</p>
+<p>由于CPU对内存提供了更多保护的能力，所以X86架构的CPU把这种工作模式称为保护模式，与可以直接访问物理内存的实模式形成了对比。</p>
+<p><a href="/attachments/编程高手必学的内存知识/01为什么可用内存会远超物理内存？.pdf" target="_blank">为什么可用内存会远超物理内存？</a></p>
+<h1 id="X86体系结构中的实模式和保护模式"><a href="#X86体系结构中的实模式和保护模式" class="headerlink" title="X86体系结构中的实模式和保护模式"></a>X86体系结构中的实模式和保护模式</h1><p>8086是16位的CPU，我们称8086的工作模式为实模式，它的特点是直接操作物理内存，内存管理容易出错，要十分小心，代码编写和调试都很困难。</p>
+<p>之后出现的i386，则采用了和实模式不同的保护模式。相比实模式，i386中的保护模式，采用了页式管理，但它没有彻底放弃8086的段式管理，而是将段寄存器中的值由段基址变成了段选择子。段选择子本质是GDT表的下标值，段基址都转移到GDT中去了。</p>
+<p>段式管理负责将逻辑地址转换为线性地址，或者称为虚拟地址，页式管理负责将线性地址映射到物理地址。i386的保护模式采用了段页式混合管理的模式，兼具了段式管理和页式管理的优点。</p>
+<p>除了段页式内存管理这个不同之外，保护模式和实模式的区别还体现在中断描述符表（IDT）上。IDT是保护模式的一个重要组成部分，它保存着 i386 中断服务程序的入口地址。</p>
+<p>8086和i386对X86架构的CPU影响巨大。直到今天，X86架构的CPU在上电以后，为了与8086保持兼容，还是运行在16位实模式下，也就是说所有访存指令访问的都是物理内存地址。在启动操作系统后，才会切换到保护模式下进行工作。</p>
+<p><a href="/attachments/编程高手必学的内存知识/02X86体系结构中的实模式和保护模式.pdf.pdf" target="_blank">X86体系结构中的实模式和保护模式</a></p>
+<h1 id="内存布局：应用程序是如何安排数据的？"><a href="#内存布局：应用程序是如何安排数据的？" class="headerlink" title="内存布局：应用程序是如何安排数据的？"></a>内存布局：应用程序是如何安排数据的？</h1><h2 id="IA-32机器上的Linux进程内存布局"><a href="#IA-32机器上的Linux进程内存布局" class="headerlink" title="IA-32机器上的Linux进程内存布局"></a>IA-32机器上的Linux进程内存布局</h2><p>在32位机器上，每个进程都具有4GB的寻址能力。Linux系统会默认将高地址的1GB空间分配给内核，剩余的低3GB是用户可以使用的用户空间。下图是32位机器上Linux进程的一个典型的内存布局。在实践中，我们可以通过cat /proc/pid/maps来查看某个进程的实际虚拟内存布局。</p>
+<p><img data-src="/images/memory-knowledge-that-programming-masters-must-learn/1.png" alt></p>
+<blockquote>
+<p>BSS 段这个缩写名字是Block Started by Symbol，但很多人可能更喜欢把它记作Better Save Space的缩写。</p>
+</blockquote>
+<blockquote>
+<p>我们上述的布局分析都是基于Linux系统下关闭了进程地址随机化的选项。如果打开进程地址随机化的模式，其中的堆空间、栈空间和共享库映射的地址，在每次程序运行下都会不一样。这是因为内核在加载的过程中，会对这些区域的起始地址增加一些随机的偏移值，这能增加缓冲区溢出的难度。</p>
+</blockquote>
+<h2 id="Intel-64机器上的Linux进程内存布局"><a href="#Intel-64机器上的Linux进程内存布局" class="headerlink" title="Intel 64机器上的Linux进程内存布局"></a>Intel 64机器上的Linux进程内存布局</h2><p><img data-src="/images/memory-knowledge-that-programming-masters-must-learn/2.png" alt></p>
+<p>从图中你可以看到，在用户空间和内核空间之间有一个巨大的内存空洞。这块空间之所以用更深颜色来区分，是因为这块空间的不可访问是由CPU来保证的（这里的地址都不满足Intel 64的Canonical form）。</p>
+<p><a href="/attachments/编程高手必学的内存知识/03内存布局：应用程序是如何安排数据的？.pdf" target="_blank">内存布局：应用程序是如何安排数据的？</a></p>
+<h1 id="深入理解栈：从CPU和函数的视角看栈的管理"><a href="#深入理解栈：从CPU和函数的视角看栈的管理" class="headerlink" title="深入理解栈：从CPU和函数的视角看栈的管理"></a>深入理解栈：从CPU和函数的视角看栈的管理</h1><p><a href="/attachments/编程高手必学的内存知识/04深入理解栈：从CPU和函数的视角看栈的管理.pdf" target="_blank">深入理解栈：从CPU和函数的视角看栈的管理</a></p>
+<h1 id="栈的魔法：从栈切换的角度理解进程和协程"><a href="#栈的魔法：从栈切换的角度理解进程和协程" class="headerlink" title="栈的魔法：从栈切换的角度理解进程和协程"></a>栈的魔法：从栈切换的角度理解进程和协程</h1><p>栈切换的核心就是栈指针rsp寄存器的切换，只要我们想办法把rsp切换了就相当于换了执行单元的上下文环境。</p>
+<p><a href="/attachments/编程高手必学的内存知识/05栈的魔法：从栈切换的角度理解进程和协程.pdf" target="_blank">栈的魔法：从栈切换的角度理解进程和协程</a></p>
+<h1 id="静态链接：变量与内存地址是如何映射的？"><a href="#静态链接：变量与内存地址是如何映射的？" class="headerlink" title="静态链接：变量与内存地址是如何映射的？"></a>静态链接：变量与内存地址是如何映射的？</h1><p>在GNU/linux 下，GNU的binutils提供了一系列编程语言的工具程序，用来查看不同格式下的目标文件。今天我要给你重点介绍两个工具：readelf和objdump，这两个工具可以用来解析和读取上一节编译阶段生成的目标文件信息。</p>
+<p>一般情况下，我在对二进制文件进行反汇编时会使用objdump工具，因为readelf工具没有提供反汇编的能力，它更多是用来解析二进制文件信息。</p>
+<p>从源文件生成二进制可执行文件，这一过程主要包含了编译和链接两个步骤。其中，编译的作用是生成性能优越的机器码。对于编译单元内部的静态函数，可以在编译时通过相对地址的办法，生成call指令，因为无论将来调用者和被调用者被安置到什么地方，它们之间的相对距离不会发生变化。</p>
+<p>而其他类型的变量和函数在编译时，编译器并不知道它们的最终地址，所以只能使用占位符（比如 0）来临时代替目标地址。</p>
+<p>而链接器的任务是为所有变量和函数分配地址，并把被分配到的地址回写到调用者处。链接的过程主要分为两步，第一步是多文件合并，同时为符号分配地址，第二步则是将符号的地址回写到引用它的地方。其中，地址回写有一个专门的名字叫做重定位。重定位的过程依赖目标文件中的重定位表。</p>
+<p><a href="/attachments/编程高手必学的内存知识/06静态链接：变量与内存地址是如何映射的？.pdf" target="_blank">静态链接：变量与内存地址是如何映射的？</a></p>
+<h1 id="动态链接（上）：地址无关代码是如何生成的？"><a href="#动态链接（上）：地址无关代码是如何生成的？" class="headerlink" title="动态链接（上）：地址无关代码是如何生成的？"></a>动态链接（上）：地址无关代码是如何生成的？</h1><p><a href="/attachments/编程高手必学的内存知识/07动态链接（上）：地址无关代码是如何生成的？.pdf" target="_blank">动态链接（上）：地址无关代码是如何生成的？</a></p>
+<h1 id="动态链接（下）：延迟绑定与动态链接器是什么？"><a href="#动态链接（下）：延迟绑定与动态链接器是什么？" class="headerlink" title="动态链接（下）：延迟绑定与动态链接器是什么？"></a>动态链接（下）：延迟绑定与动态链接器是什么？</h1><p><a href="/attachments/编程高手必学的内存知识/08动态链接（下）：延迟绑定与动态链接器是什么？.pdf" target="_blank">动态链接（下）：延迟绑定与动态链接器是什么？</a></p>
+
     </div>
 
     
@@ -448,6 +484,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么可用内存会远超物理内存？"><span class="nav-number">1.</span> <span class="nav-text">为什么可用内存会远超物理内存？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#X86体系结构中的实模式和保护模式"><span class="nav-number">2.</span> <span class="nav-text">X86体系结构中的实模式和保护模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存布局：应用程序是如何安排数据的？"><span class="nav-number">3.</span> <span class="nav-text">内存布局：应用程序是如何安排数据的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#IA-32机器上的Linux进程内存布局"><span class="nav-number">3.1.</span> <span class="nav-text">IA-32机器上的Linux进程内存布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-64机器上的Linux进程内存布局"><span class="nav-number">3.2.</span> <span class="nav-text">Intel 64机器上的Linux进程内存布局</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#深入理解栈：从CPU和函数的视角看栈的管理"><span class="nav-number">4.</span> <span class="nav-text">深入理解栈：从CPU和函数的视角看栈的管理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#栈的魔法：从栈切换的角度理解进程和协程"><span class="nav-number">5.</span> <span class="nav-text">栈的魔法：从栈切换的角度理解进程和协程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#静态链接：变量与内存地址是如何映射的？"><span class="nav-number">6.</span> <span class="nav-text">静态链接：变量与内存地址是如何映射的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#动态链接（上）：地址无关代码是如何生成的？"><span class="nav-number">7.</span> <span class="nav-text">动态链接（上）：地址无关代码是如何生成的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#动态链接（下）：延迟绑定与动态链接器是什么？"><span class="nav-number">8.</span> <span class="nav-text">动态链接（下）：延迟绑定与动态链接器是什么？</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -534,7 +571,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">936k</span>
+    <span title="站点总字数">940k</span>
 </div>
 
         
