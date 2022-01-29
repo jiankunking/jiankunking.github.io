@@ -308,7 +308,7 @@ update操作需要先获取原始文档，如果查询不到，会新增；如�
 虽然更新操作最终调用的方法也是[InternalEngine](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java)中的[index](https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/index/engine/InternalEngine.java#L854)，但在更新时调用[lucene](https://github.com/jiankunking/lucene) [softUpdateDocuments](https://github.com/jiankunking/lucene/blob/master/core/src/java/org/apache/lucene/index/IndexWriter.java#L1519)，会包含两个操作：标记删除、新增。
 
 相对于新增而言:
-* 多了一次完整的查询(为了保证一致性，update调用GET时将realtime选项设置为true，并且不 可配置。因此update操作可能会导致refresh生成新的Lucene分段。)
+* 多了一次完整的查询(为了保证一致性，update调用GET时将realtime选项设置为true，并且不可配置。因此update操作可能会导致refresh生成新的Lucene分段。)
 * 多了一个标记删除
 
 如果数据量比较大，操作又比较频繁的情况下，update这种操作还是要慎重。
