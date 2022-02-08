@@ -94,3 +94,63 @@ tags:
 # 动态链接（下）：延迟绑定与动态链接器是什么？
 
 <a href="/attachments/编程高手必学的内存知识/08动态链接（下）：延迟绑定与动态链接器是什么？.pdf" target="_blank">动态链接（下）：延迟绑定与动态链接器是什么？</a>
+
+# 深入理解堆：malloc和内存池是怎么回事？
+
+<a href="/attachments/编程高手必学的内存知识/09深入理解堆：malloc和内存池是怎么回事？.pdf" target="_blank">深入理解堆：malloc和内存池是怎么回事？？</a>
+
+# 页中断：fork、mmap背后的保护神
+
+<a href="/attachments/编程高手必学的内存知识/10页中断：fork、mmap背后的保护神.pdf" target="_blank">页中断：fork、mmap背后的保护神</a>
+
+# 即时编译：高性能JVM的核心秘密
+
+<a href="/attachments/编程高手必学的内存知识/11即时编译：高性能JVM的核心秘密.pdf" target="_blank">即时编译：高性能JVM的核心秘密</a>
+
+# 内存虚拟化：云原生时代的奠基者
+
+<a href="/attachments/编程高手必学的内存知识/12内存虚拟化：云原生时代的奠基者.pdf" target="_blank">内存虚拟化：云原生时代的奠基者</a>
+
+# 存储电路：计算机存储芯片的电路结构是怎样的？
+
+<a href="/attachments/编程高手必学的内存知识/13存储电路：计算机存储芯片的电路结构是怎样的？.pdf" target="_blank">存储电路：计算机存储芯片的电路结构是怎样的？</a>
+
+# CPUCache：访存速度是如何大幅提升的？
+
+<a href="/attachments/编程高手必学的内存知识/14CPUCache：访存速度是如何大幅提升的？.pdf" target="_blank">CPUCache：访存速度是如何大幅提升的？</a>
+
+# MESI协议：多核CPU是如何同步高速缓存的？
+
+<a href="/attachments/编程高手必学的内存知识/15MESI协议：多核CPU是如何同步高速缓存的？.pdf" target="_blank">MESI协议：多核CPU是如何同步高速缓存的？</a>
+
+# 内存模型：有了MESI为什么还需要内存屏障？
+
+<a href="/attachments/编程高手必学的内存知识/16内存模型：有了MESI为什么还需要内存屏障？.pdf" target="_blank">内存模型：有了MESI为什么还需要内存屏障？</a>
+
+# NUMA：非均匀访存带来了哪些提升与挑战？
+
+<a href="/attachments/编程高手必学的内存知识/17NUMA：非均匀访存带来了哪些提升与挑战？.pdf" target="_blank">NUMA：非均匀访存带来了哪些提升与挑战？</a>
+
+# Java内存模型：Java中的volatile有什么用？
+
+<a href="/attachments/编程高手必学的内存知识/18Java内存模型：Java中的volatile有什么用？.pdf" target="_blank">Java内存模型：Java中的volatile有什么用？</a>
+
+# Scavenge：基于copy的垃圾回收算法
+
+<a href="/attachments/编程高手必学的内存知识/20Scavenge：基于copy的垃圾回收算法.pdf" target="_blank">Scavenge：基于copy的垃圾回收算法</a>
+
+# 分代算法：基于生命周期的内存管理
+
+<a href="/attachments/编程高手必学的内存知识/21分代算法：基于生命周期的内存管理.pdf" target="_blank">分代算法：基于生命周期的内存管理</a>
+
+# G1GC：分区回收算法说的是什么？
+
+<a href="/attachments/编程高手必学的内存知识/22G1GC：分区回收算法说的是什么？.pdf" target="_blank">G1GC：分区回收算法说的是什么？</a>
+
+# PauselessGC：挑战无暂停的垃圾回收
+
+<a href="/attachments/编程高手必学的内存知识/23PauselessGC：挑战无暂停的垃圾回收.pdf" target="_blank">PauselessGC：挑战无暂停的垃圾回收</a>
+
+# GC实例：Python和Go的内存管理机制是怎样的？
+
+<a href="/attachments/编程高手必学的内存知识/24GC实例：Python和Go的内存管理机制是怎样的？.pdf" target="_blank">GC实例：Python和Go的内存管理机制是怎样的？</a>
