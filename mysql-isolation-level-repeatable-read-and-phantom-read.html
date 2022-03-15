@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="在MySQL可重复读的隔离级别下，能很大程度上避免幻读，而不能完全避免。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2022-03-14T01:49:54.802Z">
+<meta property="og:updated_time" content="2022-03-15T00:59:01.679Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL 可重复读隔离级别与幻读">
 <meta name="twitter:description" content="在MySQL可重复读的隔离级别下，能很大程度上避免幻读，而不能完全避免。">
@@ -236,10 +236,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-03-14 08:31:09 / 修改时间：09:49:54" itemprop="dateCreated datePublished" datetime="2022-03-14T08:31:09+08:00">2022-03-14</time>
+              <time title="创建时间：2022-03-14 08:31:09" itemprop="dateCreated datePublished" datetime="2022-03-14T08:31:09+08:00">2022-03-14</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-15 08:59:01" itemprop="dateModified" datetime="2022-03-15T08:59:01+08:00">2022-03-15</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -263,14 +269,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.3k</span>
+              <span>2.9k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>2 分钟</span>
+              <span>3 分钟</span>
             </span>
 
         </div>
@@ -287,7 +293,7 @@
 </blockquote>
 <a id="more"></a>
 
-<p>环境信息：</p>
+<h1 id="场景复现"><a href="#场景复现" class="headerlink" title="场景复现"></a>场景复现</h1><p>环境信息：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MySQL版本：5.7.23-log</span><br><span class="line">隔离级别：REPEATABLE-READ</span><br></pre></td></tr></table></figure>
 
 <p>测试数据：</p>
@@ -298,8 +304,8 @@
 <thead>
 <tr>
 <th align="center">时间</th>
-<th align="center">会话A</th>
-<th align="center">会话B</th>
+<th align="center">会话A(T1)</th>
+<th align="center">会话B(T2)</th>
 </tr>
 </thead>
 <tbody><tr>
@@ -346,6 +352,11 @@
 <p>在第3步执行查询cluster = ‘cluster1’时，查询到的结果是空。<br>但会话B执行完第4 5之后，再在会话A中执行第6步，就不会等待或者报错了，也就是可以正常执行，在第7步的查询中，也能查到该数据了。</p>
 <blockquote>
 <p>注意：会话A能正常更新、查询的前提是：会话B事务已提交。<br>注意：会话A如果不执行更新（也就是第6步），那么在查询的时候，还是查询不到记录的。</p>
+</blockquote>
+<h1 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h1><p>对于使用InnoDB存储引擎的表来说，它的聚簇索引记录中都包含下面这两个必要的隐藏列（row_id并不是必要的：在创建的表中有主键时，或者有不允许为NULL的UNIQUE键时，都不会包含row_id列）.<br>• trx_id：一个事务每次对某条聚簇索引记录进行改动时，都会把该事务的事务id赋值给trx_id隐藏列.<br>• roll_pointer：每次对某条聚族索引记录进行改动时，都会把旧的版本写入到undo日志中.这个隐藏列就相当于一个指针，可以通过它找到该记录修改前的信息.</p>
+<p>在REPEATABLE READ隔离级别下，T1第一次执行普通的SELECT语句时生成了一个ReadView,之后T2向hero表中新插入一条记录并提交.ReadView并不能阻止T1执行UPDATE或者DELETE语句来改动这个新插入的记录（由于T2已经提交，因此改动该记录并不会造成阻塞），但是这样一来，这条新记录的trx_id隐藏列的值就变成了T1的事务id,之后T1再使用普通的SELECT语句去查询这条记录时就可以看到这条记录了，也就可以把这条记录返回给客户端.因为这个特殊现象的存在，我们也可以认为InnoDB中的MVCC并不能完全禁止幻读。</p>
+<blockquote>
+<p>也就是说，T1将新插入数据的事务号修改的小于等于ReadView对应的事务版本号了，相当于扩充了ReadView的范围，从而导致在下一次查询的时候能查询出该记录。</p>
 </blockquote>
 
     </div>
@@ -506,6 +517,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#场景复现"><span class="nav-number">1.</span> <span class="nav-text">场景复现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原因分析"><span class="nav-number">2.</span> <span class="nav-text">原因分析</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -592,7 +604,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">943k</span>
+    <span title="站点总字数">944k</span>
 </div>
 
         
