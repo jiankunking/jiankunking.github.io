@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="先看一下Golang Web Server是如何监听请求的: 12345678srv := &amp;amp;http.Server&amp;#123;		Addr:    &amp;quot;:8080&amp;quot;,		Handler: obj.App,	&amp;#125;if err := srv.ListenAndServe(); err != nil &amp;amp;&amp;amp; err != http.ErrServerCl">
+<meta name="keywords" content="原创,Go,net&#x2F;http,Request">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang net&#x2F;http 请求处理流程分析">
+<meta property="og:url" content="http://jiankunking.com/golang-net-http-request-processing-flow.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="先看一下Golang Web Server是如何监听请求的: 12345678srv := &amp;amp;http.Server&amp;#123;		Addr:    &amp;quot;:8080&amp;quot;,		Handler: obj.App,	&amp;#125;if err := srv.ListenAndServe(); err != nil &amp;amp;&amp;amp; err != http.ErrServerCl">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2022-07-15T09:22:44.023Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Golang net&#x2F;http 请求处理流程分析">
+<meta name="twitter:description" content="先看一下Golang Web Server是如何监听请求的: 12345678srv := &amp;amp;http.Server&amp;#123;		Addr:    &amp;quot;:8080&amp;quot;,		Handler: obj.App,	&amp;#125;if err := srv.ListenAndServe(); err != nil &amp;amp;&amp;amp; err != http.ErrServerCl">
+
+<link rel="canonical" href="http://jiankunking.com/golang-net-http-request-processing-flow.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Golang net/http 请求处理流程分析 | 衣舞晨风</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121070942-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">衣舞晨风</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">124</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">165</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://jiankunking.com/golang-net-http-request-processing-flow.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Golang net/http 请求处理流程分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-07-15 16:30:16 / 修改时间：17:22:44" itemprop="dateCreated datePublished" datetime="2022-07-15T16:30:16+08:00">2022-07-15</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>17k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>15 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>先看一下Golang Web Server是如何监听请求的:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">srv := &amp;http.Server&#123;</span><br><span class="line">		Addr:    &quot;:8080&quot;,</span><br><span class="line">		Handler: obj.App,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">if err := srv.ListenAndServe(); err != nil &amp;&amp; err != http.ErrServerClosed &#123;</span><br><span class="line">   log.Fatalf(&quot;listen: %s\n&quot;, err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>具体的监听处理在<a href="https://github.com/golang/go/blob/master/src/net/http/server.go#L2987" target="_blank" rel="noopener">ListenAndServe()</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">// ListenAndServe listens on the TCP network address srv.Addr and then</span><br><span class="line">// calls Serve to handle requests on incoming connections.</span><br><span class="line">// Accepted connections are configured to enable TCP keep-alives.</span><br><span class="line">//</span><br><span class="line">// If srv.Addr is blank, &quot;:http&quot; is used.</span><br><span class="line">//</span><br><span class="line">// ListenAndServe always returns a non-nil error. After Shutdown or Close,</span><br><span class="line">// the returned error is ErrServerClosed.</span><br><span class="line">func (srv *Server) ListenAndServe() error &#123;</span><br><span class="line">	if srv.shuttingDown() &#123;</span><br><span class="line">		return ErrServerClosed</span><br><span class="line">	&#125;</span><br><span class="line">	addr := srv.Addr</span><br><span class="line">	if addr == &quot;&quot; &#123;</span><br><span class="line">		addr = &quot;:http&quot;</span><br><span class="line">	&#125;</span><br><span class="line">	ln, err := net.Listen(&quot;tcp&quot;, addr)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	return srv.Serve(ln)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面看一下<a href="https://github.com/golang/go/blob/master/src/net/http/server.go#L3040" target="_blank" rel="noopener">Serve(l net.Listener)</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line">// Serve accepts incoming connections on the Listener l, creating a</span><br><span class="line">// new service goroutine for each. The service goroutines read requests and</span><br><span class="line">// then call srv.Handler to reply to them.</span><br><span class="line">//</span><br><span class="line">// HTTP/2 support is only enabled if the Listener returns *tls.Conn</span><br><span class="line">// connections and they were configured with &quot;h2&quot; in the TLS</span><br><span class="line">// Config.NextProtos.</span><br><span class="line">//</span><br><span class="line">// Serve always returns a non-nil error and closes l.</span><br><span class="line">// After Shutdown or Close, the returned error is ErrServerClosed.</span><br><span class="line">func (srv *Server) Serve(l net.Listener) error &#123;</span><br><span class="line">	if fn := testHookServerServe; fn != nil &#123;</span><br><span class="line">		fn(srv, l) // call hook with unwrapped listener</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	origListener := l</span><br><span class="line">	l = &amp;onceCloseListener&#123;Listener: l&#125;</span><br><span class="line">	defer l.Close()</span><br><span class="line"></span><br><span class="line">	if err := srv.setupHTTP2_Serve(); err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if !srv.trackListener(&amp;l, true) &#123;</span><br><span class="line">		return ErrServerClosed</span><br><span class="line">	&#125;</span><br><span class="line">	defer srv.trackListener(&amp;l, false)</span><br><span class="line"></span><br><span class="line">	baseCtx := context.Background()</span><br><span class="line">	if srv.BaseContext != nil &#123;</span><br><span class="line">		baseCtx = srv.BaseContext(origListener)</span><br><span class="line">		if baseCtx == nil &#123;</span><br><span class="line">			panic(&quot;BaseContext returned a nil context&quot;)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	var tempDelay time.Duration // how long to sleep on accept failure</span><br><span class="line"></span><br><span class="line">	ctx := context.WithValue(baseCtx, ServerContextKey, srv)</span><br><span class="line">	for &#123;</span><br><span class="line">		rw, err := l.Accept()</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			select &#123;</span><br><span class="line">			case &lt;-srv.getDoneChan():</span><br><span class="line">				return ErrServerClosed</span><br><span class="line">			default:</span><br><span class="line">			&#125;</span><br><span class="line">			if ne, ok := err.(net.Error); ok &amp;&amp; ne.Temporary() &#123;</span><br><span class="line">				if tempDelay == 0 &#123;</span><br><span class="line">					tempDelay = 5 * time.Millisecond</span><br><span class="line">				&#125; else &#123;</span><br><span class="line">					tempDelay *= 2</span><br><span class="line">				&#125;</span><br><span class="line">				if max := 1 * time.Second; tempDelay &gt; max &#123;</span><br><span class="line">					tempDelay = max</span><br><span class="line">				&#125;</span><br><span class="line">				srv.logf(&quot;http: Accept error: %v; retrying in %v&quot;, err, tempDelay)</span><br><span class="line">				time.Sleep(tempDelay)</span><br><span class="line">				continue</span><br><span class="line">			&#125;</span><br><span class="line">			return err</span><br><span class="line">		&#125;</span><br><span class="line">		connCtx := ctx</span><br><span class="line">		if cc := srv.ConnContext; cc != nil &#123;</span><br><span class="line">			connCtx = cc(connCtx, rw)</span><br><span class="line">			if connCtx == nil &#123;</span><br><span class="line">				panic(&quot;ConnContext returned nil&quot;)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		tempDelay = 0</span><br><span class="line">		c := srv.newConn(rw)</span><br><span class="line">		c.setState(c.rwc, StateNew, runHooks) // before Serve can return</span><br><span class="line">		go c.serve(connCtx)  // &lt;--- 注意这里</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意一下，在serve(l net.Listener)函数中，对于每一个请求都会开一个协程来处理。</p>
+</blockquote>
+<p>协程内部都做了啥呢？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br></pre></td><td class="code"><pre><span class="line">// Serve a new connection.</span><br><span class="line">func (c *conn) serve(ctx context.Context) &#123;</span><br><span class="line">	c.remoteAddr = c.rwc.RemoteAddr().String()</span><br><span class="line">	ctx = context.WithValue(ctx, LocalAddrContextKey, c.rwc.LocalAddr())</span><br><span class="line">	var inFlightResponse *response</span><br><span class="line">	defer func() &#123;</span><br><span class="line">		if err := recover(); err != nil &amp;&amp; err != ErrAbortHandler &#123;</span><br><span class="line">			const size = 64 &lt;&lt; 10</span><br><span class="line">			buf := make([]byte, size)</span><br><span class="line">			buf = buf[:runtime.Stack(buf, false)]</span><br><span class="line">			c.server.logf(&quot;http: panic serving %v: %v\n%s&quot;, c.remoteAddr, err, buf)</span><br><span class="line">		&#125;</span><br><span class="line">		if inFlightResponse != nil &#123;</span><br><span class="line">			inFlightResponse.cancelCtx()</span><br><span class="line">		&#125;</span><br><span class="line">		if !c.hijacked() &#123;</span><br><span class="line">			if inFlightResponse != nil &#123;</span><br><span class="line">				inFlightResponse.conn.r.abortPendingRead()</span><br><span class="line">				inFlightResponse.reqBody.Close()</span><br><span class="line">			&#125;</span><br><span class="line">			c.close()</span><br><span class="line">			c.setState(c.rwc, StateClosed, runHooks)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	if tlsConn, ok := c.rwc.(*tls.Conn); ok &#123;</span><br><span class="line">		tlsTO := c.server.tlsHandshakeTimeout()</span><br><span class="line">		if tlsTO &gt; 0 &#123;</span><br><span class="line">			dl := time.Now().Add(tlsTO)</span><br><span class="line">			c.rwc.SetReadDeadline(dl)</span><br><span class="line">			c.rwc.SetWriteDeadline(dl)</span><br><span class="line">		&#125;</span><br><span class="line">		if err := tlsConn.HandshakeContext(ctx); err != nil &#123;</span><br><span class="line">			// If the handshake failed due to the client not speaking</span><br><span class="line">			// TLS, assume they&apos;re speaking plaintext HTTP and write a</span><br><span class="line">			// 400 response on the TLS conn&apos;s underlying net.Conn.</span><br><span class="line">			if re, ok := err.(tls.RecordHeaderError); ok &amp;&amp; re.Conn != nil &amp;&amp; tlsRecordHeaderLooksLikeHTTP(re.RecordHeader) &#123;</span><br><span class="line">				io.WriteString(re.Conn, &quot;HTTP/1.0 400 Bad Request\r\n\r\nClient sent an HTTP request to an HTTPS server.\n&quot;)</span><br><span class="line">				re.Conn.Close()</span><br><span class="line">				return</span><br><span class="line">			&#125;</span><br><span class="line">			c.server.logf(&quot;http: TLS handshake error from %s: %v&quot;, c.rwc.RemoteAddr(), err)</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">		// Restore Conn-level deadlines.</span><br><span class="line">		if tlsTO &gt; 0 &#123;</span><br><span class="line">			c.rwc.SetReadDeadline(time.Time&#123;&#125;)</span><br><span class="line">			c.rwc.SetWriteDeadline(time.Time&#123;&#125;)</span><br><span class="line">		&#125;</span><br><span class="line">		c.tlsState = new(tls.ConnectionState)</span><br><span class="line">		*c.tlsState = tlsConn.ConnectionState()</span><br><span class="line">		if proto := c.tlsState.NegotiatedProtocol; validNextProto(proto) &#123;</span><br><span class="line">			if fn := c.server.TLSNextProto[proto]; fn != nil &#123;</span><br><span class="line">				h := initALPNRequest&#123;ctx, tlsConn, serverHandler&#123;c.server&#125;&#125;</span><br><span class="line">				// Mark freshly created HTTP/2 as active and prevent any server state hooks</span><br><span class="line">				// from being run on these connections. This prevents closeIdleConns from</span><br><span class="line">				// closing such connections. See issue https://golang.org/issue/39776.</span><br><span class="line">				c.setState(c.rwc, StateActive, skipHooks)</span><br><span class="line">				fn(c.server, tlsConn, h)</span><br><span class="line">			&#125;</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// HTTP/1.x from here on.</span><br><span class="line"></span><br><span class="line">	ctx, cancelCtx := context.WithCancel(ctx)</span><br><span class="line">	c.cancelCtx = cancelCtx</span><br><span class="line">	defer cancelCtx()</span><br><span class="line"></span><br><span class="line">	c.r = &amp;connReader&#123;conn: c&#125;</span><br><span class="line">	c.bufr = newBufioReader(c.r)</span><br><span class="line">	c.bufw = newBufioWriterSize(checkConnErrorWriter&#123;c&#125;, 4&lt;&lt;10)</span><br><span class="line"></span><br><span class="line">	for &#123;</span><br><span class="line">		w, err := c.readRequest(ctx)</span><br><span class="line">		if c.r.remain != c.server.initialReadLimitSize() &#123;</span><br><span class="line">			// If we read any bytes off the wire, we&apos;re active.</span><br><span class="line">			c.setState(c.rwc, StateActive, runHooks)</span><br><span class="line">		&#125;</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			const errorHeaders = &quot;\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\n\r\n&quot;</span><br><span class="line"></span><br><span class="line">			switch &#123;</span><br><span class="line">			case err == errTooLarge:</span><br><span class="line">				// Their HTTP client may or may not be</span><br><span class="line">				// able to read this if we&apos;re</span><br><span class="line">				// responding to them and hanging up</span><br><span class="line">				// while they&apos;re still writing their</span><br><span class="line">				// request. Undefined behavior.</span><br><span class="line">				const publicErr = &quot;431 Request Header Fields Too Large&quot;</span><br><span class="line">				fmt.Fprintf(c.rwc, &quot;HTTP/1.1 &quot;+publicErr+errorHeaders+publicErr)</span><br><span class="line">				c.closeWriteAndWait()</span><br><span class="line">				return</span><br><span class="line"></span><br><span class="line">			case isUnsupportedTEError(err):</span><br><span class="line">				// Respond as per RFC 7230 Section 3.3.1 which says,</span><br><span class="line">				//      A server that receives a request message with a</span><br><span class="line">				//      transfer coding it does not understand SHOULD</span><br><span class="line">				//      respond with 501 (Unimplemented).</span><br><span class="line">				code := StatusNotImplemented</span><br><span class="line"></span><br><span class="line">				// We purposefully aren&apos;t echoing back the transfer-encoding&apos;s value,</span><br><span class="line">				// so as to mitigate the risk of cross side scripting by an attacker.</span><br><span class="line">				fmt.Fprintf(c.rwc, &quot;HTTP/1.1 %d %s%sUnsupported transfer encoding&quot;, code, StatusText(code), errorHeaders)</span><br><span class="line">				return</span><br><span class="line"></span><br><span class="line">			case isCommonNetReadError(err):</span><br><span class="line">				return // don&apos;t reply</span><br><span class="line"></span><br><span class="line">			default:</span><br><span class="line">				if v, ok := err.(statusError); ok &#123;</span><br><span class="line">					fmt.Fprintf(c.rwc, &quot;HTTP/1.1 %d %s: %s%s%d %s: %s&quot;, v.code, StatusText(v.code), v.text, errorHeaders, v.code, StatusText(v.code), v.text)</span><br><span class="line">					return</span><br><span class="line">				&#125;</span><br><span class="line">				publicErr := &quot;400 Bad Request&quot;</span><br><span class="line">				fmt.Fprintf(c.rwc, &quot;HTTP/1.1 &quot;+publicErr+errorHeaders+publicErr)</span><br><span class="line">				return</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		// Expect 100 Continue support</span><br><span class="line">		req := w.req</span><br><span class="line">		if req.expectsContinue() &#123;</span><br><span class="line">			if req.ProtoAtLeast(1, 1) &amp;&amp; req.ContentLength != 0 &#123;</span><br><span class="line">				// Wrap the Body reader with one that replies on the connection</span><br><span class="line">				req.Body = &amp;expectContinueReader&#123;readCloser: req.Body, resp: w&#125;</span><br><span class="line">				w.canWriteContinue.setTrue()</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; else if req.Header.get(&quot;Expect&quot;) != &quot;&quot; &#123;</span><br><span class="line">			w.sendExpectationFailed()</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		c.curReq.Store(w)</span><br><span class="line"></span><br><span class="line">		if requestBodyRemains(req.Body) &#123;</span><br><span class="line">			registerOnHitEOF(req.Body, w.conn.r.startBackgroundRead)</span><br><span class="line">		&#125; else &#123;</span><br><span class="line">			w.conn.r.startBackgroundRead()</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		// HTTP cannot have multiple simultaneous active requests.[*]</span><br><span class="line">		// Until the server replies to this request, it can&apos;t read another,</span><br><span class="line">		// so we might as well run the handler in this goroutine.</span><br><span class="line">		// [*] Not strictly true: HTTP pipelining. We could let them all process</span><br><span class="line">		// in parallel even if their responses need to be serialized.</span><br><span class="line">		// But we&apos;re not going to implement HTTP pipelining because it</span><br><span class="line">		// was never deployed in the wild and the answer is HTTP/2.</span><br><span class="line">		inFlightResponse = w</span><br><span class="line">		serverHandler&#123;c.server&#125;.ServeHTTP(w, w.req) // &lt;--- 注意这里</span><br><span class="line">		inFlightResponse = nil</span><br><span class="line">		w.cancelCtx()</span><br><span class="line">		if c.hijacked() &#123;</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">		w.finishRequest()</span><br><span class="line">		if !w.shouldReuseConnection() &#123;</span><br><span class="line">			if w.requestBodyLimitHit || w.closedRequestBodyEarly() &#123;</span><br><span class="line">				c.closeWriteAndWait()</span><br><span class="line">			&#125;</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">		c.setState(c.rwc, StateIdle, runHooks)</span><br><span class="line">		c.curReq.Store((*response)(nil))</span><br><span class="line"></span><br><span class="line">		if !w.conn.server.doKeepAlives() &#123;</span><br><span class="line">			// We&apos;re in shutdown mode. We might&apos;ve replied</span><br><span class="line">			// to the user without &quot;Connection: close&quot; and</span><br><span class="line">			// they might think they can send another</span><br><span class="line">			// request, but such is life with HTTP/1.1.</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		if d := c.server.idleTimeout(); d != 0 &#123;</span><br><span class="line">			c.rwc.SetReadDeadline(time.Now().Add(d))</span><br><span class="line">			if _, err := c.bufr.Peek(4); err != nil &#123;</span><br><span class="line">				return</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		c.rwc.SetReadDeadline(time.Time&#123;&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意这行代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">serverHandler&#123;c.server&#125;.ServeHTTP(w, w.req)</span><br></pre></td></tr></table></figure>
+
+<p>其中ServeHTTP是一个接口，绝大多数Web框架都是通过实现该接口，从而替换掉Golang默认的路由。</p>
+<p>具体的接口定义:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">// A Handler responds to an HTTP request.</span><br><span class="line">//</span><br><span class="line">// ServeHTTP should write reply headers and data to the ResponseWriter</span><br><span class="line">// and then return. Returning signals that the request is finished; it</span><br><span class="line">// is not valid to use the ResponseWriter or read from the</span><br><span class="line">// Request.Body after or concurrently with the completion of the</span><br><span class="line">// ServeHTTP call.</span><br><span class="line">//</span><br><span class="line">// Depending on the HTTP client software, HTTP protocol version, and</span><br><span class="line">// any intermediaries between the client and the Go server, it may not</span><br><span class="line">// be possible to read from the Request.Body after writing to the</span><br><span class="line">// ResponseWriter. Cautious handlers should read the Request.Body</span><br><span class="line">// first, and then reply.</span><br><span class="line">//</span><br><span class="line">// Except for reading the body, handlers should not modify the</span><br><span class="line">// provided Request.</span><br><span class="line">//</span><br><span class="line">// If ServeHTTP panics, the server (the caller of ServeHTTP) assumes</span><br><span class="line">// that the effect of the panic was isolated to the active request.</span><br><span class="line">// It recovers the panic, logs a stack trace to the server error log,</span><br><span class="line">// and either closes the network connection or sends an HTTP/2</span><br><span class="line">// RST_STREAM, depending on the HTTP protocol. To abort a handler so</span><br><span class="line">// the client sees an interrupted response but the server doesn&apos;t log</span><br><span class="line">// an error, panic with the value ErrAbortHandler.</span><br><span class="line">type Handler interface &#123;</span><br><span class="line">	ServeHTTP(ResponseWriter, *Request)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Golang默认实现:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br></pre></td><td class="code"><pre><span class="line">// https://github.com/golang/go/blob/master/src/net/http/server.go#L2926</span><br><span class="line">func (sh serverHandler) ServeHTTP(rw ResponseWriter, req *Request) &#123;</span><br><span class="line">	handler := sh.srv.Handler</span><br><span class="line">	if handler == nil &#123;</span><br><span class="line">		handler = DefaultServeMux</span><br><span class="line">	&#125;</span><br><span class="line">	if req.RequestURI == &quot;*&quot; &amp;&amp; req.Method == &quot;OPTIONS&quot; &#123;</span><br><span class="line">		handler = globalOptionsHandler&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if req.URL != nil &amp;&amp; strings.Contains(req.URL.RawQuery, &quot;;&quot;) &#123;</span><br><span class="line">		var allowQuerySemicolonsInUse int32</span><br><span class="line">		req = req.WithContext(context.WithValue(req.Context(), silenceSemWarnContextKey, func() &#123;</span><br><span class="line">			atomic.StoreInt32(&amp;allowQuerySemicolonsInUse, 1)</span><br><span class="line">		&#125;))</span><br><span class="line">		defer func() &#123;</span><br><span class="line">			if atomic.LoadInt32(&amp;allowQuerySemicolonsInUse) == 0 &#123;</span><br><span class="line">				sh.srv.logf(&quot;http: URL query contains semicolon, which is no longer a supported separator; parts of the query may be stripped when parsed; see golang.org/issue/25192&quot;)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	handler.ServeHTTP(rw, req)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// https://github.com/golang/go/blob/master/src/net/http/server.go#L2478</span><br><span class="line">// ServeHTTP dispatches the request to the handler whose</span><br><span class="line">// pattern most closely matches the request URL.</span><br><span class="line">func (mux *ServeMux) ServeHTTP(w ResponseWriter, r *Request) &#123;</span><br><span class="line">	if r.RequestURI == &quot;*&quot; &#123;</span><br><span class="line">		if r.ProtoAtLeast(1, 1) &#123;</span><br><span class="line">			w.Header().Set(&quot;Connection&quot;, &quot;close&quot;)</span><br><span class="line">		&#125;</span><br><span class="line">		w.WriteHeader(StatusBadRequest)</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	h, _ := mux.Handler(r) // &lt;--- 注意这里</span><br><span class="line">	h.ServeHTTP(w, r)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// https://github.com/golang/go/blob/master/src/net/http/server.go#L2423</span><br><span class="line">// consulting r.Method, r.Host, and r.URL.Path. It always returns</span><br><span class="line">// a non-nil handler. If the path is not in its canonical form, the</span><br><span class="line">// handler will be an internally-generated handler that redirects</span><br><span class="line">// to the canonical path. If the host contains a port, it is ignored</span><br><span class="line">// when matching handlers.</span><br><span class="line">//</span><br><span class="line">// The path and host are used unchanged for CONNECT requests.</span><br><span class="line">//</span><br><span class="line">// Handler also returns the registered pattern that matches the</span><br><span class="line">// request or, in the case of internally-generated redirects,</span><br><span class="line">// the pattern that will match after following the redirect.</span><br><span class="line">//</span><br><span class="line">// If there is no registered handler that applies to the request,</span><br><span class="line">// Handler returns a “page not found” handler and an empty pattern.</span><br><span class="line">func (mux *ServeMux) Handler(r *Request) (h Handler, pattern string) &#123;</span><br><span class="line"></span><br><span class="line">	// CONNECT requests are not canonicalized.</span><br><span class="line">	if r.Method == &quot;CONNECT&quot; &#123;</span><br><span class="line">		// If r.URL.Path is /tree and its handler is not registered,</span><br><span class="line">		// the /tree -&gt; /tree/ redirect applies to CONNECT requests</span><br><span class="line">		// but the path canonicalization does not.</span><br><span class="line">		if u, ok := mux.redirectToPathSlash(r.URL.Host, r.URL.Path, r.URL); ok &#123;</span><br><span class="line">			return RedirectHandler(u.String(), StatusMovedPermanently), u.Path</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		return mux.handler(r.Host, r.URL.Path)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// All other requests have any port stripped and path cleaned</span><br><span class="line">	// before passing to mux.handler.</span><br><span class="line">	host := stripHostPort(r.Host)</span><br><span class="line">	path := cleanPath(r.URL.Path)</span><br><span class="line"></span><br><span class="line">	// If the given path is /tree and its handler is not registered,</span><br><span class="line">	// redirect for /tree/.</span><br><span class="line">	if u, ok := mux.redirectToPathSlash(host, path, r.URL); ok &#123;</span><br><span class="line">		return RedirectHandler(u.String(), StatusMovedPermanently), u.Path</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if path != r.URL.Path &#123;</span><br><span class="line">		_, pattern = mux.handler(host, path)</span><br><span class="line">		u := &amp;url.URL&#123;Path: path, RawQuery: r.URL.RawQuery&#125;</span><br><span class="line">		return RedirectHandler(u.String(), StatusMovedPermanently), pattern</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	return mux.handler(host, r.URL.Path)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// https://github.com/golang/go/blob/master/src/net/http/server.go#L2459</span><br><span class="line">// handler is the main implementation of Handler.</span><br><span class="line">// The path is known to be in canonical form, except for CONNECT methods.</span><br><span class="line">func (mux *ServeMux) handler(host, path string) (h Handler, pattern string) &#123;</span><br><span class="line">	mux.mu.RLock()</span><br><span class="line">	defer mux.mu.RUnlock()</span><br><span class="line"></span><br><span class="line">	// Host-specific pattern takes precedence over generic ones</span><br><span class="line">	if mux.hosts &#123;</span><br><span class="line">		h, pattern = mux.match(host + path)</span><br><span class="line">	&#125;</span><br><span class="line">	if h == nil &#123;</span><br><span class="line">		h, pattern = mux.match(path)</span><br><span class="line">	&#125;</span><br><span class="line">	if h == nil &#123;</span><br><span class="line">		h, pattern = NotFoundHandler(), &quot;&quot;</span><br><span class="line">	&#125;</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// https://github.com/golang/go/blob/master/src/net/http/server.go#L2350</span><br><span class="line">// 从代码中可以看出，匹配规则过于简单,导致基本所有的go框架</span><br><span class="line">// 最重要的一点就是:重写路由匹配这部分，比如gin</span><br><span class="line">// Find a handler on a handler map given a path string.</span><br><span class="line">// Most-specific (longest) pattern wins.</span><br><span class="line">func (mux *ServeMux) match(path string) (h Handler, pattern string) &#123;</span><br><span class="line">	// Check for exact match first.</span><br><span class="line">	v, ok := mux.m[path]</span><br><span class="line">	if ok &#123;</span><br><span class="line">		return v.h, v.pattern</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// Check for longest valid match.  mux.es contains all patterns</span><br><span class="line">	// that end in / sorted from longest to shortest.</span><br><span class="line">	for _, e := range mux.es &#123;</span><br><span class="line">		if strings.HasPrefix(path, e.pattern) &#123;</span><br><span class="line">			return e.h, e.pattern</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	return nil, &quot;&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// ServeHTTP calls f(w, r).</span><br><span class="line">func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) &#123;</span><br><span class="line">	f(w, r)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// The HandlerFunc type is an adapter to allow the use of</span><br><span class="line">// ordinary functions as HTTP handlers. If f is a function</span><br><span class="line">// with the appropriate signature, HandlerFunc(f) is a</span><br><span class="line">// Handler that calls f.</span><br><span class="line">type HandlerFunc func(ResponseWriter, *Request) // &lt;--- 接口型函数</span><br></pre></td></tr></table></figure>
+
+<p>比如Gin就通过实现<a href="https://github.com/gin-gonic/gin/blob/master/gin.go#L566" target="_blank" rel="noopener">ServeHTTP(w http.ResponseWriter, req *http.Request)</a>接口，在这里重新实现路由匹配</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line">// ServeHTTP conforms to the http.Handler interface.</span><br><span class="line">func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) &#123;</span><br><span class="line">	c := engine.pool.Get().(*Context)</span><br><span class="line">	c.writermem.reset(w)</span><br><span class="line">	c.Request = req</span><br><span class="line">	c.reset()</span><br><span class="line"></span><br><span class="line">	engine.handleHTTPRequest(c)</span><br><span class="line"></span><br><span class="line">	engine.pool.Put(c)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// https://github.com/gin-gonic/gin/blob/master/gin.go#L588</span><br><span class="line">func (engine *Engine) handleHTTPRequest(c *Context) &#123;</span><br><span class="line">	httpMethod := c.Request.Method</span><br><span class="line">	rPath := c.Request.URL.Path</span><br><span class="line">	unescape := false</span><br><span class="line">	if engine.UseRawPath &amp;&amp; len(c.Request.URL.RawPath) &gt; 0 &#123;</span><br><span class="line">		rPath = c.Request.URL.RawPath</span><br><span class="line">		unescape = engine.UnescapePathValues</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if engine.RemoveExtraSlash &#123;</span><br><span class="line">		rPath = cleanPath(rPath)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// Find root of the tree for the given HTTP method</span><br><span class="line">	t := engine.trees</span><br><span class="line">	for i, tl := 0, len(t); i &lt; tl; i++ &#123;</span><br><span class="line">		if t[i].method != httpMethod &#123;</span><br><span class="line">			continue</span><br><span class="line">		&#125;</span><br><span class="line">		root := t[i].root</span><br><span class="line">		// Find route in tree</span><br><span class="line">		value := root.getValue(rPath, c.params, c.skippedNodes, unescape)</span><br><span class="line">		if value.params != nil &#123;</span><br><span class="line">			c.Params = *value.params</span><br><span class="line">		&#125;</span><br><span class="line">		if value.handlers != nil &#123;</span><br><span class="line">			c.handlers = value.handlers</span><br><span class="line">			c.fullPath = value.fullPath</span><br><span class="line">			c.Next()</span><br><span class="line">			c.writermem.WriteHeaderNow()</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">		if httpMethod != http.MethodConnect &amp;&amp; rPath != &quot;/&quot; &#123;</span><br><span class="line">			if value.tsr &amp;&amp; engine.RedirectTrailingSlash &#123;</span><br><span class="line">				redirectTrailingSlash(c)</span><br><span class="line">				return</span><br><span class="line">			&#125;</span><br><span class="line">			if engine.RedirectFixedPath &amp;&amp; redirectFixedPath(c, root, engine.RedirectFixedPath) &#123;</span><br><span class="line">				return</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		break</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if engine.HandleMethodNotAllowed &#123;</span><br><span class="line">		for _, tree := range engine.trees &#123;</span><br><span class="line">			if tree.method == httpMethod &#123;</span><br><span class="line">				continue</span><br><span class="line">			&#125;</span><br><span class="line">			if value := tree.root.getValue(rPath, nil, c.skippedNodes, unescape); value.handlers != nil &#123;</span><br><span class="line">				c.handlers = engine.allNoMethod</span><br><span class="line">				serveError(c, http.StatusMethodNotAllowed, default405Body)</span><br><span class="line">				return</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	c.handlers = engine.allNoRoute</span><br><span class="line">	serveError(c, http.StatusNotFound, default404Body)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">相关文章</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\go-net-http-timeout-sequence-diagram.html" rel="bookmark">[译]关于Go net/http 超时完全指南</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\go-concurrency-patterns-context.html" rel="bookmark">[译]Go 并发 : Context</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\go-sync-map.html" rel="bookmark">Go 1.9 Sync Map</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\memory-knowledge-that-programming-masters-must-learn.html" rel="bookmark">编程高手必学的内存知识 笔记</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\system-performance-tuning-must-know-and-must-know.html" rel="bookmark">系统性能调优必知必会 笔记</a></div>
+    </li>
+  </ul>
+
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>jiankunking
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://jiankunking.com/golang-net-http-request-processing-flow.html" title="Golang net/http 请求处理流程分析">http://jiankunking.com/golang-net-http-request-processing-flow.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/images/wechat/wechat.jpg">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/原创/" rel="tag"># 原创</a>
+              <a href="/tags/Go/" rel="tag"># Go</a>
+              <a href="/tags/net-http/" rel="tag"># net/http</a>
+              <a href="/tags/Request/" rel="tag"># Request</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/golang-copy-on-write-and-atomic.html" rel="prev" title="Golang写时复制是否是原子性的？">
+      <i class="fa fa-chevron-left"></i> Golang写时复制是否是原子性的？
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jiankunking"
+      src="/images/avatar/avatar.png">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">124</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">165</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https://blog.csdn.net/jiankunking" rel="noopener" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">982k</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/muse.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
+  </script>
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5e2e6dc5bd7af549261d',
+      clientSecret: 'f37069692932676f0ad9fbfecb5164aee191fe23',
+      repo        : 'blog-comments',
+      owner       : 'jiankunking',
+      admin       : ['jiankunking'],
+      id          : '61ec37b7a16d40cb1d25904078dd0401',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

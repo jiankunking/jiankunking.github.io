@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="历史背景日志对于程序开发人员而言应该再熟悉不过了,从最简单的测试程序到复杂的分布式应用,从客户端(页面、App)到服务端,从系统内核态到用户态,日志无处不在,开发人员需要通过日志分析程序问题,记录程序状态,日志几乎伴随软件发展的各个历史阶段:    单机软件开发阶段,日志最主要的功能就是定位与分析软件的问题； 分布式开发阶段,日志的功能在定位问题的基础上增加了业务分析的功能,业务系统会通常会记录业">
+<meta name="keywords" content="jiankunking">
+<meta property="og:type" content="website">
+<meta property="og:title" content="云原生场景下的日志解决方案">
+<meta property="og:url" content="http://jiankunking.com/bak/console-log.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="历史背景日志对于程序开发人员而言应该再熟悉不过了,从最简单的测试程序到复杂的分布式应用,从客户端(页面、App)到服务端,从系统内核态到用户态,日志无处不在,开发人员需要通过日志分析程序问题,记录程序状态,日志几乎伴随软件发展的各个历史阶段:    单机软件开发阶段,日志最主要的功能就是定位与分析软件的问题； 分布式开发阶段,日志的功能在定位问题的基础上增加了业务分析的功能,业务系统会通常会记录业">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-06-21T07:27:37.437Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="云原生场景下的日志解决方案">
+<meta name="twitter:description" content="历史背景日志对于程序开发人员而言应该再熟悉不过了,从最简单的测试程序到复杂的分布式应用,从客户端(页面、App)到服务端,从系统内核态到用户态,日志无处不在,开发人员需要通过日志分析程序问题,记录程序状态,日志几乎伴随软件发展的各个历史阶段:    单机软件开发阶段,日志最主要的功能就是定位与分析软件的问题； 分布式开发阶段,日志的功能在定位问题的基础上增加了业务分析的功能,业务系统会通常会记录业">
+
+<link rel="canonical" href="http://jiankunking.com/bak/console-log.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : false,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>云原生场景下的日志解决方案 | 衣舞晨风
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121070942-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">衣舞晨风</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">124</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">165</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+  
+  
+
+          <div class="content page posts-expand">
+            
+
+    
+    
+    
+    <div class="post-block" lang="zh-CN">
+      <header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">云原生场景下的日志解决方案
+</h1>
+
+<div class="post-meta">
+  
+
+</div>
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+          <h1 id="历史背景"><a href="#历史背景" class="headerlink" title="历史背景"></a>历史背景</h1><p>日志对于程序开发人员而言应该再熟悉不过了,从最简单的测试程序到复杂的分布式应用,从客户端(页面、App)到服务端,从系统内核态到用户态,日志无处不在,开发人员需要通过日志分析程序问题,记录程序状态,日志几乎伴随软件发展的各个历史阶段:  </p>
+<ul>
+<li>单机软件开发阶段,日志最主要的功能就是定位与分析软件的问题；</li>
+<li>分布式开发阶段,日志的功能在定位问题的基础上增加了业务分析的功能,业务系统会通常会记录业务相关的日志用于后续分析系统的使用情况；</li>
+<li>云原生开发阶段,日志相较于分布式阶段又引入了新的问题,如: 因应用动态编排(动态性)日志如何记录,大量微服务并发调用如何梳理日志时序与上下文等；</li>
+</ul>
+<h1 id="云原生日志"><a href="#云原生日志" class="headerlink" title="云原生日志"></a>云原生日志</h1><p>近年来随着以 Kubernetes 为代表的云原生技术的崛起，应用上云是大势所趋，随之而来的也为日志处理增加了新的挑战,如之前提到的日志如何记录,如何存储,如何检索等,以下简要罗列了云原生时代系统中日志处理面对的部分问题:</p>
+<ul>
+<li>动态性变强<br>在Kubernetes中，机器下线、上线、Pod销毁、扩容/缩容等都是常态，这种情况下日志的存在是瞬时的（例如如果Pod销毁后该Pod日志就不可见了），所以日志必须有实时采集与存储的能力。</li>
+<li>复杂性变强<br>在应用上云之前，大多数应用都是运行在某个服务器上，每个应用程序通常仅生成一个日志。现在随着应用上云、落地微服务架构，服务之间的依赖关系越来越复杂了，排查问题时如何关联各个维度、服务的日志将是一个困难的问题。</li>
+<li>日志结构复杂<br>在上云之后，绝大多数的开发者都习惯于通过终端输出日志，但这些日志有的是一条普通文本，有的是一条json，如何兼顾多种日志结构，满足不同的业务需求？</li>
+<li>日志与Trace<br>当应用开发者根据 Trace 定位到问题模块、方法的时候，如何查看该请求对应的日志上下文？<br>当应用开发者在日志中发现一个异常的时候，如何查看该日志对应请求的Trace上下文？</li>
+</ul>
+<h1 id="架构介绍"><a href="#架构介绍" class="headerlink" title="架构介绍"></a>架构介绍</h1><p>为了解决云原生平台日志处理面临的问题,开发者平台整合了业内流行的方案并结合海尔内部业务方的特有需求与特定应用场景作了定制化的修改(包括性能调优,开源组件源码调整等)<br>主要组件如下:  </p>
+<ul>
+<li><p>Filebeat(云原生平台中以Daemonset方式运行于每个Node中收集日志)</p>
+</li>
+<li><p>Kafka(消息中间件)</p>
+</li>
+<li><p>Elasticsearch(日志存储)</p>
+</li>
+<li><p>Kibana(数据查看、分析、图表展示)</p>
+</li>
+<li><p>自研高性能服务(负责日志存储与提取)</p>
+</li>
+</ul>
+<h2 id="整体架构"><a href="#整体架构" class="headerlink" title="整体架构"></a>整体架构</h2><p><img data-src="D:%5C360%E6%9E%81%E9%80%9F%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%8B%E8%BD%BD%5C%E6%97%A5%E5%BF%97%5Cimages%5Cconsole-log%5C%E6%9E%B6%E6%9E%84%E5%9B%BE.png" alt>  </p>
+<h1 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h1><p>针对云原生场景下的日志需求(上节所提出的问题)，云原生开发者平台提供了以下核心能力：</p>
+<h2 id="实时日志"><a href="#实时日志" class="headerlink" title="实时日志"></a>实时日志</h2><p>日志实时查询可实时同步查询运行中应用所输出的日志,方便快速定位问题,主要是用于在测试环境分析应用的出现的问题  </p>
+<p><img data-src="/images/console-log/%E6%97%A5%E5%BF%97%E6%A3%80%E7%B4%A2.png" alt></p>
+<h2 id="日志查询"><a href="#日志查询" class="headerlink" title="日志查询"></a>日志查询</h2><p>日志查询可以帮助开发人员从应用历史日志中快速检索与定位信息,可以通过关键字或是关键字的组合来查询,既可以用于定位应用问题也可以用于分析业务日志, 主要功能如下:</p>
+<ul>
+<li>历史日志快速检索(则在搜索框输入内容即可)</li>
+<li>日志上下文关联查询  </li>
+</ul>
+<p><img data-src="/images/console-log/%E6%97%A5%E5%BF%97%E6%A3%80%E7%B4%A2.png" alt></p>
+<p><img data-src="/images/console-log/%E6%97%A5%E5%BF%97%E4%B8%8A%E4%B8%8B%E6%96%87.png" alt></p>
+<h2 id="日志处理"><a href="#日志处理" class="headerlink" title="日志处理"></a>日志处理</h2><p>日志处理功能主要针对业务日志处理与分析,通过将特定的业务日志(支持过滤)按照某种方式进行结构化提取将其格式转换并单独存储,后续既可以给开发人员分析特定业务与可以提供给数据分析人员进行数据分析,主要功能如下:</p>
+<ul>
+<li>日志结构化提取与存储(支持三种结构化提取方式: dissect,grok,json)</li>
+<li>日志访问地理位置转换(如果日志提取中包含ip信息可以自动转换其地理位置)</li>
+<li>特定日志事件通知(可针对特定的日志触发通知)</li>
+<li>整合kibana将提取后的数据以图表展示  </li>
+</ul>
+<p><img data-src="/images/console-log/log-handle.png" alt></p>
+<p><img data-src="/images/console-log/%E6%97%A5%E5%BF%97kibana%E8%A7%86%E5%9B%BE.png" alt></p>
+<h2 id="日志与Trace"><a href="#日志与Trace" class="headerlink" title="日志与Trace"></a>日志与Trace</h2><p>如果应用在输出日志中整合了trace跟踪系统,后续分析时可以方便的查询相关trace上下文的日志集合并且支持日志与trace两都双向关联。</p>
+<h3 id="Trace到日志"><a href="#Trace到日志" class="headerlink" title="Trace到日志"></a>Trace到日志</h3><ul>
+<li>点击某个想要查看的请求；</li>
+<li>点击请求中的某一步，就可以在详情中看到日志了；  </li>
+</ul>
+<p><img data-src="/images/console-log/trace-log1.png" alt></p>
+<p><img data-src="/images/console-log/trace-log2.png" alt></p>
+<h3 id="日志到Trace"><a href="#日志到Trace" class="headerlink" title="日志到Trace"></a>日志到Trace</h3><ul>
+<li><p>找到自己关注那条日志；</p>
+</li>
+<li><p>点击蓝色的TID部分，即可跳转链路追踪查看Trace信息。  </p>
+<p><img data-src="/images/console-log/trace1.png" alt></p>
+<p><img data-src="/images/console-log/trace2.png" alt></p>
+</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>以上介绍了云原生开发者平台在日志部分提供主要功能,可以看到当前的核心功能既可以满足开发人员的需求又可以为业务与数据分析人员提供部分支持,但是还有一定的提升空间,例如数据存储的实时性还有待提高,数据检索的能力与关联查询的能力可以进一步提升,后续也会继续深入挖掘业务需求并结合海尔智家的特定场景为业务方赋能。</p>
+
+      </div>
+      
+      
+      
+    </div>
+    
+
+    
+    
+    
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#历史背景"><span class="nav-number">1.</span> <span class="nav-text">历史背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#云原生日志"><span class="nav-number">2.</span> <span class="nav-text">云原生日志</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#架构介绍"><span class="nav-number">3.</span> <span class="nav-text">架构介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#整体架构"><span class="nav-number">3.1.</span> <span class="nav-text">整体架构</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解决方案"><span class="nav-number">4.</span> <span class="nav-text">解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#实时日志"><span class="nav-number">4.1.</span> <span class="nav-text">实时日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#日志查询"><span class="nav-number">4.2.</span> <span class="nav-text">日志查询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#日志处理"><span class="nav-number">4.3.</span> <span class="nav-text">日志处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#日志与Trace"><span class="nav-number">4.4.</span> <span class="nav-text">日志与Trace</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Trace到日志"><span class="nav-number">4.4.1.</span> <span class="nav-text">Trace到日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#日志到Trace"><span class="nav-number">4.4.2.</span> <span class="nav-text">日志到Trace</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jiankunking"
+      src="/images/avatar/avatar.png">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">124</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">165</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https://blog.csdn.net/jiankunking" rel="noopener" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">982k</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/muse.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
+  </script>
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5e2e6dc5bd7af549261d',
+      clientSecret: 'f37069692932676f0ad9fbfecb5164aee191fe23',
+      repo        : 'blog-comments',
+      owner       : 'jiankunking',
+      admin       : ['jiankunking'],
+      id          : '9a02b7e6c9bcf3504b5dbe5bc3749cb2',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
