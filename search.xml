@@ -213,8 +213,8 @@
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -419,9 +419,9 @@
         <category>Performance</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>读书笔记</tag>
         <tag>原创</tag>
+        <tag>Performance</tag>
       </tags>
   </entry>
   <entry>
@@ -1587,8 +1587,8 @@
 <a id="more"></a>
 
 <h1 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h1><p>在看源码之前先梳理一下，自己对于更新疑惑的点：<br>为什么Elasticsearch更新与写入的性能会有比较大的差异？</p>
-<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>建议先看一下：<a href="https://jiankunking.com/elasticsearch-write-source-code-analysis.html">【Elasticsearch源码】 写入分析</a></p>
-<p>在<a href="https://jiankunking.com/elasticsearch-write-source-code-analysis.html">【Elasticsearch源码】 写入分析</a>中可以看到bulk请求最终在<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/bulk/TransportShardBulkAction.java" target="_blank" rel="noopener">TransportShardBulkAction</a> <a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/bulk/TransportShardBulkAction.java#L182" target="_blank" rel="noopener">doRun()</a>中执行的时候，还是通过一个循环，一个一个处理的，并没有什么神奇之处。</p>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>建议先看一下：<a href="https://jiankunking.com/elasticsearch-write-source-code-analysis.html" target="_blank" rel="noopener">【Elasticsearch源码】 写入分析</a></p>
+<p>在<a href="https://jiankunking.com/elasticsearch-write-source-code-analysis.html" target="_blank" rel="noopener">【Elasticsearch源码】 写入分析</a>中可以看到bulk请求最终在<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/bulk/TransportShardBulkAction.java" target="_blank" rel="noopener">TransportShardBulkAction</a> <a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/bulk/TransportShardBulkAction.java#L182" target="_blank" rel="noopener">doRun()</a>中执行的时候，还是通过一个循环，一个一个处理的，并没有什么神奇之处。</p>
 <p>下面看一下具体执行的代码<a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/bulk/TransportShardBulkAction.java" target="_blank" rel="noopener">executeBulkItemRequest</a> <a href="https://github.com/jiankunking/elasticsearch/blob/master/server/src/main/java/org/elasticsearch/action/bulk/TransportShardBulkAction.java#L238" target="_blank" rel="noopener">doRun()</a>：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"> /**</span><br><span class="line"> * Executes bulk item requests and handles request execution exceptions.</span><br><span class="line"> * @return &#123;@code true&#125; if request completed on this thread and the listener was invoked, &#123;@code false&#125; if the request triggered</span><br><span class="line"> *                      a mapping update that will finish and invoke the listener on a different thread</span><br><span class="line"> */</span><br><span class="line">static boolean executeBulkItemRequest(BulkPrimaryExecutionContext context, UpdateHelper updateHelper, LongSupplier nowInMillisSupplier,</span><br><span class="line">                                   MappingUpdatePerformer mappingUpdater, Consumer&lt;ActionListener&lt;Void&gt;&gt; waitForMappingUpdate,</span><br><span class="line">                                   ActionListener&lt;Void&gt; itemDoneListener) throws Exception &#123;</span><br><span class="line">    final DocWriteRequest.OpType opType = context.getCurrent().opType();</span><br><span class="line"></span><br><span class="line">    final UpdateHelper.Result updateResult;</span><br><span class="line">    if (opType == DocWriteRequest.OpType.UPDATE) &#123;</span><br><span class="line">        final UpdateRequest updateRequest = (UpdateRequest) context.getCurrent();</span><br><span class="line">        try &#123;</span><br><span class="line">            // </span><br><span class="line">            updateResult = updateHelper.prepare(updateRequest, context.getPrimary(), nowInMillisSupplier);</span><br><span class="line">        &#125; catch (Exception failure) &#123;</span><br><span class="line">            // we may fail translating a update to index or delete operation</span><br><span class="line">            // we use index result to communicate failure while translating update request</span><br><span class="line">            final Engine.Result result =</span><br><span class="line">                new Engine.IndexResult(failure, updateRequest.version());</span><br><span class="line">            context.setRequestToExecute(updateRequest);</span><br><span class="line">            context.markOperationAsExecuted(result);</span><br><span class="line">            context.markAsCompleted(context.getExecutionResult());</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">        // execute translated update request</span><br><span class="line">        switch (updateResult.getResponseResult()) &#123;</span><br><span class="line">            case CREATED:</span><br><span class="line">            case UPDATED:</span><br><span class="line">                IndexRequest indexRequest = updateResult.action();</span><br><span class="line">                IndexMetadata metadata = context.getPrimary().indexSettings().getIndexMetadata();</span><br><span class="line">                MappingMetadata mappingMd = metadata.mapping();</span><br><span class="line">                indexRequest.process(metadata.getCreationVersion(), mappingMd, updateRequest.concreteIndex());</span><br><span class="line">                context.setRequestToExecute(indexRequest);</span><br><span class="line">                break;</span><br><span class="line">            case DELETED:</span><br><span class="line">                context.setRequestToExecute(updateResult.action());</span><br><span class="line">                break;</span><br><span class="line">            case NOOP:</span><br><span class="line">                context.markOperationAsNoOp(updateResult.action());</span><br><span class="line">                context.markAsCompleted(context.getExecutionResult());</span><br><span class="line">                return true;</span><br><span class="line">            default:</span><br><span class="line">                throw new IllegalStateException(&quot;Illegal update operation &quot; + updateResult.getResponseResult());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        context.setRequestToExecute(context.getCurrent());</span><br><span class="line">        updateResult = null;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    assert context.getRequestToExecute() != null; // also checks that we&apos;re in TRANSLATED state</span><br><span class="line"></span><br><span class="line">    final IndexShard primary = context.getPrimary();</span><br><span class="line">    final long version = context.getRequestToExecute().version();</span><br><span class="line">    final boolean isDelete = context.getRequestToExecute().opType() == DocWriteRequest.OpType.DELETE;</span><br><span class="line">    final Engine.Result result;</span><br><span class="line">    if (isDelete) &#123;</span><br><span class="line">        final DeleteRequest request = context.getRequestToExecute();</span><br><span class="line">        result = primary.applyDeleteOperationOnPrimary(version, request.id(), request.versionType(),</span><br><span class="line">            request.ifSeqNo(), request.ifPrimaryTerm());</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        final IndexRequest request = context.getRequestToExecute();</span><br><span class="line">        result = primary.applyIndexOperationOnPrimary(version, request.versionType(), new SourceToParse(</span><br><span class="line">                request.index(), request.id(), request.source(), request.getContentType(), request.routing()),</span><br><span class="line">                request.ifSeqNo(), request.ifPrimaryTerm(), request.getAutoGeneratedTimestamp(), request.isRetry());</span><br><span class="line">    &#125;</span><br><span class="line">    if (result.getResultType() == Engine.Result.Type.MAPPING_UPDATE_REQUIRED) &#123;</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            primary.mapperService().merge(MapperService.SINGLE_MAPPING_NAME,</span><br><span class="line">                new CompressedXContent(result.getRequiredMappingUpdate(), XContentType.JSON, ToXContent.EMPTY_PARAMS),</span><br><span class="line">                MapperService.MergeReason.MAPPING_UPDATE_PREFLIGHT);</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            logger.info(() -&gt; new ParameterizedMessage(&quot;&#123;&#125; mapping update rejected by primary&quot;, primary.shardId()), e);</span><br><span class="line">            onComplete(exceptionToResult(e, primary, isDelete, version), context, updateResult);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mappingUpdater.updateMappings(result.getRequiredMappingUpdate(), primary.shardId(),</span><br><span class="line">            new ActionListener&lt;&gt;() &#123;</span><br><span class="line">                @Override</span><br><span class="line">                public void onResponse(Void v) &#123;</span><br><span class="line">                    context.markAsRequiringMappingUpdate();</span><br><span class="line">                    waitForMappingUpdate.accept(</span><br><span class="line">                        ActionListener.runAfter(new ActionListener&lt;&gt;() &#123;</span><br><span class="line">                            @Override</span><br><span class="line">                            public void onResponse(Void v) &#123;</span><br><span class="line">                                assert context.requiresWaitingForMappingUpdate();</span><br><span class="line">                                context.resetForExecutionForRetry();</span><br><span class="line">                            &#125;</span><br><span class="line"></span><br><span class="line">                            @Override</span><br><span class="line">                            public void onFailure(Exception e) &#123;</span><br><span class="line">                                context.failOnMappingUpdate(e);</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;, () -&gt; itemDoneListener.onResponse(null))</span><br><span class="line">                    );</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                @Override</span><br><span class="line">                public void onFailure(Exception e) &#123;</span><br><span class="line">                    onComplete(exceptionToResult(e, primary, isDelete, version), context, updateResult);</span><br><span class="line">                    // Requesting mapping update failed, so we don&apos;t have to wait for a cluster state update</span><br><span class="line">                    assert context.isInitial();</span><br><span class="line">                    itemDoneListener.onResponse(null);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        return false;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        onComplete(result, context, updateResult);</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Prepares an update request by converting it into an index or delete request or an update response (no action).</span><br><span class="line"> */</span><br><span class="line">public Result prepare(UpdateRequest request, IndexShard indexShard, LongSupplier nowInMillis) &#123;</span><br><span class="line">    // 这里是实时获取</span><br><span class="line">    // 获取结果最终会到InternalEngine </span><br><span class="line">    // get(Get get, DocumentMapper mapper, Function&lt;Engine.Searcher, Engine.Searcher&gt; searcherWrapper)</span><br><span class="line">    // 后面会附上 代码</span><br><span class="line">    final GetResult getResult = indexShard.getService().getForUpdate(</span><br><span class="line">        request.id(), request.ifSeqNo(), request.ifPrimaryTerm());</span><br><span class="line">    return prepare(indexShard.shardId(), request, getResult, nowInMillis);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public GetResult getForUpdate(String id, long ifSeqNo, long ifPrimaryTerm) &#123;</span><br><span class="line">    // realtime是true</span><br><span class="line">    return get(id, new String[]&#123;RoutingFieldMapper.NAME&#125;, true,</span><br><span class="line">        Versions.MATCH_ANY, VersionType.INTERNAL, ifSeqNo, ifPrimaryTerm, FetchSourceContext.FETCH_SOURCE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private GetResult get(String id, String[] gFields, boolean realtime, long version, VersionType versionType,</span><br><span class="line">                      long ifSeqNo, long ifPrimaryTerm, FetchSourceContext fetchSourceContext) &#123;</span><br><span class="line">    currentMetric.inc();</span><br><span class="line">    try &#123;</span><br><span class="line">        long now = System.nanoTime();</span><br><span class="line">        GetResult getResult =</span><br><span class="line">            innerGet(id, gFields, realtime, version, versionType, ifSeqNo, ifPrimaryTerm, fetchSourceContext);</span><br><span class="line"></span><br><span class="line">        if (getResult.isExists()) &#123;</span><br><span class="line">            existsMetric.inc(System.nanoTime() - now);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            missingMetric.inc(System.nanoTime() - now);</span><br><span class="line">        &#125;</span><br><span class="line">        return getResult;</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        currentMetric.dec();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private GetResult innerGet(String id, String[] gFields, boolean realtime, long version, VersionType versionType,</span><br><span class="line">                           long ifSeqNo, long ifPrimaryTerm, FetchSourceContext fetchSourceContext) &#123;</span><br><span class="line">    fetchSourceContext = normalizeFetchSourceContent(fetchSourceContext, gFields);</span><br><span class="line"></span><br><span class="line">    Engine.GetResult get = indexShard.get(new Engine.Get(realtime, realtime, id)</span><br><span class="line">        .version(version).versionType(versionType).setIfSeqNo(ifSeqNo).setIfPrimaryTerm(ifPrimaryTerm));</span><br><span class="line">    assert get.isFromTranslog() == false || realtime : &quot;should only read from translog if realtime enabled&quot;;</span><br><span class="line">    if (get.exists() == false) &#123;</span><br><span class="line">        get.close();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (get == null || get.exists() == false) &#123;</span><br><span class="line">        return new GetResult(shardId.getIndexName(), id, UNASSIGNED_SEQ_NO, UNASSIGNED_PRIMARY_TERM, -1, false, null, null, null);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    try &#123;</span><br><span class="line">        // break between having loaded it from translog (so we only have _source), and having a document to load</span><br><span class="line">        return innerGetLoadFromStoredFields(id, gFields, fetchSourceContext, get, mapperService);</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        get.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public Engine.GetResult get(Engine.Get get) &#123;</span><br><span class="line">    readAllowed();</span><br><span class="line">    DocumentMapper mapper = mapperService.documentMapper();</span><br><span class="line">    if (mapper == null) &#123;</span><br><span class="line">        return GetResult.NOT_EXISTS;</span><br><span class="line">    &#125;</span><br><span class="line">    return getEngine().get(get, mapper, this::wrapSearcher);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"> /**</span><br><span class="line"> * Prepares an update request by converting it into an index or delete request or an update response (no action, in the event of a</span><br><span class="line"> * noop).</span><br><span class="line"> */</span><br><span class="line">protected Result prepare(ShardId shardId, UpdateRequest request, final GetResult getResult, LongSupplier nowInMillis) &#123;</span><br><span class="line">    if (getResult.isExists() == false) &#123;</span><br><span class="line">        // If the document didn&apos;t exist, execute the update request as an upsert</span><br><span class="line">        return prepareUpsert(shardId, request, getResult, nowInMillis);</span><br><span class="line">    &#125; else if (getResult.internalSourceRef() == null) &#123;</span><br><span class="line">        // no source, we can&apos;t do anything, throw a failure...</span><br><span class="line">        throw new DocumentSourceMissingException(shardId, request.id());</span><br><span class="line">    &#125; else if (request.script() == null &amp;&amp; request.doc() != null) &#123;</span><br><span class="line">        // The request has no script, it is a new doc that should be merged with the old document</span><br><span class="line">        return prepareUpdateIndexRequest(shardId, request, getResult, request.detectNoop());</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // The request has a script (or empty script), execute the script and prepare a new index request</span><br><span class="line">        return prepareUpdateScriptRequest(shardId, request, getResult, nowInMillis);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -1614,8 +1614,8 @@
 
 ]]></content>
       <tags>
-        <tag>Performance</tag>
         <tag>原创</tag>
+        <tag>Performance</tag>
         <tag>ElasticSearch</tag>
         <tag>源码</tag>
         <tag>Update</tag>
@@ -1767,8 +1767,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>原创</tag>
+        <tag>Performance</tag>
         <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Tuning</tag>
@@ -1778,7 +1778,7 @@
   <entry>
     <title>404</title>
     <url>/404.html</url>
-    <content><![CDATA[<p><a href="https://jiankunking.com">如果你来访我，我不在，</a><br><a href="https://jiankunking.com">请和我门外的花坐一会儿，</a><br><a href="https://jiankunking.com">它们很温暖，我注视它们很多很多日子了。</a></p>
+    <content><![CDATA[<p><a href="https://jiankunking.com" target="_blank" rel="noopener">如果你来访我，我不在，</a><br><a href="https://jiankunking.com" target="_blank" rel="noopener">请和我门外的花坐一会儿，</a><br><a href="https://jiankunking.com" target="_blank" rel="noopener">它们很温暖，我注视它们很多很多日子了。</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1860,7 +1860,7 @@
 <p>所以说，还是在数据入es时，拆分到合适的索引，效果最好。</p>
 <p>推荐阅读：</p>
 <ul>
-<li><p><a href="https://jiankunking.com/elasticsearch-performance-tuning-practice-at-ebay.html">https://jiankunking.com/elasticsearch-performance-tuning-practice-at-ebay.html</a></p>
+<li><p><a href="https://jiankunking.com/elasticsearch-performance-tuning-practice-at-ebay.html" target="_blank" rel="noopener">https://jiankunking.com/elasticsearch-performance-tuning-practice-at-ebay.html</a></p>
 </li>
 <li><p><a href="https://www.easyice.cn/archives/350" target="_blank" rel="noopener">https://www.easyice.cn/archives/350</a></p>
 </li>
@@ -2240,7 +2240,7 @@
 <li>会拉升代码维护的成本。对于写代码/维护代码的人，有一定的要求（需要学习语法糖）。</li>
 <li>对于非 CPU密集型的程序，性能方面没有什么提升。</li>
 </ul>
-<p>拓展：<a href="https://jiankunking.com/java-lambda.html">Java Lambda表达式 实现原理分析</a></p>
+<p>拓展：<a href="https://jiankunking.com/java-lambda.html" target="_blank" rel="noopener">Java Lambda表达式 实现原理分析</a></p>
 <h1 id="CompletableFuture"><a href="#CompletableFuture" class="headerlink" title="CompletableFuture"></a>CompletableFuture</h1><p>CompletableFuture这种回调底层还是Fork/Join框架，Fork/Join对于io这种操作还是会阻塞线程，而且CompletableFuture默认线程数是与CPU核数一样的。在现在容器化的场景下，CPU核数都不会很多（一般都是个位数），那么使用CompletableFuture是执行io操作是不是会更早的无响应？因为个位数的线程很快就都被阻塞了。</p>
 <blockquote>
 <p>这里说一下我的理解：</p>
@@ -2250,10 +2250,10 @@
 <p>– <cite>李玥</cite></p>
 </blockquote>
 <h1 id="Spring-Reactive"><a href="#Spring-Reactive" class="headerlink" title="Spring Reactive"></a>Spring Reactive</h1><p>Spring Reactive基于Netty，用更少的线程可以满足更多的并发请求，可以减少微服务部署的实例，但对于使用者来说Reactor不是很友好，而且排查问题麻烦。</p>
-<p>拓展：<a href="https://jiankunking.com/spring-webflux-vs-spring-mvc.html">Spring WebFlux vs Spring MVC</a></p>
+<p>拓展：<a href="https://jiankunking.com/spring-webflux-vs-spring-mvc.html" target="_blank" rel="noopener">Spring WebFlux vs Spring MVC</a></p>
 <h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>目前来看CompletableFuture、Lambda、Reactive，对于目前Web开发而言可以说是意义不大，尤其是CompletableFuture、Spring Reactive，终将被<a href="http://openjdk.java.net/projects/loom/" target="_blank" rel="noopener">Loom项目</a>代替或者将基于<a href="http://openjdk.java.net/projects/loom/" target="_blank" rel="noopener">Loom</a>再次开发。</p>
 <p><code>Java目前的问题在于语言层面没有协程这种东西，所以io操作仍然会阻塞线程（除非基于Netty开发）。</code></p>
-<p>Java在云原生的路上，内存归还OS问题，已在G1、ZGC中解决了，剩下的就是协程跟<a href="https://jiankunking.com/spring-boot-clound-native-by-graalvm.html">AOT</a>了。</p>
+<p>Java在云原生的路上，内存归还OS问题，已在G1、ZGC中解决了，剩下的就是协程跟<a href="https://jiankunking.com/spring-boot-clound-native-by-graalvm.html" target="_blank" rel="noopener">AOT</a>了。</p>
 <!-- 最早结识Lambda是在14、15年的时候，那时候主要是写C#,刚开始的感觉是惊艳，竟然可以把代码写的如此简洁。
 
 后来写了一段时间发现有这么几个问题：
@@ -3710,8 +3710,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>原创</tag>
+        <tag>Performance</tag>
         <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Size</tag>
@@ -4458,8 +4458,8 @@
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>原创</tag>
       </tags>
   </entry>
@@ -4866,8 +4866,8 @@
         <category>Interview</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>读书笔记</tag>
+        <tag>Performance</tag>
       </tags>
   </entry>
   <entry>
@@ -6250,8 +6250,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>Microservice</tag>
       </tags>
   </entry>
@@ -6517,8 +6517,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>OAuth</tag>
         <tag>Login</tag>
       </tags>
@@ -6877,8 +6877,8 @@ use one vs other -->
         <category>Network</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>读书笔记</tag>
+        <tag>Performance</tag>
       </tags>
   </entry>
   <entry>
@@ -9998,7 +9998,7 @@ use one vs other -->
 <p>阅读本文前，推荐先阅读以下两篇文章，以便能更好的对比理解：</p>
 <ul>
 <li><a href="https://www.jiankunking.com/java-concurrent-atomic-package.html" target="_blank" rel="noopener">译-Java-Concurrent-Atomic-Package-详解</a></li>
-<li><a href="https://jiankunking.com/java-juc-atomic-atomiclong.html">Java-JUC-Atomic-AtomicLong</a></li>
+<li><a href="https://jiankunking.com/java-juc-atomic-atomiclong.html" target="_blank" rel="noopener">Java-JUC-Atomic-AtomicLong</a></li>
 </ul>
 <p>LongAdder是JDK 1.8 新增的原子类，基于Striped64实现。 从官方文档看，LongAdder在高并发的场景下会比AtomicLong 具有更好的性能，代价是消耗更多的内存空间：</p>
 <blockquote>
@@ -10841,8 +10841,8 @@ use one vs other -->
         <category>Database</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>Design</tag>
         <tag>Database</tag>
         <tag>Oracle</tag>
@@ -11130,8 +11130,8 @@ use one vs other -->
         <category>Java</category>
       </categories>
       <tags>
-        <tag>Performance</tag>
         <tag>读书笔记</tag>
+        <tag>Performance</tag>
         <tag>Java</tag>
         <tag>GC</tag>
         <tag>JVM</tag>
@@ -11992,8 +11992,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>Multi-Live</tag>
         <tag>High-Available</tag>
       </tags>
@@ -12324,9 +12324,9 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
+        <tag>读书笔记</tag>
         <tag>Architecture</tag>
         <tag>Distributed</tag>
-        <tag>读书笔记</tag>
         <tag>Cache</tag>
         <tag>Consistent</tag>
       </tags>
@@ -12544,8 +12544,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -12618,8 +12618,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -12670,8 +12670,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -12693,8 +12693,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
@@ -12735,8 +12735,8 @@ table th:nth-of-type(2) {
         <category>MySQL</category>
       </categories>
       <tags>
-        <tag>读书笔记</tag>
         <tag>MySQL</tag>
+        <tag>读书笔记</tag>
         <tag>InnoDB</tag>
       </tags>
   </entry>
