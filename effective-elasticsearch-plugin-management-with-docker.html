@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="原文地址:https://www.elastic.co/cn/blog/elasticsearch-docker-plugin-management">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2022-12-27T07:51:32.602Z">
+<meta property="og:updated_time" content="2022-12-28T03:28:09.142Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Effective Elasticsearch Plugin Management with Docker">
 <meta name="twitter:description" content="原文地址:https://www.elastic.co/cn/blog/elasticsearch-docker-plugin-management">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-12-27 15:51:32" itemprop="dateModified" datetime="2022-12-27T15:51:32+08:00">2022-12-27</time>
+                <time title="修改时间：2022-12-28 11:28:09" itemprop="dateModified" datetime="2022-12-28T11:28:09+08:00">2022-12-28</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -293,7 +293,7 @@
 </blockquote>
 <a id="more"></a>
 
-<p>如果你正在用容器来运行elasticsearch,那么有一些事项需要时刻注意。在管理有状态服务和守护进程时尤其如此——当将数据持久化在临时容器之外变得很重要时。</p>
+<p>如果你正在用容器来运行elasticsearch,那么有一些事项需要注意。在管理有状态服务和守护进程时尤其如此——当将数据持久化在临时容器之外变得很重要时。</p>
 <p>在容器中使用Elasticsearch插件就是一个例子，无论是以可重复、可跟踪的方式安装它们，还是管理插件配置和数据。</p>
 <p>在这篇文章中，我们将探讨一些在Docker和Elasticsearch中实现合理插件管理的选项。</p>
 <h1 id="Docker-持久性入门"><a href="#Docker-持久性入门" class="headerlink" title="Docker 持久性入门"></a>Docker 持久性入门</h1><p>与版本控制系统中更改文档一样，更改正在运行的容器中的文档系统会在正在运行的镜像中引入差异。如果数据和更改需要在临时容器的范围之外永久保留，则需要采取措施。</p>
@@ -303,7 +303,7 @@
 <p>在这种情况下，管理插件的存在最简单，只需使用Dockerfile扩展镜像即可。 例如：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM elasticsearch:2</span><br><span class="line"></span><br><span class="line">RUN /usr/share/elasticsearch/bin/plugin install --batch cloud-aws</span><br></pre></td></tr></table></figure>
 
-<p>这个<code>Dockerfile</code>从Docker Hub的维护者提供的Elasticsearch镜像开始，并运行一个简单的插件安装命令。然后可以通过标签构建和引用此图像：</p>
+<p>这个<code>Dockerfile</code>从Docker Hub的维护者提供的Elasticsearch镜像开始，并运行一个简单的插件安装命令。然后可以通过标签构建和引用此镜像：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker build -t elasticsearch-aws .</span><br></pre></td></tr></table></figure>
 
 <!-- 当在与Dockerfile相同的目录中运行时，将构建名称为elasticsearch-aws的镜像，现在可以在未来的Docker命令中引用，当启动具有从原始容器继承的行为的新容器时。 -->
@@ -351,7 +351,7 @@
 <li>在挂载卷中维护持久数据。将您的索引数据和插件配置与容器镜像分开存储可确保您的数据受到控制并且容器保持短暂。</li>
 <li>测试！在部署任何生产基础设施之前，确保Elasticsearch在Docker中的行为符合预期，尤其是在网络通信（包括单播和IP地址绑定行为）、JVM资源分配和插件功能方面。</li>
 </ul>
-<h1 id="新版本实例"><a href="#新版本实例" class="headerlink" title="新版本实例"></a>新版本实例</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FROM elasticsearch:7.13.4</span><br><span class="line"></span><br><span class="line"># RUN ./bin/elasticsearch-plugin install --batch https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.13.4/elasticsearch-analysis-ik-7.13.4.zip</span><br><span class="line">ADD elasticsearch-analysis-ik-7.13.4.zip /usr/share/elasticsearch</span><br><span class="line">RUN ./bin/elasticsearch-plugin install --batch file:///usr/share/elasticsearch/elasticsearch-analysis-ik-7.13.4.zip</span><br></pre></td></tr></table></figure>
+<h1 id="新版本示例"><a href="#新版本示例" class="headerlink" title="新版本示例"></a>新版本示例</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FROM elasticsearch:7.13.4</span><br><span class="line"></span><br><span class="line"># RUN ./bin/elasticsearch-plugin install --batch https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.13.4/elasticsearch-analysis-ik-7.13.4.zip</span><br><span class="line">ADD elasticsearch-analysis-ik-7.13.4.zip /usr/share/elasticsearch</span><br><span class="line">RUN ./bin/elasticsearch-plugin install --batch file:///usr/share/elasticsearch/elasticsearch-analysis-ik-7.13.4.zip</span><br></pre></td></tr></table></figure>
     </div>
 
     
@@ -512,7 +512,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Docker-持久性入门"><span class="nav-number">1.</span> <span class="nav-text">Docker 持久性入门</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#管理基础插件"><span class="nav-number">2.</span> <span class="nav-text">管理基础插件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#更复杂的插件"><span class="nav-number">3.</span> <span class="nav-text">更复杂的插件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Example-Shield"><span class="nav-number">3.1.</span> <span class="nav-text">Example: Shield</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Adding-SSL-TLS"><span class="nav-number">3.2.</span> <span class="nav-text">Adding SSL/TLS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#新版本实例"><span class="nav-number">5.</span> <span class="nav-text">新版本实例</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Docker-持久性入门"><span class="nav-number">1.</span> <span class="nav-text">Docker 持久性入门</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#管理基础插件"><span class="nav-number">2.</span> <span class="nav-text">管理基础插件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#更复杂的插件"><span class="nav-number">3.</span> <span class="nav-text">更复杂的插件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Example-Shield"><span class="nav-number">3.1.</span> <span class="nav-text">Example: Shield</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Adding-SSL-TLS"><span class="nav-number">3.2.</span> <span class="nav-text">Adding SSL/TLS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#新版本示例"><span class="nav-number">5.</span> <span class="nav-text">新版本示例</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
