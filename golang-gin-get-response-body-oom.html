@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="有轮子尽量用轮子 😭 😭 😭 😭 😭 😭">
-<meta name="keywords" content="Go,OOM,Gin,Response,Body">
+<meta name="keywords" content="OOM,Go,Gin,Response,Body">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Gin获取Response Body引发的OOM">
 <meta property="og:url" content="http://jiankunking.com/golang-gin-get-response-body-oom.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="有轮子尽量用轮子 😭 😭 😭 😭 😭 😭">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-03-03T18:19:48.624Z">
+<meta property="og:updated_time" content="2023-03-03T18:22:12.487Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Gin获取Response Body引发的OOM">
 <meta name="twitter:description" content="有轮子尽量用轮子 😭 😭 😭 😭 😭 😭">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-03-04 02:19:48" itemprop="dateModified" datetime="2023-03-04T02:19:48+08:00">2023-03-04</time>
+                <time title="修改时间：2023-03-04 02:22:12" itemprop="dateModified" datetime="2023-03-04T02:22:12+08:00">2023-03-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -311,7 +311,7 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line">package server</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;bytes&quot;</span><br><span class="line">	&quot;fmt&quot;</span><br><span class="line">	&quot;net/http&quot;</span><br><span class="line">	&quot;strings&quot;</span><br><span class="line"></span><br><span class="line">	&quot;github.com/gin-gonic/gin&quot;</span><br><span class="line">	jsoniter &quot;github.com/json-iterator/go&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">var json = jsoniter.ConfigCompatibleWithStandardLibrary</span><br><span class="line"></span><br><span class="line">type BodyDumpResponseWriter struct &#123;</span><br><span class="line">	gin.ResponseWriter</span><br><span class="line">	body *bytes.Buffer</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (w *BodyDumpResponseWriter) Write(b []byte) (int, error) &#123;</span><br><span class="line">	// 文件下载类请求,不再缓存相应结果</span><br><span class="line">	if !isFileDownLoad(w.Header()) &#123;</span><br><span class="line">		w.body.Write(b)</span><br><span class="line">	&#125;</span><br><span class="line">	return w.ResponseWriter.Write(b)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func isNoNeedToReadResponse(req *http.Request) bool &#123;</span><br><span class="line">	if isSSE(req) || isWebsocket(req) &#123;</span><br><span class="line">		return true</span><br><span class="line">	&#125;</span><br><span class="line">	return false</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func isSSE(req *http.Request) bool &#123;</span><br><span class="line">	contentType := req.Header.Get(&quot;Accept&quot;)</span><br><span class="line">	if contentType == &quot;&quot; &#123;</span><br><span class="line">		contentType = req.Header.Get(&quot;accept&quot;)</span><br><span class="line">	&#125;</span><br><span class="line">	contentType = strings.ToLower(contentType)</span><br><span class="line">	// sse</span><br><span class="line">	if !strings.Contains(contentType, &quot;text/event-stream&quot;) &#123;</span><br><span class="line">		return false</span><br><span class="line">	&#125;</span><br><span class="line">	return true</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Basics_of_HTTP/MIME_types</span><br><span class="line">// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition</span><br><span class="line">func isFileDownLoad(responseHeader http.Header) bool &#123;</span><br><span class="line">	contentType := strings.ToLower(responseHeader.Get(&quot;Content-Type&quot;))</span><br><span class="line">	if strings.Contains(contentType, &quot;application/octet-stream&quot;) &#123;</span><br><span class="line">		return true</span><br><span class="line">	&#125;</span><br><span class="line">	contentDisposition := responseHeader.Get(&quot;Content-Disposition&quot;)</span><br><span class="line">	if contentDisposition != &quot;&quot; &#123;</span><br><span class="line">		return true</span><br><span class="line">	&#125;</span><br><span class="line">	return false</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func isWebsocket(req *http.Request) bool &#123;</span><br><span class="line">	conntype := strings.ToLower(req.Header.Get(&quot;Connection&quot;))</span><br><span class="line">	upgrade := strings.ToLower(req.Header.Get(&quot;Upgrade&quot;))</span><br><span class="line">	if conntype == &quot;upgrade&quot; &amp;&amp; upgrade == &quot;websocket&quot; &#123;</span><br><span class="line">		return true</span><br><span class="line">	&#125;</span><br><span class="line">	return false</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func ReadResponseBody(ctx *gin.Context) &#123;</span><br><span class="line"></span><br><span class="line">	if isNoNeedToReadResponse(ctx.Request) &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	rbw := &amp;BodyDumpResponseWriter&#123;body: &amp;bytes.Buffer&#123;&#125;, ResponseWriter: ctx.Writer&#125;</span><br><span class="line">	ctx.Writer = rbw</span><br><span class="line"></span><br><span class="line">	ctx.Next()</span><br><span class="line"></span><br><span class="line">	contentType := ctx.Writer.Header().Get(&quot;content-type&quot;)</span><br><span class="line">	if !strings.Contains(contentType, &quot;application/json&quot;) &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	rawResp := rbw.body.String()</span><br><span class="line">	if len(rawResp) == 0 &#123;</span><br><span class="line">		AbnormalPrint(ctx, &quot;resp-empty&quot;, rawResp)</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	ctx.Set(ctx_raw_response_body, rawResp)</span><br><span class="line"></span><br><span class="line">	// 序列化Body,并放到ctx中</span><br><span class="line">	// 读取响应Body的目的是记录审计日志用</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// AbnormalPrint 异常情况，打印信息到日志</span><br><span class="line">func AbnormalPrint(ctx *gin.Context, typ string, rawResp string) &#123;</span><br><span class="line">// 具体代码忽略</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>其实，写这篇文章的目的并不是为了阐述这个问题如何解决，而是想说:</p>
 <ul>
-<li>Copy 代码的时候留意下自己的场景</li>
+<li>Copy 代码的时候需要留意下自己的场景</li>
 <li>尽量用轮子，而不是自己去造轮子</li>
 </ul>
 <p>在我们手写API网关的时候，还遇到过以下问题</p>
@@ -345,6 +345,9 @@
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\fraternity-sentry.html" rel="bookmark">友爱的Sentry</a></div>
+    </li>
+    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\golang-net-http-request-processing-flow.html" rel="bookmark">Golang net/http 请求处理流程分析</a></div>
     </li>
     <li class="popular-posts-item">
@@ -355,9 +358,6 @@
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\go-concurrency-patterns-context.html" rel="bookmark">[译]Go 并发 : Context</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\go-net-http-timeout-sequence-diagram.html" rel="bookmark">[译]关于Go net/http 超时完全指南</a></div>
     </li>
   </ul>
 
@@ -420,8 +420,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Go/" rel="tag"># Go</a>
               <a href="/tags/OOM/" rel="tag"># OOM</a>
+              <a href="/tags/Go/" rel="tag"># Go</a>
               <a href="/tags/Gin/" rel="tag"># Gin</a>
               <a href="/tags/Response/" rel="tag"># Response</a>
               <a href="/tags/Body/" rel="tag"># Body</a>
