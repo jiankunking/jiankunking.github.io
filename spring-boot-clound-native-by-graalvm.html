@@ -269,7 +269,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.6k</span>
+              <span>2.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -290,7 +290,6 @@
       
         <p>云原生时代的Spring Boot/Java</p>
 <a id="more"></a>
-
 <p>Spring Boot毫无疑问是Java后端开发的第一大框架，基于Spring Boot有着一套完整的工具链，各种各样的starter。对于日常业务开发而言，可以说是轮子很全。</p>
 <p>但随着云原生时代的到来，Spring Boot应用或者说是Java应用却暴露出了一些问题，其中比较突出的有：</p>
 <ul>
@@ -300,7 +299,6 @@
 <p>其中启动慢的主要原因：代码编译。</p>
 <p>当然对于Spring Boot来说，Bean实例注入也会花费一定的时间，但花费时间相比编译会小的多。大家可以通过开启延迟初始化试试。</p>
  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">spring:</span><br><span class="line">  main:</span><br><span class="line">    lazy-initialization: true</span><br></pre></td></tr></table></figure>
-
 <blockquote>
 <p>Spring Boot 2.2开始支持。</p>
 </blockquote>
@@ -330,26 +328,26 @@
 <p>其实，Java想要解决云原生时代的问题，目前的方案基本都是基于GraalVM来的，不管是Quarkus还是Micronaut都是。</p>
 <p>那么，Spring Boot有没有类似的方案呢？</p>
 <p>答案是有的。</p>
-<p>在<a href="这个项目的状态是alpha">spring-projects-experimental</a> Organizations下有这么一个项目：<a href="https://github.com/spring-projects-experimental/spring-graalvm-native" target="_blank" rel="noopener">spring-graalvm-native</a></p>
+<p>在<a href="%E8%BF%99%E4%B8%AA%E9%A1%B9%E7%9B%AE%E7%9A%84%E7%8A%B6%E6%80%81%E6%98%AFalpha">spring-projects-experimental</a> Organizations下有这么一个项目：<a href="https://github.com/spring-projects-experimental/spring-graalvm-native" target="_blank" rel="noopener">spring-graalvm-native</a></p>
 <p>目前已发布到0.7.0 release，不过从github的文档中可以看到这个项目的状态仍然是alpha，也就是说目前用到生产中还是为时过早。</p>
 <p><img data-src="/images/spring-graalvm-native/alpha.png" alt></p>
 <p>希望能早日spring-graalvm-native能早日发布生产可用版本吧。</p>
 <p>graalvm+AOT如此美好？</p>
 <p>其实，GraalVM目前来看还是有一些局限的：</p>
-<p>Not Supported </p>
+<p>Not Supported</p>
 <ul>
 <li>Dynamic Class Loading/Unloading</li>
 <li>Runtime Bytecode Generation *</li>
-<li>InvokeDynamic Bytecode and Method Handles </li>
-<li>……</li>
+<li>InvokeDynamic Bytecode and Method Handles</li>
+<li>…</li>
 </ul>
 <p>Require Configuration</p>
 <ul>
-<li>Resource Access </li>
+<li>Resource Access</li>
 <li>Reflection</li>
 <li>Dynamic Proxy（JDK，not CGLIB）</li>
 <li>JNI (Java Native Interface)</li>
-<li>……</li>
+<li>…</li>
 </ul>
 <p>更详细限制可以看：</p>
 <p><a href="https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md" target="_blank" rel="noopener">https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md</a></p>
@@ -357,19 +355,22 @@
 <p>具体做法：<a href="https://www.graalvm.org/docs/release-notes/19_2/" target="_blank" rel="noopener">https://www.graalvm.org/docs/release-notes/19_2/</a></p>
 <p>JIT会做的典型的PGO<a href="#fnref:1"><sup>1</sup></a>：</p>
 <ul>
-<li><p>type-feedback optimization：主要针对多态的面向对象程序来做优化。根据profile收集到的receiver type信息来把原本多态的虚方法调用点（virtual method call site）或属性访问点（property access site）根据类型来去虚化（devirtualize）。</p>
+<li>
+<p>type-feedback optimization：主要针对多态的面向对象程序来做优化。根据profile收集到的receiver type信息来把原本多态的虚方法调用点（virtual method call site）或属性访问点（property access site）根据类型来去虚化（devirtualize）。</p>
 </li>
-<li><p>single-value profiling：这个相对少见一些。它的思路是有些参数、函数返回值可能在一次运行中只会遇到一个具体值。如果是这样的话可以把那个具体值给记录下来，然后在JIT编译时把它当作常量来做优化，于是常见的常量相关优化（常量折叠、条件常量传播等）就可以针对一个静态意义上本来不是常量的值来做了。branch-profile-based code scheduling：主要目的是把“热”的（频繁执行的）代码路径集中放在一起，而把“冷”的（不频繁执行的）代码路径放到别的地方。AOT编译的话常常会利用一些静态的启发条件来猜测哪些路径比较热，或者让用户指定哪些路径比较热（例如likely()/unlikely()宏），而JIT搭配PGO的话可以有比较准确的路径热度信息，对应可以做的优化也就更吻合实际执行情况，于是效果会更好。</p>
+<li>
+<p>single-value profiling：这个相对少见一些。它的思路是有些参数、函数返回值可能在一次运行中只会遇到一个具体值。如果是这样的话可以把那个具体值给记录下来，然后在JIT编译时把它当作常量来做优化，于是常见的常量相关优化（常量折叠、条件常量传播等）就可以针对一个静态意义上本来不是常量的值来做了。branch-profile-based code scheduling：主要目的是把“热”的（频繁执行的）代码路径集中放在一起，而把“冷”的（不频繁执行的）代码路径放到别的地方。AOT编译的话常常会利用一些静态的启发条件来猜测哪些路径比较热，或者让用户指定哪些路径比较热（例如likely()/unlikely()宏），而JIT搭配PGO的话可以有比较准确的路径热度信息，对应可以做的优化也就更吻合实际执行情况，于是效果会更好。</p>
 </li>
-<li><p>profile-guided inlining heuristics：根据profile信息得知函数调用点的热度，从而影响内联决策——对某个调用点，到底值不值得把目标函数内联进来。</p>
+<li>
+<p>profile-guided inlining heuristics：根据profile信息得知函数调用点的热度，从而影响内联决策——对某个调用点，到底值不值得把目标函数内联进来。</p>
 </li>
-<li><p>implicit exception：隐式异常，例如Java/C#的空指针异常检查，又例如Java/C#的除以零检查。这些异常如果在某块代码里从来没有发生过，就可以用更快的方式来实现，而不必生成显式检查代码。但如果在某块代码经常发生这种异常，则显式检查会更快。</p>
+<li>
+<p>implicit exception：隐式异常，例如Java/C#的空指针异常检查，又例如Java/C#的除以零检查。这些异常如果在某块代码里从来没有发生过，就可以用更快的方式来实现，而不必生成显式检查代码。但如果在某块代码经常发生这种异常，则显式检查会更快。</p>
 </li>
 </ul>
 <p>附录：</p>
 <div id="fnref:1">1.</div> JIT会做的典型的PGO
-
-<p><a href="https://www.zhihu.com/question/52572852↩︎" target="_blank" rel="noopener">https://www.zhihu.com/question/52572852↩︎</a></p>
+<p><a href="https://www.zhihu.com/question/52572852%E2%86%A9%EF%B8%8E" target="_blank" rel="noopener">https://www.zhihu.com/question/52572852↩︎</a></p>
 <p>个人思考：</p>
 <p>其实，通过openjdk jeps及spring boot的一些实验性的项目可以看出，Java正在实现一些新的特性：比如本文提到的AOT,<a href="https://openjdk.java.net/projects/loom/" target="_blank" rel="noopener">Loom</a>来解决Java的一些痛点。</p>
 <p>但这些新的特性具体什么时候能用于生产还是一个未知数。</p>

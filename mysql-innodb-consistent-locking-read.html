@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+  <meta name="description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta name="keywords" content="读书笔记,MySQL,InnoDB">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL InnoDB存储引擎：一致性锁定读">
 <meta property="og:url" content="http://jiankunking.com/mysql-innodb-consistent-locking-read.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+<meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2019-10-14T05:36:05.691Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL InnoDB存储引擎：一致性锁定读">
-<meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+<meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 
 <link rel="canonical" href="http://jiankunking.com/mysql-innodb-consistent-locking-read.html">
 
@@ -288,15 +288,14 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 </p>
+        <p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版</p>
 <p>作者：姜承尧</p>
 <p>出版时间：2013-05</p>
 <a id="more"></a>
-
 <p>在<a href="https://www.jiankunking.com/mysql-innodb-consistent-nonlocking-read.html" target="_blank" rel="noopener">前一小节</a>中讲到，在默认配置下，即事务的隔离级别为 REPEATABLE READ 模式下， InnoDB 存储引擎的 SELECT 操作使用一致性非锁定读。但是在某些情况下，用户需要显式地对数据库读取操作进行加锁以保证数据逻辑的一致性。而这要求数据库支持加锁语句，即使是对于SELECT的只读操作。InnoDB存储引擎对于SELECT语句支持两种一致性的锁定读（locking read)操作：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SELECT......FOR UPDATE</span><br><span class="line">SELECT......LOCK IN SHARE MODE</span><br></pre></td></tr></table></figure>
-
-<p><font color="DeepPink"><strong>SELECT…FOR UPDATE对读取的行记录加一个X锁，其他事务不能对已锁定的行加上任何锁。</strong></font><br><font color="DeepPink"><strong>SELECT…LOCK IN SHARE MODE对读取的行记录加一个S锁，其他事务可以向被锁定的行加S锁，但是如果加X锁，则会被阻塞。</strong></font></p>
+<p><font color="DeepPink"><strong>SELECT…FOR UPDATE对读取的行记录加一个X锁，其他事务不能对已锁定的行加上任何锁。</strong></font><br>
+<font color="DeepPink"><strong>SELECT…LOCK IN SHARE MODE对读取的行记录加一个S锁，其他事务可以向被锁定的行加S锁，但是如果加X锁，则会被阻塞。</strong></font></p>
 <p>对于一致性非锁定读，即使读取的行已被执行了 SELECT…FOR UPDATE,也是可以进行读取的，这和之前讨论的情况一样。此外，SELECT…FOR UPDATE, SELECT…LOCK IN SHARE MODE必须在一个事务中，当事务提交了，锁也就释放了。因此在使用上述两句SELECT锁定语句时，务必加上BEGIN,START TRANSACTION 或者SET AUTOCOMMIT =0 。</p>
 
     </div>

@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="有轮子尽量用轮子 😭 😭 😭 😭 😭 😭">
-<meta name="keywords" content="OOM,Go,Gin,Response,Body">
+<meta name="keywords" content="Go,OOM,Gin,Response,Body">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Gin获取Response Body引发的OOM">
 <meta property="og:url" content="http://jiankunking.com/golang-gin-get-response-body-oom.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="有轮子尽量用轮子 😭 😭 😭 😭 😭 😭">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-02-24T20:43:56.064Z">
+<meta property="og:updated_time" content="2023-03-03T18:19:48.624Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Gin获取Response Body引发的OOM">
 <meta name="twitter:description" content="有轮子尽量用轮子 😭 😭 😭 😭 😭 😭">
@@ -236,10 +236,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2023-02-25 03:31:32 / 修改时间：04:43:56" itemprop="dateCreated datePublished" datetime="2023-02-25T03:31:32+08:00">2023-02-25</time>
+              <time title="创建时间：2023-02-25 03:31:32" itemprop="dateCreated datePublished" datetime="2023-02-25T03:31:32+08:00">2023-02-25</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-03-04 02:19:48" itemprop="dateModified" datetime="2023-03-04T02:19:48+08:00">2023-03-04</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -292,9 +298,9 @@
 <p><img data-src="/images/golang-gin-get-response-body-oom/2.png" alt></p>
 <p>在图二中可以看到内存的增长是很快的，在一分半的时间内，内存增长了近2G。</p>
 <blockquote>
-<p>对于这种内存短时间暴涨的问题，pprof不好管用，除非写个脚本定时去pprof</p>
+<p>对于这种内存短时间暴涨的问题，pprof不太分析，除非写个脚本定时去pprof</p>
 </blockquote>
-<p>经过再次review代码，找到了原因了</p>
+<p>经过再次review代码，找到了原因</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">package server</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;bytes&quot;</span><br><span class="line">	&quot;fmt&quot;</span><br><span class="line"></span><br><span class="line">	&quot;github.com/gin-gonic/gin&quot;</span><br><span class="line">	jsoniter &quot;github.com/json-iterator/go&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">var json = jsoniter.ConfigCompatibleWithStandardLibrary</span><br><span class="line"></span><br><span class="line">type BodyDumpResponseWriter struct &#123;</span><br><span class="line">	gin.ResponseWriter</span><br><span class="line">	body *bytes.Buffer</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (w *BodyDumpResponseWriter) Write(b []byte) (int, error) &#123;</span><br><span class="line">	w.body.Write(b) // 注意这一行</span><br><span class="line">	return w.ResponseWriter.Write(b)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func ReadResponseBody(ctx *gin.Context) &#123;</span><br><span class="line">	rbw := &amp;BodyDumpResponseWriter&#123;body: &amp;bytes.Buffer&#123;&#125;, ResponseWriter: ctx.Writer&#125;</span><br><span class="line">	ctx.Writer = rbw</span><br><span class="line"></span><br><span class="line">	ctx.Next()</span><br><span class="line"></span><br><span class="line">	rawResp := rbw.body.String()</span><br><span class="line">	if len(rawResp) == 0 &#123;</span><br><span class="line">		AbnormalPrint(ctx, &quot;resp-empty&quot;, rawResp)</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	ctx.Set(ctx_raw_response_body, rawResp)</span><br><span class="line"></span><br><span class="line">	// 序列化Body,并放到ctx中</span><br><span class="line">	// 读取响应Body的目的是记录审计日志用</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// AbnormalPrint 异常情况，打印信息到日志</span><br><span class="line">func AbnormalPrint(ctx *gin.Context, typ string, rawResp string) &#123;</span><br><span class="line">// 具体代码忽略</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>简单一看，这不就是Gin获取响应体一种标准的方式吗？毕竟GitHub及Stack Overflow上都是这么写的<br>
 <a href="https://github.com/gin-gonic/gin/issues/1363" target="_blank" rel="noopener">https://github.com/gin-gonic/gin/issues/1363</a><br>
@@ -319,9 +325,9 @@
 	* https://github.com/labstack/echo/blob/master/middleware/middleware.go -->
 <ul>
 <li>因为要解析Body，也没有精力去适配各种压缩协议，所以在网关这里会强制关闭压缩;</li>
-<li>手写网络处理，会一些情况会出现一些诡异的问题
+<li>手写网络处理，会出现一些诡异的问题
 <ul>
-<li>比如：我们支持页面终端连接到K8S集群，而这个终端连接走的是Websocket，假设支持该连接操作的服务是A(就是:页面&lt; - - - - - - &gt;服务A&lt; - - - - - - &gt;K8S集群)，那么后面过网关的请求部分请求会直接请求到服务A上(此时根本没有走网关的API router,<br>
+<li>比如：我们支持页面终端连接到K8S集群，而这个终端连接走的是Websocket，假设支持该连接操作的服务是A(就是:页面&lt; - - - - - - &gt;网关&lt; - - - - - - &gt;服务A&lt; - - - - - - &gt;K8S集群)，那么后面过网关的请求部分请求会直接请求到服务A上(此时根本没有走网关的API router,<br>
 直接就复用Websocket这个连接了)，即使这些API不是服务A的。</li>
 </ul>
 </li>
@@ -339,9 +345,6 @@
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\fraternity-sentry.html" rel="bookmark">友爱的Sentry</a></div>
-    </li>
-    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\golang-net-http-request-processing-flow.html" rel="bookmark">Golang net/http 请求处理流程分析</a></div>
     </li>
     <li class="popular-posts-item">
@@ -352,6 +355,9 @@
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\go-concurrency-patterns-context.html" rel="bookmark">[译]Go 并发 : Context</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\go-net-http-timeout-sequence-diagram.html" rel="bookmark">[译]关于Go net/http 超时完全指南</a></div>
     </li>
   </ul>
 
@@ -414,8 +420,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/OOM/" rel="tag"># OOM</a>
               <a href="/tags/Go/" rel="tag"># Go</a>
+              <a href="/tags/OOM/" rel="tag"># OOM</a>
               <a href="/tags/Gin/" rel="tag"># Gin</a>
               <a href="/tags/Response/" rel="tag"># Response</a>
               <a href="/tags/Body/" rel="tag"># Body</a>
