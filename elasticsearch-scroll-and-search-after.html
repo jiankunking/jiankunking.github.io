@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Elasticsearch From/Size、Scroll、Search After对比">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-03-18T13:40:06.686Z">
+<meta property="og:updated_time" content="2023-03-22T05:37:02.978Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Elasticsearch Scroll and Search After">
 <meta name="twitter:description" content="Elasticsearch From/Size、Scroll、Search After对比">
@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">131</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">133</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-03-18 21:40:06" itemprop="dateModified" datetime="2023-03-18T21:40:06+08:00">2023-03-18</time>
+                <time title="修改时间：2023-03-22 13:37:02" itemprop="dateModified" datetime="2023-03-22T13:37:02+08:00">2023-03-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -269,7 +269,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.8k</span>
+              <span>3.2k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -354,6 +354,14 @@ _id 字段被限制在聚合、排序和脚本中使用。 如果需要对 _id �
 <p>20230318现在不用纠结了 😭 😭 😭 😭 😭 😭</p>
 <p><img data-src="/images/elasticsearch-scroll-and-search-after/scroll.png" alt></p>
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html#scroll-search-results" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html#scroll-search-results</a></p>
+<p>search after是lucene原生支持的:<br>
+<a href="https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/search/IndexSearcher.html" target="_blank" rel="noopener">https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/search/IndexSearcher.html</a><br>
+<a href="https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/search/IndexSearcher.html#searchAfter-org.apache.lucene.search.ScoreDoc-org.apache.lucene.search.Query-int-" target="_blank" rel="noopener">https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/search/IndexSearcher.html#searchAfter-org.apache.lucene.search.ScoreDoc-org.apache.lucene.search.Query-int-</a></p>
+<blockquote>
+<p>猜测一下search after的实现原理,应该是通过doc_values来实现的<br>
+doc_values已经排好序了,所以通过每次search_after制定的值,往后查找即可</p>
+</blockquote>
+<p><img data-src="/images/elasticsearch-scroll-and-search-after/doc_values.png" alt></p>
 <blockquote>
 <p>本文内容来自官方文档，主要是做了翻译及汇总。</p>
 </blockquote>
@@ -367,6 +375,12 @@ _id 字段被限制在聚合、排序和脚本中使用。 如果需要对 _id �
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\elasticsearch-from-the-top-down.html" rel="bookmark">[译]自上而下认识Elasticsearch</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\elasticsearch-from-the-bottom-up.html" rel="bookmark">[译]自下而上认识Elasticsearch</a></div>
+    </li>
+    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\elasticsearch-limits.html" rel="bookmark">ElasticSearch的一些限制</a></div>
     </li>
     <li class="popular-posts-item">
@@ -374,12 +388,6 @@ _id 字段被限制在聚合、排序和脚本中使用。 如果需要对 _id �
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\elasticsearch-node-start-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 节点启动分析</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-get-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 GET分析</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\why-does-elasticsearch-have-poor-update-performance.html" rel="bookmark">【Elasticsearch源码】 更新性能分析</a></div>
     </li>
   </ul>
 
@@ -535,7 +543,7 @@ _id 字段被限制在聚合、排序和脚本中使用。 如果需要对 _id �
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">131</span>
+          <span class="site-state-item-count">133</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -606,7 +614,7 @@ _id 字段被限制在聚合、排序和脚本中使用。 如果需要对 _id �
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">1m</span>
+    <span title="站点总字数">1.1m</span>
 </div>
 
         
