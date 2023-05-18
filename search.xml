@@ -250,10 +250,10 @@ Ngram分词会消耗大量资源(尤其是磁盘),reindex有可能会超时</p>
         <category>ElasticSearch</category>
       </categories>
       <tags>
+        <tag>Architecture</tag>
         <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
-        <tag>Architecture</tag>
       </tags>
   </entry>
   <entry>
@@ -362,10 +362,10 @@ Ngram分词会消耗大量资源(尤其是磁盘),reindex有可能会超时</p>
         <category>ElasticSearch</category>
       </categories>
       <tags>
+        <tag>Architecture</tag>
         <tag>原创</tag>
         <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
-        <tag>Architecture</tag>
       </tags>
   </entry>
   <entry>
@@ -1599,6 +1599,37 @@ Ngram分词会消耗大量资源(尤其是磁盘),reindex有可能会超时</p>
   </entry>
   <entry>
     <title>Golang PutUvarint Uvarint</title>
+    <url>/golang-putuvarint-uvarint-1.html</url>
+    <content><![CDATA[<blockquote>
+<p>看<a href="https://github.com/allegro/bigcache" target="_blank" rel="noopener">bigcache</a>库的时候,注意到存放数据用的是PutUvarint、Uvarint,那这两个方法是做什么的呢？</p>
+</blockquote>
+<a id="more"></a>
+<h1>PutUvarint</h1>
+<h2 id="源码及注释">源码及注释</h2>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">// PutUvarint encodes a uint64 into buf and returns the number of bytes written.</span><br><span class="line">// If the buffer is too small, PutUvarint will panic.</span><br><span class="line">// PutVarint 将 int64 编码为 buf 并返回写入的字节数。如果缓冲区太小，PutVarint 会panic。</span><br><span class="line">func PutUvarint(buf []byte, x uint64) int &#123;</span><br><span class="line">	i := 0</span><br><span class="line">	// 0x80 128</span><br><span class="line">	for x &gt;= 0x80 &#123;</span><br><span class="line">		buf[i] = byte(x) | 0x80</span><br><span class="line">		// 右移7位,然后将右移后的值，赋值给x</span><br><span class="line">		x &gt;&gt;= 7</span><br><span class="line">		i++</span><br><span class="line">	&#125;</span><br><span class="line">	buf[i] = byte(x)</span><br><span class="line">	return i + 1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="代码示例">代码示例</h2>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;encoding/binary&quot;</span><br><span class="line">	&quot;fmt&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	buf := make([]byte, binary.MaxVarintLen64)</span><br><span class="line"></span><br><span class="line">	for _, x := range []int64&#123;-65, -64, -2, -1, 0, 1, 2, 63, 64&#125; &#123;</span><br><span class="line">		n := binary.PutVarint(buf, x)</span><br><span class="line">		fmt.Printf(&quot;%x\n&quot;, buf[:n])</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出结果</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">8101</span><br><span class="line">7f</span><br><span class="line">03</span><br><span class="line">01</span><br><span class="line">00</span><br><span class="line">02</span><br><span class="line">04</span><br><span class="line">7e</span><br><span class="line">8001</span><br><span class="line"></span><br><span class="line">Program exited.</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><a href="https://go.dev/play/p/yRUoUooVrHm" target="_blank" rel="noopener">https://go.dev/play/p/yRUoUooVrHm</a></p>
+</blockquote>
+<h1>Uvarint</h1>
+<h2 id="源码及注释-v2">源码及注释</h2>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">// Uvarint decodes a uint64 from buf and returns that value and the</span><br><span class="line">// number of bytes read (&gt; 0). If an error occurred, the value is 0</span><br><span class="line">// and the number of bytes n is &lt;= 0 meaning:</span><br><span class="line">//</span><br><span class="line">//	n == 0: buf too small</span><br><span class="line">//	n  &lt; 0: value larger than 64 bits (overflow)</span><br><span class="line">//	        and -n is the number of bytes read</span><br><span class="line">// Uvarint 从 buf 解码 uint64 并返回该值和读取的字节数（&gt; 0）。如果发生错误，则该值为0，并且字节数n &lt;= 0意味着：</span><br><span class="line">// n == 0：buf太小了</span><br><span class="line">// n &lt;0：大于64位的值（溢出）</span><br><span class="line">//       和-n是读取的字节数</span><br><span class="line">func Uvarint(buf []byte) (uint64, int) &#123;</span><br><span class="line">	var x uint64</span><br><span class="line">	var s uint</span><br><span class="line">	for i, b := range buf &#123;</span><br><span class="line">		// MaxVarintLen64 10</span><br><span class="line">		if i == MaxVarintLen64 &#123;</span><br><span class="line">			// Catch byte reads past MaxVarintLen64.</span><br><span class="line">			// See issue https://golang.org/issues/41185</span><br><span class="line">			return 0, -(i + 1) // overflow</span><br><span class="line">		&#125;</span><br><span class="line">		// 0x80 128</span><br><span class="line">		if b &lt; 0x80 &#123;</span><br><span class="line">			if i == MaxVarintLen64-1 &amp;&amp; b &gt; 1 &#123;</span><br><span class="line">				return 0, -(i + 1) // overflow</span><br><span class="line">			&#125;</span><br><span class="line">			return x | uint64(b)&lt;&lt;s, i + 1</span><br><span class="line">		&#125;</span><br><span class="line">		// 0x7f 127</span><br><span class="line">		x |= uint64(b&amp;0x7f) &lt;&lt; s</span><br><span class="line">		s += 7</span><br><span class="line">	&#125;</span><br><span class="line">	return 0, 0</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="代码示例-v2">代码示例</h2>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;encoding/binary&quot;</span><br><span class="line">	&quot;fmt&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	inputs := [][]byte&#123;</span><br><span class="line">		[]byte&#123;0x01&#125;,       //1</span><br><span class="line">		[]byte&#123;0x02&#125;,       //2</span><br><span class="line">		[]byte&#123;0x7f&#125;,       //127</span><br><span class="line">		[]byte&#123;0x80, 0x01&#125;, //128,1</span><br><span class="line">		[]byte&#123;0xff, 0x01&#125;, //255,1</span><br><span class="line">		[]byte&#123;0x80, 0x02&#125;, //128,2</span><br><span class="line">		[]byte&#123;0x80, 0x03&#125;, //128,3</span><br><span class="line">	&#125;</span><br><span class="line">	for _, b := range inputs &#123;</span><br><span class="line">		x, n := binary.Uvarint(b)</span><br><span class="line">		if n != len(b) &#123;</span><br><span class="line">			fmt.Println(&quot;Uvarint did not consume all of in&quot;)</span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println(x)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出结果</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">384</span><br><span class="line"></span><br><span class="line">Program exited.</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><a href="https://go.dev/play/p/df572cFK6Im" target="_blank" rel="noopener">https://go.dev/play/p/df572cFK6Im</a></p>
+</blockquote>
+<p>在线16进制转10进制:<a href="https://jisuan5.com/hexadecimal-to-decimal/" target="_blank" rel="noopener">https://jisuan5.com/hexadecimal-to-decimal/</a><br>
+参考文章:<a href="https://cloud.tencent.com/developer/section/1141534" target="_blank" rel="noopener">https://cloud.tencent.com/developer/section/1141534</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Golang PutUvarint Uvarint</title>
     <url>/golang-putuvarint-uvarint.html</url>
     <content><![CDATA[<blockquote>
 <p>看<a href="https://github.com/allegro/bigcache" target="_blank" rel="noopener">bigcache</a>库的时候,注意到存放数据用的是PutUvarint、Uvarint,那这两个方法是做什么的呢？</p>
@@ -1627,6 +1658,11 @@ Ngram分词会消耗大量资源(尤其是磁盘),reindex有可能会超时</p>
 <p>在线16进制转10进制:<a href="https://jisuan5.com/hexadecimal-to-decimal/" target="_blank" rel="noopener">https://jisuan5.com/hexadecimal-to-decimal/</a><br>
 参考文章:<a href="https://cloud.tencent.com/developer/section/1141534" target="_blank" rel="noopener">https://cloud.tencent.com/developer/section/1141534</a></p>
 ]]></content>
+      <tags>
+        <tag>Go</tag>
+        <tag>PutUvarint</tag>
+        <tag>Uvarint</tag>
+      </tags>
   </entry>
   <entry>
     <title>Golang net/http 请求处理流程分析</title>
@@ -3006,8 +3042,8 @@ outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分�
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Heap</tag>
         <tag>Index</tag>
       </tags>
@@ -4269,10 +4305,10 @@ CompletableFuture.get() 等于 Join</p>
         <category>ElasticSearch</category>
       </categories>
       <tags>
+        <tag>转载</tag>
         <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
         <tag>Score</tag>
-        <tag>转载</tag>
       </tags>
   </entry>
   <entry>
@@ -4296,8 +4332,8 @@ CompletableFuture.get() 等于 Join</p>
         <category>Kubernetes</category>
       </categories>
       <tags>
-        <tag>Design</tag>
         <tag>Architecture</tag>
+        <tag>Design</tag>
         <tag>Kubernetes</tag>
       </tags>
   </entry>
@@ -4389,8 +4425,8 @@ CompletableFuture.get() 等于 Join</p>
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Cluster</tag>
         <tag>Shard</tag>
       </tags>
@@ -8196,8 +8232,8 @@ use one vs other -->
         <category>编码规范</category>
       </categories>
       <tags>
-        <tag>编码规范</tag>
         <tag>转载</tag>
+        <tag>编码规范</tag>
         <tag>Go</tag>
         <tag>Uber</tag>
         <tag>Style</tag>
@@ -8372,8 +8408,8 @@ doc_values已经排好序了,所以通过每次search_after制定的值,往后�
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Microservice</tag>
       </tags>
   </entry>
@@ -8669,8 +8705,8 @@ redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。<
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>OAuth</tag>
         <tag>Login</tag>
       </tags>
@@ -12655,6 +12691,60 @@ WebSocket 的 Key 和 Accept 握手可以解决其中一些问题：这是服务
   </entry>
   <entry>
     <title>Java JUC Atomic AtomicLong</title>
+    <url>/java-juc-atomic-atomiclong-1.html</url>
+    <content><![CDATA[<blockquote>
+<p>基于OpenJDK 12<br>
+本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。</p>
+</blockquote>
+<a id="more"></a>
+<p><a href="https://www.jiankunking.com/java-concurrent-atomic-package.html" target="_blank" rel="noopener">Atomic Package解析参考（比如lazySet原理解析）</a></p>
+<p>AtomicLong的常用方法如下：</p>
+<ul>
+<li>long addAndGet(long delta)：以原子方式将输入的数值与实例中的值（AtomicLong里的<br>
+value）相加，并返回结果。</li>
+<li>compareAndSet(long expectedValue, long newValue)：如果输入的数值等于预期值，则以原子方<br>
+式将该值设置为输入的值。</li>
+<li>long getAndIncrement()：以原子方式将当前值加1，注意，这里返回的是自增前的值。</li>
+<li>void lazySet(long newValue)：最终会设置成newValue，<font color="DeepPink"><strong>使用lazySet设置值后，可能导致其他线程在之后的一小段时间内还是可以读到旧的值</strong></font>。</li>
+<li>long getAndSet(long newValue)：以原子方式设置为newValue的值，并返回旧值。</li>
+</ul>
+<p>AtomicLong示例代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class AtomicLongTest &#123;</span><br><span class="line">    static AtomicLong ai = new AtomicLong(1);</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        System.out.println(ai.getAndIncrement());</span><br><span class="line">        System.out.println(ai.get());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出结果如下:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td></tr></table></figure>
+<p>那么getAndIncrement是如何实现原子操作的呢？让我们一起分析其实现原理，getAndIncrement的源码如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public final long getAndIncrement() &#123;</span><br><span class="line">   return U.getAndAddLong(this, VALUE, 1L);</span><br><span class="line">&#125;</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final long getAndAddLong(Object o, long offset, long delta) &#123;</span><br><span class="line">    long v;</span><br><span class="line">    do &#123;</span><br><span class="line">        v = getLongVolatile(o, offset);</span><br><span class="line">    &#125; while (!weakCompareAndSetLong(o, offset, v, v + delta));</span><br><span class="line">    return v;</span><br><span class="line">&#125;</span><br><span class="line">/** Volatile version of &#123;@link #getLong(Object, long)&#125;  */</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public native long getLongVolatile(Object o, long offset);</span><br><span class="line"></span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final boolean weakCompareAndSetLong(Object o, long offset,</span><br><span class="line">                                           long expected,</span><br><span class="line">                                           ong x) &#123;</span><br><span class="line">    return compareAndSetLong(o, offset, expected, x);</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * Atomically updates Java variable to &#123;@code x&#125; if it is currently</span><br><span class="line"> * holding &#123;@code expected&#125;.</span><br><span class="line"> *</span><br><span class="line"> * &lt;p&gt;This operation has memory semantics of a &#123;@code volatile&#125; read</span><br><span class="line"> * and write.  Corresponds to C11 atomic_compare_exchange_strong.</span><br><span class="line"> *</span><br><span class="line"> * @return &#123;@code true&#125; if successful</span><br><span class="line"> */</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final native boolean compareAndSetLong(Object o, long offset,</span><br><span class="line">                                              long expected,</span><br><span class="line">                                              long x);</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>@HotSpotIntrinsicCandidate JDK的源码中，被@HotSpotIntrinsicCandidate标注的方法，在HotSpot中都有一套高效的实现，该高效实现基于CPU指令，运行时，HotSpot维护的高效实现会替代JDK的源码实现，从而获得更高的效率。</p>
+</blockquote>
+<p>源码getAndAddLong(Object o, long offset, long delta)中do while循环体是实现的关键所在，其逻辑是：<br>
+第一步先取得AtomicLong里存储的数值，<br>
+第二步对AtomicLong的当前数值进行加1操作，<br>
+第三步调用weakCompareAndSetLong方法来进行原子更新操作，该方法先检查当前数值是否等于v，等于意味着AtomicLong的值没有被其他线程修改过，则将weakCompareAndSetLong的当前数值更新成v+delta的值，如果不等于v，weakCompareAndSetLong方法会返回false，<font color="DeepPink"><strong>程序会进入do while循环重新进行</strong></font>weakCompareAndSetLong操作。</p>
+<p><font color="DeepPink"><strong>这里隐含了一个问题，当对于共享变量（假设变量名字是a）的竞争非常激烈的时候，在当前线程读取a、改变a之间，a的值会被别的线程改变，从而导致当前线程一直重试（自旋），一直占用CPU。</strong></font></p>
+<p><font color="DeepPink"><strong>这就引出另一个问题，对于锁抢占很激烈的时候，串行是最好的解决办法。比如使用synchronized。</strong></font></p>
+<blockquote>
+<p>java.util.concurrent.atomic中的原子操作基本是基于Unsafe或者VarHandle实现的。</p>
+</blockquote>
+<p><a href="https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/java/util/concurrent/atomic/AtomicLong.java" target="_blank" rel="noopener">AtomicLong源码</a></p>
+<blockquote>
+<p>本文参考 《Java并发编程的艺术》 作者：方腾飞　魏鹏　程晓明</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>JDK</category>
+      </categories>
+      <tags>
+        <tag>原创</tag>
+        <tag>Java</tag>
+        <tag>JDK</tag>
+        <tag>Concurrent</tag>
+        <tag>Atomic</tag>
+        <tag>AtomicLong</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Java JUC Atomic AtomicLong</title>
     <url>/java-juc-atomic-atomiclong.html</url>
     <content><![CDATA[<blockquote>
 <p>基于OpenJDK 12<br>
@@ -12705,6 +12795,108 @@ value）相加，并返回结果。</li>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
         <tag>AtomicLong</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Java JUC Atomic LongAdder</title>
+    <url>/java-juc-atomic-longadder-1.html</url>
+    <content><![CDATA[<blockquote>
+<p>基于OpenJDK 12</p>
+</blockquote>
+<a id="more"></a>
+<p>阅读本文前，推荐先阅读以下两篇文章，以便能更好的对比理解：</p>
+<ul>
+<li><a href="https://www.jiankunking.com/java-concurrent-atomic-package.html" target="_blank" rel="noopener">译-Java-Concurrent-Atomic-Package-详解</a></li>
+<li><a href="https://jiankunking.com/java-juc-atomic-atomiclong.html">Java-JUC-Atomic-AtomicLong</a></li>
+</ul>
+<p>LongAdder是JDK 1.8 新增的原子类，基于Striped64实现。 从官方文档看，LongAdder在高并发的场景下会比AtomicLong 具有更好的性能，代价是消耗更多的内存空间：</p>
+<blockquote>
+<p>This class is usually preferable to AtomicLong when multiple threads update a common sum that is used for purposes such as collecting statistics, not for fine-grained synchronization control. <font color="DeepPink"><strong>Under low update contention, the two classes have similar characteristics. But under high contention, expected throughput of this class is significantly higher, at the expense of higher space consumption.</strong></font></p>
+</blockquote>
+<p>那么LongAdder是怎么实现的？</p>
+<p>先看一下LongAdder的类图：<br>
+<img data-src="/images/java-juc-atomic-longadder/LongAdder%E7%B1%BB%E5%9B%BE.png" alt></p>
+<p>基类Number，Number是一个抽象类其中没有任何逻辑，该类是byte、double、float、int、long、short的基类。</p>
+<h1>Striped64</h1>
+<h2 id="设计思想">设计思想</h2>
+<p>该部分翻译自Striped64源码注释，可以略过，概括起来就是：</p>
+<blockquote>
+<p>分散热点，将value值分散到一个数组中，不同线程会命中到数组的不同槽中，各个线程只对自己槽中的那个值进行CAS操作，这样热点就被分散了，冲突的概率就小很多。如果要获取真正的long值，只要将各个槽中的变量值累加返回。</p>
+</blockquote>
+<hr>
+<p>从Striped64类注释可以看到：</p>
+<blockquote>
+<p>Striped64是package内使用的，对于在64位元素上动态分片提供统一实现（感觉有点像：AbstractQueuedSynchronizer）<br>
+Striped64继承了Number类，这也就是说具体实现的子类也必须实现相关的内容</p>
+</blockquote>
+<p>该类维护一个原子更新变量的延迟初始化表，以及一个额外的“base”字段。表的大小是2的幂。索引使用掩码下的每个线程的hash code。这个类中的几乎所有声明都是package私有的，由子类直接访问。</p>
+<p>表格内的元素是Cell类，Cell类是一个为了减少缓存争用而填充的AtomicLong的变种。填充对于大多数原子来说是多余的，因为它们通常不规则地分散在内存中，因此彼此之间不会有太多的干扰。但是，驻留在数组中的原子对象往往是彼此相邻的，因此在没有这种预防措施的情况下，最常见的情况是共享高速缓存线(这对性能有很大的负面影响)。</p>
+<p>在某种程度上，因为Cell类相对较大，只有他们真正被需要的时候，我们才创建。<font color="DeepPink"><strong>如果没有竞争，那么所有的更新操作将对base字段实现。当发生第一次争用（也就是说如果第一次对base字段的CAS操作失败），初始化为大小是2的表格。当进一步的争用发生的时候,表的大小会加倍，直到达到等于大于cpu的数量。表在未使用之前一直为null。</strong></font></p>
+<p>利用一个自旋锁（cellsBusy）来初始化和调整表的大小，以及用新Cells填充slots。这个地方没有必要使用阻塞锁，如果锁不可达，线程可以尝试其他的slots，或者尝试base字段。在这些重试期间，竞争加剧，但是降低了局部性，这仍然比阻塞锁来得好。</p>
+<p>通过ThreadLocalRandom维护的Thread.probe字段用作每个线程的哈希码。我们让它们保持未初始化（为零）(如果它们以这种方式出现)，直到它们在插槽0竞争。出现竞争后初始化为通常不会和其他的的值冲突的值，比如线程的哈希码。在执行更新时发生CAS操作失败意味着出现了争用或者表碰撞，或两者都有。在发生冲突时，如果表的大小小于容量，那么它的大小将加倍，除非其他线程持有锁。如果哈希后的slot为空，并且锁可用，则创建一个新单元格。如果存在了那么会进行CAS尝试。通过双重哈希进行重试，利用一个辅助哈希（Marsaglia XorShift随机数算法）来尝试寻找一个空闲的slot。</p>
+<p><font color="DeepPink"><strong>表的大小是有上限的，因为当线程多于CPU时，假设每个线程都绑定到一个CPU，就会有一个完美的散列函数将线程映射到插槽，从而消除冲突。当我们达到容量时，我们通过随机改变冲突线程的哈希代码来搜索这个映射。因为搜索是随机的，冲突只有通过CAS失败才知道，收敛可能会很慢，而且因为线程通常不会永远绑定到CPU，所以根本不会发生。然而，尽管有这些限制，在这些情况下观察到的竞争率通常很低。</strong></font></p>
+<p><font color="DeepPink"><strong>Cell可能会出现不可用的情况，包括进行哈希的线程终止，或者由于table扩容导致线程哈希不正确。我们不尝试检测或删除这样的单元格，假设对于长时间运行的实例，争用会再次发生，因此最终将再次需要这些单元格;而对于短时间运行的实例，花费时间去销毁又没有什么必要。</strong></font></p>
+<hr>
+<h2 id="Cell类">Cell类</h2>
+<p>Atomiclong的变体，仅支持原始访问和CAS。</p>
+<blockquote>
+<p>Cell类被注解@jdk.internal.vm.annotation.Contended修饰。<br>
+Contended的作用（详细信息参见：<a href="http://openjdk.java.net/jeps/142" target="_blank" rel="noopener">JEP 142</a>）：<br>
+Define a way to specify that one or more fields in an object are likely to be highly contended across processor cores so that the VM can arrange for them not to share cache lines with other fields, or other objects, that are likely to be independently accessed.</p>
+</blockquote>
+<h2 id="示意图">示意图</h2>
+<p><img data-src="/images/java-juc-atomic-longadder/%E7%83%AD%E7%82%B9%E5%88%86%E7%A6%BB%E7%A4%BA%E6%84%8F%E5%9B%BE.png" alt></p>
+<h2 id="具体实现">具体实现</h2>
+<p>Striped64的核心方法是longAccumulate、doubleAccumulate，两者类似，下面主要看一下longAccumulate，<strong>对于这种代码，个人建议是理解思路即可，毕竟咱们又不是过来修改JDK的，如果真的要修改了或者有类似的需求了，再回来细看即可。</strong></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//x  元素</span><br><span class="line">//fn  更新函数，如果是add可以为null（这个约定避免了longadder中定义额外的变量或者函数）</span><br><span class="line">//wasUncontended 如果CAS在调用之前失败了，这个值为false</span><br><span class="line">final void longAccumulate(long x, LongBinaryOperator fn,</span><br><span class="line">                          boolean wasUncontended) &#123;</span><br><span class="line">    int h;</span><br><span class="line">    //获取当前线程的probe值，如果为0，则需要初始化该线程的probe值</span><br><span class="line">    if ((h = getProbe()) == 0) &#123;</span><br><span class="line">    	ThreadLocalRandom.current(); // force initialization</span><br><span class="line">        h = getProbe();</span><br><span class="line">        wasUncontended = true;</span><br><span class="line">    &#125;</span><br><span class="line">    boolean collide = false;  // True if last slot nonempty</span><br><span class="line">    done: for (;;) &#123;</span><br><span class="line">        Cell[] cs; Cell c; int n; long v;</span><br><span class="line">        //Cells不为空，进行操作</span><br><span class="line">        if ((cs = cells) != null &amp;&amp; (n = cs.length) &gt; 0) &#123;</span><br><span class="line">            //通过（hashCode &amp; (length - 1)）这种算法来实现取模 有种看到HashMap代码的感觉</span><br><span class="line">            //如果当前位置为null说明需要初始化</span><br><span class="line">            if ((c = cs[(n - 1) &amp; h]) == null) &#123;</span><br><span class="line">                //判断锁状态</span><br><span class="line">                if (cellsBusy == 0) &#123;       // Try to attach new Cell</span><br><span class="line">                    Cell r = new Cell(x);   // Optimistically create</span><br><span class="line">                    //再次判断锁状态，同时获取锁</span><br><span class="line">                    if (cellsBusy == 0 &amp;&amp; casCellsBusy()) &#123;</span><br><span class="line">                        try &#123;               // Recheck under lock</span><br><span class="line">                            Cell[] rs; int m, j;</span><br><span class="line">                            if ((rs = cells) != null &amp;&amp;</span><br><span class="line">                                (m = rs.length) &gt; 0 &amp;&amp;</span><br><span class="line">                                rs[j = (m - 1) &amp; h] == null) &#123;</span><br><span class="line">                                rs[j] = r;</span><br><span class="line">                                //创建成功跳出</span><br><span class="line">                                break done;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125; finally &#123;</span><br><span class="line">                            //释放锁</span><br><span class="line">                            cellsBusy = 0;</span><br><span class="line">                        &#125;</span><br><span class="line">                        continue;           // Slot is now non-empty</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                collide = false;</span><br><span class="line">            &#125;</span><br><span class="line">            //运行到此说明cell的对应位置上已经有相应的Cell了，</span><br><span class="line">            //不需要初始化了</span><br><span class="line">            //CAS操作已经失败了，出现了竞争</span><br><span class="line">            else if (!wasUncontended)       // CAS already known to fail</span><br><span class="line">                wasUncontended = true;      // Continue after rehash</span><br><span class="line">            //这里尝试将x值加到a的value上 </span><br><span class="line">            else if (c.cas(v = c.value,</span><br><span class="line">                           (fn == null) ? v + x : fn.applyAsLong(v, x)))</span><br><span class="line">                //如果尝试成功，跳出循环，方法退出</span><br><span class="line">                break;</span><br><span class="line">            //cell数组最大为cpu的数量，</span><br><span class="line">            //cells != as表明cells数组已经被更新了 </span><br><span class="line">            //标记为最大状态或者说是过期状态</span><br><span class="line">            else if (n &gt;= NCPU || cells != cs)</span><br><span class="line">                collide = false;            // At max size or stale</span><br><span class="line">            else if (!collide)</span><br><span class="line">                collide = true;</span><br><span class="line">            //扩容 当前容量 * 2</span><br><span class="line">            else if (cellsBusy == 0 &amp;&amp; casCellsBusy()) &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    if (cells == cs)        // Expand table unless stale</span><br><span class="line">                        cells = Arrays.copyOf(cs, n &lt;&lt; 1);</span><br><span class="line">                &#125; finally &#123;</span><br><span class="line">                    cellsBusy = 0;</span><br><span class="line">                &#125;</span><br><span class="line">                collide = false;</span><br><span class="line">                continue;                   // Retry with expanded table</span><br><span class="line">            &#125;</span><br><span class="line">            h = advanceProbe(h);</span><br><span class="line">        &#125;</span><br><span class="line">        //尝试获取锁之后扩大Cells</span><br><span class="line">        else if (cellsBusy == 0 &amp;&amp; cells == cs &amp;&amp; casCellsBusy()) &#123;</span><br><span class="line">            try &#123;                           // Initialize table</span><br><span class="line">                if (cells == cs) &#123;</span><br><span class="line">                    //初始化cell表，初始容量为2。 </span><br><span class="line">                    Cell[] rs = new Cell[2];</span><br><span class="line">                    rs[h &amp; 1] = new Cell(x);</span><br><span class="line">                    cells = rs;</span><br><span class="line">                    break done;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; finally &#123;</span><br><span class="line">                //释放cellsBusy锁</span><br><span class="line">                cellsBusy = 0;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        //如果创建cell表由于竞争导致失败，尝试将x累加到base上</span><br><span class="line">        // Fall back on using base</span><br><span class="line">        else if (casBase(v = base,</span><br><span class="line">                         (fn == null) ? v + x : fn.applyAsLong(v, x)))</span><br><span class="line">            break done;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * CASes the cellsBusy field from 0 to 1 to acquire lock.</span><br><span class="line"> */</span><br><span class="line">final boolean casCellsBusy() &#123;</span><br><span class="line">    return CELLSBUSY.compareAndSet(this, 0, 1);</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * CASes the base field.</span><br><span class="line"> */</span><br><span class="line">final boolean casBase(long cmp, long val) &#123;</span><br><span class="line">    return BASE.compareAndSet(this, cmp, val);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这一段的核心是这样的：</p>
+<ul>
+<li>longAccumulate会根据当前线程来计算一个哈希值，然后根据(hashCode &amp; (length - 1))取模，以定位到该线程被分散到的Cell数组中的位置</li>
+<li>如果Cell数组还没有被创建，那么就去获取cellBusy这个锁（相当于锁，但是更为轻量级），如果获取成功，则初始化Cell数组，初始容量为2，初始化完成之后将x包装成一个Cell，哈希计算之后分散到相应的index上。如果获取cellBusy失败，那么会试图将x累计到base上，更新失败会重新尝试直到成功。</li>
+<li>如果Cell数组已经被初始化过了，那么就根据线程的哈希值分散到一个Cell数组元素上，获取这个位置上的Cell并且赋值给变量a，如果a为null，说明该位置还没有被初始化，那么就初始化，当然在初始化之前需要竞争cellBusy变量。</li>
+<li>如果Cell数组的大小已经最大了（大于等于CPU的数量），那么就需要重新计算哈希，来重新分散当前线程到另外一个Cell位置上再走一遍该方法的逻辑，否则就需要对Cell数组进行扩容，然后将原来的计数内容迁移过去。由于Cell里面保存的是计数值，所以扩容后没有必要做其他处理，直接根据index将旧的Cell数组内容复制到新的Cell数组中。</li>
+</ul>
+<h1>LongAdder</h1>
+<blockquote>
+<p>LongAdder的基本思路就是分散热点，将value值分散到一个数组中，不同线程会命中到数组的不同槽中，各个线程只对自己槽中的那个值进行CAS操作，这样热点就被分散了，冲突的概率就小很多。如果要获取真正的long值，只要将各个槽中的变量值累加返回。</p>
+</blockquote>
+<h2 id="说明">说明</h2>
+<p>保持一个或者多个变量，初始值设置为零用于求和。当更新出现多个线程竞争时，变量集合动态增长以减少争用。最后当需要求和的时候或者说需要这个Long型的值时，可以通过把当前这些变量求和，合并后得出最终的和。</p>
+<p><font color="DeepPink"><strong>LongAdder在一些高并发场景下表现要比AtomicLong好，比如多个线程同时更新一个求和的变量，比如统计集合的数量，但是不能用于细粒度同步控制，换句话说这个是可能有误差的（因为更新与读取是并行的）。在低并发场景场景下LongAdder和AtomicLong的性能表现没什么差别，但是当高并发竞争的时候，这个类将具备更好的吞吐性能，但是相应的也会耗费相当的空间。</strong></font></p>
+<p>LongAdder继承了Number抽象类，但是并没有实现一些方法例如: equals、hashCode、compareTo，因为LongAdder实例的预期用途是进行一些比较频繁的变化，所以也不适合作为集合的key。</p>
+<h2 id="具体实现-v2">具体实现</h2>
+<p>看一下LongAdder有哪些方法：<br>
+<img data-src="/images/java-juc-atomic-longadder/LongAdder%E5%87%BD%E6%95%B0%E5%88%97%E8%A1%A8.png" alt></p>
+<p>下面主要解析LongAdder increment、sum方法，先看一下源码：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Equivalent to &#123;@code add(1)&#125;.</span><br><span class="line"> */</span><br><span class="line">public void increment() &#123;</span><br><span class="line">	add(1L);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line">* Adds the given value.</span><br><span class="line">*</span><br><span class="line">* @param x the value to add</span><br><span class="line">*/</span><br><span class="line">public void add(long x) &#123;</span><br><span class="line">    Cell[] cs; long b, v; int m; Cell c;</span><br><span class="line">    if ((cs = cells) != null || !casBase(b = base, b + x)) &#123;</span><br><span class="line">    	//到了这里 表明cs不为null or 线程有并发冲突，导致caseBase失败</span><br><span class="line">        boolean uncontended = true;</span><br><span class="line">        if (cs == null || // cells 为null</span><br><span class="line">            (m = cs.length - 1) &lt; 0 || // cells 不为null 但只有一个元素</span><br><span class="line">            (c = cs[getProbe() &amp; m]) == null || //哈希取模 对应位置元素为null</span><br><span class="line">            !(uncontended = c.cas(v = c.value, v + x))) //cas 替换失败（并发竞争）</span><br><span class="line">            longAccumulate(x, null, uncontended);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line">* CASes the base field (Striped64类中的方法)</span><br><span class="line">*/</span><br><span class="line">final boolean casBase(long cmp, long val) &#123;</span><br><span class="line">    return BASE.compareAndSet(this, cmp, val);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//当在sum的过程中，有可能别的线程正在操作cells（因为没有加锁）</span><br><span class="line">//sum取的值，不一定准确</span><br><span class="line">public long sum() &#123;</span><br><span class="line">     Cell[] cs = cells;</span><br><span class="line">     long sum = base;</span><br><span class="line">     if (cs != null) &#123;</span><br><span class="line">        for (Cell c : cs)</span><br><span class="line">            if (c != null)</span><br><span class="line">                sum += c.value;</span><br><span class="line">    &#125;</span><br><span class="line">    return sum;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="LongAdder-vs-AtomicLong-Performance">LongAdder vs AtomicLong Performance</h2>
+<p><a href="http://blog.palominolabs.com/2014/02/10/java-8-performance-improvements-longadder-vs-atomiclong/" target="_blank" rel="noopener">Java 8 Performance Improvements: LongAdder vs AtomicLong</a></p>
+<h1>对比LongAccumulator</h1>
+<p>LongAdder类可以看做是LongAccumulator的一个特例，LongAccumulator提供了比LongAdder更强大、灵活的功能。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Creates a new instance using the given accumulator function</span><br><span class="line"> * and identity element.</span><br><span class="line"> * @param accumulatorFunction a side-effect-free function of two arguments</span><br><span class="line"> * @param identity identity (initial value) for the accumulator function</span><br><span class="line">*/</span><br><span class="line">public LongAccumulator(LongBinaryOperator accumulatorFunction,</span><br><span class="line">                           long identity) &#123;</span><br><span class="line">    this.function = accumulatorFunction;</span><br><span class="line">    base = this.identity = identity;</span><br><span class="line">&#125;</span><br><span class="line">@FunctionalInterface</span><br><span class="line">public interface LongBinaryOperator &#123;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Applies this operator to the given operands.</span><br><span class="line"> *</span><br><span class="line"> * @param left the first operand</span><br><span class="line"> * @param right the second operand</span><br><span class="line"> * @return the operator result</span><br><span class="line">*/</span><br><span class="line">long applyAsLong(long left, long right);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>构造函数其中accumulatorFunction一个双目运算接口，根据输入的两个参数返回一个计算值，identity则是LongAccumulator累加器的初始值。</p>
+<p>accumulatorFunction主要用于Striped64 longAccumulate中使用，如果fn==null，则默认是相加，否则会调用fn.applyAsLong(v, x)</p>
+<blockquote>
+<p>LongAccumulator相比于LongAdder，可以为累加器提供非0的初始值，而LongAdder只能提供默认的0值。<br>
+另外，LongAccumulator还可以指定累加规则，比如累加或者相乘，只需要在构造LongAccumulator时，传入自定义的双目运算器即可，后者则内置累加规则。</p>
+</blockquote>
+<h1>Reference</h1>
+<p><a href="https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/java/util/concurrent/atomic/LongAdder.java" target="_blank" rel="noopener">https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/java/util/concurrent/atomic/LongAdder.java</a></p>
+<p><a href="https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/jdk/internal/vm/annotation/Contended.java" target="_blank" rel="noopener">https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/jdk/internal/vm/annotation/Contended.java</a></p>
+<p><a href="https://www.jianshu.com/p/9a7de5644dd4" target="_blank" rel="noopener">https://www.jianshu.com/p/9a7de5644dd4</a></p>
+<p><a href="http://openjdk.java.net/jeps/142" target="_blank" rel="noopener">http://openjdk.java.net/jeps/142</a></p>
+<p><a href="http://mail.openjdk.java.net/pipermail/hotspot-dev/2012-November/007309.html" target="_blank" rel="noopener">http://mail.openjdk.java.net/pipermail/hotspot-dev/2012-November/007309.html</a></p>
+]]></content>
+      <categories>
+        <category>JDK</category>
+      </categories>
+      <tags>
+        <tag>原创</tag>
+        <tag>Java</tag>
+        <tag>JDK</tag>
+        <tag>Concurrent</tag>
+        <tag>Atomic</tag>
+        <tag>LongAdder</tag>
       </tags>
   </entry>
   <entry>
@@ -14538,8 +14730,8 @@ Elasticsearch是如何有效的对这些文档id压缩的呢？</p>
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Query</tag>
       </tags>
   </entry>
@@ -15049,12 +15241,12 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>转载</tag>
         <tag>Architecture</tag>
-        <tag>Distributed</tag>
         <tag>Fescar</tag>
         <tag>Seata</tag>
+        <tag>Distributed</tag>
         <tag>Transaction</tag>
+        <tag>转载</tag>
       </tags>
   </entry>
   <entry>
@@ -15216,8 +15408,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>原创</tag>
         <tag>Architecture</tag>
+        <tag>原创</tag>
         <tag>Multi-Live</tag>
         <tag>High-Available</tag>
       </tags>
