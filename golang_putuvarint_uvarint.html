@@ -24,20 +24,20 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="基于OpenJDK 12 本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
-<meta name="keywords" content="原创,Java,JDK,Concurrent,Atomic,AtomicLong">
+  <meta name="description" content="看bigcache库的时候,注意到存放数据用的是PutUvarint、Uvarint,那这两个方法是做什么的呢？">
+<meta name="keywords" content="Go,PutUvarint,Uvarint">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Java JUC Atomic AtomicLong">
-<meta property="og:url" content="https://jiankunking.com/java-juc-atomic-atomiclong-1.html">
+<meta property="og:title" content="Golang PutUvarint Uvarint">
+<meta property="og:url" content="https://jiankunking.com/golang_putuvarint_uvarint.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="基于OpenJDK 12 本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
+<meta property="og:description" content="看bigcache库的时候,注意到存放数据用的是PutUvarint、Uvarint,那这两个方法是做什么的呢？">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2020-11-18T05:32:00.980Z">
+<meta property="og:updated_time" content="2023-05-18T06:19:09.101Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Java JUC Atomic AtomicLong">
-<meta name="twitter:description" content="基于OpenJDK 12 本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
+<meta name="twitter:title" content="Golang PutUvarint Uvarint">
+<meta name="twitter:description" content="看bigcache库的时候,注意到存放数据用的是PutUvarint、Uvarint,那这两个方法是做什么的呢？">
 
-<link rel="canonical" href="https://jiankunking.com/java-juc-atomic-atomiclong-1.html">
+<link rel="canonical" href="https://jiankunking.com/golang_putuvarint_uvarint.html">
 
 
 <script id="page-configurations">
@@ -50,7 +50,7 @@
   };
 </script>
 
-  <title>Java JUC Atomic AtomicLong | 衣舞晨风</title>
+  <title>Golang PutUvarint Uvarint | 衣舞晨风</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
     <script>
@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">138</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">135</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
@@ -214,7 +214,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-juc-atomic-atomiclong-1.html">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/golang_putuvarint_uvarint.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar/avatar.png">
@@ -227,7 +227,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Java JUC Atomic AtomicLong
+          Golang PutUvarint Uvarint
         </h1>
 
         <div class="post-meta">
@@ -237,24 +237,15 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2019-08-04 11:17:52" itemprop="dateCreated datePublished" datetime="2019-08-04T11:17:52+08:00">2019-08-04</time>
+              <time title="创建时间：2022-12-24 07:31:46" itemprop="dateCreated datePublished" datetime="2022-12-24T07:31:46+08:00">2022-12-24</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-11-18 13:32:00" itemprop="dateModified" datetime="2020-11-18T13:32:00+08:00">2020-11-18</time>
+                <time title="修改时间：2023-05-18 14:19:09" itemprop="dateModified" datetime="2023-05-18T14:19:09+08:00">2023-05-18</time>
               </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/jdk/" itemprop="url" rel="index"><span itemprop="name">JDK</span></a>
-                </span>
-            </span>
 
           
             <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
@@ -269,7 +260,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.4k</span>
+              <span>2.3k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -289,43 +280,31 @@
 
       
         <blockquote>
-<p>基于OpenJDK 12<br>
-本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。</p>
+<p>看<a href="https://github.com/allegro/bigcache" target="_blank" rel="noopener">bigcache</a>库的时候,注意到存放数据用的是PutUvarint、Uvarint,那这两个方法是做什么的呢？</p>
 </blockquote>
 <a id="more"></a>
-<p><a href="https://www.jiankunking.com/java-concurrent-atomic-package.html" target="_blank" rel="noopener">Atomic Package解析参考（比如lazySet原理解析）</a></p>
-<p>AtomicLong的常用方法如下：</p>
-<ul>
-<li>long addAndGet(long delta)：以原子方式将输入的数值与实例中的值（AtomicLong里的<br>
-value）相加，并返回结果。</li>
-<li>compareAndSet(long expectedValue, long newValue)：如果输入的数值等于预期值，则以原子方<br>
-式将该值设置为输入的值。</li>
-<li>long getAndIncrement()：以原子方式将当前值加1，注意，这里返回的是自增前的值。</li>
-<li>void lazySet(long newValue)：最终会设置成newValue，<font color="DeepPink"><strong>使用lazySet设置值后，可能导致其他线程在之后的一小段时间内还是可以读到旧的值</strong></font>。</li>
-<li>long getAndSet(long newValue)：以原子方式设置为newValue的值，并返回旧值。</li>
-</ul>
-<p>AtomicLong示例代码如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class AtomicLongTest &#123;</span><br><span class="line">    static AtomicLong ai = new AtomicLong(1);</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        System.out.println(ai.getAndIncrement());</span><br><span class="line">        System.out.println(ai.get());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>输出结果如下:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td></tr></table></figure>
-<p>那么getAndIncrement是如何实现原子操作的呢？让我们一起分析其实现原理，getAndIncrement的源码如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public final long getAndIncrement() &#123;</span><br><span class="line">   return U.getAndAddLong(this, VALUE, 1L);</span><br><span class="line">&#125;</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final long getAndAddLong(Object o, long offset, long delta) &#123;</span><br><span class="line">    long v;</span><br><span class="line">    do &#123;</span><br><span class="line">        v = getLongVolatile(o, offset);</span><br><span class="line">    &#125; while (!weakCompareAndSetLong(o, offset, v, v + delta));</span><br><span class="line">    return v;</span><br><span class="line">&#125;</span><br><span class="line">/** Volatile version of &#123;@link #getLong(Object, long)&#125;  */</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public native long getLongVolatile(Object o, long offset);</span><br><span class="line"></span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final boolean weakCompareAndSetLong(Object o, long offset,</span><br><span class="line">                                           long expected,</span><br><span class="line">                                           ong x) &#123;</span><br><span class="line">    return compareAndSetLong(o, offset, expected, x);</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * Atomically updates Java variable to &#123;@code x&#125; if it is currently</span><br><span class="line"> * holding &#123;@code expected&#125;.</span><br><span class="line"> *</span><br><span class="line"> * &lt;p&gt;This operation has memory semantics of a &#123;@code volatile&#125; read</span><br><span class="line"> * and write.  Corresponds to C11 atomic_compare_exchange_strong.</span><br><span class="line"> *</span><br><span class="line"> * @return &#123;@code true&#125; if successful</span><br><span class="line"> */</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final native boolean compareAndSetLong(Object o, long offset,</span><br><span class="line">                                              long expected,</span><br><span class="line">                                              long x);</span><br></pre></td></tr></table></figure>
+<h1>PutUvarint</h1>
+<h2 id="源码及注释">源码及注释</h2>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">// PutUvarint encodes a uint64 into buf and returns the number of bytes written.</span><br><span class="line">// If the buffer is too small, PutUvarint will panic.</span><br><span class="line">// PutVarint 将 int64 编码为 buf 并返回写入的字节数。如果缓冲区太小，PutVarint 会panic。</span><br><span class="line">func PutUvarint(buf []byte, x uint64) int &#123;</span><br><span class="line">	i := 0</span><br><span class="line">	// 0x80 128</span><br><span class="line">	for x &gt;= 0x80 &#123;</span><br><span class="line">		buf[i] = byte(x) | 0x80</span><br><span class="line">		// 右移7位,然后将右移后的值，赋值给x</span><br><span class="line">		x &gt;&gt;= 7</span><br><span class="line">		i++</span><br><span class="line">	&#125;</span><br><span class="line">	buf[i] = byte(x)</span><br><span class="line">	return i + 1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="代码示例">代码示例</h2>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;encoding/binary&quot;</span><br><span class="line">	&quot;fmt&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	buf := make([]byte, binary.MaxVarintLen64)</span><br><span class="line"></span><br><span class="line">	for _, x := range []int64&#123;-65, -64, -2, -1, 0, 1, 2, 63, 64&#125; &#123;</span><br><span class="line">		n := binary.PutVarint(buf, x)</span><br><span class="line">		fmt.Printf(&quot;%x\n&quot;, buf[:n])</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出结果</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">8101</span><br><span class="line">7f</span><br><span class="line">03</span><br><span class="line">01</span><br><span class="line">00</span><br><span class="line">02</span><br><span class="line">04</span><br><span class="line">7e</span><br><span class="line">8001</span><br><span class="line"></span><br><span class="line">Program exited.</span><br></pre></td></tr></table></figure>
 <blockquote>
-<p>@HotSpotIntrinsicCandidate JDK的源码中，被@HotSpotIntrinsicCandidate标注的方法，在HotSpot中都有一套高效的实现，该高效实现基于CPU指令，运行时，HotSpot维护的高效实现会替代JDK的源码实现，从而获得更高的效率。</p>
+<p><a href="https://go.dev/play/p/yRUoUooVrHm" target="_blank" rel="noopener">https://go.dev/play/p/yRUoUooVrHm</a></p>
 </blockquote>
-<p>源码getAndAddLong(Object o, long offset, long delta)中do while循环体是实现的关键所在，其逻辑是：<br>
-第一步先取得AtomicLong里存储的数值，<br>
-第二步对AtomicLong的当前数值进行加1操作，<br>
-第三步调用weakCompareAndSetLong方法来进行原子更新操作，该方法先检查当前数值是否等于v，等于意味着AtomicLong的值没有被其他线程修改过，则将weakCompareAndSetLong的当前数值更新成v+delta的值，如果不等于v，weakCompareAndSetLong方法会返回false，<font color="DeepPink"><strong>程序会进入do while循环重新进行</strong></font>weakCompareAndSetLong操作。</p>
-<p><font color="DeepPink"><strong>这里隐含了一个问题，当对于共享变量（假设变量名字是a）的竞争非常激烈的时候，在当前线程读取a、改变a之间，a的值会被别的线程改变，从而导致当前线程一直重试（自旋），一直占用CPU。</strong></font></p>
-<p><font color="DeepPink"><strong>这就引出另一个问题，对于锁抢占很激烈的时候，串行是最好的解决办法。比如使用synchronized。</strong></font></p>
+<h1>Uvarint</h1>
+<h2 id="源码及注释-v2">源码及注释</h2>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">// Uvarint decodes a uint64 from buf and returns that value and the</span><br><span class="line">// number of bytes read (&gt; 0). If an error occurred, the value is 0</span><br><span class="line">// and the number of bytes n is &lt;= 0 meaning:</span><br><span class="line">//</span><br><span class="line">//	n == 0: buf too small</span><br><span class="line">//	n  &lt; 0: value larger than 64 bits (overflow)</span><br><span class="line">//	        and -n is the number of bytes read</span><br><span class="line">// Uvarint 从 buf 解码 uint64 并返回该值和读取的字节数（&gt; 0）。如果发生错误，则该值为0，并且字节数n &lt;= 0意味着：</span><br><span class="line">// n == 0：buf太小了</span><br><span class="line">// n &lt;0：大于64位的值（溢出）</span><br><span class="line">//       和-n是读取的字节数</span><br><span class="line">func Uvarint(buf []byte) (uint64, int) &#123;</span><br><span class="line">	var x uint64</span><br><span class="line">	var s uint</span><br><span class="line">	for i, b := range buf &#123;</span><br><span class="line">		// MaxVarintLen64 10</span><br><span class="line">		if i == MaxVarintLen64 &#123;</span><br><span class="line">			// Catch byte reads past MaxVarintLen64.</span><br><span class="line">			// See issue https://golang.org/issues/41185</span><br><span class="line">			return 0, -(i + 1) // overflow</span><br><span class="line">		&#125;</span><br><span class="line">		// 0x80 128</span><br><span class="line">		if b &lt; 0x80 &#123;</span><br><span class="line">			if i == MaxVarintLen64-1 &amp;&amp; b &gt; 1 &#123;</span><br><span class="line">				return 0, -(i + 1) // overflow</span><br><span class="line">			&#125;</span><br><span class="line">			return x | uint64(b)&lt;&lt;s, i + 1</span><br><span class="line">		&#125;</span><br><span class="line">		// 0x7f 127</span><br><span class="line">		x |= uint64(b&amp;0x7f) &lt;&lt; s</span><br><span class="line">		s += 7</span><br><span class="line">	&#125;</span><br><span class="line">	return 0, 0</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="代码示例-v2">代码示例</h2>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;encoding/binary&quot;</span><br><span class="line">	&quot;fmt&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	inputs := [][]byte&#123;</span><br><span class="line">		[]byte&#123;0x01&#125;,       //1</span><br><span class="line">		[]byte&#123;0x02&#125;,       //2</span><br><span class="line">		[]byte&#123;0x7f&#125;,       //127</span><br><span class="line">		[]byte&#123;0x80, 0x01&#125;, //128,1</span><br><span class="line">		[]byte&#123;0xff, 0x01&#125;, //255,1</span><br><span class="line">		[]byte&#123;0x80, 0x02&#125;, //128,2</span><br><span class="line">		[]byte&#123;0x80, 0x03&#125;, //128,3</span><br><span class="line">	&#125;</span><br><span class="line">	for _, b := range inputs &#123;</span><br><span class="line">		x, n := binary.Uvarint(b)</span><br><span class="line">		if n != len(b) &#123;</span><br><span class="line">			fmt.Println(&quot;Uvarint did not consume all of in&quot;)</span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println(x)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出结果</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">384</span><br><span class="line"></span><br><span class="line">Program exited.</span><br></pre></td></tr></table></figure>
 <blockquote>
-<p>java.util.concurrent.atomic中的原子操作基本是基于Unsafe或者VarHandle实现的。</p>
+<p><a href="https://go.dev/play/p/df572cFK6Im" target="_blank" rel="noopener">https://go.dev/play/p/df572cFK6Im</a></p>
 </blockquote>
-<p><a href="https://github.com/jiankunking/openjdk12/blob/master/src/java.base/share/classes/java/util/concurrent/atomic/AtomicLong.java" target="_blank" rel="noopener">AtomicLong源码</a></p>
-<blockquote>
-<p>本文参考 《Java并发编程的艺术》 作者：方腾飞　魏鹏　程晓明</p>
-</blockquote>
+<p>在线16进制转10进制:<a href="https://jisuan5.com/hexadecimal-to-decimal/" target="_blank" rel="noopener">https://jisuan5.com/hexadecimal-to-decimal/</a><br>
+参考文章:<a href="https://cloud.tencent.com/developer/section/1141534" target="_blank" rel="noopener">https://cloud.tencent.com/developer/section/1141534</a></p>
 
     </div>
 
@@ -336,19 +315,19 @@ value）相加，并返回结果。</li>
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\java-juc-atomic-atomiclong.html" rel="bookmark">Java JUC Atomic AtomicLong</a></div>
+      <div class="popular-posts-title"><a href="\golang-gin-get-response-body-oom.html" rel="bookmark">Gin获取Response Body引发的OOM</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\java-concurrent-atomic-package.html" rel="bookmark">[译]Java Concurrent Atomic Package详解</a></div>
+      <div class="popular-posts-title"><a href="\golang-net-http-request-processing-flow.html" rel="bookmark">Golang net/http 请求处理流程分析</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\java-juc-atomic-longadder-1.html" rel="bookmark">Java JUC Atomic LongAdder</a></div>
+      <div class="popular-posts-title"><a href="\golang-copy-on-write-and-atomic.html" rel="bookmark">Golang写时复制是否是原子性的？</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\java-juc-atomic-longadder.html" rel="bookmark">Java JUC Atomic LongAdder</a></div>
+      <div class="popular-posts-title"><a href="\go-select.html" rel="bookmark">[转]Go Select 实现分析</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\java-atomic-operation-principle.html" rel="bookmark">Java 原子操作的实现原理</a></div>
+      <div class="popular-posts-title"><a href="\go-concurrency-patterns-context.html" rel="bookmark">[译]Go 并发 : Context</a></div>
     </li>
   </ul>
 
@@ -381,7 +360,7 @@ value）相加，并返回结果。</li>
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://jiankunking.com/java-juc-atomic-atomiclong-1.html" title="Java JUC Atomic AtomicLong">https://jiankunking.com/java-juc-atomic-atomiclong-1.html</a>
+    <a href="https://jiankunking.com/golang_putuvarint_uvarint.html" title="Golang PutUvarint Uvarint">https://jiankunking.com/golang_putuvarint_uvarint.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -411,12 +390,9 @@ value）相加，并返回结果。</li>
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/原创/" rel="tag"># 原创</a>
-              <a href="/tags/java/" rel="tag"># Java</a>
-              <a href="/tags/jdk/" rel="tag"># JDK</a>
-              <a href="/tags/concurrent/" rel="tag"># Concurrent</a>
-              <a href="/tags/atomic/" rel="tag"># Atomic</a>
-              <a href="/tags/atomiclong/" rel="tag"># AtomicLong</a>
+              <a href="/tags/go/" rel="tag"># Go</a>
+              <a href="/tags/putuvarint/" rel="tag"># PutUvarint</a>
+              <a href="/tags/uvarint/" rel="tag"># Uvarint</a>
           </div>
 
         
@@ -425,12 +401,12 @@ value）相加，并返回结果。</li>
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/java-juc-atomic-atomiclong.html" rel="prev" title="Java JUC Atomic AtomicLong">
-      <i class="fa fa-chevron-left"></i> Java JUC Atomic AtomicLong
+    <a href="/golang-net-http-request-processing-flow.html" rel="prev" title="Golang net/http 请求处理流程分析">
+      <i class="fa fa-chevron-left"></i> Golang net/http 请求处理流程分析
     </a></div>
       <div class="post-nav-item">
-    <a href="/java-concurrent-atomic-package.html" rel="next" title="[译]Java Concurrent Atomic Package详解">
-      [译]Java Concurrent Atomic Package详解 <i class="fa fa-chevron-right"></i>
+    <a href="/effective-elasticsearch-plugin-management-with-docker.html" rel="next" title="[译]Effective Elasticsearch Plugin Management with Docker">
+      [译]Effective Elasticsearch Plugin Management with Docker <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -491,6 +467,7 @@ value）相加，并返回结果。</li>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">PutUvarint</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#源码及注释"><span class="nav-number">1.1.</span> <span class="nav-text">源码及注释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码示例"><span class="nav-number">1.2.</span> <span class="nav-text">代码示例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Uvarint</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#源码及注释-v2"><span class="nav-number">2.1.</span> <span class="nav-text">源码及注释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码示例-v2"><span class="nav-number">2.2.</span> <span class="nav-text">代码示例</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -506,7 +483,7 @@ value）相加，并返回结果。</li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">138</span>
+          <span class="site-state-item-count">135</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -684,7 +661,7 @@ NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
       repo        : 'blog-comments',
       owner       : 'jiankunking',
       admin       : ['jiankunking'],
-      id          : 'e171a275a0da3f5aa0a97037655b8137',
+      id          : '4b237709fe9fc39a93fa72d1b1702809',
         language: 'zh-CN',
       distractionFreeMode: true
     });
