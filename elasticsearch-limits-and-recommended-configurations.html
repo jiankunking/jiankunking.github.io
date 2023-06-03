@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="ElasticSearch的一些限制及推荐配置">
-<meta name="keywords" content="ElasticSearch,原创,限制,推荐,配置">
+<meta name="keywords" content="原创,ElasticSearch,限制,推荐,配置">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ElasticSearch的一些限制及推荐配置">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-limits-and-recommended-configurations.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="ElasticSearch的一些限制及推荐配置">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-04-25T01:07:04.388Z">
+<meta property="og:updated_time" content="2023-06-01T10:37:29.715Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ElasticSearch的一些限制及推荐配置">
 <meta name="twitter:description" content="ElasticSearch的一些限制及推荐配置">
@@ -148,12 +148,12 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">137</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">140</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">189</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">191</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-04-25 09:07:04" itemprop="dateModified" datetime="2023-04-25T09:07:04+08:00">2023-04-25</time>
+                <time title="修改时间：2023-06-01 18:37:29" itemprop="dateModified" datetime="2023-06-01T18:37:29+08:00">2023-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -306,10 +306,8 @@
 <p>从ES 5.x开始，索引级设置需要写在模板中，或者在创建索引时指定，我们把各个索引通用的配置写到了模板中，这个模板匹配全部的索引，并且具有最低的优先级，让用户定义的模板有更高的优先级，以覆盖这个模板中的配置。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;template&quot;: &quot;*&quot;,</span><br><span class="line">  &quot;order&quot;: 0,</span><br><span class="line">  &quot;settings&quot;: &#123;</span><br><span class="line">    &quot;index.merge.policy.max_merged_segment&quot;: &quot;2gb&quot;,</span><br><span class="line">    &quot;index.merge.policy.segments_per_tier&quot;: &quot;24&quot;,</span><br><span class="line">    &quot;index.number_of_replicas&quot;: &quot;1&quot;,</span><br><span class="line">    &quot;index.number_of_shards&quot;: &quot;24&quot;,</span><br><span class="line">    &quot;index.optimize_auto_generated_id&quot;: &quot;true&quot;,</span><br><span class="line">    &quot;index.refresh_interval&quot;: &quot;120s&quot;,</span><br><span class="line">    &quot;index.translog.durability&quot;: &quot;async&quot;,</span><br><span class="line">    &quot;index.translog.flush_threshold_size&quot;: &quot;1000mb&quot;,</span><br><span class="line">    &quot;index.translog.sync_interval&quot;: &quot;120s&quot;,</span><br><span class="line">    &quot;index.unassigned.node_left.delayed_timeout&quot;: &quot;5d&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="避免热索引分片不均">避免热索引分片不均</h2>
-<p>默认情况下，ES的分片均衡策略是尽量保持各个节点分片数量大致相同。但是当集群扩容时，新加入集群的节点没有分片，此时新创建的<br>
-索引分片会集中在新节点上，这导致新节点拥有太多热点数据，该节点可能会面临巨大的写入压力。因此，对于一个索引的全部分片，我们需要控制单个节点上存储的该索引的分片总数，使索引分片在节点上分布得更均匀一些。</p>
-<p>例如，10个节点的集群，索引主分片数为5，副本数量为1，那么平均下来每个节点应该有(5×2)/10=1个分片，考虑到节点故障、分片迁<br>
-移的情况，可以设置节点分片总数为2：</p>
+<p>默认情况下，ES的分片均衡策略是尽量保持各个节点分片数量大致相同。但是当集群扩容时，新加入集群的节点没有分片，此时新创建的索引分片会集中在新节点上，这导致新节点拥有太多热点数据，该节点可能会面临巨大的写入压力。因此，对于一个索引的全部分片，我们需要控制单个节点上存储的该索引的分片总数，使索引分片在节点上分布得更均匀一些。</p>
+<p>例如，10个节点的集群，索引主分片数为5，副本数量为1，那么平均下来每个节点应该有(5×2)/10=1个分片，考虑到节点故障、分片迁移的情况，可以设置节点分片总数为2：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://127.0.0.1:9200/myindex/_settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data &apos;&#123;</span><br><span class="line">  &quot;index&quot;: &#123;</span><br><span class="line">    &quot;routing.allocation.total_shards_per_node&quot;: &quot;2&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
 <h2 id="延时分片分配策略-节点离开延迟分片分配">延时分片分配策略(节点离开延迟分片分配)</h2>
 <p>当节点出于任何原因（人为原因或系统异常）离开集群时，主节点会做出以下反应（如下称为步骤 X 是方便后续的解读）：</p>
@@ -329,8 +327,7 @@
 <h2 id="每个节点将被恢复的并发分片数">每个节点将被恢复的并发分片数</h2>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PUT _cluster/settings</span><br><span class="line">&#123;</span><br><span class="line">  &quot;transient&quot;: &#123;</span><br><span class="line">    &quot;cluster.routing.allocation.node_concurrent_recoveries&quot;: 3</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>以上配置:node_concurrent_incoming_recoveries和 node_concurrent_outgoing_recoveries同时生效。<br>
-incoming_recoverie:通常是其他节点上的副本 shard 恢复到该节点上<br>
-outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分片到其他节点上。</p>
+incoming_recoverie:通常是其他节点上的副本 shard 恢复到该节点上outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分片到其他节点上。</p>
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html</a></p>
 
     </div>
@@ -342,6 +339,9 @@ outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分�
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\elasticsearch-file-storage.html" rel="bookmark">Elasticsearch文件存储</a></div>
+    </li>
+    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\human-names-searching-how-to-improve-results.html" rel="bookmark">人名搜索 - 如何改进结果</a></div>
     </li>
     <li class="popular-posts-item">
@@ -352,9 +352,6 @@ outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分�
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\elasticsearch-node-stop-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 节点关闭分析</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-node-start-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 节点启动分析</a></div>
     </li>
   </ul>
 
@@ -417,8 +414,8 @@ outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分�
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
+              <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/限制/" rel="tag"># 限制</a>
               <a href="/tags/推荐/" rel="tag"># 推荐</a>
               <a href="/tags/配置/" rel="tag"># 配置</a>
@@ -512,7 +509,7 @@ outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">137</span>
+          <span class="site-state-item-count">140</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -524,7 +521,7 @@ outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分�
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">189</span>
+        <span class="site-state-item-count">191</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -583,7 +580,7 @@ outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分�
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">1.1m</span>
+    <span title="站点总字数">1.4m</span>
 </div>
 
         
