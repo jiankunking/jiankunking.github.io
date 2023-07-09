@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="TCP的三次握手、TCP四次挥手、TCP状态机">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-07-08T06:22:03.784Z">
+<meta property="og:updated_time" content="2023-07-09T00:59:35.463Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP 状态图">
 <meta name="twitter:description" content="TCP的三次握手、TCP四次挥手、TCP状态机">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-07-08 14:22:03" itemprop="dateModified" datetime="2023-07-08T14:22:03+08:00">2023-07-08</time>
+                <time title="修改时间：2023-07-09 08:59:35" itemprop="dateModified" datetime="2023-07-09T08:59:35+08:00">2023-07-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -269,14 +269,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>1.1k</span>
+              <span>1.9k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>2 分钟</span>
             </span>
 
         </div>
@@ -333,6 +333,24 @@ A直接跑路还有一个问题是,A的端口就直接空出来了,但是B不知
 <p><img data-src="/images/tcp-state-diagram/tcp-queue.png" alt></p>
 <p>连接建立好之后会被放入 accept queue，等待应用 accept，如果应用迟迟没有从队列里面去 accept 连接，等到 client 超时时间，主动关闭了连接，这时连接在 server 端仍在全连接队列中，状态变为 <code>CLOSE_WAIT</code>。</p>
 <p>如果连接一直不被应用 accept 出来，内核也不会自动响应 ACK 去关闭连接的。不过这种情况的堆积量一般也不高，取决于 accept queue 的大小。</p>
+<h2 id="TIME-WAIT">TIME_WAIT</h2>
+<p>补充我一个之前遇到的场景，有次上线服务，发现连接ES的连接有很多TIME_WAIT<br>
+<img data-src="/images/tcp-state-diagram/cmdb_tcp_time_wait.jpg" alt></p>
+<p>TIME_WAIT很明显就是本地主动关闭连接，但在等2MSL。</p>
+<p>按理说连接ES都是长连接（Keep-Alive），按理说不会有这么多需要关闭的连接。</p>
+<p>看了下代码及issue，找到了原因<br>
+<a href="https://github.com/elastic/go-elasticsearch/issues/123" target="_blank" rel="noopener">https://github.com/elastic/go-elasticsearch/issues/123</a></p>
+<p>发现其实是Golang的一个问题<br>
+<a href="https://pkg.go.dev/net/http#Response" target="_blank" rel="noopener">https://pkg.go.dev/net/http#Response</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// The http Client and Transport guarantee that Body is always</span><br><span class="line">// non-nil, even on responses without a body or responses with</span><br><span class="line">// a zero-length body. It is the caller&apos;s responsibility to</span><br><span class="line">// close Body. The default HTTP client&apos;s Transport may not</span><br><span class="line">// reuse HTTP/1.x &quot;keep-alive&quot; TCP connections if the Body is</span><br><span class="line">// not read to completion and closed.</span><br></pre></td></tr></table></figure>
+<p>在代码中加上</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_ = res.String()</span><br></pre></td></tr></table></figure>
+<p>问题解决</p>
+<p>关于TIME_WAIT一些其它资料推荐:</p>
+<ul>
+<li><a href="/attachments/网络编程实战/TIME_WAIT：隐藏在细节下的魔鬼.pdf" target="_blank">10-TIME_WAIT：隐藏在细节下的魔鬼</a></li>
+<li><a href="https://coolshell.cn/articles/22263.html(%E5%A6%82%E6%9E%9C%E7%BD%91%E7%AB%99%E6%89%93%E4%B8%8D%E5%BC%80%EF%BC%8C%E5%8F%AF%E4%BB%A5%E6%9C%AC%E5%9C%B0%E8%BF%90%E8%A1%8C%E4%B8%8B%E8%AF%95%E8%AF%95https://github.com/jiankunking/forever-coolshell)" target="_blank" rel="noopener">https://coolshell.cn/articles/22263.html(如果网站打不开，可以本地运行下试试https://github.com/jiankunking/forever-coolshell)</a></li>
+</ul>
 <h1>TCP状态机</h1>
 <p>将连接建立和连接断开的两个时序状态图综合起来,就是这个著名的TCP的状态机。学习的时候比较建议将这个状态机和时序状态机对照着看,不然容易晕。</p>
 <p><img data-src="/images/tcp-state-diagram/Tcp_state_diagram.png" alt></p>
@@ -499,7 +517,7 @@ A直接跑路还有一个问题是,A的端口就直接空出来了,但是B不知
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">TCP的三次握手</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">TCP四次挥手</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#CLOSE-WAIT-堆积的危害"><span class="nav-number">2.1.</span> <span class="nav-text">CLOSE_WAIT 堆积的危害</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#应用没有-Close"><span class="nav-number">2.1.1.</span> <span class="nav-text">应用没有 Close</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应用迟迟不-accept-连接"><span class="nav-number">2.1.2.</span> <span class="nav-text">应用迟迟不 accept 连接</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">TCP状态机</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">TCP的三次握手</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">TCP四次挥手</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#CLOSE-WAIT-堆积的危害"><span class="nav-number">2.1.</span> <span class="nav-text">CLOSE_WAIT 堆积的危害</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#应用没有-Close"><span class="nav-number">2.1.1.</span> <span class="nav-text">应用没有 Close</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应用迟迟不-accept-连接"><span class="nav-number">2.1.2.</span> <span class="nav-text">应用迟迟不 accept 连接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TIME-WAIT"><span class="nav-number">2.2.</span> <span class="nav-text">TIME_WAIT</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">TCP状态机</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
