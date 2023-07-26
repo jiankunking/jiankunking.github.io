@@ -53,9 +53,9 @@
             
             <tag> 读书笔记 </tag>
             
-            <tag> 原创 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 原创 </tag>
             
         </tags>
       
@@ -361,9 +361,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> ElasticSearch </tag>
             
@@ -392,9 +392,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> ElasticSearch </tag>
             
@@ -566,11 +566,11 @@
             
             <tag> ElasticSearch </tag>
             
+            <tag> 翻译 </tag>
+            
             <tag> Plugin </tag>
             
             <tag> Docker </tag>
-            
-            <tag> 翻译 </tag>
             
         </tags>
       
@@ -695,7 +695,7 @@
       <link href="mysql-isolation-level-repeatable-read-and-phantom-read.html"/>
       <url>mysql-isolation-level-repeatable-read-and-phantom-read.html</url>
       
-        <content type="html"><![CDATA[<blockquote><p>在MySQL可重复读的隔离级别下，能很大程度上避免幻读，而不能完全避免。</p></blockquote><a id="more"></a><h1>场景复现</h1><p>环境信息：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MySQL版本：5.7.23-log</span><br><span class="line">隔离级别：REPEATABLE-READ</span><br></pre></td></tr></table></figure><p>测试数据：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">SET NAMES utf8mb4;</span><br><span class="line">SET FOREIGN_KEY_CHECKS = 0;</span><br><span class="line"></span><br><span class="line">-- ----------------------------</span><br><span class="line">-- Table structure for app_record_lock_test</span><br><span class="line">-- ----------------------------</span><br><span class="line">DROP TABLE IF EXISTS `app_record_lock_test`;</span><br><span class="line">CREATE TABLE `app_record_lock_test`  (</span><br><span class="line">  `id` int(11) NOT NULL AUTO_INCREMENT,</span><br><span class="line">  `hash` bigint(20) NOT NULL DEFAULT 0,</span><br><span class="line">  `cluster` varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,</span><br><span class="line">  `namespace` varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT &apos;&apos;,</span><br><span class="line">  `service` varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT &apos;&apos;,</span><br><span class="line">  `pod` varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT &apos;&apos;,</span><br><span class="line">  `created_at` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),</span><br><span class="line">  `updated_at` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),</span><br><span class="line">  PRIMARY KEY (`id`) USING BTREE,</span><br><span class="line">  UNIQUE INDEX `cluster_hash`(`cluster`, `hash`) USING BTREE</span><br><span class="line">) ENGINE = InnoDB AUTO_INCREMENT = 120236026 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;</span><br><span class="line"></span><br><span class="line">-- ----------------------------</span><br><span class="line">-- Records of app_record_lock_test</span><br><span class="line">-- ----------------------------</span><br><span class="line">INSERT INTO `app_record_lock_test` VALUES (120236012, 1, &apos;cluster&apos;, &apos;namespace&apos;, &apos;service&apos;, &apos;pod&apos;, &apos;2022-02-18 14:14:59&apos;, &apos;2022-02-09 10:00:00&apos;);</span><br><span class="line">INSERT INTO `app_record_lock_test` VALUES (120236013, 2, &apos;cluster&apos;, &apos;namespace&apos;, &apos;service&apos;, &apos;pod&apos;, &apos;2022-02-18 14:14:59&apos;, &apos;2022-02-09 10:00:00&apos;);</span><br><span class="line">INSERT INTO `app_record_lock_test` VALUES (120236014, 3, &apos;cluster&apos;, &apos;namespace&apos;, &apos;service&apos;, &apos;pod&apos;, &apos;2022-02-18 14:14:59&apos;, &apos;2022-02-09 10:00:00&apos;);</span><br><span class="line"></span><br><span class="line">SET FOREIGN_KEY_CHECKS = 1;</span><br></pre></td></tr></table></figure><p>复现流程：</p><table><thead><tr><th style="text-align:center">时间</th><th style="text-align:center">会话A(T1)</th><th style="text-align:center">会话B(T2)</th></tr></thead><tbody><tr><td style="text-align:center">1</td><td style="text-align:center">START TRANSACTION;</td><td style="text-align:center"></td></tr><tr><td style="text-align:center">2</td><td style="text-align:center"></td><td style="text-align:center">START TRANSACTION;</td></tr><tr><td style="text-align:center">3</td><td style="text-align:center">SELECT * FROM app_record_lock_test WHERE cluster = ‘cluster1’;</td><td style="text-align:center"></td></tr><tr><td style="text-align:center">4</td><td style="text-align:center"></td><td style="text-align:center">INSERT INTO app_record_lock_test (HASH, cluster, namespace, service, pod, updated_at)VALUES(1, ‘cluster1’, ‘namespace’, ‘service’, ‘pod’, ‘2022-02-09 10:00:00’) ;</td></tr><tr><td style="text-align:center">5</td><td style="text-align:center"></td><td style="text-align:center">COMMIT;</td></tr><tr><td style="text-align:center">6</td><td style="text-align:center">update app_record_lock_test set namespace= ‘namespace2’ where cluster = ‘cluster1’;</td><td style="text-align:center"></td></tr><tr><td style="text-align:center">7</td><td style="text-align:center">SELECT * FROM app_record_lock_test WHERE cluster = ‘cluster1’;</td><td style="text-align:center"></td></tr><tr><td style="text-align:center">8</td><td style="text-align:center">COMMIT;</td><td style="text-align:center"></td></tr></tbody></table><p>在第3步执行查询cluster = 'cluster1’时，查询到的结果是空。<br>但会话B执行完第4 5之后，再在会话A中执行第6步，就不会等待或者报错了，也就是可以正常执行，在第7步的查询中，也能查到该数据了。</p><blockquote><p>注意：会话A能正常更新、查询的前提是：会话B事务已提交。<br>注意：会话A如果不执行更新（也就是第6步），那么在查询的时候，还是查询不到记录的。</p></blockquote><h1>原因分析</h1><p>对于使用InnoDB存储引擎的表来说，它的聚簇索引记录中都包含下面这两个必要的隐藏列（row_id并不是必要的：在创建的表中有主键时，或者有不允许为NULL的UNIQUE键时，都不会包含row_id列）.<br>• trx_id：一个事务每次对某条聚簇索引记录进行改动时，都会把该事务的事务id赋值给trx_id隐藏列.<br>• roll_pointer：每次对某条聚族索引记录进行改动时，都会把旧的版本写入到undo日志中.这个隐藏列就相当于一个指针，可以通过它找到该记录修改前的信息.</p><p>在REPEATABLE READ隔离级别下，T1第一次执行普通的SELECT语句时生成了一个ReadView,之后T2向hero表中新插入一条记录并提交.ReadView并不能阻止T1执行UPDATE或者DELETE语句来改动这个新插入的记录（由于T2已经提交，因此改动该记录并不会造成阻塞），但是这样一来，这条新记录的trx_id隐藏列的值就变成了T1的事务id,之后T1再使用普通的SELECT语句去查询这条记录时就可以看到这条记录了，也就可以把这条记录返回给客户端.因为这个特殊现象的存在，我们也可以认为InnoDB中的MVCC并不能完全禁止幻读。</p><blockquote><p>也就是说，T1将新插入数据的事务号修改的小于等于ReadView对应的事务版本号了，相当于扩充了ReadView的范围，从而导致在下一次查询的时候能查询出该记录。</p></blockquote>]]></content>
+        <content type="html"><![CDATA[<blockquote><p>在MySQL可重复读的隔离级别下，能很大程度上避免幻读，而不能完全避免。</p></blockquote><a id="more"></a><h1>场景复现</h1><p>环境信息：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MySQL版本：5.7.23-log</span><br><span class="line">隔离级别：REPEATABLE-READ</span><br></pre></td></tr></table></figure><p>测试数据：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">SET NAMES utf8mb4;</span><br><span class="line">SET FOREIGN_KEY_CHECKS = 0;</span><br><span class="line"></span><br><span class="line">-- ----------------------------</span><br><span class="line">-- Table structure for app_record_lock_test</span><br><span class="line">-- ----------------------------</span><br><span class="line">DROP TABLE IF EXISTS `app_record_lock_test`;</span><br><span class="line">CREATE TABLE `app_record_lock_test`  (</span><br><span class="line">  `id` int(11) NOT NULL AUTO_INCREMENT,</span><br><span class="line">  `hash` bigint(20) NOT NULL DEFAULT 0,</span><br><span class="line">  `cluster` varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,</span><br><span class="line">  `namespace` varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT &apos;&apos;,</span><br><span class="line">  `service` varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT &apos;&apos;,</span><br><span class="line">  `pod` varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT &apos;&apos;,</span><br><span class="line">  `created_at` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),</span><br><span class="line">  `updated_at` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),</span><br><span class="line">  PRIMARY KEY (`id`) USING BTREE,</span><br><span class="line">  UNIQUE INDEX `cluster_hash`(`cluster`, `hash`) USING BTREE</span><br><span class="line">) ENGINE = InnoDB AUTO_INCREMENT = 120236026 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;</span><br><span class="line"></span><br><span class="line">-- ----------------------------</span><br><span class="line">-- Records of app_record_lock_test</span><br><span class="line">-- ----------------------------</span><br><span class="line">INSERT INTO `app_record_lock_test` VALUES (120236012, 1, &apos;cluster&apos;, &apos;namespace&apos;, &apos;service&apos;, &apos;pod&apos;, &apos;2022-02-18 14:14:59&apos;, &apos;2022-02-09 10:00:00&apos;);</span><br><span class="line">INSERT INTO `app_record_lock_test` VALUES (120236013, 2, &apos;cluster&apos;, &apos;namespace&apos;, &apos;service&apos;, &apos;pod&apos;, &apos;2022-02-18 14:14:59&apos;, &apos;2022-02-09 10:00:00&apos;);</span><br><span class="line">INSERT INTO `app_record_lock_test` VALUES (120236014, 3, &apos;cluster&apos;, &apos;namespace&apos;, &apos;service&apos;, &apos;pod&apos;, &apos;2022-02-18 14:14:59&apos;, &apos;2022-02-09 10:00:00&apos;);</span><br><span class="line"></span><br><span class="line">SET FOREIGN_KEY_CHECKS = 1;</span><br></pre></td></tr></table></figure><p>复现流程：</p><table><thead><tr><th style="text-align:center">时间</th><th style="text-align:center">会话A(T1)</th><th style="text-align:center">会话B(T2)</th></tr></thead><tbody><tr><td style="text-align:center">1</td><td style="text-align:center">START TRANSACTION;</td><td style="text-align:center"></td></tr><tr><td style="text-align:center">2</td><td style="text-align:center"></td><td style="text-align:center">START TRANSACTION;</td></tr><tr><td style="text-align:center">3</td><td style="text-align:center">SELECT * FROM app_record_lock_test WHERE cluster = ‘cluster1’;</td><td style="text-align:center"></td></tr><tr><td style="text-align:center">4</td><td style="text-align:center"></td><td style="text-align:center">INSERT INTO app_record_lock_test (HASH, cluster, namespace, service, pod, updated_at)VALUES(1, ‘cluster1’, ‘namespace’, ‘service’, ‘pod’, ‘2022-02-09 10:00:00’) ;</td></tr><tr><td style="text-align:center">5</td><td style="text-align:center"></td><td style="text-align:center">COMMIT;</td></tr><tr><td style="text-align:center">6</td><td style="text-align:center">update app_record_lock_test set namespace= ‘namespace2’ where cluster = ‘cluster1’;</td><td style="text-align:center"></td></tr><tr><td style="text-align:center">7</td><td style="text-align:center">SELECT * FROM app_record_lock_test WHERE cluster = ‘cluster1’;</td><td style="text-align:center"></td></tr><tr><td style="text-align:center">8</td><td style="text-align:center">COMMIT;</td><td style="text-align:center"></td></tr></tbody></table><p>在第3步执行查询cluster = 'cluster1’时，查询到的结果是空。<br>但会话B执行完第4 5之后，再在会话A中执行第6步，就不会等待或者报错了，也就是可以正常执行，在第7步的查询中，也能查到该数据了。</p><blockquote><p>注意：会话A能正常更新、查询的前提是：会话B事务已提交。<br>注意：会话A如果不执行更新（也就是第6步），那么在查询的时候，还是查询不到记录的。</p></blockquote><h1>原因分析</h1><p>对于使用InnoDB存储引擎的表来说，它的聚簇索引记录中都包含下面这两个必要的隐藏列（row_id并不是必要的：在创建的表中有主键时，或者有不允许为NULL的UNIQUE键时，都不会包含row_id列）.<br>• trx_id：一个事务每次对某条聚簇索引记录进行改动时，都会把该事务的事务id赋值给trx_id隐藏列.<br>• roll_pointer：每次对某条聚族索引记录进行改动时，都会把旧的版本写入到undo日志中.这个隐藏列就相当于一个指针，可以通过它找到该记录修改前的信息.</p><p>在REPEATABLE READ隔离级别下，T1第一次执行普通的SELECT语句时生成了一个ReadView,之后T2向app_record_lock_test表中新插入一条记录并提交.ReadView并不能阻止T1执行UPDATE或者DELETE语句来改动这个新插入的记录（由于T2已经提交，因此改动该记录并不会造成阻塞），但是这样一来，这条新记录的trx_id隐藏列的值就变成了T1的事务id,之后T1再使用普通的SELECT语句去查询这条记录时就可以看到这条记录了，也就可以把这条记录返回给客户端.因为这个特殊现象的存在，我们也可以认为InnoDB中的MVCC并不能完全禁止幻读。</p><blockquote><p>也就是说，T1将新插入数据的事务号修改的小于等于ReadView对应的事务版本号了，相当于扩充了ReadView的范围，从而导致在下一次查询的时候能查询出该记录。</p></blockquote>]]></content>
       
       
       <categories>
@@ -1003,9 +1003,9 @@
             
             <tag> ElasticSearch </tag>
             
-            <tag> Node </tag>
-            
             <tag> 源码 </tag>
+            
+            <tag> Node </tag>
             
         </tags>
       
@@ -1034,9 +1034,9 @@
             
             <tag> ElasticSearch </tag>
             
-            <tag> Node </tag>
-            
             <tag> 源码 </tag>
+            
+            <tag> Node </tag>
             
         </tags>
       
@@ -1065,9 +1065,9 @@
             
             <tag> ElasticSearch </tag>
             
-            <tag> 源码 </tag>
-            
             <tag> GET </tag>
+            
+            <tag> 源码 </tag>
             
         </tags>
       
@@ -1156,11 +1156,11 @@
             
             <tag> ElasticSearch </tag>
             
-            <tag> 翻译 </tag>
-            
             <tag> Cluster </tag>
             
             <tag> Tuning </tag>
+            
+            <tag> 翻译 </tag>
             
         </tags>
       
@@ -1965,13 +1965,13 @@
             
             <tag> ElasticSearch </tag>
             
-            <tag> 翻译 </tag>
-            
             <tag> Cluster </tag>
             
             <tag> Size </tag>
             
             <tag> Tuning </tag>
+            
+            <tag> 翻译 </tag>
             
         </tags>
       
@@ -2127,9 +2127,9 @@
             
             <tag> 读书笔记 </tag>
             
-            <tag> 原创 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 原创 </tag>
             
         </tags>
       
@@ -2448,9 +2448,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> Microservice </tag>
             
@@ -2562,9 +2562,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> OAuth </tag>
             
@@ -2618,9 +2618,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> UNION </tag>
             
@@ -2755,7 +2755,7 @@
       <link href="idea-plugin.html"/>
       <url>idea-plugin.html</url>
       
-        <content type="html"><![CDATA[<blockquote><p>IDEA 个人常用插件整理，持续更新中</p></blockquote><a id="more"></a><h1>mybatis-lite</h1><p>根据数据库表自动生成代码<br>git地址：<a href="https://github.com/mustfun/mybatis-lite" target="_blank" rel="noopener">https://github.com/mustfun/mybatis-lite</a></p><h1>MyBatis Log Plugin</h1><p>把mybatis输出的日志还原成完整的sql语句<br>git地址：<a href="https://github.com/kookob/mybatis-log-plugin" target="_blank" rel="noopener">https://github.com/kookob/mybatis-log-plugin</a></p>]]></content>
+        <content type="html"><![CDATA[<blockquote><p>IDEA 个人常用插件整理，持续更新中</p></blockquote><a id="more"></a><h1>mybatis-lite</h1><p>根据数据库表自动生成代码<br>git地址：<a href="https://github.com/mustfun/mybatis-lite" target="_blank" rel="noopener">https://github.com/mustfun/mybatis-lite</a></p><h1>MyBatis Log Plugin</h1><p>把mybatis输出的日志还原成完整的sql语句<br>git地址：<a href="https://github.com/kookob/mybatis-log-plugin" target="_blank" rel="noopener">https://github.com/kookob/mybatis-log-plugin</a></p><h1>MyBatisX</h1><p>mapper和xml互相跳转<br><a href="https://baomidou.com/pages/ba5b24/" target="_blank" rel="noopener">https://baomidou.com/pages/ba5b24/</a><br>git地址：<a href="https://github.com/baomidou/MybatisX" target="_blank" rel="noopener">https://github.com/baomidou/MybatisX</a></p>]]></content>
       
       
       <categories>
@@ -3358,6 +3358,8 @@
             
             <tag> Design </tag>
             
+            <tag> Index </tag>
+            
             <tag> Database </tag>
             
             <tag> Oracle </tag>
@@ -3365,8 +3367,6 @@
             <tag> SQL Server </tag>
             
             <tag> DB2 </tag>
-            
-            <tag> Index </tag>
             
             <tag> Optimizers </tag>
             
@@ -3426,9 +3426,9 @@
       
         <tags>
             
-            <tag> Words </tag>
-            
             <tag> 原创 </tag>
+            
+            <tag> Words </tag>
             
         </tags>
       
@@ -3612,9 +3612,9 @@
       
         <tags>
             
-            <tag> 原创 </tag>
-            
             <tag> Architecture </tag>
+            
+            <tag> 原创 </tag>
             
             <tag> Multi-Live </tag>
             

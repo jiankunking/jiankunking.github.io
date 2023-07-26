@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="在MySQL可重复读的隔离级别下，能很大程度上避免幻读，而不能完全避免。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2022-03-15T00:59:01.679Z">
+<meta property="og:updated_time" content="2023-07-26T00:55:40.538Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL 可重复读隔离级别与幻读">
 <meta name="twitter:description" content="在MySQL可重复读的隔离级别下，能很大程度上避免幻读，而不能完全避免。">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-03-15 08:59:01" itemprop="dateModified" datetime="2022-03-15T08:59:01+08:00">2022-03-15</time>
+                <time title="修改时间：2023-07-26 08:55:40" itemprop="dateModified" datetime="2023-07-26T08:55:40+08:00">2023-07-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -359,7 +359,7 @@
 <p>对于使用InnoDB存储引擎的表来说，它的聚簇索引记录中都包含下面这两个必要的隐藏列（row_id并不是必要的：在创建的表中有主键时，或者有不允许为NULL的UNIQUE键时，都不会包含row_id列）.<br>
 • trx_id：一个事务每次对某条聚簇索引记录进行改动时，都会把该事务的事务id赋值给trx_id隐藏列.<br>
 • roll_pointer：每次对某条聚族索引记录进行改动时，都会把旧的版本写入到undo日志中.这个隐藏列就相当于一个指针，可以通过它找到该记录修改前的信息.</p>
-<p>在REPEATABLE READ隔离级别下，T1第一次执行普通的SELECT语句时生成了一个ReadView,之后T2向hero表中新插入一条记录并提交.ReadView并不能阻止T1执行UPDATE或者DELETE语句来改动这个新插入的记录（由于T2已经提交，因此改动该记录并不会造成阻塞），但是这样一来，这条新记录的trx_id隐藏列的值就变成了T1的事务id,之后T1再使用普通的SELECT语句去查询这条记录时就可以看到这条记录了，也就可以把这条记录返回给客户端.因为这个特殊现象的存在，我们也可以认为InnoDB中的MVCC并不能完全禁止幻读。</p>
+<p>在REPEATABLE READ隔离级别下，T1第一次执行普通的SELECT语句时生成了一个ReadView,之后T2向app_record_lock_test表中新插入一条记录并提交.ReadView并不能阻止T1执行UPDATE或者DELETE语句来改动这个新插入的记录（由于T2已经提交，因此改动该记录并不会造成阻塞），但是这样一来，这条新记录的trx_id隐藏列的值就变成了T1的事务id,之后T1再使用普通的SELECT语句去查询这条记录时就可以看到这条记录了，也就可以把这条记录返回给客户端.因为这个特殊现象的存在，我们也可以认为InnoDB中的MVCC并不能完全禁止幻读。</p>
 <blockquote>
 <p>也就是说，T1将新插入数据的事务号修改的小于等于ReadView对应的事务版本号了，相当于扩充了ReadView的范围，从而导致在下一次查询的时候能查询出该记录。</p>
 </blockquote>
