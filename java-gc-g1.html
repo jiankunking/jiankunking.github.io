@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="有可能是全网最全的G1总结">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-07-10T09:23:06.267Z">
+<meta property="og:updated_time" content="2023-07-31T10:39:10.369Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java 垃圾回收算法之G1">
 <meta name="twitter:description" content="有可能是全网最全的G1总结">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-07-10 17:23:06" itemprop="dateModified" datetime="2023-07-10T17:23:06+08:00">2023-07-10</time>
+                <time title="修改时间：2023-07-31 18:39:10" itemprop="dateModified" datetime="2023-07-31T18:39:10+08:00">2023-07-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -269,7 +269,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>7.8k</span>
+              <span>8.2k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -292,6 +292,8 @@
 <p>有可能是全网最全的G1总结</p>
 </blockquote>
 <a id="more"></a>
+<p>推荐阅读文章：<br>
+<a href="/attachments/java-gc-g1/22G1GC：分区回收算法说的是什么？.pdf" target="_blank">G1GC：分区回收算法说的是什么？</a></p>
 <p>推荐阅读官方文档:<br>
 <a href="https://docs.oracle.com/en/java/javase/20/gctuning/garbage-first-g1-garbage-collector1.html#GUID-3A99AE6C-F80A-4565-A27C-B4AEDF5CDF71" target="_blank" rel="noopener">https://docs.oracle.com/en/java/javase/20/gctuning/garbage-first-g1-garbage-collector1.html#GUID-3A99AE6C-F80A-4565-A27C-B4AEDF5CDF71</a></p>
 <p>调优:<br>
@@ -446,6 +448,11 @@ Humongous regions：巨型区域</p>
 </ul>
 <blockquote>
 <p>对于增大Region size有一个负面影响就是：减少了可用region的数量。因此，对于这种情况，你需要进行相应的测试，以查看是否实际提高了应用程序的吞吐量或延迟。</p>
+</blockquote>
+<h2 id="当巨型对象对象大于region的时候如何处理？">当巨型对象对象大于region的时候如何处理？</h2>
+<p>Humongous objects always take up a number of regions. If a humongous object is smaller than one region then it takes up the whole region. If a humongous object is larger than N regions and smaller than (N+1) regions then it takes up (N+1) regions. No allocations are allowed in the free space, if any, of the last region.</p>
+<blockquote>
+<p><a href="https://openjdk.org/jeps/278" target="_blank" rel="noopener">https://openjdk.org/jeps/278</a></p>
 </blockquote>
 <h1>七、常见调优参数</h1>
 <h2 id="1、-XX-MaxGCPauseMillis-N">1、-XX:MaxGCPauseMillis=N</h2>
@@ -695,7 +702,7 @@ Humongous regions：巨型区域</p>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">一、G1的内存划分和主要收集过程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">二、G1的新生代GC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">三、G1并发标记周期</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">四、混合回收</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">五、必要时的Full GC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、并发模式失效"><span class="nav-number">5.1.</span> <span class="nav-text">1、并发模式失效</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、晋升失败"><span class="nav-number">5.2.</span> <span class="nav-text">2、晋升失败</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、疏散失败"><span class="nav-number">5.3.</span> <span class="nav-text">3、疏散失败</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4、Humongous-Object-分配失败"><span class="nav-number">5.4.</span> <span class="nav-text">4、Humongous Object 分配失败</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">六、巨型对象</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">七、常见调优参数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、-XX-MaxGCPauseMillis-N"><span class="nav-number">7.1.</span> <span class="nav-text">1、-XX:MaxGCPauseMillis=N</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、-XX-G1HeapRegionSize-n"><span class="nav-number">7.2.</span> <span class="nav-text">2、-XX:G1HeapRegionSize=n</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、-XX-InitiatingHeapOccupancyPercent-45（调整G1垃圾收集运行频率）"><span class="nav-number">7.3.</span> <span class="nav-text">3、 -XX:InitiatingHeapOccupancyPercent=45（调整G1垃圾收集运行频率）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">8.</span> <span class="nav-text">八、细节</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、G1-mixed-GC时机？"><span class="nav-number">8.1.</span> <span class="nav-text">1、G1 mixed GC时机？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、XX：G1-HeapRegionSize-默认值？"><span class="nav-number">8.2.</span> <span class="nav-text">2、XX：G1 HeapRegionSize 默认值？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、直接内存配置"><span class="nav-number">8.3.</span> <span class="nav-text">3、直接内存配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4、RSet"><span class="nav-number">8.4.</span> <span class="nav-text">4、RSet</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">9.</span> <span class="nav-text">九、JDK 12中G1的新特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、可中断-mixed-GC"><span class="nav-number">9.1.</span> <span class="nav-text">1、可中断 mixed GC</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、G1未使用分配内存即时返回"><span class="nav-number">9.2.</span> <span class="nav-text">2、G1未使用分配内存即时返回</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">10.</span> <span class="nav-text">十、GC 发展趋势</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">11.</span> <span class="nav-text">十一、结尾</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">一、G1的内存划分和主要收集过程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">二、G1的新生代GC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">三、G1并发标记周期</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">四、混合回收</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">五、必要时的Full GC</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、并发模式失效"><span class="nav-number">5.1.</span> <span class="nav-text">1、并发模式失效</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、晋升失败"><span class="nav-number">5.2.</span> <span class="nav-text">2、晋升失败</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、疏散失败"><span class="nav-number">5.3.</span> <span class="nav-text">3、疏散失败</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4、Humongous-Object-分配失败"><span class="nav-number">5.4.</span> <span class="nav-text">4、Humongous Object 分配失败</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">六、巨型对象</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#当巨型对象对象大于region的时候如何处理？"><span class="nav-number">6.1.</span> <span class="nav-text">当巨型对象对象大于region的时候如何处理？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">七、常见调优参数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、-XX-MaxGCPauseMillis-N"><span class="nav-number">7.1.</span> <span class="nav-text">1、-XX:MaxGCPauseMillis=N</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、-XX-G1HeapRegionSize-n"><span class="nav-number">7.2.</span> <span class="nav-text">2、-XX:G1HeapRegionSize=n</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、-XX-InitiatingHeapOccupancyPercent-45（调整G1垃圾收集运行频率）"><span class="nav-number">7.3.</span> <span class="nav-text">3、 -XX:InitiatingHeapOccupancyPercent=45（调整G1垃圾收集运行频率）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">8.</span> <span class="nav-text">八、细节</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、G1-mixed-GC时机？"><span class="nav-number">8.1.</span> <span class="nav-text">1、G1 mixed GC时机？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、XX：G1-HeapRegionSize-默认值？"><span class="nav-number">8.2.</span> <span class="nav-text">2、XX：G1 HeapRegionSize 默认值？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3、直接内存配置"><span class="nav-number">8.3.</span> <span class="nav-text">3、直接内存配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4、RSet"><span class="nav-number">8.4.</span> <span class="nav-text">4、RSet</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">9.</span> <span class="nav-text">九、JDK 12中G1的新特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、可中断-mixed-GC"><span class="nav-number">9.1.</span> <span class="nav-text">1、可中断 mixed GC</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、G1未使用分配内存即时返回"><span class="nav-number">9.2.</span> <span class="nav-text">2、G1未使用分配内存即时返回</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">10.</span> <span class="nav-text">十、GC 发展趋势</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">11.</span> <span class="nav-text">十一、结尾</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
