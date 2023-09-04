@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="带着疑问学源码，第四篇：Elasticsearch GET 代码分析基于：https://github.com/jiankunking/elasticsearch Elasticsearch 7.10.2+">
-<meta name="keywords" content="ElasticSearch,原创,GET,源码">
+<meta name="keywords" content="原创,ElasticSearch,GET,源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="【Elasticsearch源码】 GET分析">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-get-source-code-analysis.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="带着疑问学源码，第四篇：Elasticsearch GET 代码分析基于：https://github.com/jiankunking/elasticsearch Elasticsearch 7.10.2+">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2021-04-18T00:33:51.293Z">
+<meta property="og:updated_time" content="2023-09-04T09:13:45.299Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="【Elasticsearch源码】 GET分析">
 <meta name="twitter:description" content="带着疑问学源码，第四篇：Elasticsearch GET 代码分析基于：https://github.com/jiankunking/elasticsearch Elasticsearch 7.10.2+">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-04-18 08:33:51" itemprop="dateModified" datetime="2021-04-18T08:33:51+08:00">2021-04-18</time>
+                <time title="修改时间：2023-09-04 17:13:45" itemprop="dateModified" datetime="2023-09-04T17:13:45+08:00">2023-09-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -316,6 +316,7 @@ Elasticsearch 7.10.2+</p>
 <ul>
 <li>是不是根据Document _id通过hash找到对应的Shard？</li>
 <li>根据Document _id查询如何做到实时可见的？</li>
+<li>单个shard查询失败会不会查询副本？</li>
 </ul>
 <h1>源码分析</h1>
 <p><font color="DeepPink"><strong>第二部分是代码分析的过程，不想看的朋友可以跳过直接看第三部分总结。</strong></font></p>
@@ -345,6 +346,17 @@ GetResult getResult = innerGet(…)；<br>
 <ul>
 <li>GET是根据Document _id 哈希找到对应的shard的。</li>
 <li>根据Document _id查询的实时可见是通过依靠refresh实现的。</li>
+<li>从代码来看只会查询一次，不会多次查询
+<ul>
+<li>其实换个角度来看，如果查询落到单个shard查询失败后，如果es自动查询其它副本，会引入以下两个问题：
+<ul>
+<li>雪崩</li>
+<li>代码逻辑变复杂</li>
+<li>所以大概率也是不会默认支持的，通过在SDK上支持retry参数反而更好</li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <p>参考资料：<br>
 《Elasticsearch源码解析与优化实战》</p>
@@ -433,8 +445,8 @@ GetResult getResult = innerGet(…)；<br>
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
+              <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/get/" rel="tag"># GET</a>
               <a href="/tags/源码/" rel="tag"># 源码</a>
           </div>
