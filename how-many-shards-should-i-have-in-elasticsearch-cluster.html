@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址： https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
-<meta name="keywords" content="转载,ElasticSearch,Cluster,Shard">
+<meta name="keywords" content="ElasticSearch,转载,Cluster,Shard">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[转]Elasticsearch 集群内应该设置多少个分片(shard)？">
 <meta property="og:url" content="https://jiankunking.com/how-many-shards-should-i-have-in-elasticsearch-cluster.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址： https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-10-27T04:51:43.709Z">
+<meta property="og:updated_time" content="2023-10-30T10:44:56.678Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[转]Elasticsearch 集群内应该设置多少个分片(shard)？">
 <meta name="twitter:description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址： https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
@@ -244,7 +244,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-10-27 12:51:43" itemprop="dateModified" datetime="2023-10-27T12:51:43+08:00">2023-10-27</time>
+                <time title="修改时间：2023-10-30 18:44:56" itemprop="dateModified" datetime="2023-10-30T18:44:56+08:00">2023-10-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -269,7 +269,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>4.1k</span>
+              <span>4.6k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -294,6 +294,9 @@
 <a href="https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster" target="_blank" rel="noopener">https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster</a></p>
 </blockquote>
 <a id="more"></a>
+<blockquote>
+<p>编者按:&quot;以每 GB 堆内存配置 20 个或以下分片为目标”的经验法则在 8.3 版中已被弃用。这篇博文已更新，以反映<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/size-your-shards.html#field-count-recommendation" target="_blank" rel="noopener">最新建议</a>。</p>
+</blockquote>
 <p>Elasticsearch 是一个功能十分丰富的平台，支持各种用例，能够在数据整理和复制战略方面提供很大的灵活性。然而这一灵活性有时也会带来困扰，让您在前期难以确定如何最好地将数据整理为索引和分片，如果您刚上手使用 Elastic Stack，这一点可能更明显。如果未能做出最佳选择，尽管这在开始的时候可能不会造成问题，但随着数据量越来越大，便有可能会引发性能问题。集群中的数据越多，要纠正这一问题就越难，这是因为有时必须对大量数据进行重新索引。</p>
 <p>据我们了解，当用户遇到性能问题时，原因通常都可回溯至数据的索引方式以及集群中的分片数量。对于涉及多租户和/或用到时序型索引的用例，这一点尤为突出。与用户讨论这一问题时，无论是在活动或聚会中面对面讨论，还是在论坛上讨论，<font color="DeepPink"><strong>我们遇到的一些最常见问题就是“我应该设置多少个分片？”以及“我应该设置多大的分片？”。</strong></font></p>
 <p>这篇博文旨在帮您集中解答这些问题，并为涉及时序型索引（例如日志或安全分析）的用例提供实用指南。</p>
@@ -328,7 +331,13 @@
 <p>提示： 由于单个分片的开销取决于段数量和段大小，所以通过 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/5.5/indices-forcemerge.html" target="_blank" rel="noopener">forcemerge</a> 操作强制将较小的段合并为较大的段能够减少开销并改善查询性能。理想状况下，应当在索引内再无数据写入时完成此操作。请注意：这是一个极其耗费资源的操作，所以应该在非高峰时段进行。</p>
 </blockquote>
 <blockquote>
-<p>提示： 每个节点上可以存储的分片数量与可用的堆内存大小成正比关系，但是 Elasticsearch 并未强制规定固定限值。这里有一个很好的经验法则：<font color="DeepPink"><strong>确保对于节点上已配置的每个 GB，将分片数量保持在 20 以下。如果某个节点拥有 30GB 的堆内存，那其最多可有 600 个分片，但是在此限值范围内，您设置的分片数量越少，效果就越好。</strong></font>一般而言，这可以帮助集群保持良好的运行状态。</p>
+<p>提示： 每个节点上可以存储的分片数量与可用的堆内存大小成正比关系，但是 Elasticsearch 并未强制规定固定限值。这里有一个很好的经验法则：<font color="DeepPink"><strong>确保对于节点上已配置的每个 GB，将分片数量保持在 20 以下。如果某个节点拥有 30GB 的堆内存，那其最多可有 600 个分片，但是在此限值范围内，您设置的分片数量越少，效果就越好。</strong></font>一般而言，这可以帮助集群保持良好的运行状态。（编者按：从 8.3 版开始，我们大幅减小了每个分片的堆使用量，因此对本博文中的经验法则也进行了相应更新。请按照以下提示了解 8.3+ 版本的 Elasticsearch。）</p>
+</blockquote>
+<blockquote>
+<p>新提示：<font color="DeepPink"><strong>为数据节点上每个索引的每个字段留出 1kB 的堆空间，还要为开销留出额外的空间每个映射字段的具体资源使用情况取决于其类型，但经验法则是，每个数据节点持有的每个索引的每个映射字段允许大约 1kB 的堆开销。您还必须为 Elasticsearch 的基线使用以及工作负载（例如索引、搜索和聚合）留出足够的堆空间。额外留出 0.5GB 的堆足以满足许多合理的工作负载，如果您的工作负载非常轻，可能需要更少的空间，而工作负载繁重的话可能需要更多空间。</strong></font></p>
+</blockquote>
+<blockquote>
+<p><font color="DeepPink"><strong>例如，如果一个数据节点持有来自 1000 个索引的分片，每个索引包含 4000 个映射字段，那么您应该为字段留出大约 1000 × 4000 × 1kB = 4GB 的堆空间，并为其分配另外 0.5GB 的堆空间用于工作负载和其他开销，因此该节点需要至少 4.5GB 的堆大小。</strong></font></p>
 </blockquote>
 <h1>分片大小对性能有何影响？</h1>
 <p>在 Elasticsearch 中，每个查询都是在单个分片上以单线程方式执行的。然而，可以同时对多个分片进行处理，正如可以针对同一分片进行多次查询和聚合一样。</p>
@@ -371,13 +380,13 @@
       <div class="popular-posts-title"><a href="\significantly-decrease-your-elasticsearch-heap-memory-usage.html" rel="bookmark">[转]7.7 版本中的新改进：显著降低 Elasticsearch 堆内存使用量</a></div>
     </li>
     <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\elasticsearch-performance-tuning-practice-at-ebay.html" rel="bookmark">[译]eBay Elasticsearch性能调优实践</a></div>
+    </li>
+    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\apache-lucene-scoring-introduction.html" rel="bookmark">Apache Lucene 评分简介</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-query-secret.html" rel="bookmark">[转]ElasticSearch 查询的秘密</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-performance-tuning-practice-at-ebay.html" rel="bookmark">[译]eBay Elasticsearch性能调优实践</a></div>
+      <div class="popular-posts-title"><a href="\elasticsearch-cluster-sizing-and-performance-tuning.html" rel="bookmark">[译]Elasticsearch集群规模和性能调优</a></div>
     </li>
   </ul>
 
@@ -440,8 +449,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/转载/" rel="tag"># 转载</a>
               <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
+              <a href="/tags/转载/" rel="tag"># 转载</a>
               <a href="/tags/cluster/" rel="tag"># Cluster</a>
               <a href="/tags/shard/" rel="tag"># Shard</a>
           </div>
