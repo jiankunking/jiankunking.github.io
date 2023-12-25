@@ -27,14 +27,14 @@
   <meta name="description" content="Elasticsearch From/Size、Scroll、Search After对比">
 <meta name="keywords" content="原创,ElasticSearch,Query">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Elasticsearch Scroll and Search After">
+<meta property="og:title" content="Elasticsearch From&#x2F;Size vs Scroll vs Search After">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-scroll-and-search-after.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="Elasticsearch From/Size、Scroll、Search After对比">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-03-22T05:37:02.978Z">
+<meta property="og:updated_time" content="2023-12-25T06:36:31.936Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Elasticsearch Scroll and Search After">
+<meta name="twitter:title" content="Elasticsearch From&#x2F;Size vs Scroll vs Search After">
 <meta name="twitter:description" content="Elasticsearch From/Size、Scroll、Search After对比">
 
 <link rel="canonical" href="https://jiankunking.com/elasticsearch-scroll-and-search-after.html">
@@ -50,7 +50,7 @@
   };
 </script>
 
-  <title>Elasticsearch Scroll and Search After | 衣舞晨风</title>
+  <title>Elasticsearch From/Size vs Scroll vs Search After | 衣舞晨风</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
     <script>
@@ -232,7 +232,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Elasticsearch Scroll and Search After
+          Elasticsearch From/Size vs Scroll vs Search After
         </h1>
 
         <div class="post-meta">
@@ -249,7 +249,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-03-22 13:37:02" itemprop="dateModified" datetime="2023-03-22T13:37:02+08:00">2023-03-22</time>
+                <time title="修改时间：2023-12-25 14:36:31" itemprop="dateModified" datetime="2023-12-25T14:36:31+08:00">2023-12-25</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -274,7 +274,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3.2k</span>
+              <span>3.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -305,6 +305,16 @@
 <blockquote>
 <p>注意from + size 不能超过 index.max_result_window 索引设置，默认为 10,000。 有关深入滚动的更有效方法，请参阅 Scroll 或 Search After API。</p>
 </blockquote>
+<h2 id="示例">示例</h2>
+<p>举个例子，一个索引，有10亿数据，分10个shards，然后，一个搜索请求，from=1,000,000，size=100，这时候，会带来严重的性能问题：</p>
+<ul>
+<li>CPU</li>
+<li>内存</li>
+<li>IO</li>
+<li>网络带宽</li>
+</ul>
+<p>CPU、内存和IO消耗容易理解，网络带宽问题稍难理解一点。<font color="DeepPink"><strong>在query阶段，每个shards需要返回1,000,100条数据给coordinating node，而coordinating node需要接收10*1,000,100条数据</strong></font>，即使每条数据只有_doc _id 和_score，这数据量也很大了，而且，这才一个查询请求，那如果再乘以100呢？</p>
+<p>在另一方面，我们意识到，这种深度分页的请求并不合理，因为我们是很少人为的看很后面的请求的，在很多的业务场景中，都直接限制分页，比如只能看前100页。</p>
 <h1><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-body.html#request-body-search-search-type" target="_blank" rel="noopener">Search Type</a></h1>
 <p>在执行分布式搜索时可以执行不同的执行路径。分布式搜索操作需要分散到所有相关的shard，然后收集所有的结果。当使用分散/集中类型执行时，有几种方法可以做到这一点，特别是使用搜索引擎。</p>
 <p>执行分布式搜索时的一个问题是从每个shard检索多少结果。例如，如果我们有 10 个shard，则第一个shard可能保存从 0 到 10 的最相关的结果，而其他shard的结果排在后面。因此，在执行请求时，我们需要从所有shard中获取从0到10的结果，对它们进行排序，然后返回结果(如果我们希望确保得到正确的结果)。</p>
@@ -356,7 +366,7 @@ _id 字段被限制在聚合、排序和脚本中使用。 如果需要对 _id �
 <p>通常，后台合并过程通过将较小的段合并在一起以创建新的较大段来优化索引，此时较小的段被删除。此过程在滚动期间继续，但是打开的搜索上下文防止旧段在它们仍在使用时被删除。这就是Elasticsearch如何能够返回初始搜索请求的结果，而不考虑对文档的后续更改。</p>
 <h1>小结</h1>
 <p>如果要做非常多页的查询时，search after是一个常量查询延迟和开销，并无什么副作用，可是，就像要查询结果全量导出那样，要在短时间内不断重复同一查询成百甚至上千次，效率就显得非常低了。</p>
-<p>20230318现在不用纠结了 😭 😭 😭 😭 😭 😭</p>
+<p>2023-03-18现在不用纠结了 😭 😭 😭 😭 😭 😭</p>
 <p><img data-src="/images/elasticsearch-scroll-and-search-after/scroll.png" alt></p>
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html#scroll-search-results" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html#scroll-search-results</a></p>
 <p>search after是lucene原生支持的:<br>
@@ -364,7 +374,7 @@ _id 字段被限制在聚合、排序和脚本中使用。 如果需要对 _id �
 <a href="https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/search/IndexSearcher.html#searchAfter-org.apache.lucene.search.ScoreDoc-org.apache.lucene.search.Query-int-" target="_blank" rel="noopener">https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/search/IndexSearcher.html#searchAfter-org.apache.lucene.search.ScoreDoc-org.apache.lucene.search.Query-int-</a></p>
 <blockquote>
 <p>猜测一下search after的实现原理,应该是通过doc_values来实现的<br>
-doc_values已经排好序了,所以通过每次search_after制定的值,往后查找即可</p>
+doc_values已经排好序了,所以通过每次search_after指定的值,往后查找即可</p>
 </blockquote>
 <p><img data-src="/images/elasticsearch-scroll-and-search-after/doc_values.png" alt></p>
 <blockquote>
@@ -425,7 +435,7 @@ doc_values已经排好序了,所以通过每次search_after制定的值,往后�
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://jiankunking.com/elasticsearch-scroll-and-search-after.html" title="Elasticsearch Scroll and Search After">https://jiankunking.com/elasticsearch-scroll-and-search-after.html</a>
+    <a href="https://jiankunking.com/elasticsearch-scroll-and-search-after.html" title="Elasticsearch From/Size vs Scroll vs Search After">https://jiankunking.com/elasticsearch-scroll-and-search-after.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -532,7 +542,7 @@ doc_values已经排好序了,所以通过每次search_after制定的值,往后�
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">From/Size</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Search Type</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Query-Then-Fetch"><span class="nav-number">2.1.</span> <span class="nav-text">Query Then Fetch</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dfs-Query-Then-Fetch"><span class="nav-number">2.2.</span> <span class="nav-text">Dfs, Query Then Fetch</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">Search After</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">Scroll</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Keeping-the-search-context-alive"><span class="nav-number">4.1.</span> <span class="nav-text">Keeping the search context alive</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">From/Size</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#示例"><span class="nav-number">1.1.</span> <span class="nav-text">示例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Search Type</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Query-Then-Fetch"><span class="nav-number">2.1.</span> <span class="nav-text">Query Then Fetch</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dfs-Query-Then-Fetch"><span class="nav-number">2.2.</span> <span class="nav-text">Dfs, Query Then Fetch</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">Search After</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">Scroll</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Keeping-the-search-context-alive"><span class="nav-number">4.1.</span> <span class="nav-text">Keeping the search context alive</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
