@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文整理自：《Wireshark网络分析的艺术 第1版》作者：林沛满 著出版时间：2016-02">
+  <meta name="description" content="本文整理自：《Wireshark网络分析的艺术 第1版》 作者：林沛满 著 出版时间：2016-02">
 <meta name="keywords" content="Network,TCP,Wireshark">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[转]Wireshark的提示">
 <meta property="og:url" content="https://jiankunking.com/wireshark's-prompt.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="本文整理自：《Wireshark网络分析的艺术 第1版》作者：林沛满 著出版时间：2016-02">
+<meta property="og:description" content="本文整理自：《Wireshark网络分析的艺术 第1版》 作者：林沛满 著 出版时间：2016-02">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-10-07T09:28:34.778Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[转]Wireshark的提示">
-<meta name="twitter:description" content="本文整理自：《Wireshark网络分析的艺术 第1版》作者：林沛满 著出版时间：2016-02">
+<meta name="twitter:description" content="本文整理自：《Wireshark网络分析的艺术 第1版》 作者：林沛满 著 出版时间：2016-02">
 
 <link rel="canonical" href="https://jiankunking.com/wireshark's-prompt.html">
 
@@ -279,7 +279,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>4.1k</span>
+              <span>4k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -298,70 +298,69 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>本文整理自：《Wireshark网络分析的艺术 第1版》<br>作者：林沛满 著<br>出版时间：2016-02</p>
+        <p>本文整理自：《Wireshark网络分析的艺术 第1版》<br>
+作者：林沛满 著<br>
+出版时间：2016-02</p>
 <a id="more"></a>
-
 <p>最近有不少同事开始学习 Wireshark，他们遇到的第一个困难就是理解不了主界面上的提示信息，于是跑来问我。问的人多了，我也总结成一篇文章，希望对大家有所帮助。Wireshark 的提示可是其最有价值之处，对于初学者来说，如果能理解这些提示所隐含的意义，学起来定能事半功倍。</p>
-<h1 id="1．-Packet-size-limited-during-capture"><a href="#1．-Packet-size-limited-during-capture" class="headerlink" title="1．[Packet size limited during capture]"></a>1．[Packet size limited during capture]</h1><p>当你看到这个提示，说明被标记的那个包没有抓全。以图 1 的 4 号包为例，它全长有 171 字节，但只有前 96 个字节被抓到了，因此 Wireshark 给了此提示。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE1.png"></p>
+<h1>1．[Packet size limited during capture]</h1>
+<p>当你看到这个提示，说明被标记的那个包没有抓全。以图 1 的 4 号包为例，它全长有 171 字节，但只有前 96 个字节被抓到了，因此 Wireshark 给了此提示。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE1.png" alt></p>
 <center>图1</center>
-
 <p>这种情况一般是由抓包方式引起的。在有些操作系统中，tcpdump默认只抓每个帧的前96个字节，我们可以用“-s”参数来指定想要抓到的字节数，比如下面这条命令可以抓到1000字节。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@my_server /]# tcpdump -i eth0 -s 1000 -w /tmp/tcpdump.cap</span><br></pre></td></tr></table></figure>
-
-<h1 id="2．［TCP-Previous-segment-not-captured］"><a href="#2．［TCP-Previous-segment-not-captured］" class="headerlink" title="2．［TCP Previous segment not captured］"></a>2．［TCP Previous segment not captured］</h1><p>在 TCP 传输过程中，同一台主机发出的数据段应该是连续的，<strong>即后一个包的Seq 号等于前一个包的 Seq+Len（三次握手和四次挥手是例外）</strong>。如果 Wireshark发现后一个包的 Seq 号大于前一个包的 Seq+Len，就知道中间缺失了一段数据。假如缺失的那段数据在整个网络包中都找不到（即排除了乱序），就会提示［TCP Previous segment not captured］。比如在图 2 这个例子中，6 号包的 Seq 号 1449 大于 5 号包的 Seq+Len&#x3D;1+0&#x3D;1，说明中间有个携带 1448 字节的包没被抓到，它就是“Seq&#x3D;1, Len&#x3D;1448”。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE2.png"></p>
+<h1>2．［TCP Previous segment not captured］</h1>
+<p>在 TCP 传输过程中，同一台主机发出的数据段应该是连续的，<strong>即后一个包的Seq 号等于前一个包的 Seq+Len（三次握手和四次挥手是例外）</strong>。如果 Wireshark发现后一个包的 Seq 号大于前一个包的 Seq+Len，就知道中间缺失了一段数据。假如缺失的那段数据在整个网络包中都找不到（即排除了乱序），就会提示［TCP Previous segment not captured］。比如在图 2 这个例子中，6 号包的 Seq 号 1449 大于 5 号包的 Seq+Len=1+0=1，说明中间有个携带 1448 字节的包没被抓到，它就是“Seq=1, Len=1448”。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE2.png" alt></p>
 <center>图2</center>
-
 <p>网络包没被抓到还分两种情况：一种是真的丢了；另一种是实际上没有丢，但被抓包工具漏掉了。在 Wireshark 中如何区分这两种情况呢？只要看对方回复的确认（Ack）就行了。如果该确认包含了没抓到的那个包，那就是抓包工具漏掉而已，否则就是真的丢了。</p>
 <p>顺便分析一下图 2 这个网络包，它是 HTTPS 传输异常时在客户端抓的。因为“Len: 667”的小包（即 6 号包）可以送达，但“Len: 1448”的大包却丢了，说明路径上可能有个网络设备的 MTU 比较小，会丢弃大包。后来的解决方式证实了这个猜测，只要把整个网络路径的 MTU 保持一致，问题就消失了。</p>
-<h1 id="3．-TCP-ACKed-unseen-segment"><a href="#3．-TCP-ACKed-unseen-segment" class="headerlink" title="3．[TCP ACKed unseen segment]"></a>3．[TCP ACKed unseen segment]</h1><p>当 Wireshark 发现被 Ack 的那个包没被抓到，就会提示 [TCP ACKed unseen segment］。这可能是最常见的 Wireshark 提示了，幸好它几乎是永远可以忽略的。以图 3 为例，32 号包的 Seq+Len&#x3D;6889+1448&#x3D;8337，说明服务器发出的下一个包应该是 Seq&#x3D;8337。而我们看到的却是 35 号包的 Seq&#x3D;11233，这意味着 8337～11232这段数据没有被抓到。这段数据本应该出现在 34 号之前，所以 Wireshark 提示了[TCP ACKed unseen segment]。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE3.png"></p>
+<h1>3．[TCP ACKed unseen segment]</h1>
+<p>当 Wireshark 发现被 Ack 的那个包没被抓到，就会提示 [TCP ACKed unseen segment］。这可能是最常见的 Wireshark 提示了，幸好它几乎是永远可以忽略的。以图 3 为例，32 号包的 Seq+Len=6889+1448=8337，说明服务器发出的下一个包应该是 Seq=8337。而我们看到的却是 35 号包的 Seq=11233，这意味着 8337～11232这段数据没有被抓到。这段数据本应该出现在 34 号之前，所以 Wireshark 提示了[TCP ACKed unseen segment]。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE3.png" alt></p>
 <center>图3</center>
-
 <p>不难想象，在一个网络包的开头会经常看到这个提示，因为只抓到了后面的Ack 但没抓到前面的数据包。</p>
-<h1 id="4．-TCP-Out-of-Order"><a href="#4．-TCP-Out-of-Order" class="headerlink" title="4．[TCP Out-of-Order]"></a>4．[TCP Out-of-Order]</h1><p>在 TCP 传输过程中（不包括三次握手和四次挥手），同一台主机发出的数据包应该是连续的，即后一个包的 Seq 号等于前一个包的 Seq+Len。也可以说，后一个包的 Seq 会大于或等于前一个包的 Seq。当 Wireshark 发现后一个包的 Seq 号小于前一个包的 Seq+Len 时，就会认为是乱序了，因此提示 [TCP Out-of-Order] 。如图 4 所示，3362 号包的 Seq&#x3D;2685642 小于 3360 号包的 Seq&#x3D;2712622，所以就是乱序。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE4.png"></p>
+<h1>4．[TCP Out-of-Order]</h1>
+<p>在 TCP 传输过程中（不包括三次握手和四次挥手），同一台主机发出的数据包应该是连续的，即后一个包的 Seq 号等于前一个包的 Seq+Len。也可以说，后一个包的 Seq 会大于或等于前一个包的 Seq。当 Wireshark 发现后一个包的 Seq 号小于前一个包的 Seq+Len 时，就会认为是乱序了，因此提示 [TCP Out-of-Order] 。如图 4 所示，3362 号包的 Seq=2685642 小于 3360 号包的 Seq=2712622，所以就是乱序。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE4.png" alt></p>
 <center>图4</center>
-
 <p>小跨度的乱序影响不大，比如原本顺序为 1、2、3、4、5 号包被打乱成 2、1、3、4、5就没事。但跨度大的乱序却可能触发快速重传，比如打乱成 2、3、4、5、1 时，就会触发足够多的 Dup ACK，从而导致 1 号包的重传。</p>
-<h1 id="5．-TCP-Dup-ACK"><a href="#5．-TCP-Dup-ACK" class="headerlink" title="5．[TCP Dup ACK]"></a>5．[TCP Dup ACK]</h1><p>当乱序或者丢包发生时，接收方会收到一些 Seq 号比期望值大的包。它每收到一个这种包就会 Ack 一次期望的 Seq 值，以此方式来提醒发送方，于是就产生了一些重复的 Ack。Wireshark 会在这种重复的 Ack 上标记[TCP Dup ACK] 。</p>
-<p>以图 5 为例，服务器收到的 7 号包为“Seq&#x3D;29303, Len&#x3D;1460”，所以它期望下一个包应该是 Seq+Len&#x3D;29303+1460&#x3D;30763，没想到实际收到的却是 8 号包Seq&#x3D;32223，说明 Seq&#x3D;30763 那个包可能丢失了。因此服务器立即在 9 号包发了Ack&#x3D;30763，表示“我要的是 Seq&#x3D;30763”。由于接下来服务器收到的 10 号、12号、14 号也都是大于 Seq&#x3D;30763 的，因此它每收到一个就回复一次 Ack&#x3D;30763，从图中可见 Wireshark 在这些回复上都标记了[TCP Dup ACK]。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE5.png"></p>
+<h1>5．[TCP Dup ACK]</h1>
+<p>当乱序或者丢包发生时，接收方会收到一些 Seq 号比期望值大的包。它每收到一个这种包就会 Ack 一次期望的 Seq 值，以此方式来提醒发送方，于是就产生了一些重复的 Ack。Wireshark 会在这种重复的 Ack 上标记[TCP Dup ACK] 。</p>
+<p>以图 5 为例，服务器收到的 7 号包为“Seq=29303, Len=1460”，所以它期望下一个包应该是 Seq+Len=29303+1460=30763，没想到实际收到的却是 8 号包Seq=32223，说明 Seq=30763 那个包可能丢失了。因此服务器立即在 9 号包发了Ack=30763，表示“我要的是 Seq=30763”。由于接下来服务器收到的 10 号、12号、14 号也都是大于 Seq=30763 的，因此它每收到一个就回复一次 Ack=30763，从图中可见 Wireshark 在这些回复上都标记了[TCP Dup ACK]。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE5.png" alt></p>
 <center>图5</center>
-
-<h1 id="6．-TCP-Fast-Retransmission"><a href="#6．-TCP-Fast-Retransmission" class="headerlink" title="6．[TCP Fast Retransmission]"></a>6．[TCP Fast Retransmission]</h1><p>当发送方收到 3 个或以上[TCP Dup ACK]，就意识到之前发的包可能丢了，于是快速重传它（这是 RFC 的规定）。以图 6 为例，客户端收到了 4 个 Ack&#x3D;991851，于是在 1177 号包重传了 Seq&#x3D;991851。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE6.png"></p>
+<h1>6．[TCP Fast Retransmission]</h1>
+<p>当发送方收到 3 个或以上[TCP Dup ACK]，就意识到之前发的包可能丢了，于是快速重传它（这是 RFC 的规定）。以图 6 为例，客户端收到了 4 个 Ack=991851，于是在 1177 号包重传了 Seq=991851。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE6.png" alt></p>
 <center>图6</center>
-
-<h1 id="7．-TCP-Retransmission"><a href="#7．-TCP-Retransmission" class="headerlink" title="7．[TCP Retransmission]"></a>7．[TCP Retransmission]</h1><p>如果一个包真的丢了，又没有后续包可以在接收方触发[Dup Ack]，就不会快速重传。这种情况下发送方只好等到超时了再重传，此类重传包就会被 Wireshark标上[TCP Retransmission]。以图 7 为例，客户端发了原始包（包号 1053）之后，一直等不到相应的 Ack，于是只能在 100 多毫秒之后重传了（包号 1225）。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE7.png"></p>
+<h1>7．[TCP Retransmission]</h1>
+<p>如果一个包真的丢了，又没有后续包可以在接收方触发[Dup Ack]，就不会快速重传。这种情况下发送方只好等到超时了再重传，此类重传包就会被 Wireshark标上[TCP Retransmission]。以图 7 为例，客户端发了原始包（包号 1053）之后，一直等不到相应的 Ack，于是只能在 100 多毫秒之后重传了（包号 1225）。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE7.png" alt></p>
 <center>图7</center>
-
 <p>超时重传是一个非常有技术含量的知识点，比如等待时间的长短就大有学问，本文就不细说了，毕竟需要懂这个的人很少。</p>
-<h1 id="8．-TCP-zerowindow"><a href="#8．-TCP-zerowindow" class="headerlink" title="8．[TCP zerowindow]"></a>8．[TCP zerowindow]</h1><p>TCP 包中的“win&#x3D;”代表接收窗口的大小，即<strong>表示这个包的发送方当前还有多少缓存区可以接收数据</strong>。当 Wireshark 在一个包中发现“win&#x3D;0”时，就会给它打上“TCP zerowindow”的标志，表示缓存区已满，不能再接收数据了。比如图8 就是服务器的缓存区已满，所以通知客户端不要再发数据了。我们甚至可以在3258～3263 这几个包中看出它的窗口逐渐减少的过程，即从 win&#x3D;15872 减小到win&#x3D;1472。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE8.png"></p>
+<h1>8．[TCP zerowindow]</h1>
+<p>TCP 包中的“win=”代表接收窗口的大小，即<strong>表示这个包的发送方当前还有多少缓存区可以接收数据</strong>。当 Wireshark 在一个包中发现“win=0”时，就会给它打上“TCP zerowindow”的标志，表示缓存区已满，不能再接收数据了。比如图8 就是服务器的缓存区已满，所以通知客户端不要再发数据了。我们甚至可以在3258～3263 这几个包中看出它的窗口逐渐减少的过程，即从 win=15872 减小到win=1472。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE8.png" alt></p>
 <center>图8</center>
-
-<h1 id="9．-TCP-window-Full"><a href="#9．-TCP-window-Full" class="headerlink" title="9．[TCP window Full]"></a>9．[TCP window Full]</h1><p>当 Wireshark 在一个包中打上[TCP window Full]标志时，就表示这个包的发送方已经把对方所声明的接收窗口耗尽了。以图 9 为例，Britain 一直声明它的接收窗口只有 65535，意味着 Middle East 最多能给它发送 65535 字节的数据而无需确认，即“在途字节数”最多为 65535 字节。当 Wireshark 在包中计算出 Middle East已经有 65535 字节未被确认时，就会发出此提示。至于 Wireshark 是怎么计算的，请参考本书的<a href="https://jiankunking.com/bytes-in-transit-of-tcp.html">《计算“在途字节数”》</a>一文。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE9.png"></p>
+<h1>9．[TCP window Full]</h1>
+<p>当 Wireshark 在一个包中打上[TCP window Full]标志时，就表示这个包的发送方已经把对方所声明的接收窗口耗尽了。以图 9 为例，Britain 一直声明它的接收窗口只有 65535，意味着 Middle East 最多能给它发送 65535 字节的数据而无需确认，即“在途字节数”最多为 65535 字节。当 Wireshark 在包中计算出 Middle East已经有 65535 字节未被确认时，就会发出此提示。至于 Wireshark 是怎么计算的，请参考本书的<a href="https://jiankunking.com/bytes-in-transit-of-tcp.html">《计算“在途字节数”》</a>一文。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE9.png" alt></p>
 <center>图9</center>
-
-<p> [TCP window Full]很容易跟［TCP zerowindow］混淆，实际上它们也有相似之处。前者表示这个包的发送方暂时没办法再<strong>发送</strong>数据了，后者表示这个包的发送方暂时没办法再<strong>接收</strong>数据了，也就是说两者都意味着传输暂停，都必须引起重视。</p>
-<h1 id="10．-TCP-segment-of-a-reassembled-PDU"><a href="#10．-TCP-segment-of-a-reassembled-PDU" class="headerlink" title="10．[TCP segment of a reassembled PDU]"></a>10．[TCP segment of a reassembled PDU]</h1><p> 当你收到这个提示，肯定已经在EditPreferences ProtocolsTCP菜单里启用了Allow sub dissector to reassemble TCP streams。它表示Wireshark可以把属于同一个应用层PDU（比如SMB的Read Response和Write Request之类）的TCP 包虚拟地集中起来。如图10所示，这一个SMB Read Response由39～48号包共同完成，因此Wireshark在最后一个包中虚拟地把所有包集中起来。这样做有个好处，就是可以右键点击图10底部的方框，选择CopyBytesPrintable Text 59 Only，从而复制整个应用层的PDU。做研发的同学可能比较需要这个功能。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE10.png"></p>
+<p>[TCP window Full]很容易跟［TCP zerowindow］混淆，实际上它们也有相似之处。前者表示这个包的发送方暂时没办法再<strong>发送</strong>数据了，后者表示这个包的发送方暂时没办法再<strong>接收</strong>数据了，也就是说两者都意味着传输暂停，都必须引起重视。</p>
+<h1>10．[TCP segment of a reassembled PDU]</h1>
+<p>当你收到这个提示，肯定已经在EditPreferences ProtocolsTCP菜单里启用了Allow sub dissector to reassemble TCP streams。它表示Wireshark可以把属于同一个应用层PDU（比如SMB的Read Response和Write Request之类）的TCP 包虚拟地集中起来。如图10所示，这一个SMB Read Response由39～48号包共同完成，因此Wireshark在最后一个包中虚拟地把所有包集中起来。这样做有个好处，就是可以右键点击图10底部的方框，选择CopyBytesPrintable Text 59 Only，从而复制整个应用层的PDU。做研发的同学可能比较需要这个功能。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE10.png" alt></p>
 <center>图10</center>
-
-<h1 id="11．［Continuation-to-］"><a href="#11．［Continuation-to-］" class="headerlink" title="11．［Continuation to #］"></a>11．［Continuation to #］</h1><p>你看到这个提示，说明已经在EditPreferencesProtocolsTCP菜单里关闭了Allow sub dissector to reassemble TCP streams。比如图10的那些包，一关闭就变成图11这样。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE11.png"></p>
+<h1>11．［Continuation to #］</h1>
+<p>你看到这个提示，说明已经在EditPreferencesProtocolsTCP菜单里关闭了Allow sub dissector to reassemble TCP streams。比如图10的那些包，一关闭就变成图11这样。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE11.png" alt></p>
 <center>图11</center>
-
-<p>仔细对比图10和图11，你会发现Read Response在图10中被算在了48号包头上，而在图11中被算到了39号包头上。这样会带来一个诡异的结果：图10的读响应时间为2.528毫秒（38号包和48号包的时间差），而图11的读响应时间为2.476毫秒（38号包和39号包的时间差）。究竟哪个算正确呢？这个问题很难回答，如果在乎的是实际的总性能，那就看前者；如果想忽略TCP&#x2F;IP协议的损耗，单看服务器的响应速度，那就看后者。在某些特殊情况下，这两者相差非常大，所以必须搞清楚。</p>
-<h1 id="12．［Time-to-live-exceeded-Fragment-reassembly-time-exceeded-］"><a href="#12．［Time-to-live-exceeded-Fragment-reassembly-time-exceeded-］" class="headerlink" title="12．［Time-to-live exceeded (Fragment reassembly time exceeded)］"></a>12．［Time-to-live exceeded (Fragment reassembly time exceeded)］</h1><p>ICMP的报错有好多种，大都不难理解，所以我们只举其中的一种为例。[Fragment reassembly time exceeded]表示这个包的发送方之前收到了一些分片，但是由于某些原因迟迟无法组装起来。比如在图12中，由于上海发往北京的一些包被分片传输，且有一部分在路上丢失了，所以北京方无法组装起来，便只好用这个ICMP报错告知上海方。</p>
-<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE12.png"></p>
+<p>仔细对比图10和图11，你会发现Read Response在图10中被算在了48号包头上，而在图11中被算到了39号包头上。这样会带来一个诡异的结果：图10的读响应时间为2.528毫秒（38号包和48号包的时间差），而图11的读响应时间为2.476毫秒（38号包和39号包的时间差）。究竟哪个算正确呢？这个问题很难回答，如果在乎的是实际的总性能，那就看前者；如果想忽略TCP/IP协议的损耗，单看服务器的响应速度，那就看后者。在某些特殊情况下，这两者相差非常大，所以必须搞清楚。</p>
+<h1>12．［Time-to-live exceeded (Fragment reassembly time exceeded)］</h1>
+<p>ICMP的报错有好多种，大都不难理解，所以我们只举其中的一种为例。[Fragment reassembly time exceeded]表示这个包的发送方之前收到了一些分片，但是由于某些原因迟迟无法组装起来。比如在图12中，由于上海发往北京的一些包被分片传输，且有一部分在路上丢失了，所以北京方无法组装起来，便只好用这个ICMP报错告知上海方。</p>
+<p><img data-src="/images/wireshark's-prompt/%E5%9B%BE12.png" alt></p>
 <center>图12</center>
-
-
 <p><a href="/attachments/Wireshark网络分析的艺术.pdf" target="_blank">Wireshark网络分析的艺术</a></p>
 
     </div>
@@ -525,7 +524,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1．-Packet-size-limited-during-capture"><span class="nav-number">1.</span> <span class="nav-text">1．[Packet size limited during capture]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2．［TCP-Previous-segment-not-captured］"><span class="nav-number">2.</span> <span class="nav-text">2．［TCP Previous segment not captured］</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3．-TCP-ACKed-unseen-segment"><span class="nav-number">3.</span> <span class="nav-text">3．[TCP ACKed unseen segment]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4．-TCP-Out-of-Order"><span class="nav-number">4.</span> <span class="nav-text">4．[TCP Out-of-Order]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5．-TCP-Dup-ACK"><span class="nav-number">5.</span> <span class="nav-text">5．[TCP Dup ACK]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6．-TCP-Fast-Retransmission"><span class="nav-number">6.</span> <span class="nav-text">6．[TCP Fast Retransmission]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7．-TCP-Retransmission"><span class="nav-number">7.</span> <span class="nav-text">7．[TCP Retransmission]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8．-TCP-zerowindow"><span class="nav-number">8.</span> <span class="nav-text">8．[TCP zerowindow]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9．-TCP-window-Full"><span class="nav-number">9.</span> <span class="nav-text">9．[TCP window Full]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10．-TCP-segment-of-a-reassembled-PDU"><span class="nav-number">10.</span> <span class="nav-text">10．[TCP segment of a reassembled PDU]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11．［Continuation-to-］"><span class="nav-number">11.</span> <span class="nav-text">11．［Continuation to #］</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12．［Time-to-live-exceeded-Fragment-reassembly-time-exceeded-］"><span class="nav-number">12.</span> <span class="nav-text">12．［Time-to-live exceeded (Fragment reassembly time exceeded)］</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">1．[Packet size limited during capture]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">2．［TCP Previous segment not captured］</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">3．[TCP ACKed unseen segment]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">4．[TCP Out-of-Order]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">5．[TCP Dup ACK]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">6．[TCP Fast Retransmission]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">7．[TCP Retransmission]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">8.</span> <span class="nav-text">8．[TCP zerowindow]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">9.</span> <span class="nav-text">9．[TCP window Full]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">10.</span> <span class="nav-text">10．[TCP segment of a reassembled PDU]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">11.</span> <span class="nav-text">11．［Continuation to #］</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">12.</span> <span class="nav-text">12．［Time-to-live exceeded (Fragment reassembly time exceeded)］</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -603,7 +602,7 @@
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2023</span>
+  <span itemprop="copyrightYear">2024</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

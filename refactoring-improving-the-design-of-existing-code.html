@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文整理自：《重构改善既有代码的设计》  作者：MartinFowler 出版时间：2015-08">
+  <meta name="description" content="本文整理自：《重构改善既有代码的设计》 作者：MartinFowler 出版时间：2015-08">
 <meta name="keywords" content="读书笔记,原创,Design,Refactoring,Code">
 <meta property="og:type" content="article">
 <meta property="og:title" content="重构：改善既有代码的设计 笔记">
 <meta property="og:url" content="https://jiankunking.com/refactoring-improving-the-design-of-existing-code.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="本文整理自：《重构改善既有代码的设计》  作者：MartinFowler 出版时间：2015-08">
+<meta property="og:description" content="本文整理自：《重构改善既有代码的设计》 作者：MartinFowler 出版时间：2015-08">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-05-19T10:46:10.161Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="重构：改善既有代码的设计 笔记">
-<meta name="twitter:description" content="本文整理自：《重构改善既有代码的设计》  作者：MartinFowler 出版时间：2015-08">
+<meta name="twitter:description" content="本文整理自：《重构改善既有代码的设计》 作者：MartinFowler 出版时间：2015-08">
 
 <link rel="canonical" href="https://jiankunking.com/refactoring-improving-the-design-of-existing-code.html">
 
@@ -298,76 +298,108 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>本文整理自：《重构改善既有代码的设计》 </p>
+        <p>本文整理自：《重构改善既有代码的设计》</p>
 <p>作者：MartinFowler</p>
 <p>出版时间：2015-08</p>
 <a id="more"></a>
-
-<h1 id="重构，第一个案例"><a href="#重构，第一个案例" class="headerlink" title="重构，第一个案例"></a>重构，第一个案例</h1><p>如果你发现自己需要为程序添加一个特性，而代码结构使你无法很方便地达成目的，那就先重构那个程序，使特性添加比较容易进行，然后再添加特性。</p>
+<h1>重构，第一个案例</h1>
+<p>如果你发现自己需要为程序添加一个特性，而代码结构使你无法很方便地达成目的，那就先重构那个程序，使特性添加比较容易进行，然后再添加特性。</p>
 <p>每当我要进行重构的时候，第一个步骤永远相同：我得为即将修改的代码建立一组可靠的测试环境。这些测试是必要的，因为尽管遵循重构手法可以使我避免绝大多数引入bug的情形，但我毕竟是人，毕竟有可能犯错。所以我需要可靠的测试。</p>
 <p>测试过程中很重要的一部分，就是测试程序对于结果的报告方式，他们要么说“OK”，表示所有新字符串都和参考字符串一样，要么就列出失败清单，显示问题字符串的出现行号。这些测试都能够自我检验。是的，你必须让测试有能力自我检验，否则就得耗费大把时间来回比对，这会降低你的开发速度。</p>
 <p><font color="DeepPink"><strong>进行重构的时候， 我们需要依赖测试， 让它告诉我们是引入Bug。好的测试是重构的根本。花时间建立一个优良的测试机制是完全值得的，因为当你修改程序时，好测试会给你必要的安全保障。</strong></font></p>
-<h1 id="重构原则"><a href="#重构原则" class="headerlink" title="重构原则"></a>重构原则</h1><h2 id="何谓重构"><a href="#何谓重构" class="headerlink" title="何谓重构"></a>何谓重构</h2><blockquote>
+<h1>重构原则</h1>
+<h2 id="何谓重构">何谓重构</h2>
+<blockquote>
 <p>重构（名词）：对软件内部结构的一种调整，目的是在不改变软件可观察行为的前提下，提高其可理解性，降低其修改成本。</p>
 </blockquote>
 <p>首先，重构的目的是使软件更容易被理解和修改。你可以在软件内部做很多修改，但必须对软件可观察的外部行为只造成很小变化，或甚至不造成变化。与之形成对比的是性能优化。和重构一样，性能优化通常不会改变组件的行为（除了执行速度），只会改变其内部结构。但是两者出发点不同:性能优化往往使代码较难理解，但为了得到所需的性能你不得不那么做。</p>
 <p>我要强调的第二点是:重构不会改变软件可观察的行为——重构之后软件功能一如以往。任何用户，不论最终用户或其他程序员，都不知道已经有东西发生了变化。</p>
-<h2 id="何时重构"><a href="#何时重构" class="headerlink" title="何时重构"></a>何时重构</h2><h3 id="三次法则"><a href="#三次法则" class="headerlink" title="三次法则"></a>三次法则</h3><p>Don Roberts 给了我一条准则：<font color="DeepPink"><strong>第一次做某件事时只管去做；第二次做类似的事会产生反感，但无论如何还是可以去做；第三次再做类似的事，你就应该重构。</strong></font></p>
+<h2 id="何时重构">何时重构</h2>
+<h3 id="三次法则">三次法则</h3>
+<p>Don Roberts 给了我一条准则：<font color="DeepPink"><strong>第一次做某件事时只管去做；第二次做类似的事会产生反感，但无论如何还是可以去做；第三次再做类似的事，你就应该重构。</strong></font></p>
 <blockquote>
 <p>事不过三，三则重构。</p>
 </blockquote>
-<h3 id="复审代码时重构"><a href="#复审代码时重构" class="headerlink" title="复审代码时重构"></a>复审代码时重构</h3><p>如果是比较大的设计复审工作，那么在一个较大团队内保留多种观点通常会更好一些。此时直接展示代码往往不是最佳办法。我喜欢运用 UML 示意图展现设计，并以 CRC 卡展示软件情节。换句话说，我会和某个团队进行设计复审，而和单个复审者进行代码复审。</p>
+<h3 id="复审代码时重构">复审代码时重构</h3>
+<p>如果是比较大的设计复审工作，那么在一个较大团队内保留多种观点通常会更好一些。此时直接展示代码往往不是最佳办法。我喜欢运用 UML 示意图展现设计，并以 CRC 卡展示软件情节。换句话说，我会和某个团队进行设计复审，而和单个复审者进行代码复审。</p>
 <p>极限编程[ Beck ,  XP ]中的“结对编程”形式，把代码复审的积极性发挥到了极致。一旦采用这种形式，所有正式开发任务都由两名开发者在同一台机器上进行。这样便在开发过程中形成随时进行的代码复审工作，而重构也就被包含在开发过程内了。</p>
-<h2 id="重构的难题"><a href="#重构的难题" class="headerlink" title="重构的难题"></a>重构的难题</h2><h3 id="修改接口"><a href="#修改接口" class="headerlink" title="修改接口"></a>修改接口</h3><p>如今的问题是：该如何面对那些必须修改“已发布接口”的重构手法？</p>
+<h2 id="重构的难题">重构的难题</h2>
+<h3 id="修改接口">修改接口</h3>
+<p>如今的问题是：该如何面对那些必须修改“已发布接口”的重构手法？</p>
 <p>简言之，如果重构手法改变了已发布接口，你必须同时维护新旧两个接口，直到所有用户都有时间对这个变化做出反应。幸运的是，这不太困难。你通常都有办法把事情组织好，让旧接口继续工作。请尽量这么做：让旧接口调用新接口。当你要修改某个函数名称时，请留下旧函数，让它调用新函数。千万不要复制函数实现，那会让你陷入重复代码的泥悼中难以自拔。你还应该使用 Java 提供的 deprecation (不建议使用）设施，将旧接口标记为 deprecated 。这么一来你的调用者就会注意到它了。</p>
 <p>这个过程的一个好例子就是 Java 容器类（集合类 ， collection classes)。 Java 2的新容器取代了原先一些容器。当 Java 2容器发布时， JavaSoft 花了很大力气来为开发者提供一条顺利迁徙之路。</p>
 <p>“保留旧接口”的办法通常可行，但很烦人。起码在一段时间里你必须构造并维护一些额外的函数。它们会使接口变得复杂，使接口难以使用。还好我们有另一个选择：不要发布接口。当然我不是说要完全禁止，因为很明显你总得发布一些接口。如果你正在建造供外部使用的 API (就像 Sim 公司所做的那样），就必须发布接口。之所以说尽量不要发布，是因为我常常看到一些开发团队公开了太多接口。我曾经看到一支三人团队这么工作：每个人都向另外两人公开发布接口。这使他们不得不经常来回维护接口，而其实他们原本可以直換进入程序库，径行修改自己管理的那一部分，那会轻松许多。过度强调代码所有权的团队常常会犯这种错误。发布接口很有用，但也有代价。所以除非真有必要，不要发布接口。这可能意味需要改变你的代码所有权观念，让每个人都可以修改别人的代码，以适应接口的改动。以结对编程的方式完成这一切通常是个好主意。</p>
 <blockquote>
 <p><font color="DeepPink"><strong>不要过早发布接口。请修改你的代码所有权政策，使重构更顺畅。</strong></font></p>
 </blockquote>
-<h1 id="代码的坏味道"><a href="#代码的坏味道" class="headerlink" title="代码的坏味道"></a>代码的坏味道</h1><h2 id="Duplicated-Code-重复代码"><a href="#Duplicated-Code-重复代码" class="headerlink" title="Duplicated Code 重复代码"></a>Duplicated Code 重复代码</h2><h2 id="LongMethod-过长方法"><a href="#LongMethod-过长方法" class="headerlink" title="LongMethod 过长方法"></a>LongMethod 过长方法</h2><p>我们遵循这样一条原则：每当感觉需要以注释来说明点什么的时候，我们就把需要说明的东西写进一个独立函数中，并以其用途（而非实现手法）命名。</p>
-<h2 id="Large-Class-过长类"><a href="#Large-Class-过长类" class="headerlink" title="Large Class 过长类"></a>Large Class 过长类</h2><h2 id="Long-Parameter-List-过长参数列表"><a href="#Long-Parameter-List-过长参数列表" class="headerlink" title="Long Parameter List 过长参数列表"></a>Long Parameter List 过长参数列表</h2><h2 id="Divergent-Change-发散式变化"><a href="#Divergent-Change-发散式变化" class="headerlink" title="Divergent Change 发散式变化"></a>Divergent Change 发散式变化</h2><p>我们希望软件能够更容易被修改——毕竟软件再怎么说本来就该是“软”的。<strong>一旦需要修改，我们希望能够跳到系统的某一点，只在该处做修改。</strong>如果不能做到这点，你就嗅出两种紧密相关的刺鼻味道中的一种了。</p>
+<h1>代码的坏味道</h1>
+<h2 id="Duplicated-Code-重复代码">Duplicated Code 重复代码</h2>
+<h2 id="LongMethod-过长方法">LongMethod 过长方法</h2>
+<p>我们遵循这样一条原则：每当感觉需要以注释来说明点什么的时候，我们就把需要说明的东西写进一个独立函数中，并以其用途（而非实现手法）命名。</p>
+<h2 id="Large-Class-过长类">Large Class 过长类</h2>
+<h2 id="Long-Parameter-List-过长参数列表">Long Parameter List 过长参数列表</h2>
+<h2 id="Divergent-Change-发散式变化">Divergent Change 发散式变化</h2>
+<p>我们希望软件能够更容易被修改——毕竟软件再怎么说本来就该是“软”的。**一旦需要修改，我们希望能够跳到系统的某一点，只在该处做修改。**如果不能做到这点，你就嗅出两种紧密相关的刺鼻味道中的一种了。</p>
 <p>如果某个类经常因为不同的原因在不同的方向上发生变化 ，Divergent Change就出现了。当你看着一个类说：“呃，如果新加入一个数据库，我必须修改这三个函数；如果新出现一种金融工具，我必须修改这四个函数。”那么此时也许将这个对象分成两个会更好，这么一来每个对象就可以只因一种变化而需要修改。当然，往往只有在加入新数据库或新金融工具后，你才能发现这一点。<font color="DeepPink"><strong>针对某一外界变化的所有相应修改，都只应该发生在单一类中，而这个新类内的所有内容都应该反应此变化。</strong></font>为此，你应该找出某特定原因而造成的所有变化，然后运用Extract Class将它们提炼到另一个类中。</p>
-<h2 id="Shotgun-Surgery-霰弹式修改"><a href="#Shotgun-Surgery-霰弹式修改" class="headerlink" title="Shotgun Surgery 霰弹式修改"></a>Shotgun Surgery 霰弹式修改</h2><p>Shotgun Surgery 类似 Divergent Change ，但恰恰相反。如果每遇到某种变化，你都必须在许多不同的类内做出许多小修改，你所面临的坏味道就是Shotgun Surgery。如果需要修改的代码散布四处，你不但很难找到它们，也很容易忘记某个重要的修改。</p>
+<h2 id="Shotgun-Surgery-霰弹式修改">Shotgun Surgery 霰弹式修改</h2>
+<p>Shotgun Surgery 类似 Divergent Change ，但恰恰相反。如果每遇到某种变化，你都必须在许多不同的类内做出许多小修改，你所面临的坏味道就是Shotgun Surgery。如果需要修改的代码散布四处，你不但很难找到它们，也很容易忘记某个重要的修改。</p>
 <p>这种情况下你应该使用Move Method和 Move Filed把所有需要修改的代码放进同一个类。如果眼下没有合适的类可以安置这些代码，就创造一个。通常可以运用Inline Class把一系列相关行为放进同一个类 。 这可能会造成少量Divergent Change ，但你可以轻易处理它。</p>
 <p><font color="DeepPink"><strong>Divergent Change是指“一个类受多种变化的影响”，Shotgun Surgery则是指“一种变化引发多个类相应修改”。这两种情况下你都会希望整理代码使“外界变化”与“需要修改的类”趋于一一对应。</strong></font></p>
-<h2 id="Feature-Envy-特性依恋"><a href="#Feature-Envy-特性依恋" class="headerlink" title="Feature Envy 特性依恋"></a>Feature Envy 特性依恋</h2><p>对象技术的全部要点在于：这是一种“将数据和对数据的操作行为包装在一起”的技术。有一种经典气味是：函数对某个类的兴趣高过对自己所处类的兴趣。这种孺慕之情最通常的焦点便是数据。无数次经验里，我们看到某个函数为了计算某个值，从另一个对象那儿调用几乎半打的取值函数。疗法显而易见：把这个函数移至另一个地点。你应该使用Move Method把它移到它该去的地方。有时候函数中只有一部分受这种依恋之苦，这时候你应该使用Extract Method把这一部分提炼到独立函数中，再使用Move Method带它去它的梦中家园。</p>
+<h2 id="Feature-Envy-特性依恋">Feature Envy 特性依恋</h2>
+<p>对象技术的全部要点在于：这是一种“将数据和对数据的操作行为包装在一起”的技术。有一种经典气味是：函数对某个类的兴趣高过对自己所处类的兴趣。这种孺慕之情最通常的焦点便是数据。无数次经验里，我们看到某个函数为了计算某个值，从另一个对象那儿调用几乎半打的取值函数。疗法显而易见：把这个函数移至另一个地点。你应该使用Move Method把它移到它该去的地方。有时候函数中只有一部分受这种依恋之苦，这时候你应该使用Extract Method把这一部分提炼到独立函数中，再使用Move Method带它去它的梦中家园。</p>
 <p>当然，并非所有情况都这么简单 。一个函数往往会用到几个类的功能，那么它究竟该被置于何处呢?我们的原则是：判断哪个类拥有最多被此函数使用的数据，然后就把这个函数和那些数据摆在一起。如果先以Extract Method将这个函数分解为数个较小函数并分别置放于不同地点，上述步骤也就比较容易完成了。</p>
 <p>有几个复杂精巧的模式破坏了这个规则。说起这个话题， GoF的Strategy和Visitor立刻跳入我的脑海，Kent Beck的Self Delegation [Beck]也在此列。使用这些模式是为了对抗坏味道Divergent Change 。最根本的原则是：将总是一起变化的东西放在一块儿。数据和引用这些数据的行为总是一起变化的，但也有例外。如果例外出现，我们就搬移那些行为，保持变化只在一地发生。Strategy和Visitor使你得以轻松修改函数行为，因为它们将少量需被扭写的行为隔离开来―当然也付出了“多一层间接性”的代价。</p>
-<h2 id="Data-Clumps-数据泥团"><a href="#Data-Clumps-数据泥团" class="headerlink" title="Data Clumps 数据泥团"></a>Data Clumps 数据泥团</h2><p>数据项就像小孩子，喜欢成群结队地待在一块儿。你常常可以在很多地方看到相同的三四项数据：两个类中相同的字段、许多函数签名中相同的参数。这些总是绑在一起出现的数据真应该拥有属于它们自己的对象。首先请找出这些数据以字段形式出现的地方， 运用Extract Class将它们提炼到一个独立对象中。然后将注意力转移到函数签名上，运用Introduce Parameter Object(或Preserve Whole Object为它减肥。这么做的直接好处是可以将很多参数列缩短，简化函数调用。是的，不必在意Data Clumps只用上新对象的一部分字段，只要以新对象取代两个(或更多)字段，你就值回票价了。</p>
+<h2 id="Data-Clumps-数据泥团">Data Clumps 数据泥团</h2>
+<p>数据项就像小孩子，喜欢成群结队地待在一块儿。你常常可以在很多地方看到相同的三四项数据：两个类中相同的字段、许多函数签名中相同的参数。这些总是绑在一起出现的数据真应该拥有属于它们自己的对象。首先请找出这些数据以字段形式出现的地方， 运用Extract Class将它们提炼到一个独立对象中。然后将注意力转移到函数签名上，运用Introduce Parameter Object(或Preserve Whole Object为它减肥。这么做的直接好处是可以将很多参数列缩短，简化函数调用。是的，不必在意Data Clumps只用上新对象的一部分字段，只要以新对象取代两个(或更多)字段，你就值回票价了。</p>
 <p>一个好的评判办法是：删掉众多数据中的一项。这么做，其他数据有没有因而失去意义?如果它们不再有意义，这就是个明确信号：你应该为它们产生一个新对象。</p>
 <p>减少字段和参数的个数，当然可以去除一些坏味道，但更重要的是：一旦拥有新对象，你就有机会让程序散发出一种芳香。得到新对象后，你就可以着手寻找Feature Envy，这可以帮你指出能够移至新类中的种种程序行为。不必太久， 所有的类都将在它们的小小社会中充分发挥价值。</p>
-<h2 id="Primitive-Obsession-基本类型偏执"><a href="#Primitive-Obsession-基本类型偏执" class="headerlink" title="Primitive Obsession 基本类型偏执"></a>Primitive Obsession 基本类型偏执</h2><p>如果你有一组应该总是被放在一起的字段，可以运用Extract Class。如果你在参数列表中看到基本型数据，不妨试试Introduce Parameter Object。如果你发现自己正从数组中挑选数据，可运用Replace Array with Object。</p>
-<h2 id="Switch-Statements-switch-语句"><a href="#Switch-Statements-switch-语句" class="headerlink" title="Switch Statements switch 语句"></a>Switch Statements switch 语句</h2><p>面向对象程序的一个最明显特征就是：少用switch(或case) 语句。从本质上说，switch语句的问题在于重复。你常会发现同样的switch语句散布于不同地点。如果要为它添加一个新的case子句， 就必须找到所有switch语句并修改它们。面向对象中的多态概念可为此带来优雅的解决办法。</p>
-<p><font color="DeepPink"><strong>大多数时候，一看到switch语句，你就应该考虑以多态来替换它。</strong></font>问题是多态该出现在哪儿?switch语句常常根据类型码进行选择，你要的是“与该类型码相关的函数或类”，所以应该使用Extract Method将switch语句提炼到一个独立函数中，再以Move Method将它搬移到需要多态性的那个类里。此时你必须决定是否使用Replace Type Code with Subclasses或Replace Type Code with State&#x2F;Strategy 。一旦这样完成继承结构之后，你就可以运用Replace Conditional with Polymorphism了。</p>
+<h2 id="Primitive-Obsession-基本类型偏执">Primitive Obsession 基本类型偏执</h2>
+<p>如果你有一组应该总是被放在一起的字段，可以运用Extract Class。如果你在参数列表中看到基本型数据，不妨试试Introduce Parameter Object。如果你发现自己正从数组中挑选数据，可运用Replace Array with Object。</p>
+<h2 id="Switch-Statements-switch-语句">Switch Statements switch 语句</h2>
+<p>面向对象程序的一个最明显特征就是：少用switch(或case) 语句。从本质上说，switch语句的问题在于重复。你常会发现同样的switch语句散布于不同地点。如果要为它添加一个新的case子句， 就必须找到所有switch语句并修改它们。面向对象中的多态概念可为此带来优雅的解决办法。</p>
+<p><font color="DeepPink"><strong>大多数时候，一看到switch语句，你就应该考虑以多态来替换它。</strong></font>问题是多态该出现在哪儿?switch语句常常根据类型码进行选择，你要的是“与该类型码相关的函数或类”，所以应该使用Extract Method将switch语句提炼到一个独立函数中，再以Move Method将它搬移到需要多态性的那个类里。此时你必须决定是否使用Replace Type Code with Subclasses或Replace Type Code with State/Strategy 。一旦这样完成继承结构之后，你就可以运用Replace Conditional with Polymorphism了。</p>
 <p>如果你只是在单一函数中有些选择事例，且并不想改动它们，那么多态就有点杀鸡用牛刀了。这种情况下Replace Parameter with Explicit Methods是个不错的选择。如果你的选择条件之一是null，可以试试Introduce Null Object 。</p>
-<h2 id="ParallelInheritanceHierarchies-平行继承体系"><a href="#ParallelInheritanceHierarchies-平行继承体系" class="headerlink" title="ParallelInheritanceHierarchies 平行继承体系"></a>ParallelInheritanceHierarchies 平行继承体系</h2><p>Parallel Inheritance hierarchies其实是Shotgun Surgery的特殊情况。在这种情况下,每当你为某个类增加一个子类,必须也为另一个类相应增加一个子类。<strong>如果你发现某个继承体系的类名称前缀和另一个继承体系的类名称前缀完全相同,便是闻到了这种坏味道。</strong></p>
+<h2 id="ParallelInheritanceHierarchies-平行继承体系">ParallelInheritanceHierarchies 平行继承体系</h2>
+<p>Parallel Inheritance hierarchies其实是Shotgun Surgery的特殊情况。在这种情况下,每当你为某个类增加一个子类,必须也为另一个类相应增加一个子类。<strong>如果你发现某个继承体系的类名称前缀和另一个继承体系的类名称前缀完全相同,便是闻到了这种坏味道。</strong></p>
 <p>消除这种重复性的一般策略是:让一个继承体系的实例引用另一个继承体系的实例。如果再接再励运用Move method和Move Field,就可以将引用端的继承体系消弭于无形。</p>
-<h2 id="LazyClass-冗余类"><a href="#LazyClass-冗余类" class="headerlink" title="LazyClass 冗余类"></a>LazyClass 冗余类</h2><h2 id="SpeculativeGenerality-夸夸其谈未来性"><a href="#SpeculativeGenerality-夸夸其谈未来性" class="headerlink" title="SpeculativeGenerality 夸夸其谈未来性"></a>SpeculativeGenerality 夸夸其谈未来性</h2><p>这个令我们十分敏感的坏味道,命名者是 Brian Foote。当有人说“噢,我想我们总有一天需要做这事”,并因而企图以各式各样的钩子和特殊情况来处理一些非必要的事情,这种坏味道就出现了。那么做的结果往往造成系统更难理解和维护。如果所有装置都会被用到,那就值得那么做;如果用不到,就不值得。用不上的装置只会挡你的路,所以,把它搬开吧。</p>
+<h2 id="LazyClass-冗余类">LazyClass 冗余类</h2>
+<h2 id="SpeculativeGenerality-夸夸其谈未来性">SpeculativeGenerality 夸夸其谈未来性</h2>
+<p>这个令我们十分敏感的坏味道,命名者是 Brian Foote。当有人说“噢,我想我们总有一天需要做这事”,并因而企图以各式各样的钩子和特殊情况来处理一些非必要的事情,这种坏味道就出现了。那么做的结果往往造成系统更难理解和维护。如果所有装置都会被用到,那就值得那么做;如果用不到,就不值得。用不上的装置只会挡你的路,所以,把它搬开吧。</p>
 <p><font color="DeepPink"><strong>如果你的某个抽象类其实没有太大作用,请运用Collapse Hierarchy。不必要的委托可运用Inline class除掉。如果函数的某些参数未被用上,可对它实施Remove Parameter。如果函数名称带有多余的抽象意味,应该对它实施Rename Method,让它现实一些。</strong></font></p>
-<h2 id="Temporary-Field-令人迷惑的临时字段"><a href="#Temporary-Field-令人迷惑的临时字段" class="headerlink" title="Temporary Field 令人迷惑的临时字段"></a>Temporary Field 令人迷惑的临时字段</h2><h2 id="Message-Chains-过度耦合的消息链"><a href="#Message-Chains-过度耦合的消息链" class="headerlink" title="Message Chains (过度耦合的消息链)"></a>Message Chains (过度耦合的消息链)</h2><p>如果你看到用户向一个对象请求另一个对象,然后再向后者请求另一个对象,然后再请求另一个对象……这就是消息链。实际代码中你看到的可能是一长串getThis()或一长串临时变量。采取这种方式,意味客户代码将与查找过程中的导航结构紧密耦合。一旦对象间的关系发生任何变化,客户端就不得不做出相应修改。</p>
+<h2 id="Temporary-Field-令人迷惑的临时字段">Temporary Field 令人迷惑的临时字段</h2>
+<h2 id="Message-Chains-过度耦合的消息链">Message Chains (过度耦合的消息链)</h2>
+<p>如果你看到用户向一个对象请求另一个对象,然后再向后者请求另一个对象,然后再请求另一个对象……这就是消息链。实际代码中你看到的可能是一长串getThis()或一长串临时变量。采取这种方式,意味客户代码将与查找过程中的导航结构紧密耦合。一旦对象间的关系发生任何变化,客户端就不得不做出相应修改。</p>
 <p>这时候你应该使用Hide Delegate。你可以在消息链的不同位置进行这种重构手法。理论上可以重构消息链上的任何一个对象,但这么做往往会把一系列对象(intermediate object)都变成Middle Man。通常更好的选择是:先观察消息链最终得到的对象是用来干什么的,看看能否以Extract Method把使用该对象的代码提炼到一个独立函数中,再运用Move Method把这个函数推入消息链。如果这条链上的某个对象有多位客户打算航行此航线的剩余部分,就加一个函数来做这件事。</p>
 <p>有些人把任何函数链都视为坏东西,我们不这样想。呵呵,我们的冷静镇定是出了名的,起码在这件事上是这样</p>
-<h2 id="Middle-Man-中间人"><a href="#Middle-Man-中间人" class="headerlink" title="Middle Man 中间人"></a>Middle Man 中间人</h2><p>对象的基本特征之一就是封装——对外部世界隐藏其内部细节。封装往往伴随委托。比如说你问主管是否有时间参加一个会议,他就把这个消息“委托”给他的记事簿,然后才能回答你。很好,你没必要知道这位主管到底使用传统记事簿或电子记事簿亦或秘书来记录自己的约会。</p>
+<h2 id="Middle-Man-中间人">Middle Man 中间人</h2>
+<p>对象的基本特征之一就是封装——对外部世界隐藏其内部细节。封装往往伴随委托。比如说你问主管是否有时间参加一个会议,他就把这个消息“委托”给他的记事簿,然后才能回答你。很好,你没必要知道这位主管到底使用传统记事簿或电子记事簿亦或秘书来记录自己的约会。</p>
 <p>但是人们可能过度运用委托。你也许会看到某个类接口有一半的函数都委托给其他类,这样就是过度运用。这时应该使用Remove Middle Man,直接和真正负责的对象打交道。如果这样“不干实事”的函数只有少数几个,可以运用Inline Method把它们放进调用端。如果这些Middle Man还有其他行为,可以运用Replace Delegation with Inheritance把它变成实责对象的子类,这样你既可以扩展原对象的行为,又不必负担那么多的委托动作。</p>
-<h2 id="Inappropriate-Intimacy-过度亲密"><a href="#Inappropriate-Intimacy-过度亲密" class="headerlink" title="Inappropriate Intimacy 过度亲密"></a>Inappropriate Intimacy 过度亲密</h2><p>过分狎昵的类必须拆散。你可以采用Move Method和Move Field帮它们划清界线,从而减少狎昵行径。你也可以看看是否可以运用Change Bidirectional Association to Unidirectional让其中一个类对另一个斩断情丝。如果两个类实在是情投意合,可以运用Extract Class把两者共同点提炼到一个安全地点,让它们坦荡地使用这个新类。或者也可以尝试运用Hide Delegate让另一个类来为它们传递相思情。</p>
+<h2 id="Inappropriate-Intimacy-过度亲密">Inappropriate Intimacy 过度亲密</h2>
+<p>过分狎昵的类必须拆散。你可以采用Move Method和Move Field帮它们划清界线,从而减少狎昵行径。你也可以看看是否可以运用Change Bidirectional Association to Unidirectional让其中一个类对另一个斩断情丝。如果两个类实在是情投意合,可以运用Extract Class把两者共同点提炼到一个安全地点,让它们坦荡地使用这个新类。或者也可以尝试运用Hide Delegate让另一个类来为它们传递相思情。</p>
 <p><font color="DeepPink"><strong>继承往往造成过度亲密,因为子类对超类的了解总是超过后者的主观愿望。如果你觉得该让这个孩子独自生活了,请运用Replace Inheritance with Delegation让它离开继承体系。</strong></font></p>
-<h2 id="Alternative-Classes-with-Different-Interfaces-异曲同工的类"><a href="#Alternative-Classes-with-Different-Interfaces-异曲同工的类" class="headerlink" title="Alternative Classes with Different Interfaces 异曲同工的类"></a>Alternative Classes with Different Interfaces 异曲同工的类</h2><p>如果两个函数做同一件事,却有着不同的签名,请运用Rename Method根据它们的用途重新命名。但这往往不够,请反复运用Move Method将某些行为移入类,直到两者的协议一致为止。如果你必须重复而赘余地移入代码才能完成这些,或许可运用Extract Superclass为自己赎点罪。</p>
-<h2 id="Incomplete-Library-Class-不完整的库类"><a href="#Incomplete-Library-Class-不完整的库类" class="headerlink" title="Incomplete Library Class 不完整的库类"></a>Incomplete Library Class 不完整的库类</h2><p>如果你只想修改库类的一两个函数,可以运用Introduce Foreign Method;如果想要添加一大堆额外行为,就得运用Introduce Local Extension。</p>
-<h2 id="Data-Class-数据类"><a href="#Data-Class-数据类" class="headerlink" title="Data Class 数据类"></a>Data Class 数据类</h2><p>所谓Data Class是指:它们拥有一些字段,以及用于访问(读写)这些字段的函数,除此之外一无长物。这样的类只是一种不会说话的数据容器,它们几乎一定被其他类过分细琐地操控着。这些类早期可能拥有public字段,果真如此你应该在别人注意到它们之前,立刻运用Encapsulate Field将它们封装起来。如果这些类内含容器类的字段,你应该检查它们是不是得到了恰当的封装:如果没有,就运用Encapsulate Collection把它们封装起来。对于那些不该被其他类修改的字段,请运用Remove Setting Method。</p>
-<p>然后,找出这些取值设值函数被其他类运用的地点。尝试以Move Method把那些调用行为搬移到Data Class。如果无法搬移整个函数,就运用Extract Method产生一个可被搬移的函数。不久之后你就可以运用Hide Method把这些取值&#x2F;设值函数隐藏起来了。</p>
-<h2 id="Refused-Bequest-拒绝继承"><a href="#Refused-Bequest-拒绝继承" class="headerlink" title="Refused Bequest 拒绝继承"></a>Refused Bequest 拒绝继承</h2><p>子类应该继承超类的函数和数据。但如果它们不想或不需要继承,又该怎么办呢?它们得到所有礼物,却只从中挑选几样来玩!</p>
+<h2 id="Alternative-Classes-with-Different-Interfaces-异曲同工的类">Alternative Classes with Different Interfaces 异曲同工的类</h2>
+<p>如果两个函数做同一件事,却有着不同的签名,请运用Rename Method根据它们的用途重新命名。但这往往不够,请反复运用Move Method将某些行为移入类,直到两者的协议一致为止。如果你必须重复而赘余地移入代码才能完成这些,或许可运用Extract Superclass为自己赎点罪。</p>
+<h2 id="Incomplete-Library-Class-不完整的库类">Incomplete Library Class 不完整的库类</h2>
+<p>如果你只想修改库类的一两个函数,可以运用Introduce Foreign Method;如果想要添加一大堆额外行为,就得运用Introduce Local Extension。</p>
+<h2 id="Data-Class-数据类">Data Class 数据类</h2>
+<p>所谓Data Class是指:它们拥有一些字段,以及用于访问(读写)这些字段的函数,除此之外一无长物。这样的类只是一种不会说话的数据容器,它们几乎一定被其他类过分细琐地操控着。这些类早期可能拥有public字段,果真如此你应该在别人注意到它们之前,立刻运用Encapsulate Field将它们封装起来。如果这些类内含容器类的字段,你应该检查它们是不是得到了恰当的封装:如果没有,就运用Encapsulate Collection把它们封装起来。对于那些不该被其他类修改的字段,请运用Remove Setting Method。</p>
+<p>然后,找出这些取值设值函数被其他类运用的地点。尝试以Move Method把那些调用行为搬移到Data Class。如果无法搬移整个函数,就运用Extract Method产生一个可被搬移的函数。不久之后你就可以运用Hide Method把这些取值/设值函数隐藏起来了。</p>
+<h2 id="Refused-Bequest-拒绝继承">Refused Bequest 拒绝继承</h2>
+<p>子类应该继承超类的函数和数据。但如果它们不想或不需要继承,又该怎么办呢?它们得到所有礼物,却只从中挑选几样来玩!</p>
 <p>按传统说法,这就意味着继承体系设计错误。你需要为这个子类新建一个兄弟类,再运用Push Down Method和Push Down Field把所有用不到的函数下推给那个兄弟。这样一来,超类就只持有所有子类共享的东西。你常常会听到这样的建议:所有超类都应该是抽象(abstract)的。</p>
 <p>既然使用“传统说法”这个略带贬义的词,你就可以猜到,我们不建议你这么做,起码不建议你每次都这么做。我们经常利用继承来复用一些行为,并发现这可以很好地应用于日常工作。这也是一种坏味道,我们不否认,但气味通常并不强烈。所以我们说:如果Refused Bequest引起困惑和问题,请遵循传统忠告。但不必认为你每次都得那么做。十有八九这种坏味道很淡,不值得理睬。</p>
 <p>如果子类复用了超类的行为(实现),却又不愿意支持超类的接口, Refused Bequest的坏味道就会变得浓烈。拒绝继承超类的实现,这一点我们不介意;但如果拒绝继承超类的接口,我们不以为然。不过即使你不愿意继承接口,也不要胡乱修改继承体系,应该运用Replace Inheritance with Delegation来达到目的</p>
-<h2 id="Comments-注释过多"><a href="#Comments-注释过多" class="headerlink" title="Comments 注释过多"></a>Comments 注释过多</h2><p>别担心,我们并不是说你不该写注释。从嗅觉上说, Comments不是一种坏味道,事实上它们还是一种香味呢。我们之所以要在这里提到 Comments,是因为人们常把它当作除臭剂来使用。常常会有这样的情况:你看到一段代码有着长长的注释,然后发现,这些注释之所以存在乃是因为代码很糟糕。这种情况的发生次数之多,实在令人吃惊。</p>
+<h2 id="Comments-注释过多">Comments 注释过多</h2>
+<p>别担心,我们并不是说你不该写注释。从嗅觉上说, Comments不是一种坏味道,事实上它们还是一种香味呢。我们之所以要在这里提到 Comments,是因为人们常把它当作除臭剂来使用。常常会有这样的情况:你看到一段代码有着长长的注释,然后发现,这些注释之所以存在乃是因为代码很糟糕。这种情况的发生次数之多,实在令人吃惊。</p>
 <p>Comments可以带我们找到本章先前提到的各种坏味道。找到坏味道后,我们首先应该以各种重构手法把坏味道去除。完成之后我们常常会发现:注释已经变得多余了,因为代码已经清楚说明了一切。</p>
 <p>如果你需要注释来解释一块代码做了什么,试试Extract Method;如果函数已经提炼出来,但还是需要注释来解释其行为,试试Rename Method;如果你需要注释说明某些系统的需求规格,试试Introduce Assertion。</p>
 <blockquote>
 <p>当你感觉需要撰写注释时,请先尝试重构,试着让所有注释都变得多余。</p>
 </blockquote>
 <p><font color="DeepPink"><strong>如果你不知道该做什么,这才是注释的良好运用时机。除了用来记述将来的打算之外,注释还可以用来标记你并无十足把握的区域。你可以在注释里写下自己“为什么做某某事”。这类信息可以帮助将来的修改者,尤其是那些健忘的家伙。</strong></font></p>
-<h1 id="重构列表"><a href="#重构列表" class="headerlink" title="重构列表"></a>重构列表</h1><h2 id="重构的记录格式"><a href="#重构的记录格式" class="headerlink" title="重构的记录格式"></a>重构的记录格式</h2><p>介绍重构时,我采用一种标准格式。每个重构手法都有如下五个部分。</p>
+<h1>重构列表</h1>
+<h2 id="重构的记录格式">重构的记录格式</h2>
+<p>介绍重构时,我采用一种标准格式。每个重构手法都有如下五个部分。</p>
 <ul>
 <li>首先是名称(name)。建造一个重构词汇表,名称是很重要的。这个名称也就是我将在本书其他地方使用的名称。</li>
 <li>名称之后是一个简短概要(summary)。简单介绍此一重构手法的适用情景以及它所做的事情。这部分可以帮助你更快找到你所需要的重构手法。</li>
@@ -375,69 +407,86 @@
 <li>做法(mechanics)简明扼要地一步一步介绍如何进行此一重构。</li>
 <li>范例(examples)以一个十分简单的例子说明此重构手法如何运作。</li>
 </ul>
-<p>概要”包括三个部分:(1)一句话,介绍这个重构能够帮助解决的问题;(2)段简短陈述,介绍你应该做的事:(3)一幅速写图,简单展现重构前后示例:有时候我展示代码,有时候我展示UML图。总之,哪种形式能更好呈现该重构的本质,我就使用哪种形式(本书所有UML图都根据实现观点而画[Fowler,,UML]。)如果你以前见过这一重构手法,那么速写图能够让你迅速了解这一重构的概况;如果你不曾见过这个重构,可能就需要浏览整个范例,才能得到较好的认识。</p>
+<p>概要”包括三个部分:(1)一句话,介绍这个重构能够帮助解决的问题;(2)段简短陈述,介绍你应该做的事:(3)一幅速写图,简单展现重构前后示例:有时候我展示代码,有时候我展示UML图。总之,哪种形式能更好呈现该重构的本质,我就使用哪种形式(本书所有UML图都根据实现观点而画[Fowler,UML]。)如果你以前见过这一重构手法,那么速写图能够让你迅速了解这一重构的概况;如果你不曾见过这个重构,可能就需要浏览整个范例,才能得到较好的认识。</p>
 <p>“做法”出自我自己的笔记。这些笔记是为了让我在一段时间不做某项重构之后还能记得怎么做。它们也颇为简洁,通常不会解释“为什么要这么做那么做”。我会在“范例”中给出更多解释。这么一来,“做法”就成了简短的笔记。如果你知道该使用哪个重构,但记不清具体步骤,可以参考“做法”部分(至少我是这么使用它们的);如果你初次使用某个重构,可能只参考“做法”还不够,你还需要阅读“范例”。</p>
 <p>撰写“做法”的时候,我尽量将重构的每个步骤都写得简短。我强调安全的重构方式,所以应该采用非常小的步骤,并且在每个步骤之后进行测试。真正工作时,我通常会采用比这里介绍的“婴儿学步”稍大些的步骤,然而一旦出问题,我就会撤销上一步,换用比较小的步骤。这些步骤还包含一些特定状况的参考,所以它们也有检验表的作用。我自己经常忘掉这些该做的事情。</p>
 <p>“范例”像是简单而有趣的教科书。我使用这些范例是为了帮助解释重构的基本要素,最大限度地避免其他枝节,所以我希望你能原谅其中的简化工作(它们当然不是优秀商用对象设计的适当例子)。不过我敢肯定,你一定能在你手上那些更复杂的情况中使用它们。某些十分简单的重构干脆没有范例,因为我觉得为它们加上个范例不会有多大意义。</p>
 <p>更明确地说,加上范例仅仅是为了阐释当时讨论的重构手法。通常那些代码最终仍有其他问题,但修正那些问题需要用到其他重构手法。某些情况下数个重构经常被一并运用,这时候我会把某些范例拿到另一个重构中继续使用。大部分时候,个范例只为一项重构而设计,这么做是为了让每一项重构手法自成一体,因为这份重构列表的首要目的还是作为参考工具。</p>
-<h2 id="这些重构的成熟度如何？"><a href="#这些重构的成熟度如何？" class="headerlink" title="这些重构的成熟度如何？"></a>这些重构的成熟度如何？</h2><p>重构的基本技巧—小步前进、频繁测试——已经得到多年的实践检验。所以,我敢保证,重构的这些基础思想是非常可靠的。</p>
-<h1 id="重新组织方法"><a href="#重新组织方法" class="headerlink" title="重新组织方法"></a>重新组织方法</h1><h2 id="Extract-Method-提炼函数"><a href="#Extract-Method-提炼函数" class="headerlink" title="Extract Method 提炼函数"></a>Extract Method 提炼函数</h2><h3 id="动机"><a href="#动机" class="headerlink" title="动机"></a>动机</h3><p>有几个原因造成我喜欢简短而命名良好的函数。首先,如果每个函数的粒度都很小,那么函数被复用的机会就更大;其次,这会使高层函数读起来就像一系列注释:再次,如果函数都是细粒度,那么函数的覆写也会更容易些。</p>
+<h2 id="这些重构的成熟度如何？">这些重构的成熟度如何？</h2>
+<p>重构的基本技巧—小步前进、频繁测试——已经得到多年的实践检验。所以,我敢保证,重构的这些基础思想是非常可靠的。</p>
+<h1>重新组织方法</h1>
+<h2 id="Extract-Method-提炼函数">Extract Method 提炼函数</h2>
+<h3 id="动机">动机</h3>
+<p>有几个原因造成我喜欢简短而命名良好的函数。首先,如果每个函数的粒度都很小,那么函数被复用的机会就更大;其次,这会使高层函数读起来就像一系列注释:再次,如果函数都是细粒度,那么函数的覆写也会更容易些。</p>
 <p><font color="DeepPink"><strong>人们有时会问我,一个函数多长才算合适?在我看来,长度不是问题,关键在于函数名称和函数本体之间的语义距离。如果提炼可以强化代码的清晰度,那就去做,就算函数名称比提炼出来的代码还长也无所谓。</strong></font></p>
-<h3 id="做法"><a href="#做法" class="headerlink" title="做法"></a>做法</h3><ul>
-<li><p><font color="DeepPink"><strong>创造一个新函数,根据这个函数的意图来对它命名</strong></font>(以它“做什么”来命名,而不是以它“怎样做”命名)</p>
+<h3 id="做法">做法</h3>
+<ul>
+<li>
+<p><font color="DeepPink"><strong>创造一个新函数,根据这个函数的意图来对它命名</strong></font>(以它“做什么”来命名,而不是以它“怎样做”命名)</p>
 <ul>
 <li>→<font color="DeepPink"><strong>即使你想要提炼的代码非常简单,例如只是一条消息或一个函数调用,只要新函数的名称能够以更好的方式昭示代码意图,你也应该提炼它。但如果你想不出一个更有意义的名称,就别动。</strong></font></li>
 </ul>
 </li>
-<li><p>将提炼出的代码从源函数复制到新建的目标函数中。</p>
+<li>
+<p>将提炼出的代码从源函数复制到新建的目标函数中。</p>
 </li>
-<li><p>仔细检查提炼出的代码,看看其中是否引用了“作用域限于源函数”的变量(包括局部变量和源函数参数)。</p>
+<li>
+<p>仔细检查提炼出的代码,看看其中是否引用了“作用域限于源函数”的变量(包括局部变量和源函数参数)。</p>
 </li>
-<li><p>检查是否有“仅用于被提炼代码段”的临时变量。如果有,在目标函数中将它们声明为临时变量。</p>
+<li>
+<p>检查是否有“仅用于被提炼代码段”的临时变量。如果有,在目标函数中将它们声明为临时变量。</p>
 </li>
-<li><p>检査被提炼代码段,看看是否有任何局部变量的值被它改变。如果一个临时变量值被修改了,看看是否可以将被提炼代码段处理为一个查询,并将结果赋值给相关变量。如果很难这样做,或如果被修改的变量不止一个,你就不能仅仅将这段代码原封不动地提炼出来。你可能需要先使用Split Temporary Ariable,然后再尝试提炼。也可以使用Replace Temp with Query将临时变量消灭掉。</p>
+<li>
+<p>检査被提炼代码段,看看是否有任何局部变量的值被它改变。如果一个临时变量值被修改了,看看是否可以将被提炼代码段处理为一个查询,并将结果赋值给相关变量。如果很难这样做,或如果被修改的变量不止一个,你就不能仅仅将这段代码原封不动地提炼出来。你可能需要先使用Split Temporary Ariable,然后再尝试提炼。也可以使用Replace Temp with Query将临时变量消灭掉。</p>
 </li>
-<li><p>将被提炼代码段中需要读取的局部变量,当作参数传给目标函数。</p>
+<li>
+<p>将被提炼代码段中需要读取的局部变量,当作参数传给目标函数。</p>
 </li>
-<li><p>处理完所有局部变量之后,进行编译。</p>
+<li>
+<p>处理完所有局部变量之后,进行编译。</p>
 </li>
-<li><p>在源函数中,将被提炼代码段替换为对目标函数的调用。</p>
+<li>
+<p>在源函数中,将被提炼代码段替换为对目标函数的调用。</p>
 <ul>
 <li>如果你将任何临时变量移到目标函数中,请检查它们原本的声明式是否在被提炼代码段的外围。如果是,现在你可以删除这些声明式了</li>
 </ul>
 </li>
-<li><p>编译,测试。</p>
+<li>
+<p>编译,测试。</p>
 </li>
 </ul>
 <p>临时变量往往为数众多,甚至会使提炼工作举步维艰。这种情况下,我会尝试先运用Replace Temp with Query(减少临时变量。如果即使这么做了提炼依旧困难重重,我就会动用Replace Method with Method Object,这个重构手法不在乎 代码中有多少临时变量,也不在乎你如何使用它们。</p>
-<h2 id="Inline-Method-内联方法"><a href="#Inline-Method-内联方法" class="headerlink" title="Inline Method 内联方法"></a>Inline Method 内联方法</h2><p>一个函数的本体与名称同样清楚易懂。</p>
+<h2 id="Inline-Method-内联方法">Inline Method 内联方法</h2>
+<p>一个函数的本体与名称同样清楚易懂。</p>
 <p>在函数调用点插入函数本体,然后移除该函数。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">int getRating()&#123;</span><br><span class="line">	return (moreThanFiveLateDeliveries())? 2: 1;</span><br><span class="line">&#125;</span><br><span class="line">boolean moreThanFiveLateDeliveries()&#123;</span><br><span class="line">	return numberofLateDeliveries &gt;5:</span><br><span class="line">&#125;</span><br><span class="line">    ||</span><br><span class="line">    ||</span><br><span class="line">    \/</span><br><span class="line">int getRating()&#123;</span><br><span class="line">	return(numberofLateDeliveries &gt;5)?2: 1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="Inline-Temp-内联临时变量"><a href="#Inline-Temp-内联临时变量" class="headerlink" title="Inline Temp 内联临时变量"></a>Inline Temp 内联临时变量</h2><p>你有一个临时变量,只被一个简单表达式赋值一次,而它妨碍了其他重构手法。</p>
+<h2 id="Inline-Temp-内联临时变量">Inline Temp 内联临时变量</h2>
+<p>你有一个临时变量,只被一个简单表达式赋值一次,而它妨碍了其他重构手法。</p>
 <p><strong>将所有对该变量的引用动作,替换为对它赋值的那个表达式自身。</strong></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">double basePrice= anorder.basePrice();</span><br><span class="line">return (basePrice&gt;1000)</span><br><span class="line">    ||</span><br><span class="line">    ||</span><br><span class="line">    \/</span><br><span class="line">return (anorder. basePrice()&gt; 1000)</span><br></pre></td></tr></table></figure>
-
-<h2 id="Replace-Temp-with-Query-用查询方法代替临时变量"><a href="#Replace-Temp-with-Query-用查询方法代替临时变量" class="headerlink" title="Replace Temp with Query 用查询方法代替临时变量"></a>Replace Temp with Query 用查询方法代替临时变量</h2><p>你的程序以一个临时变量保存某一表达式的运算结果。</p>
+<h2 id="Replace-Temp-with-Query-用查询方法代替临时变量">Replace Temp with Query 用查询方法代替临时变量</h2>
+<p>你的程序以一个临时变量保存某一表达式的运算结果。</p>
 <p>将这个表达式提炼到一个独立函数中。将这个临时变量的所有引用点替换为对新函数的调用。此后,新函数就可被其他函数使用。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">double basePrice =quantity *_itemPrice:</span><br><span class="line">	if(baseprice&gt;1000)</span><br><span class="line">		return baseprice *0.95</span><br><span class="line">	else</span><br><span class="line">		return baseprice *0.98;</span><br></pre></td></tr></table></figure>
-
 <p>替换为：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">if(basePrice())&gt; 1000</span><br><span class="line">	return baseprice() *0. 95:</span><br><span class="line">else</span><br><span class="line">	return basePrice()*0.98</span><br><span class="line"></span><br><span class="line">double basePrice()&#123;</span><br><span class="line">	return _quantity*_itemPrice;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="动机-1"><a href="#动机-1" class="headerlink" title="动机"></a>动机</h3><p><font color="DeepPink"><strong>临时变量的问题在于:它们是暂时的,而且只能在所属函数内使用。由于临时变量只在所属函数内可见,所以它们会驱使你写出更长的函数,因为只有这样你才能访问到需要的临时变量。如果把临时变量替换为一个查询,那么同一个类中的所有函数都将可以获得这份信息。这将带给你极大帮助,使你能够为这个类编写更清晰的代码。</strong></font></p>
+<h3 id="动机-v2">动机</h3>
+<p><font color="DeepPink"><strong>临时变量的问题在于:它们是暂时的,而且只能在所属函数内使用。由于临时变量只在所属函数内可见,所以它们会驱使你写出更长的函数,因为只有这样你才能访问到需要的临时变量。如果把临时变量替换为一个查询,那么同一个类中的所有函数都将可以获得这份信息。这将带给你极大帮助,使你能够为这个类编写更清晰的代码。</strong></font></p>
 <p>Replace Temp with Query往往是你运用Extract Method之前必不可少的个步骤。局部变量会使代码难以被提炼,所以你应该尽可能把它们替换为查询式。</p>
 <p>这个重构手法较为简单的情况是:临时变量只被赋值一次,或者赋值给临时变量的表达式不受其他条件影响。其他情况比较棘手,但也有可能发生。你可能需要先运用Split Temporary Variable或Separate Query from Modifier使情况变得简单一些,然后再替换临时变量。如果你想替换的临时变量是用来收集结果的,就需要将某些程序逻辑(例如循环)复制到查询函数去。</p>
-<h3 id="做法-1"><a href="#做法-1" class="headerlink" title="做法"></a>做法</h3><p>首先是简单情况:</p>
+<h3 id="做法-v2">做法</h3>
+<p>首先是简单情况:</p>
 <ul>
-<li>找出只被赋值一次的临时变量。<ul>
+<li>找出只被赋值一次的临时变量。
+<ul>
 <li>→如果某个临时变量被赋值超过一次,考虑使用Split Temporary Variable将它分割成多个变量。</li>
 </ul>
 </li>
 <li>将该临时变量声明为final。</li>
 <li>编译。</li>
 <li>这可确保该临时变量的确只被赋值一次。</li>
-<li>将“对该临时变量赋值”之语句的等号右侧部分提炼到一个独立函数中。<ul>
+<li>将“对该临时变量赋值”之语句的等号右侧部分提炼到一个独立函数中。
+<ul>
 <li>→首先将函数声明为private.日后你可能会发现有更多类需要使用它,那时放松对它的保护也很容易</li>
 <li>→确保提炼出来的函数无任何副作用,也就是说该函数并不修改任何对象内容。如果它有副作用,就对它进行Separate Query from Modifler</li>
 </ul>
@@ -447,34 +496,35 @@
 </ul>
 <p>我们常常使用临时变量保存循环中的累加信息。在这种情况下,整个循环都可以被提炼为一个独立函数,这也使原本的函数可以少掉几行扰人的循环逻辑。<font color="DeepPink"><strong>有时候,你可能会在一个循环中累加好几个值。这种情况下你应该针对每个累加值重复一遍循环,这样就可以将所有临时变量都替换为查询。</strong></font>当然,循环应该很简单,复制这些代码时才不会带来危险。</p>
 <p>运用此手法,你可能会担心性能问题。和其他性能问题一样,我们现在不管它,因为它十有八九根本不会造成任何影响。若是性能真的出了问题,你也可以在优化时期解决它。代码组织良好,你往往能够发现更有效的优化方案:如果没有进行重构,好的优化方案就可能与你失之交臂。如果性能实在太糟糕,要把临时变量放回去也是很容易的。</p>
-<h2 id="Introduce-Explaining-Variable-引入解释性变量"><a href="#Introduce-Explaining-Variable-引入解释性变量" class="headerlink" title="Introduce Explaining Variable 引入解释性变量"></a>Introduce Explaining Variable 引入解释性变量</h2><p>你有一个复杂的表达式,将该复杂表达式(或其中一部分)的结果放进一个临时变量,以此变量名称来解释表达式用途。</p>
+<h2 id="Introduce-Explaining-Variable-引入解释性变量">Introduce Explaining Variable 引入解释性变量</h2>
+<p>你有一个复杂的表达式,将该复杂表达式(或其中一部分)的结果放进一个临时变量,以此变量名称来解释表达式用途。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">if ((platform.toUppercase().indexof(&quot;MAC&quot;)&gt;-1)&amp;&amp;</span><br><span class="line">   (browser, toUppercase().idexon(“IE”)&gt;-1)&amp;&amp;</span><br><span class="line">	wasInitialized() &amp;&amp; resize &gt; 0)&#123;</span><br><span class="line">	//do something</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>替换为：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">final boolean isMacos=platform.toUppercase() indexof(&quot;MAC&quot;)&gt;-1:</span><br><span class="line">final boolean isIEBrowser=browser.toUppercase().indexof(&quot;IE&quot;)&gt;-1</span><br><span class="line">final boolean wasResized=resize &gt;0</span><br><span class="line">if (isMacOs &amp;&amp; isIEBrowser &amp;&amp; wasInitialized() &amp;&amp; wasResized)&#123;</span><br><span class="line">	//do something</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="动机-2"><a href="#动机-2" class="headerlink" title="动机"></a>动机</h3><p>表达式有可能非常复杂而难以阅读。这种情况下,临时变量可以帮助你将表达式分解为比较容易管理的形式。</p>
+<h3 id="动机-v3">动机</h3>
+<p>表达式有可能非常复杂而难以阅读。这种情况下,临时变量可以帮助你将表达式分解为比较容易管理的形式。</p>
 <p>在条件逻辑中,Introduce Explaining Variable特别有价值:你可以用这项重构将每个条件子句提炼出来,以一个良好命名的临时变量来解释对应条件子句的意义。使用这项重构的另一种情况是,在较长算法中,可以运用临时变量来解释每步运算的意义。</p>
 <p><font color="DeepPink"><strong>Introduce Explaining Variable是一个很常见的重构手法,但我得承认,我并不常用它。我几乎总是尽量使用Extract Method(来解释一段代码的意义。毕竟临时变量只在它所处的那个函数中才有意义,局限性较大,函数则可以在对象的整个生命中都有用,并且可被其他对象使用。但有时候,当局部变量使Extract Method难以进行时,我就使用Introduce Explaining Variable。</strong></font></p>
-<h2 id="Split-Temporary-Variable-分解临时变量"><a href="#Split-Temporary-Variable-分解临时变量" class="headerlink" title="Split Temporary Variable 分解临时变量"></a>Split Temporary Variable 分解临时变量</h2><p><font color="DeepPink"><strong>你的程序有某个临时变量被赋值超过一次,它既不是循环变量,也不被用于收集计算结果针对每次赋值,创造一个独立、对应的临时变量。</strong></font></p>
+<h2 id="Split-Temporary-Variable-分解临时变量">Split Temporary Variable 分解临时变量</h2>
+<p><font color="DeepPink"><strong>你的程序有某个临时变量被赋值超过一次,它既不是循环变量,也不被用于收集计算结果针对每次赋值,创造一个独立、对应的临时变量。</strong></font></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">double temp = 2*(_height +_width);</span><br><span class="line">System.out.println(temp);</span><br><span class="line">temp = _height*_width;</span><br><span class="line">System.out.printIn (temp);</span><br></pre></td></tr></table></figure>
-
 <p>替换为：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">final double perimeter = 2*(_height+_width);</span><br><span class="line">System.out.println(perimeter);</span><br><span class="line">final double areas =_height * _width;</span><br><span class="line">System.out.println(area);</span><br></pre></td></tr></table></figure>
-
-<h3 id="动机-3"><a href="#动机-3" class="headerlink" title="动机"></a>动机</h3><p>临时变量有各种不同用途,其中某些用途会很自然地导致临时变量被多次赋值。“循环变量”和“结果收集变量”就是两个典型例子:循环变量(loop variable)[Beck]会随循环的每次运行而改变(例如for(inti&#x3D;0;i&lt;10;i++)语句中的i);结果收集变量(collecting temporary variable)[Beck]负责将“通过整个函数的运算”而构成的某个值收集起来。</p>
+<h3 id="动机-v4">动机</h3>
+<p>临时变量有各种不同用途,其中某些用途会很自然地导致临时变量被多次赋值。“循环变量”和“结果收集变量”就是两个典型例子:循环变量(loop variable)[Beck]会随循环的每次运行而改变(例如for(inti=0;i&lt;10;i++)语句中的i);结果收集变量(collecting temporary variable)[Beck]负责将“通过整个函数的运算”而构成的某个值收集起来。</p>
 <p>除了这两种情况,还有很多临时变量用于保存一段冗长代码的运算结果,以便稍后使用。这种临时变量应该只被赋值一次。<font color="DeepPink"><strong>如果它们被赋值超过一次,就意味它们在函数中承担了一个以上的责任。如果临时变量承担多个责任,它就应该被替换(分解)为多个临时变量,每个变量只承担一个责任。</strong></font>同一个临时变量承担两件不同的事情,会令代码阅读者糊涂。</p>
-<h2 id="Remove-Assignments-to-Parameters-移除对参数的赋值"><a href="#Remove-Assignments-to-Parameters-移除对参数的赋值" class="headerlink" title="Remove Assignments to Parameters 移除对参数的赋值"></a>Remove Assignments to Parameters 移除对参数的赋值</h2><p>代码对一个参数进行赋值。以一个临时变量取代该参数的位置。</p>
+<h2 id="Remove-Assignments-to-Parameters-移除对参数的赋值">Remove Assignments to Parameters 移除对参数的赋值</h2>
+<p>代码对一个参数进行赋值。以一个临时变量取代该参数的位置。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">int discount (int inputval, int quantity, int yearToDate)&#123;</span><br><span class="line">	 if(inputval&gt; 50) inputval -=2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>替换为：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">int discount (int inputval, int quantity, int yearToDate)&#123;</span><br><span class="line">	int result = inputval;</span><br><span class="line">	if(inputval&gt; 50) result -=2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="Replace-Method-with-Method-Object-以函数对象取代函数"><a href="#Replace-Method-with-Method-Object-以函数对象取代函数" class="headerlink" title="Replace Method with Method Object 以函数对象取代函数"></a>Replace Method with Method Object 以函数对象取代函数</h2><p>你有一个大型函数,其中对局部变量的使用使你无法采用Extract Method。将这个函数放进一个单独对象中,如此一来局部变量就成了对象内的字段。然后你可以在同一个对象中将这个大型函数分解为多个小型函数。</p>
+<h2 id="Replace-Method-with-Method-Object-以函数对象取代函数">Replace Method with Method Object 以函数对象取代函数</h2>
+<p>你有一个大型函数,其中对局部变量的使用使你无法采用Extract Method。将这个函数放进一个单独对象中,如此一来局部变量就成了对象内的字段。然后你可以在同一个对象中将这个大型函数分解为多个小型函数。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">class Order...</span><br><span class="line">	double price()&#123;</span><br><span class="line">		double primaryBasePrice</span><br><span class="line">		double secondaryBasePrice:</span><br><span class="line">		double tertiaryBasePrice</span><br><span class="line">		// long computation:</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
-
-<p>替换为：<br><img data-src="/images/refactoring-improving-the-design-of-existing-code/replace-method-with-method-object.png"></p>
-<h3 id="做法-2"><a href="#做法-2" class="headerlink" title="做法"></a>做法</h3><p>我厚着脸皮从Kent Beck[Beck]那里偷来了下列做法。</p>
+<p>替换为：<br>
+<img data-src="/images/refactoring-improving-the-design-of-existing-code/replace-method-with-method-object.png" alt></p>
+<h3 id="做法-v3">做法</h3>
+<p>我厚着脸皮从Kent Beck[Beck]那里偷来了下列做法。</p>
 <ul>
 <li>建立一个新类,根据待处理函数的用途,为这个类命名。</li>
 <li><font color="DeepPink"><strong>在新类中建立一个final字段,用以保存原先大型函数所在的对象</strong></font>。我们将这个字段称为“源对象”。同时,针对原函数的每个临时变量和每个参数在新类中建立一个对应的字段保存之。</li>
@@ -485,21 +535,31 @@
 <li>将旧函数的函数本体替换为这样一条语句:“创建上述新类的一个新对象而后调用其中的compute()函数”</li>
 <li>现在进行到很有趣的部分了。因为所有局部变量现在都成了字段,所以你可以任意分解这个大型函数,不必传递任何参数。</li>
 </ul>
-<h1 id="在对象之间移动特性"><a href="#在对象之间移动特性" class="headerlink" title="在对象之间移动特性"></a>在对象之间移动特性</h1><p>类往往会因为承担过多责任而变得臃肿不堪。这种情况下,我会使用Extract Class将一部分责任分离出去。如果一个类变得太“不负责任”,我就会使用Inline Class将它融入另一个类。如果一个类使用了另一个类,运用Hide Delegate将这种关系隐藏起来通常是有帮助的。有时候隐藏委托类会导致拥有者的接口经常变化,此时需要使用Remove Middle Man。</p>
+<h1>在对象之间移动特性</h1>
+<p>类往往会因为承担过多责任而变得臃肿不堪。这种情况下,我会使用Extract Class将一部分责任分离出去。如果一个类变得太“不负责任”,我就会使用Inline Class将它融入另一个类。如果一个类使用了另一个类,运用Hide Delegate将这种关系隐藏起来通常是有帮助的。有时候隐藏委托类会导致拥有者的接口经常变化,此时需要使用Remove Middle Man。</p>
 <p>本章的最后两项重构—Introduce Foreign Method和Introduce Local Extension比较特殊。只有当我不能访问某个类的源码,却又想把其他责任移进这个不可修改的类时,我才会使用这两个重构手法。如果我想加入的只是一或两个函数,就会使用Introduce Foreign Method;如果不止一两个函数,就使用Introduce Local Extension。</p>
-<h2 id="Move-Method-搬移函数"><a href="#Move-Method-搬移函数" class="headerlink" title="Move Method 搬移函数"></a>Move Method 搬移函数</h2><p>你的程序中,有个函数与其所驻类之外的另一个类进行更多交流:调用后者,或被后者调用。<br>在该函数最常引用的类中建立一个有着类似行为的新函数。将旧函数变成一个单纯的委托函数,或是将旧函数完全移除。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/move-method.png"></p>
-<h2 id="Move-Field-搬移字段"><a href="#Move-Field-搬移字段" class="headerlink" title="Move Field 搬移字段"></a>Move Field 搬移字段</h2><p>在你的程序中,某个字段被其所驻类之外的另一个类更多地用到。<br>在目标类新建一个字段,修改源字段的所有用户,令它们改用新字段。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/move-field.png"></p>
-<h2 id="Extract-Class-提炼类"><a href="#Extract-Class-提炼类" class="headerlink" title="Extract Class 提炼类"></a>Extract Class 提炼类</h2><p>某个类做了应该由两个类做的事。<br>建立一个新类,将相关的字段和函数从旧类搬移到新类。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/extract-class.png"></p>
-<h3 id="做法-3"><a href="#做法-3" class="headerlink" title="做法"></a>做法</h3><ul>
+<h2 id="Move-Method-搬移函数">Move Method 搬移函数</h2>
+<p>你的程序中,有个函数与其所驻类之外的另一个类进行更多交流:调用后者,或被后者调用。<br>
+在该函数最常引用的类中建立一个有着类似行为的新函数。将旧函数变成一个单纯的委托函数,或是将旧函数完全移除。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/move-method.png" alt></p>
+<h2 id="Move-Field-搬移字段">Move Field 搬移字段</h2>
+<p>在你的程序中,某个字段被其所驻类之外的另一个类更多地用到。<br>
+在目标类新建一个字段,修改源字段的所有用户,令它们改用新字段。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/move-field.png" alt></p>
+<h2 id="Extract-Class-提炼类">Extract Class 提炼类</h2>
+<p>某个类做了应该由两个类做的事。<br>
+建立一个新类,将相关的字段和函数从旧类搬移到新类。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/extract-class.png" alt></p>
+<h3 id="做法-v4">做法</h3>
+<ul>
 <li>决定如何分解类所负的责任。</li>
-<li>建立一个新类,用以表现从旧类中分离出来的责任。<ul>
+<li>建立一个新类,用以表现从旧类中分离出来的责任。
+<ul>
 <li>→如果旧类剩下的责任与旧类名称不符,为旧类更名</li>
 </ul>
 </li>
-<li>建立“从旧类访问新类”的连接关系。<ul>
+<li>建立“从旧类访问新类”的连接关系。
+<ul>
 <li>→<font color="DeepPink"><strong>有可能需要一个双向连接。但是在真正需要它之前,不要建立“从新类通往旧类”的连接。</strong></font></li>
 </ul>
 </li>
@@ -507,35 +567,48 @@
 <li>每次搬移后,编译、测试</li>
 <li>使用Move Method将必要函数搬移到新类。先搬移较低层函数(也就是被其他函数调用”多于“调用其他函数”者),再搬移较高层函数。</li>
 <li>每次搬移之后,编译、测试。</li>
-<li>检查,精简每个类的接口。<ul>
+<li>检查,精简每个类的接口。
+<ul>
 <li>→<font color="DeepPink"><strong>如果你建立起双向连接,检查是否可以将它改为单向连接。</strong></font></li>
 </ul>
 </li>
 <li><font color="DeepPink"><strong>决定是否公开新类。如果你的确需要公开它,就要决定让它成为引用对象还是不可变的值对象。</strong></font></li>
 </ul>
-<h2 id="Inline-Class-将类内联化"><a href="#Inline-Class-将类内联化" class="headerlink" title="Inline Class 将类内联化"></a>Inline Class 将类内联化</h2><p>某个类没有做太多事情。<br>将这个类的所有特性搬移到另一个类中,然后移除原类。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/inline-class.png"></p>
-<h2 id="Hide-Delegate-隐藏“委托关系”"><a href="#Hide-Delegate-隐藏“委托关系”" class="headerlink" title="Hide Delegate 隐藏“委托关系”"></a>Hide Delegate 隐藏“委托关系”</h2><p>客户通过一个委托类来调用另一个对象。<br>在服务类上建立客户所需的所有函数,用以隐藏委托关系。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/hide-delegate.png"></p>
-<h2 id="Remove-Middle-Man-移除中间人"><a href="#Remove-Middle-Man-移除中间人" class="headerlink" title="Remove Middle Man 移除中间人"></a>Remove Middle Man 移除中间人</h2><p>某个类做了过多的简单委托动作。<br>让客户直接调用受托类。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/remove-middle-man.png"></p>
-<h2 id="Introduce-Foreign-Method-引入外加函数"><a href="#Introduce-Foreign-Method-引入外加函数" class="headerlink" title="Introduce Foreign Method 引入外加函数"></a>Introduce Foreign Method 引入外加函数</h2><p>你需要为提供服务的类增加一个函数,但你无法修改这个类。<br>在客户类中建立一个函数,并以第一参数形式传入一个服务类实例。</p>
+<h2 id="Inline-Class-将类内联化">Inline Class 将类内联化</h2>
+<p>某个类没有做太多事情。<br>
+将这个类的所有特性搬移到另一个类中,然后移除原类。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/inline-class.png" alt></p>
+<h2 id="Hide-Delegate-隐藏“委托关系”">Hide Delegate 隐藏“委托关系”</h2>
+<p>客户通过一个委托类来调用另一个对象。<br>
+在服务类上建立客户所需的所有函数,用以隐藏委托关系。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/hide-delegate.png" alt></p>
+<h2 id="Remove-Middle-Man-移除中间人">Remove Middle Man 移除中间人</h2>
+<p>某个类做了过多的简单委托动作。<br>
+让客户直接调用受托类。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/remove-middle-man.png" alt></p>
+<h2 id="Introduce-Foreign-Method-引入外加函数">Introduce Foreign Method 引入外加函数</h2>
+<p>你需要为提供服务的类增加一个函数,但你无法修改这个类。<br>
+在客户类中建立一个函数,并以第一参数形式传入一个服务类实例。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Date newstart= new Date (previousEnd.getYear(),</span><br><span class="line">						previousEnd.getMonth(),</span><br><span class="line">						previousEnd.getDate()+1);</span><br></pre></td></tr></table></figure>
-
 <p>替换为：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Date newstart = nextDay(previousEnd);</span><br><span class="line"></span><br><span class="line">private static Date nextDay(Date arg)&#123;</span><br><span class="line">	return new Date (arg.getYear(), arg.getMonth(), arg.getDate()+1)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="动机-4"><a href="#动机-4" class="headerlink" title="动机"></a>动机</h3><p>这种事情发生过太多次了:你正在使用一个类,它真的很好,为你提供了需要的所有服务。而后,你又需要一项新服务,这个类却无法供应。于是你开始咒骂:“为什么不能做这件事?”如果可以修改源码,你便可以自行添加一个新函数:如果不能,你就得在客户端编码,补足你要的那个函数。</p>
+<h3 id="动机-v5">动机</h3>
+<p>这种事情发生过太多次了:你正在使用一个类,它真的很好,为你提供了需要的所有服务。而后,你又需要一项新服务,这个类却无法供应。于是你开始咒骂:“为什么不能做这件事?”如果可以修改源码,你便可以自行添加一个新函数:如果不能,你就得在客户端编码,补足你要的那个函数。</p>
 <p>如果你发现自己为一个服务类建立了大量外加函数,或者发现有许多类都需要同样的外加函数,就不应该再使用本项重构,而应该使用Introduce Local Extension。</p>
-<h2 id="Introduce-Local-Extension-引入本地扩展"><a href="#Introduce-Local-Extension-引入本地扩展" class="headerlink" title="Introduce Local Extension 引入本地扩展"></a>Introduce Local Extension 引入本地扩展</h2><p>你需要为服务类提供一些额外函数,但你无法修改这个类。<br>建立一个新类,使它包含这些额外函数。让这个扩展品成为源类的子类或包装类。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/introduce-local-extension.png"></p>
-<h3 id="动机-5"><a href="#动机-5" class="headerlink" title="动机"></a>动机</h3><p>很遗憾,类的作者无法预知未来,他们常常没能为你预先准备一些有用的函数。如果你可以修改源码,最好的办法就是直接加入自己需要的函数。但你经常无法修改源码。如果只需要一两个函数,你可以使用Introduce Foreign Method。但如果你需要的额外函数超过两个,外加函数就很难控制它们了。所以,你需要将这些函数组织在一起,放到一个恰当地方去。要达到这一目的,两种标准对象技术子类化(subclassing)和包装(wrapping)—是显而易见的办法。这种情况下,我把子类或包装类统称为本地扩展(local extension)。</p>
+<h2 id="Introduce-Local-Extension-引入本地扩展">Introduce Local Extension 引入本地扩展</h2>
+<p>你需要为服务类提供一些额外函数,但你无法修改这个类。<br>
+建立一个新类,使它包含这些额外函数。让这个扩展品成为源类的子类或包装类。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/introduce-local-extension.png" alt></p>
+<h3 id="动机-v6">动机</h3>
+<p>很遗憾,类的作者无法预知未来,他们常常没能为你预先准备一些有用的函数。如果你可以修改源码,最好的办法就是直接加入自己需要的函数。但你经常无法修改源码。如果只需要一两个函数,你可以使用Introduce Foreign Method。但如果你需要的额外函数超过两个,外加函数就很难控制它们了。所以,你需要将这些函数组织在一起,放到一个恰当地方去。要达到这一目的,两种标准对象技术子类化(subclassing)和包装(wrapping)—是显而易见的办法。这种情况下,我把子类或包装类统称为本地扩展(local extension)。</p>
 <p>所谓本地扩展是一个独立的类,但也是被扩展类的子类型:它提供源类的一切特性,同时额外添加新特性。在任何使用源类的地方,你都可以使用本地扩展取而代之。</p>
 <p>使用本地扩展使你得以坚持“函数和数据应该被统一封装”的原则。如果你直把本该放在扩展类中的代码零散地放置于其他类中,最终只会让其他这些类变得过分复杂,并使得其中函数难以被复用。</p>
 <p>在子类和包装类之间做选择时,我通常首选子类,因为这样的工作量比较少。制作子类的最大障碍在于,它必须在对象创建期实施。如果我可以接管对象创建过程,那当然没问题;但如果你想在对象创建之后再使用本地扩展,就有问题了。此外,子类化方案还必须产生一个子类对象,这种情况下,如果有其他对象引用了旧对象,我们就同时有两个对象保存了原数据!如果原数据是不可修改的,那也没问题,我可以放心进行复制:但如果原数据允许被修改,问题就来了,因为一个修改动作无法同时改变两份副本。这时候我就必须改用包装类。使用包装类时,对本地扩展的修改会波及原对象,反之亦然。</p>
-<h3 id="做法-4"><a href="#做法-4" class="headerlink" title="做法"></a>做法</h3><ul>
+<h3 id="做法-v5">做法</h3>
+<ul>
 <li>建立一个扩展类,将它作为原始类的子类或包装类。</li>
-<li>在扩展类中加入转型构造函数。<ul>
+<li>在扩展类中加入转型构造函数。
+<ul>
 <li>→<font color="DeepPink"><strong>所谓“转型构造函数”是指“接受原对象作为参数”的构造函数。如果采用子类化方案,那么转型构造函数应该调用适当的超类构造函数;如果采用包装类方案,那么转型构造函数应该将它得到的传入参数以实例变量的形式保存起来,用作接受委托的原对象。</strong></font></li>
 </ul>
 </li>
@@ -543,69 +616,103 @@
 <li>根据需要,将原对象替换为扩展对象</li>
 <li>将针对原始类定义的所有外加函数搬移到扩展类中。</li>
 </ul>
-<h1 id="简化条件表达式"><a href="#简化条件表达式" class="headerlink" title="简化条件表达式"></a>简化条件表达式</h1><h2 id="Replace-Nested-Conditional-with-Guard-Clauses-以卫语句取代嵌套条件表达式"><a href="#Replace-Nested-Conditional-with-Guard-Clauses-以卫语句取代嵌套条件表达式" class="headerlink" title="Replace Nested Conditional with Guard Clauses 以卫语句取代嵌套条件表达式"></a>Replace Nested Conditional with Guard Clauses 以卫语句取代嵌套条件表达式</h2><p>函数中的条件逻辑使人难以看清正常的执行路径。<br>使用卫语句表现所有特殊情况。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%8D%AB%E8%AF%AD%E5%8F%A5.png"></p>
+<h1>简化条件表达式</h1>
+<h2 id="Replace-Nested-Conditional-with-Guard-Clauses-以卫语句取代嵌套条件表达式">Replace Nested Conditional with Guard Clauses 以卫语句取代嵌套条件表达式</h2>
+<p>函数中的条件逻辑使人难以看清正常的执行路径。<br>
+使用卫语句表现所有特殊情况。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%8D%AB%E8%AF%AD%E5%8F%A5.png" alt></p>
 <blockquote>
 <p>谓语句是我个人比较喜欢的一种处理方式，通俗点说就是让函数尽快结束。</p>
 </blockquote>
-<h2 id="Replace-Conditional-with-Polymorphism-以多态取代条件表达式"><a href="#Replace-Conditional-with-Polymorphism-以多态取代条件表达式" class="headerlink" title="Replace Conditional with Polymorphism 以多态取代条件表达式"></a>Replace Conditional with Polymorphism 以多态取代条件表达式</h2><p>你手上有个条件表达式,它根据对象类型的不同而选择不同的行为。<br><font color="DeepPink"><strong>将这个条件表达式的每个分支放进一个子类内的覆写函数中,然后将原始函数声明为抽象函数。</strong></font></p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%A4%9A%E6%80%81%E6%9B%BF%E6%8D%A2%E6%9D%A1%E4%BB%B6%E8%A1%A8%E8%BE%BE%E5%BC%8F.png"></p>
-<h3 id="动机-6"><a href="#动机-6" class="headerlink" title="动机"></a>动机</h3><p>在面向对象术语中,听上去最高贵的词非“多态”莫属。<font color="DeepPink"><strong>多态最根本的好处就是:如果你需要根据对象的不同类型而采取不同的行为,多态使你不必编写明显的条件表达式。</strong></font></p>
+<h2 id="Replace-Conditional-with-Polymorphism-以多态取代条件表达式">Replace Conditional with Polymorphism 以多态取代条件表达式</h2>
+<p>你手上有个条件表达式,它根据对象类型的不同而选择不同的行为。<br>
+<font color="DeepPink"><strong>将这个条件表达式的每个分支放进一个子类内的覆写函数中,然后将原始函数声明为抽象函数。</strong></font></p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%A4%9A%E6%80%81%E6%9B%BF%E6%8D%A2%E6%9D%A1%E4%BB%B6%E8%A1%A8%E8%BE%BE%E5%BC%8F.png" alt></p>
+<h3 id="动机-v7">动机</h3>
+<p>在面向对象术语中,听上去最高贵的词非“多态”莫属。<font color="DeepPink"><strong>多态最根本的好处就是:如果你需要根据对象的不同类型而采取不同的行为,多态使你不必编写明显的条件表达式。</strong></font></p>
 <p>正因为有了多态,所以你会发现:“类型码的switch语句”以及“基于类型名称的if-then-e1se语句”在面向对象程序中很少出现。</p>
 <p>多态能够给你带来很多好处。如果同一组条件表达式在程序许多地点出现,那么使用多态的收益是最大的。<font color="DeepPink"><strong>使用条件表达式时,如果你想添加一种新类型,就必须查找并更新所有条件表达式。但如果改用多态,只需建立一个新的子类,并在其中提供适当的函数就行了。类的用户不需要了解这个子类,这就大大降低了系统各部分之间的依赖,使系统升级更加容易。</strong></font></p>
-<h2 id="Introduce-Assertion-引入断言"><a href="#Introduce-Assertion-引入断言" class="headerlink" title="Introduce Assertion 引入断言"></a>Introduce Assertion 引入断言</h2><p>某一段代码需要对程序状态做出某种假设。以断言明确表现这种假设。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E6%96%AD%E8%A8%80.png"></p>
-<h3 id="动机-7"><a href="#动机-7" class="headerlink" title="动机"></a>动机</h3><p>常常会有这样一段代码:只有当某个条件为真时,该段代码才能正常运行。例如平方根计算只对正值才能进行,又例如某个对象可能假设其字段至少有一个不等于null。</p>
+<h2 id="Introduce-Assertion-引入断言">Introduce Assertion 引入断言</h2>
+<p>某一段代码需要对程序状态做出某种假设。以断言明确表现这种假设。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E6%96%AD%E8%A8%80.png" alt></p>
+<h3 id="动机-v8">动机</h3>
+<p>常常会有这样一段代码:只有当某个条件为真时,该段代码才能正常运行。例如平方根计算只对正值才能进行,又例如某个对象可能假设其字段至少有一个不等于null。</p>
 <p>这样的假设通常并没有在代码中明确表现出来,你必须阅读整个算法才能看出。有时程序员会以注释写出这样的假设。而我要介绍的是一种更好的技术:使用断言明确标明这些假设。</p>
 <p>断言是一个条件表达式,应该总是为真。如果它失败,表示程序员犯了错误。因此断言的失败应该导致一个非受控异常(unchecked exception)。断言绝对不能被系统的其他部分使用。实际上,程序最后的成品往往将断言统统删除。因此,标记“某些东西是个断言”是很重要的。</p>
 <p>断言可以作为交流与调试的辅助。在交流的角度上,断言可以帮助程序阅读者理解代码所做的假设;在调试的角度上,断言可以在距离bug最近的地方抓住它们。当我编写自我测试代码的时候发现,断言在调试方面的帮助变得不那么重要了,但我仍然非常看重它们在交流方面的价值。</p>
 <p>注意,不要滥用断言。请不要使用它来检査“你认为应该为真”的条件,请只使用它来检査“一定必须为真”的条件。滥用断言可能会造成难以维护的重复逻辑。在一段逻辑中加入断言是有好处的,因为它迫使你重新考虑这段代码的约束条件。如果不满足这些约束条件,程序也可以正常运行,断言就不会带给你任何帮助,只会把代码变得混乱,并且有可能妨碍以后的修改。</p>
 <p>你应该常常问自己:如果断言所指示的约束条件不能满足,代码是否仍能正常运行?如果可以,就把断言拿掉。</p>
 <p>另外,还需要注意断言中的重复代码。它们和其他任何地方的重复代码一样不好闻。你可以大胆使用Extract Method去掉那些重复代码。</p>
-<h1 id="简化函数调用"><a href="#简化函数调用" class="headerlink" title="简化函数调用"></a>简化函数调用</h1><p>关于缩减参数列的重构手法, Doug Lea对我提出了一个警告:并发编程往往需要使用较长的参数列,因为这样你可以保证传递给函数的参数都是不可被修改的, 例如内置型对象和值对象一定是不可变的。通常,你可以使用不可变对象取代这样的长参数列,但另一方面你也必须对此类重构保持谨慎。</p>
-<h2 id="Separate-Query-from-Modifier-将查询函数和修改函数分离"><a href="#Separate-Query-from-Modifier-将查询函数和修改函数分离" class="headerlink" title="Separate Query from Modifier 将查询函数和修改函数分离"></a>Separate Query from Modifier 将查询函数和修改函数分离</h2><p>某个函数既返回对象状态值,又修改对象状态。<br>建立两个不同的函数,其中一个负责查询,另一个负责修改。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%B0%86%E6%9F%A5%E8%AF%A2%E5%87%BD%E6%95%B0%E5%92%8C%E4%BF%AE%E6%94%B9%E5%87%BD%E6%95%B0%E5%88%86%E7%A6%BB.png"></p>
-<h3 id="动机-8"><a href="#动机-8" class="headerlink" title="动机"></a>动机</h3><p>如果某个函数只是向你提供一个值,没有任何看得到的副作用,那么这是个很有价值的东西。你可以任意调用这个函数,也可以把调用动作搬到函数的其他地方。</p>
+<h1>简化函数调用</h1>
+<p>关于缩减参数列的重构手法, Doug Lea对我提出了一个警告:并发编程往往需要使用较长的参数列,因为这样你可以保证传递给函数的参数都是不可被修改的, 例如内置型对象和值对象一定是不可变的。通常,你可以使用不可变对象取代这样的长参数列,但另一方面你也必须对此类重构保持谨慎。</p>
+<h2 id="Separate-Query-from-Modifier-将查询函数和修改函数分离">Separate Query from Modifier 将查询函数和修改函数分离</h2>
+<p>某个函数既返回对象状态值,又修改对象状态。<br>
+建立两个不同的函数,其中一个负责查询,另一个负责修改。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%B0%86%E6%9F%A5%E8%AF%A2%E5%87%BD%E6%95%B0%E5%92%8C%E4%BF%AE%E6%94%B9%E5%87%BD%E6%95%B0%E5%88%86%E7%A6%BB.png" alt></p>
+<h3 id="动机-v9">动机</h3>
+<p>如果某个函数只是向你提供一个值,没有任何看得到的副作用,那么这是个很有价值的东西。你可以任意调用这个函数,也可以把调用动作搬到函数的其他地方。</p>
 <p>简而言之,需要操心的事情少多了。明确表现出“有副作用”与“无副作用”两种函数之间的差异,是个很好的想法。下面是一条好规则:<font color="DeepPink"><strong>任何有返回值的函数,都不应该有看得到的副作用。</strong></font>有些程序员甚至将此作为一条必须遵守的规则。就像对待任何东西一样,我并不绝对遵守它,不过我总是尽量遵守,而它也回报我很好的效果。</p>
 <p><font color="DeepPink"><strong>如果你遇到一个“既有返回值又有副作用”的函数,就应该试着将查询动作从修改动作中分割出来。</strong></font></p>
-<h3 id="并发问题"><a href="#并发问题" class="headerlink" title="并发问题"></a>并发问题</h3><p>如果你在一个多线程系统中工作,肯定知道这样一个重要的惯用手法:在同一个动作中完成检查和赋值。这是否和Separate Query from Modifier互相矛盾呢?我曾经和Doug Lea讨论过这个问题,并得出结论:两者并不矛盾,但你需要做一些额外工作。将查询动作和修改动作分开来仍然是很有价值的。但你需要保留第三个函数来同时做这两件事。这个“查询一修改”函数将调用各自独立的查询函数和修改函数,并被声明为synchronized。如果查询函数和修改函数未被声明为synchronized,那么你还应该将它们的可见范围限制在包级别或private级别。这样,你就可以拥有一个安全、同步的操作,它由两个较易理解的函数组成。这两个较低层函数也可以用于其他场合。</p>
-<h2 id="Replace-Constructor-with-Factory-Method-以工厂函数取代构造函数"><a href="#Replace-Constructor-with-Factory-Method-以工厂函数取代构造函数" class="headerlink" title="Replace Constructor with Factory Method 以工厂函数取代构造函数"></a>Replace Constructor with Factory Method 以工厂函数取代构造函数</h2><p>你希望在创建对象时不仅仅是做简单的建构动作。<br>将构造函数替换为工厂函数。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%B7%A5%E5%8E%82%E5%87%BD%E6%95%B0%E5%8F%96%E4%BB%A3%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0.png"></p>
-<h3 id="动机-9"><a href="#动机-9" class="headerlink" title="动机"></a>动机</h3><p>使用Replace Constructor with Factory Method的最显而易见的动机,就是在派生子类的过程中以工厂函数取代类型码。你可能常常需要根据类型码创建相应的对象,现在,创建名单中还得加上子类,那些子类也是根据类型码来创建。然而由于构造函数只能返回单一类型的对象,因此你需要将构造函数替换为工厂函数。此外,如果构造函数的功能不能满足你的需要,也可以使用工厂函数来代替它。工厂函数也是Change Value to Reference的基础。你也可以令你的工厂函数根据参数的个数和类型,选择不同的创建行为。</p>
-<h2 id="Replace-Error-Code-with-Exception-以异常取代错误码"><a href="#Replace-Error-Code-with-Exception-以异常取代错误码" class="headerlink" title="Replace Error Code with Exception 以异常取代错误码"></a>Replace Error Code with Exception 以异常取代错误码</h2><p>某个函数返回一个特定的代码,用以表示某种错误情况。<br>改用异常。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%BC%82%E5%B8%B8%E4%BB%A3%E6%9B%BF%E9%94%99%E8%AF%AF%E7%A0%81.png"></p>
-<h3 id="做法-5"><a href="#做法-5" class="headerlink" title="做法"></a>做法</h3><ul>
-<li><font color="DeepPink"><strong>决定应该抛出受控(checked)异常还是非受控(unchecked)异常。</strong></font><ul>
+<h3 id="并发问题">并发问题</h3>
+<p>如果你在一个多线程系统中工作,肯定知道这样一个重要的惯用手法:在同一个动作中完成检查和赋值。这是否和Separate Query from Modifier互相矛盾呢?我曾经和Doug Lea讨论过这个问题,并得出结论:两者并不矛盾,但你需要做一些额外工作。将查询动作和修改动作分开来仍然是很有价值的。但你需要保留第三个函数来同时做这两件事。这个“查询一修改”函数将调用各自独立的查询函数和修改函数,并被声明为synchronized。如果查询函数和修改函数未被声明为synchronized,那么你还应该将它们的可见范围限制在包级别或private级别。这样,你就可以拥有一个安全、同步的操作,它由两个较易理解的函数组成。这两个较低层函数也可以用于其他场合。</p>
+<h2 id="Replace-Constructor-with-Factory-Method-以工厂函数取代构造函数">Replace Constructor with Factory Method 以工厂函数取代构造函数</h2>
+<p>你希望在创建对象时不仅仅是做简单的建构动作。<br>
+将构造函数替换为工厂函数。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%B7%A5%E5%8E%82%E5%87%BD%E6%95%B0%E5%8F%96%E4%BB%A3%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0.png" alt></p>
+<h3 id="动机-v10">动机</h3>
+<p>使用Replace Constructor with Factory Method的最显而易见的动机,就是在派生子类的过程中以工厂函数取代类型码。你可能常常需要根据类型码创建相应的对象,现在,创建名单中还得加上子类,那些子类也是根据类型码来创建。然而由于构造函数只能返回单一类型的对象,因此你需要将构造函数替换为工厂函数。此外,如果构造函数的功能不能满足你的需要,也可以使用工厂函数来代替它。工厂函数也是Change Value to Reference的基础。你也可以令你的工厂函数根据参数的个数和类型,选择不同的创建行为。</p>
+<h2 id="Replace-Error-Code-with-Exception-以异常取代错误码">Replace Error Code with Exception 以异常取代错误码</h2>
+<p>某个函数返回一个特定的代码,用以表示某种错误情况。<br>
+改用异常。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%BC%82%E5%B8%B8%E4%BB%A3%E6%9B%BF%E9%94%99%E8%AF%AF%E7%A0%81.png" alt></p>
+<h3 id="做法-v6">做法</h3>
+<ul>
+<li><font color="DeepPink"><strong>决定应该抛出受控(checked)异常还是非受控(unchecked)异常。</strong></font>
+<ul>
 <li>→如果调用者有责任在调用前检查必要状态,就抛出非受控异常。</li>
 <li>→如果想拋出受控异常,你可以新建一个异常类,也可以使用现有的异常类。</li>
 </ul>
 </li>
-<li>找到该函数的所有调用者,对它们进行相应调整,让它们使用异常。<ul>
+<li>找到该函数的所有调用者,对它们进行相应调整,让它们使用异常。
+<ul>
 <li>→如果函数抛出非受控异常,那么就调整调用者,使其在调用函数前做适当检查。每次修改后,编译并测试。</li>
 <li>→如果函数拋出受控异常,那么就调整调用者,使其在try区段中调用该函数。</li>
 </ul>
 </li>
 <li>修改该函数的签名,令它反映出新用法。</li>
 </ul>
-<h1 id="处理概括关系"><a href="#处理概括关系" class="headerlink" title="处理概括关系"></a>处理概括关系</h1><p>有一批重构手法专门用来处理类的概括关系(generalization,即继承关系),其中主要是将函数上下移动于继承体系之中。Pull Up Field和Pull Up Method都用于将特性向继承体系的上端移动,Push Down Method和Push Down Field则将特性向继承体系的下端移动。构造函数比较难以向上拉动,因此专门有一个Pull Up Constructor Body处理它。我们不会将构造函数往下推,因为Replace Constructor with Factory Method通常更管用。</p>
+<h1>处理概括关系</h1>
+<p>有一批重构手法专门用来处理类的概括关系(generalization,即继承关系),其中主要是将函数上下移动于继承体系之中。Pull Up Field和Pull Up Method都用于将特性向继承体系的上端移动,Push Down Method和Push Down Field则将特性向继承体系的下端移动。构造函数比较难以向上拉动,因此专门有一个Pull Up Constructor Body处理它。我们不会将构造函数往下推,因为Replace Constructor with Factory Method通常更管用。</p>
 <p>Pull Up Method过程中最麻烦的一点就是:<font color="DeepPink"><strong>被提升的函数可能会引用只出现于子类而不出现于超类的特性。如果被引用的是个函数,你可以将该函数也一同提升到超类,或者在超类中建立一个抽象函数。在此过程中,你可能需要修改某个函数的签名,或建立一个委托函数。</strong></font></p>
 <p><font color="DeepPink"><strong>如果两个函数相似但不相同,你或许可以先借助Form Template Method构造出相同的函数,然后再提升它们。</strong></font></p>
-<h2 id="Form-Template-Method-塑造模板函数"><a href="#Form-Template-Method-塑造模板函数" class="headerlink" title="Form Template Method 塑造模板函数"></a>Form Template Method 塑造模板函数</h2><p>你有一些子类,其中相应的某些函数以相同顺序执行类似的操作,但各个操作的细节上有所不同。<br>将这些操作分别放进独立函数中,并保持它们都有相同的签名,于是原函数也就变得相同了。然后将原函数上移至超类。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%A1%91%E9%80%A0%E6%A8%A1%E6%9D%BF%E5%87%BD%E6%95%B0.png"></p>
-<h3 id="动机-10"><a href="#动机-10" class="headerlink" title="动机"></a>动机</h3><p>继承是避免重复行为的一个强大工具。无论何时,只要你看见两个子类之中有类似的函数,就可以把它们提升到超类。但是如果这些函数并不完全相同该怎么办?我们仍有必要尽量避免重复,但又必须保持这些函数之间的实质差异。</p>
+<h2 id="Form-Template-Method-塑造模板函数">Form Template Method 塑造模板函数</h2>
+<p>你有一些子类,其中相应的某些函数以相同顺序执行类似的操作,但各个操作的细节上有所不同。<br>
+将这些操作分别放进独立函数中,并保持它们都有相同的签名,于是原函数也就变得相同了。然后将原函数上移至超类。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E5%A1%91%E9%80%A0%E6%A8%A1%E6%9D%BF%E5%87%BD%E6%95%B0.png" alt></p>
+<h3 id="动机-v11">动机</h3>
+<p>继承是避免重复行为的一个强大工具。无论何时,只要你看见两个子类之中有类似的函数,就可以把它们提升到超类。但是如果这些函数并不完全相同该怎么办?我们仍有必要尽量避免重复,但又必须保持这些函数之间的实质差异。</p>
 <p>常见的一种情况是:<font color="DeepPink"><strong>两个函数以相同顺序执行大致相近的操作,但是各操作不完全相同。这种情况下我们可以将执行操作的序列移至超类,并借助多态保证各操作仍得以保持差异性。这样的函数被称为Template Method(模板函数）</strong></font></p>
-<h2 id="Replace-Inheritance-with-Delegation-以委托取代继承"><a href="#Replace-Inheritance-with-Delegation-以委托取代继承" class="headerlink" title="Replace Inheritance with Delegation 以委托取代继承"></a>Replace Inheritance with Delegation 以委托取代继承</h2><p>某个子类只使用超类接口中的一部分,或是根本不需要继承而来的数据。<br>在子类中新建一个字段用以保存超类;调整子类函数,令它改而委托超类;然后去掉两者之间的继承关系。</p>
-<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%A7%94%E6%89%98%E5%8F%96%E4%BB%A3%E7%BB%A7%E6%89%BF.png"></p>
-<h3 id="动机-11"><a href="#动机-11" class="headerlink" title="动机"></a>动机</h3><p>继承是个好东西,但有时候它并不是你要的。你常常会遇到这样的情况:一开始继承了一个类,随后发现超类中的许多操作并不真正适用于子类。这种情况下,你所拥有的接口并未真正反映出子类的功能。或者,你可能发现你从超类中继承了大堆子类并不需要的数据,抑或你可能发现超类中的某些protected函数对子类并没有什么意义。</p>
+<h2 id="Replace-Inheritance-with-Delegation-以委托取代继承">Replace Inheritance with Delegation 以委托取代继承</h2>
+<p>某个子类只使用超类接口中的一部分,或是根本不需要继承而来的数据。<br>
+在子类中新建一个字段用以保存超类;调整子类函数,令它改而委托超类;然后去掉两者之间的继承关系。</p>
+<p><img data-src="/images/refactoring-improving-the-design-of-existing-code-notes/%E4%BB%A5%E5%A7%94%E6%89%98%E5%8F%96%E4%BB%A3%E7%BB%A7%E6%89%BF.png" alt></p>
+<h3 id="动机-v12">动机</h3>
+<p>继承是个好东西,但有时候它并不是你要的。你常常会遇到这样的情况:一开始继承了一个类,随后发现超类中的许多操作并不真正适用于子类。这种情况下,你所拥有的接口并未真正反映出子类的功能。或者,你可能发现你从超类中继承了大堆子类并不需要的数据,抑或你可能发现超类中的某些protected函数对子类并没有什么意义。</p>
 <p>你可以选择容忍,并接受传统说法:子类可以只使用超类功能的一部分。但这样做的结果是:代码传达的信息与你的意图南辕北辙—这是一种混淆,你应该将它去除。</p>
 <p><font color="DeepPink"><strong>如果以委托取代继承,你可以更清楚地表明:你只需要受托类的一部分功能。接口中的哪一部分应该被使用,哪一部分应该被忽略,完全由你主导控制。</strong></font>这样做的成本则是需要额外写出委托函数,但这些函数都非常简单,极少可能出错。</p>
-<h2 id="Replace-Delegation-with-Inheritance-以继承取代委托"><a href="#Replace-Delegation-with-Inheritance-以继承取代委托" class="headerlink" title="Replace Delegation with Inheritance 以继承取代委托"></a>Replace Delegation with Inheritance 以继承取代委托</h2><p>你在两个类之间使用委托关系,并经常为整个接口编写许多极简单的委托函数。<br>让委托类继承受托类。</p>
-<h3 id="动机-12"><a href="#动机-12" class="headerlink" title="动机"></a>动机</h3><p>本重构与Replace Inheritance with Delegation恰恰相反。如果你发现自己需要使用受托类中的所有函数,并且费了很大力气编写所有极简的委托函数,本重构可以帮助你轻松回头使用继承。</p>
+<h2 id="Replace-Delegation-with-Inheritance-以继承取代委托">Replace Delegation with Inheritance 以继承取代委托</h2>
+<p>你在两个类之间使用委托关系,并经常为整个接口编写许多极简单的委托函数。<br>
+让委托类继承受托类。</p>
+<h3 id="动机-v13">动机</h3>
+<p>本重构与Replace Inheritance with Delegation恰恰相反。如果你发现自己需要使用受托类中的所有函数,并且费了很大力气编写所有极简的委托函数,本重构可以帮助你轻松回头使用继承。</p>
 <p>两条告诫需牢记于心。首先,<font color="DeepPink"><strong>如果你并没有使用受托类的所有函数,那么就不应该使用Replace Delegation With Inheritance,因为子类应该总是遵循超类的接口。</strong></font>如果过多的委托函数让你烦心,你有别的选择:你可以通过Remove Middle Man让客户端自己调用受托函数,也可以使用Extract Superclass将两个类接口相同的部分提炼到超类中,然后让两个类都继承这个新的超类;你还可以用类似的手法使用Extract Interface。</p>
 <p>另一种需要当心的情况是:受托对象被不止一个其他对象共享,而且受托对象是可变的。在这种情况下,你就不能将委托关系替换为继承关系,因为这样就无法再共享数据了。数据共享是必须由委托关系承担的一种责任,你无法把它转给继承关系。如果受托对象是不可变的,数据共享就不成问题,因为你大可放心地复制对象,谁都不会知道。</p>
-<h1 id="大型重构"><a href="#大型重构" class="headerlink" title="大型重构"></a>大型重构</h1><p>要指出继承体系是否承担了两项不同的责任并不困难:<font color="DeepPink"><strong>如果继承体系中的某一特定层级上的所有类,其子类名称都以相同的形容词开始,那么这个体系很可能就是承担着两项不同的责任。</strong></font></p>
-<h1 id="重构，复用与现实"><a href="#重构，复用与现实" class="headerlink" title="重构，复用与现实"></a>重构，复用与现实</h1><p>关于研究,Ralph Johnson给我上了重要的一课:如果有人(文章读者或是演讲会听众)说“我不懂”或者不打算接受它,那就是我们的失败。我们有责任努力发展自己的思想,并将它清楚表达出来。</p>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>正如我所说,这是一种可以学习的技术。那么,应该如何学习呢?</p>
+<h1>大型重构</h1>
+<p>要指出继承体系是否承担了两项不同的责任并不困难:<font color="DeepPink"><strong>如果继承体系中的某一特定层级上的所有类,其子类名称都以相同的形容词开始,那么这个体系很可能就是承担着两项不同的责任。</strong></font></p>
+<h1>重构，复用与现实</h1>
+<p>关于研究,Ralph Johnson给我上了重要的一课:如果有人(文章读者或是演讲会听众)说“我不懂”或者不打算接受它,那就是我们的失败。我们有责任努力发展自己的思想,并将它清楚表达出来。</p>
+<h1>总结</h1>
+<p>正如我所说,这是一种可以学习的技术。那么,应该如何学习呢?</p>
 <ul>
 <li>随时挑一个目标。某个地方的代码开始发臭了,你就应该将问题解决掉。你应该朝目标前进,达成目标后就停止。你之所以重构,不是为了探索真善美(至少不全是),而是为了让你的系统更容易被人理解,为了防止程序变得散乱。</li>
 <li><font color="DeepPink"><strong>没把握就停下来。朝目标前进的过程中,可能会有这样的时候:你无法证明自己所做的一切能够保持程序原本的语义。此时你就应该停下来。如果代码已经改善了一些,就发布你的成果;如果没有,就撤销所有修改。</strong></font></li>
@@ -776,7 +883,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#重构，第一个案例"><span class="nav-number">1.</span> <span class="nav-text">重构，第一个案例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重构原则"><span class="nav-number">2.</span> <span class="nav-text">重构原则</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#何谓重构"><span class="nav-number">2.1.</span> <span class="nav-text">何谓重构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#何时重构"><span class="nav-number">2.2.</span> <span class="nav-text">何时重构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次法则"><span class="nav-number">2.2.1.</span> <span class="nav-text">三次法则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#复审代码时重构"><span class="nav-number">2.2.2.</span> <span class="nav-text">复审代码时重构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重构的难题"><span class="nav-number">2.3.</span> <span class="nav-text">重构的难题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#修改接口"><span class="nav-number">2.3.1.</span> <span class="nav-text">修改接口</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#代码的坏味道"><span class="nav-number">3.</span> <span class="nav-text">代码的坏味道</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Duplicated-Code-重复代码"><span class="nav-number">3.1.</span> <span class="nav-text">Duplicated Code 重复代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LongMethod-过长方法"><span class="nav-number">3.2.</span> <span class="nav-text">LongMethod 过长方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Large-Class-过长类"><span class="nav-number">3.3.</span> <span class="nav-text">Large Class 过长类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Long-Parameter-List-过长参数列表"><span class="nav-number">3.4.</span> <span class="nav-text">Long Parameter List 过长参数列表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Divergent-Change-发散式变化"><span class="nav-number">3.5.</span> <span class="nav-text">Divergent Change 发散式变化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Shotgun-Surgery-霰弹式修改"><span class="nav-number">3.6.</span> <span class="nav-text">Shotgun Surgery 霰弹式修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Feature-Envy-特性依恋"><span class="nav-number">3.7.</span> <span class="nav-text">Feature Envy 特性依恋</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-Clumps-数据泥团"><span class="nav-number">3.8.</span> <span class="nav-text">Data Clumps 数据泥团</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Primitive-Obsession-基本类型偏执"><span class="nav-number">3.9.</span> <span class="nav-text">Primitive Obsession 基本类型偏执</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Switch-Statements-switch-语句"><span class="nav-number">3.10.</span> <span class="nav-text">Switch Statements switch 语句</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ParallelInheritanceHierarchies-平行继承体系"><span class="nav-number">3.11.</span> <span class="nav-text">ParallelInheritanceHierarchies 平行继承体系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LazyClass-冗余类"><span class="nav-number">3.12.</span> <span class="nav-text">LazyClass 冗余类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SpeculativeGenerality-夸夸其谈未来性"><span class="nav-number">3.13.</span> <span class="nav-text">SpeculativeGenerality 夸夸其谈未来性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Temporary-Field-令人迷惑的临时字段"><span class="nav-number">3.14.</span> <span class="nav-text">Temporary Field 令人迷惑的临时字段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Message-Chains-过度耦合的消息链"><span class="nav-number">3.15.</span> <span class="nav-text">Message Chains (过度耦合的消息链)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Middle-Man-中间人"><span class="nav-number">3.16.</span> <span class="nav-text">Middle Man 中间人</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Inappropriate-Intimacy-过度亲密"><span class="nav-number">3.17.</span> <span class="nav-text">Inappropriate Intimacy 过度亲密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Alternative-Classes-with-Different-Interfaces-异曲同工的类"><span class="nav-number">3.18.</span> <span class="nav-text">Alternative Classes with Different Interfaces 异曲同工的类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Incomplete-Library-Class-不完整的库类"><span class="nav-number">3.19.</span> <span class="nav-text">Incomplete Library Class 不完整的库类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-Class-数据类"><span class="nav-number">3.20.</span> <span class="nav-text">Data Class 数据类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Refused-Bequest-拒绝继承"><span class="nav-number">3.21.</span> <span class="nav-text">Refused Bequest 拒绝继承</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Comments-注释过多"><span class="nav-number">3.22.</span> <span class="nav-text">Comments 注释过多</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重构列表"><span class="nav-number">4.</span> <span class="nav-text">重构列表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#重构的记录格式"><span class="nav-number">4.1.</span> <span class="nav-text">重构的记录格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#这些重构的成熟度如何？"><span class="nav-number">4.2.</span> <span class="nav-text">这些重构的成熟度如何？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重新组织方法"><span class="nav-number">5.</span> <span class="nav-text">重新组织方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Extract-Method-提炼函数"><span class="nav-number">5.1.</span> <span class="nav-text">Extract Method 提炼函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机"><span class="nav-number">5.1.1.</span> <span class="nav-text">动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#做法"><span class="nav-number">5.1.2.</span> <span class="nav-text">做法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Inline-Method-内联方法"><span class="nav-number">5.2.</span> <span class="nav-text">Inline Method 内联方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Inline-Temp-内联临时变量"><span class="nav-number">5.3.</span> <span class="nav-text">Inline Temp 内联临时变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Temp-with-Query-用查询方法代替临时变量"><span class="nav-number">5.4.</span> <span class="nav-text">Replace Temp with Query 用查询方法代替临时变量</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-1"><span class="nav-number">5.4.1.</span> <span class="nav-text">动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-1"><span class="nav-number">5.4.2.</span> <span class="nav-text">做法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduce-Explaining-Variable-引入解释性变量"><span class="nav-number">5.5.</span> <span class="nav-text">Introduce Explaining Variable 引入解释性变量</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-2"><span class="nav-number">5.5.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Split-Temporary-Variable-分解临时变量"><span class="nav-number">5.6.</span> <span class="nav-text">Split Temporary Variable 分解临时变量</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-3"><span class="nav-number">5.6.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Remove-Assignments-to-Parameters-移除对参数的赋值"><span class="nav-number">5.7.</span> <span class="nav-text">Remove Assignments to Parameters 移除对参数的赋值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Method-with-Method-Object-以函数对象取代函数"><span class="nav-number">5.8.</span> <span class="nav-text">Replace Method with Method Object 以函数对象取代函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-2"><span class="nav-number">5.8.1.</span> <span class="nav-text">做法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#在对象之间移动特性"><span class="nav-number">6.</span> <span class="nav-text">在对象之间移动特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Move-Method-搬移函数"><span class="nav-number">6.1.</span> <span class="nav-text">Move Method 搬移函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Move-Field-搬移字段"><span class="nav-number">6.2.</span> <span class="nav-text">Move Field 搬移字段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Extract-Class-提炼类"><span class="nav-number">6.3.</span> <span class="nav-text">Extract Class 提炼类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-3"><span class="nav-number">6.3.1.</span> <span class="nav-text">做法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Inline-Class-将类内联化"><span class="nav-number">6.4.</span> <span class="nav-text">Inline Class 将类内联化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hide-Delegate-隐藏“委托关系”"><span class="nav-number">6.5.</span> <span class="nav-text">Hide Delegate 隐藏“委托关系”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Remove-Middle-Man-移除中间人"><span class="nav-number">6.6.</span> <span class="nav-text">Remove Middle Man 移除中间人</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduce-Foreign-Method-引入外加函数"><span class="nav-number">6.7.</span> <span class="nav-text">Introduce Foreign Method 引入外加函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-4"><span class="nav-number">6.7.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduce-Local-Extension-引入本地扩展"><span class="nav-number">6.8.</span> <span class="nav-text">Introduce Local Extension 引入本地扩展</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-5"><span class="nav-number">6.8.1.</span> <span class="nav-text">动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-4"><span class="nav-number">6.8.2.</span> <span class="nav-text">做法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#简化条件表达式"><span class="nav-number">7.</span> <span class="nav-text">简化条件表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Nested-Conditional-with-Guard-Clauses-以卫语句取代嵌套条件表达式"><span class="nav-number">7.1.</span> <span class="nav-text">Replace Nested Conditional with Guard Clauses 以卫语句取代嵌套条件表达式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Conditional-with-Polymorphism-以多态取代条件表达式"><span class="nav-number">7.2.</span> <span class="nav-text">Replace Conditional with Polymorphism 以多态取代条件表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-6"><span class="nav-number">7.2.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduce-Assertion-引入断言"><span class="nav-number">7.3.</span> <span class="nav-text">Introduce Assertion 引入断言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-7"><span class="nav-number">7.3.1.</span> <span class="nav-text">动机</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#简化函数调用"><span class="nav-number">8.</span> <span class="nav-text">简化函数调用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Separate-Query-from-Modifier-将查询函数和修改函数分离"><span class="nav-number">8.1.</span> <span class="nav-text">Separate Query from Modifier 将查询函数和修改函数分离</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-8"><span class="nav-number">8.1.1.</span> <span class="nav-text">动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#并发问题"><span class="nav-number">8.1.2.</span> <span class="nav-text">并发问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Constructor-with-Factory-Method-以工厂函数取代构造函数"><span class="nav-number">8.2.</span> <span class="nav-text">Replace Constructor with Factory Method 以工厂函数取代构造函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-9"><span class="nav-number">8.2.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Error-Code-with-Exception-以异常取代错误码"><span class="nav-number">8.3.</span> <span class="nav-text">Replace Error Code with Exception 以异常取代错误码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-5"><span class="nav-number">8.3.1.</span> <span class="nav-text">做法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#处理概括关系"><span class="nav-number">9.</span> <span class="nav-text">处理概括关系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Form-Template-Method-塑造模板函数"><span class="nav-number">9.1.</span> <span class="nav-text">Form Template Method 塑造模板函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-10"><span class="nav-number">9.1.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Inheritance-with-Delegation-以委托取代继承"><span class="nav-number">9.2.</span> <span class="nav-text">Replace Inheritance with Delegation 以委托取代继承</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-11"><span class="nav-number">9.2.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Delegation-with-Inheritance-以继承取代委托"><span class="nav-number">9.3.</span> <span class="nav-text">Replace Delegation with Inheritance 以继承取代委托</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-12"><span class="nav-number">9.3.1.</span> <span class="nav-text">动机</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#大型重构"><span class="nav-number">10.</span> <span class="nav-text">大型重构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重构，复用与现实"><span class="nav-number">11.</span> <span class="nav-text">重构，复用与现实</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">12.</span> <span class="nav-text">总结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">重构，第一个案例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">重构原则</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#何谓重构"><span class="nav-number">2.1.</span> <span class="nav-text">何谓重构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#何时重构"><span class="nav-number">2.2.</span> <span class="nav-text">何时重构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#三次法则"><span class="nav-number">2.2.1.</span> <span class="nav-text">三次法则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#复审代码时重构"><span class="nav-number">2.2.2.</span> <span class="nav-text">复审代码时重构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重构的难题"><span class="nav-number">2.3.</span> <span class="nav-text">重构的难题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#修改接口"><span class="nav-number">2.3.1.</span> <span class="nav-text">修改接口</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">代码的坏味道</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Duplicated-Code-重复代码"><span class="nav-number">3.1.</span> <span class="nav-text">Duplicated Code 重复代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LongMethod-过长方法"><span class="nav-number">3.2.</span> <span class="nav-text">LongMethod 过长方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Large-Class-过长类"><span class="nav-number">3.3.</span> <span class="nav-text">Large Class 过长类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Long-Parameter-List-过长参数列表"><span class="nav-number">3.4.</span> <span class="nav-text">Long Parameter List 过长参数列表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Divergent-Change-发散式变化"><span class="nav-number">3.5.</span> <span class="nav-text">Divergent Change 发散式变化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Shotgun-Surgery-霰弹式修改"><span class="nav-number">3.6.</span> <span class="nav-text">Shotgun Surgery 霰弹式修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Feature-Envy-特性依恋"><span class="nav-number">3.7.</span> <span class="nav-text">Feature Envy 特性依恋</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-Clumps-数据泥团"><span class="nav-number">3.8.</span> <span class="nav-text">Data Clumps 数据泥团</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Primitive-Obsession-基本类型偏执"><span class="nav-number">3.9.</span> <span class="nav-text">Primitive Obsession 基本类型偏执</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Switch-Statements-switch-语句"><span class="nav-number">3.10.</span> <span class="nav-text">Switch Statements switch 语句</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ParallelInheritanceHierarchies-平行继承体系"><span class="nav-number">3.11.</span> <span class="nav-text">ParallelInheritanceHierarchies 平行继承体系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LazyClass-冗余类"><span class="nav-number">3.12.</span> <span class="nav-text">LazyClass 冗余类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SpeculativeGenerality-夸夸其谈未来性"><span class="nav-number">3.13.</span> <span class="nav-text">SpeculativeGenerality 夸夸其谈未来性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Temporary-Field-令人迷惑的临时字段"><span class="nav-number">3.14.</span> <span class="nav-text">Temporary Field 令人迷惑的临时字段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Message-Chains-过度耦合的消息链"><span class="nav-number">3.15.</span> <span class="nav-text">Message Chains (过度耦合的消息链)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Middle-Man-中间人"><span class="nav-number">3.16.</span> <span class="nav-text">Middle Man 中间人</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Inappropriate-Intimacy-过度亲密"><span class="nav-number">3.17.</span> <span class="nav-text">Inappropriate Intimacy 过度亲密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Alternative-Classes-with-Different-Interfaces-异曲同工的类"><span class="nav-number">3.18.</span> <span class="nav-text">Alternative Classes with Different Interfaces 异曲同工的类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Incomplete-Library-Class-不完整的库类"><span class="nav-number">3.19.</span> <span class="nav-text">Incomplete Library Class 不完整的库类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-Class-数据类"><span class="nav-number">3.20.</span> <span class="nav-text">Data Class 数据类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Refused-Bequest-拒绝继承"><span class="nav-number">3.21.</span> <span class="nav-text">Refused Bequest 拒绝继承</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Comments-注释过多"><span class="nav-number">3.22.</span> <span class="nav-text">Comments 注释过多</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">重构列表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#重构的记录格式"><span class="nav-number">4.1.</span> <span class="nav-text">重构的记录格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#这些重构的成熟度如何？"><span class="nav-number">4.2.</span> <span class="nav-text">这些重构的成熟度如何？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">重新组织方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Extract-Method-提炼函数"><span class="nav-number">5.1.</span> <span class="nav-text">Extract Method 提炼函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机"><span class="nav-number">5.1.1.</span> <span class="nav-text">动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#做法"><span class="nav-number">5.1.2.</span> <span class="nav-text">做法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Inline-Method-内联方法"><span class="nav-number">5.2.</span> <span class="nav-text">Inline Method 内联方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Inline-Temp-内联临时变量"><span class="nav-number">5.3.</span> <span class="nav-text">Inline Temp 内联临时变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Temp-with-Query-用查询方法代替临时变量"><span class="nav-number">5.4.</span> <span class="nav-text">Replace Temp with Query 用查询方法代替临时变量</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v2"><span class="nav-number">5.4.1.</span> <span class="nav-text">动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-v2"><span class="nav-number">5.4.2.</span> <span class="nav-text">做法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduce-Explaining-Variable-引入解释性变量"><span class="nav-number">5.5.</span> <span class="nav-text">Introduce Explaining Variable 引入解释性变量</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v3"><span class="nav-number">5.5.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Split-Temporary-Variable-分解临时变量"><span class="nav-number">5.6.</span> <span class="nav-text">Split Temporary Variable 分解临时变量</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v4"><span class="nav-number">5.6.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Remove-Assignments-to-Parameters-移除对参数的赋值"><span class="nav-number">5.7.</span> <span class="nav-text">Remove Assignments to Parameters 移除对参数的赋值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Method-with-Method-Object-以函数对象取代函数"><span class="nav-number">5.8.</span> <span class="nav-text">Replace Method with Method Object 以函数对象取代函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-v3"><span class="nav-number">5.8.1.</span> <span class="nav-text">做法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">在对象之间移动特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Move-Method-搬移函数"><span class="nav-number">6.1.</span> <span class="nav-text">Move Method 搬移函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Move-Field-搬移字段"><span class="nav-number">6.2.</span> <span class="nav-text">Move Field 搬移字段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Extract-Class-提炼类"><span class="nav-number">6.3.</span> <span class="nav-text">Extract Class 提炼类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-v4"><span class="nav-number">6.3.1.</span> <span class="nav-text">做法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Inline-Class-将类内联化"><span class="nav-number">6.4.</span> <span class="nav-text">Inline Class 将类内联化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hide-Delegate-隐藏“委托关系”"><span class="nav-number">6.5.</span> <span class="nav-text">Hide Delegate 隐藏“委托关系”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Remove-Middle-Man-移除中间人"><span class="nav-number">6.6.</span> <span class="nav-text">Remove Middle Man 移除中间人</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduce-Foreign-Method-引入外加函数"><span class="nav-number">6.7.</span> <span class="nav-text">Introduce Foreign Method 引入外加函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v5"><span class="nav-number">6.7.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduce-Local-Extension-引入本地扩展"><span class="nav-number">6.8.</span> <span class="nav-text">Introduce Local Extension 引入本地扩展</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v6"><span class="nav-number">6.8.1.</span> <span class="nav-text">动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-v5"><span class="nav-number">6.8.2.</span> <span class="nav-text">做法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">简化条件表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Nested-Conditional-with-Guard-Clauses-以卫语句取代嵌套条件表达式"><span class="nav-number">7.1.</span> <span class="nav-text">Replace Nested Conditional with Guard Clauses 以卫语句取代嵌套条件表达式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Conditional-with-Polymorphism-以多态取代条件表达式"><span class="nav-number">7.2.</span> <span class="nav-text">Replace Conditional with Polymorphism 以多态取代条件表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v7"><span class="nav-number">7.2.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduce-Assertion-引入断言"><span class="nav-number">7.3.</span> <span class="nav-text">Introduce Assertion 引入断言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v8"><span class="nav-number">7.3.1.</span> <span class="nav-text">动机</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">8.</span> <span class="nav-text">简化函数调用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Separate-Query-from-Modifier-将查询函数和修改函数分离"><span class="nav-number">8.1.</span> <span class="nav-text">Separate Query from Modifier 将查询函数和修改函数分离</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v9"><span class="nav-number">8.1.1.</span> <span class="nav-text">动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#并发问题"><span class="nav-number">8.1.2.</span> <span class="nav-text">并发问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Constructor-with-Factory-Method-以工厂函数取代构造函数"><span class="nav-number">8.2.</span> <span class="nav-text">Replace Constructor with Factory Method 以工厂函数取代构造函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v10"><span class="nav-number">8.2.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Error-Code-with-Exception-以异常取代错误码"><span class="nav-number">8.3.</span> <span class="nav-text">Replace Error Code with Exception 以异常取代错误码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#做法-v6"><span class="nav-number">8.3.1.</span> <span class="nav-text">做法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">9.</span> <span class="nav-text">处理概括关系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Form-Template-Method-塑造模板函数"><span class="nav-number">9.1.</span> <span class="nav-text">Form Template Method 塑造模板函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v11"><span class="nav-number">9.1.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Inheritance-with-Delegation-以委托取代继承"><span class="nav-number">9.2.</span> <span class="nav-text">Replace Inheritance with Delegation 以委托取代继承</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v12"><span class="nav-number">9.2.1.</span> <span class="nav-text">动机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Replace-Delegation-with-Inheritance-以继承取代委托"><span class="nav-number">9.3.</span> <span class="nav-text">Replace Delegation with Inheritance 以继承取代委托</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#动机-v13"><span class="nav-number">9.3.1.</span> <span class="nav-text">动机</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">10.</span> <span class="nav-text">大型重构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">11.</span> <span class="nav-text">重构，复用与现实</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">12.</span> <span class="nav-text">总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -854,7 +961,7 @@
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2023</span>
+  <span itemprop="copyrightYear">2024</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

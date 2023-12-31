@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="编程高手必学的内存知识 笔记作者： 海纳">
+  <meta name="description" content="编程高手必学的内存知识 笔记 作者： 海纳">
 <meta name="keywords" content="读书笔记,原创,Memory">
 <meta property="og:type" content="article">
 <meta property="og:title" content="编程高手必学的内存知识 笔记">
 <meta property="og:url" content="https://jiankunking.com/memory-knowledge-that-programming-masters-must-learn.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="编程高手必学的内存知识 笔记作者： 海纳">
+<meta property="og:description" content="编程高手必学的内存知识 笔记 作者： 海纳">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2022-02-08T10:15:20.052Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="编程高手必学的内存知识 笔记">
-<meta name="twitter:description" content="编程高手必学的内存知识 笔记作者： 海纳">
+<meta name="twitter:description" content="编程高手必学的内存知识 笔记 作者： 海纳">
 
 <link rel="canonical" href="https://jiankunking.com/memory-knowledge-that-programming-masters-must-learn.html">
 
@@ -298,58 +298,84 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>编程高手必学的内存知识 笔记<br>作者： 海纳</p>
+        <p>编程高手必学的内存知识 笔记<br>
+作者： 海纳</p>
 <a id="more"></a>
-
-
-<h1 id="为什么可用内存会远超物理内存？"><a href="#为什么可用内存会远超物理内存？" class="headerlink" title="为什么可用内存会远超物理内存？"></a>为什么可用内存会远超物理内存？</h1><p>虚拟内存的出现，是为了解决直接操作物理内存的系统无法支持多进程的问题。这里的难点主要是进程的地址空间非常小，而且多个进程的地址很容易发生冲突。所以在局部性原理的基础上，CPU设计者提出虚拟内存的方案将多个进程的地址空间隔离开，并且提供了巨大的内存空间。</p>
-<p>我们可以总结一下，虚拟内存主要有下面两个特点：<br>第一，由于每个进程都有自己的页表，所以每个进程的虚拟内存空间就是相互独立的。进程也没有办法访问其他进程的页表，所以这些页表是私有的。这就解决了多进程之间地址冲突的问题。<br>第二，PTE中除了物理地址之外，还有一些标记属性的比特，比如控制一个页的读写权限，标记该页是否存在等。在内存访问方面，操作系统提供了更好的安全性。</p>
+<h1>为什么可用内存会远超物理内存？</h1>
+<p>虚拟内存的出现，是为了解决直接操作物理内存的系统无法支持多进程的问题。这里的难点主要是进程的地址空间非常小，而且多个进程的地址很容易发生冲突。所以在局部性原理的基础上，CPU设计者提出虚拟内存的方案将多个进程的地址空间隔离开，并且提供了巨大的内存空间。</p>
+<p>我们可以总结一下，虚拟内存主要有下面两个特点：<br>
+第一，由于每个进程都有自己的页表，所以每个进程的虚拟内存空间就是相互独立的。进程也没有办法访问其他进程的页表，所以这些页表是私有的。这就解决了多进程之间地址冲突的问题。<br>
+第二，PTE中除了物理地址之外，还有一些标记属性的比特，比如控制一个页的读写权限，标记该页是否存在等。在内存访问方面，操作系统提供了更好的安全性。</p>
 <p>另外，虚拟内存可以充分使用CPU提供的机制来完成很多重要的任务。例如，fork借用写保护来实现写时复制，JVM中借用改变某一个页的读权限来实现safepoint查询等等。</p>
 <p>由于CPU对内存提供了更多保护的能力，所以X86架构的CPU把这种工作模式称为保护模式，与可以直接访问物理内存的实模式形成了对比。</p>
 <p><a href="/attachments/编程高手必学的内存知识/01为什么可用内存会远超物理内存？.pdf" target="_blank">为什么可用内存会远超物理内存？</a></p>
-<h1 id="X86体系结构中的实模式和保护模式"><a href="#X86体系结构中的实模式和保护模式" class="headerlink" title="X86体系结构中的实模式和保护模式"></a>X86体系结构中的实模式和保护模式</h1><p>8086是16位的CPU，我们称8086的工作模式为实模式，它的特点是直接操作物理内存，内存管理容易出错，要十分小心，代码编写和调试都很困难。</p>
+<h1>X86体系结构中的实模式和保护模式</h1>
+<p>8086是16位的CPU，我们称8086的工作模式为实模式，它的特点是直接操作物理内存，内存管理容易出错，要十分小心，代码编写和调试都很困难。</p>
 <p>之后出现的i386，则采用了和实模式不同的保护模式。相比实模式，i386中的保护模式，采用了页式管理，但它没有彻底放弃8086的段式管理，而是将段寄存器中的值由段基址变成了段选择子。段选择子本质是GDT表的下标值，段基址都转移到GDT中去了。</p>
 <p>段式管理负责将逻辑地址转换为线性地址，或者称为虚拟地址，页式管理负责将线性地址映射到物理地址。i386的保护模式采用了段页式混合管理的模式，兼具了段式管理和页式管理的优点。</p>
 <p>除了段页式内存管理这个不同之外，保护模式和实模式的区别还体现在中断描述符表（IDT）上。IDT是保护模式的一个重要组成部分，它保存着 i386 中断服务程序的入口地址。</p>
 <p>8086和i386对X86架构的CPU影响巨大。直到今天，X86架构的CPU在上电以后，为了与8086保持兼容，还是运行在16位实模式下，也就是说所有访存指令访问的都是物理内存地址。在启动操作系统后，才会切换到保护模式下进行工作。</p>
 <p><a href="/attachments/编程高手必学的内存知识/02X86体系结构中的实模式和保护模式.pdf.pdf" target="_blank">X86体系结构中的实模式和保护模式</a></p>
-<h1 id="内存布局：应用程序是如何安排数据的？"><a href="#内存布局：应用程序是如何安排数据的？" class="headerlink" title="内存布局：应用程序是如何安排数据的？"></a>内存布局：应用程序是如何安排数据的？</h1><h2 id="IA-32机器上的Linux进程内存布局"><a href="#IA-32机器上的Linux进程内存布局" class="headerlink" title="IA-32机器上的Linux进程内存布局"></a>IA-32机器上的Linux进程内存布局</h2><p>在32位机器上，每个进程都具有4GB的寻址能力。Linux系统会默认将高地址的1GB空间分配给内核，剩余的低3GB是用户可以使用的用户空间。下图是32位机器上Linux进程的一个典型的内存布局。在实践中，我们可以通过cat &#x2F;proc&#x2F;pid&#x2F;maps来查看某个进程的实际虚拟内存布局。</p>
-<p><img data-src="/images/memory-knowledge-that-programming-masters-must-learn/1.png"></p>
+<h1>内存布局：应用程序是如何安排数据的？</h1>
+<h2 id="IA-32机器上的Linux进程内存布局">IA-32机器上的Linux进程内存布局</h2>
+<p>在32位机器上，每个进程都具有4GB的寻址能力。Linux系统会默认将高地址的1GB空间分配给内核，剩余的低3GB是用户可以使用的用户空间。下图是32位机器上Linux进程的一个典型的内存布局。在实践中，我们可以通过cat /proc/pid/maps来查看某个进程的实际虚拟内存布局。</p>
+<p><img data-src="/images/memory-knowledge-that-programming-masters-must-learn/1.png" alt></p>
 <blockquote>
 <p>BSS 段这个缩写名字是Block Started by Symbol，但很多人可能更喜欢把它记作Better Save Space的缩写。</p>
 </blockquote>
 <blockquote>
 <p>我们上述的布局分析都是基于Linux系统下关闭了进程地址随机化的选项。如果打开进程地址随机化的模式，其中的堆空间、栈空间和共享库映射的地址，在每次程序运行下都会不一样。这是因为内核在加载的过程中，会对这些区域的起始地址增加一些随机的偏移值，这能增加缓冲区溢出的难度。</p>
 </blockquote>
-<h2 id="Intel-64机器上的Linux进程内存布局"><a href="#Intel-64机器上的Linux进程内存布局" class="headerlink" title="Intel 64机器上的Linux进程内存布局"></a>Intel 64机器上的Linux进程内存布局</h2><p><img data-src="/images/memory-knowledge-that-programming-masters-must-learn/2.png"></p>
+<h2 id="Intel-64机器上的Linux进程内存布局">Intel 64机器上的Linux进程内存布局</h2>
+<p><img data-src="/images/memory-knowledge-that-programming-masters-must-learn/2.png" alt></p>
 <p>从图中你可以看到，在用户空间和内核空间之间有一个巨大的内存空洞。这块空间之所以用更深颜色来区分，是因为这块空间的不可访问是由CPU来保证的（这里的地址都不满足Intel 64的Canonical form）。</p>
 <p><a href="/attachments/编程高手必学的内存知识/03内存布局：应用程序是如何安排数据的？.pdf" target="_blank">内存布局：应用程序是如何安排数据的？</a></p>
-<h1 id="深入理解栈：从CPU和函数的视角看栈的管理"><a href="#深入理解栈：从CPU和函数的视角看栈的管理" class="headerlink" title="深入理解栈：从CPU和函数的视角看栈的管理"></a>深入理解栈：从CPU和函数的视角看栈的管理</h1><p><a href="/attachments/编程高手必学的内存知识/04深入理解栈：从CPU和函数的视角看栈的管理.pdf" target="_blank">深入理解栈：从CPU和函数的视角看栈的管理</a></p>
-<h1 id="栈的魔法：从栈切换的角度理解进程和协程"><a href="#栈的魔法：从栈切换的角度理解进程和协程" class="headerlink" title="栈的魔法：从栈切换的角度理解进程和协程"></a>栈的魔法：从栈切换的角度理解进程和协程</h1><p>栈切换的核心就是栈指针rsp寄存器的切换，只要我们想办法把rsp切换了就相当于换了执行单元的上下文环境。</p>
+<h1>深入理解栈：从CPU和函数的视角看栈的管理</h1>
+<p><a href="/attachments/编程高手必学的内存知识/04深入理解栈：从CPU和函数的视角看栈的管理.pdf" target="_blank">深入理解栈：从CPU和函数的视角看栈的管理</a></p>
+<h1>栈的魔法：从栈切换的角度理解进程和协程</h1>
+<p>栈切换的核心就是栈指针rsp寄存器的切换，只要我们想办法把rsp切换了就相当于换了执行单元的上下文环境。</p>
 <p><a href="/attachments/编程高手必学的内存知识/05栈的魔法：从栈切换的角度理解进程和协程.pdf" target="_blank">栈的魔法：从栈切换的角度理解进程和协程</a></p>
-<h1 id="静态链接：变量与内存地址是如何映射的？"><a href="#静态链接：变量与内存地址是如何映射的？" class="headerlink" title="静态链接：变量与内存地址是如何映射的？"></a>静态链接：变量与内存地址是如何映射的？</h1><p>在GNU&#x2F;linux 下，GNU的binutils提供了一系列编程语言的工具程序，用来查看不同格式下的目标文件。今天我要给你重点介绍两个工具：readelf和objdump，这两个工具可以用来解析和读取上一节编译阶段生成的目标文件信息。</p>
+<h1>静态链接：变量与内存地址是如何映射的？</h1>
+<p>在GNU/linux 下，GNU的binutils提供了一系列编程语言的工具程序，用来查看不同格式下的目标文件。今天我要给你重点介绍两个工具：readelf和objdump，这两个工具可以用来解析和读取上一节编译阶段生成的目标文件信息。</p>
 <p>一般情况下，我在对二进制文件进行反汇编时会使用objdump工具，因为readelf工具没有提供反汇编的能力，它更多是用来解析二进制文件信息。</p>
 <p>从源文件生成二进制可执行文件，这一过程主要包含了编译和链接两个步骤。其中，编译的作用是生成性能优越的机器码。对于编译单元内部的静态函数，可以在编译时通过相对地址的办法，生成call指令，因为无论将来调用者和被调用者被安置到什么地方，它们之间的相对距离不会发生变化。</p>
 <p>而其他类型的变量和函数在编译时，编译器并不知道它们的最终地址，所以只能使用占位符（比如 0）来临时代替目标地址。</p>
 <p>而链接器的任务是为所有变量和函数分配地址，并把被分配到的地址回写到调用者处。链接的过程主要分为两步，第一步是多文件合并，同时为符号分配地址，第二步则是将符号的地址回写到引用它的地方。其中，地址回写有一个专门的名字叫做重定位。重定位的过程依赖目标文件中的重定位表。</p>
 <p><a href="/attachments/编程高手必学的内存知识/06静态链接：变量与内存地址是如何映射的？.pdf" target="_blank">静态链接：变量与内存地址是如何映射的？</a></p>
-<h1 id="动态链接（上）：地址无关代码是如何生成的？"><a href="#动态链接（上）：地址无关代码是如何生成的？" class="headerlink" title="动态链接（上）：地址无关代码是如何生成的？"></a>动态链接（上）：地址无关代码是如何生成的？</h1><p><a href="/attachments/编程高手必学的内存知识/07动态链接（上）：地址无关代码是如何生成的？.pdf" target="_blank">动态链接（上）：地址无关代码是如何生成的？</a></p>
-<h1 id="动态链接（下）：延迟绑定与动态链接器是什么？"><a href="#动态链接（下）：延迟绑定与动态链接器是什么？" class="headerlink" title="动态链接（下）：延迟绑定与动态链接器是什么？"></a>动态链接（下）：延迟绑定与动态链接器是什么？</h1><p><a href="/attachments/编程高手必学的内存知识/08动态链接（下）：延迟绑定与动态链接器是什么？.pdf" target="_blank">动态链接（下）：延迟绑定与动态链接器是什么？</a></p>
-<h1 id="深入理解堆：malloc和内存池是怎么回事？"><a href="#深入理解堆：malloc和内存池是怎么回事？" class="headerlink" title="深入理解堆：malloc和内存池是怎么回事？"></a>深入理解堆：malloc和内存池是怎么回事？</h1><p><a href="/attachments/编程高手必学的内存知识/09深入理解堆：malloc和内存池是怎么回事？.pdf" target="_blank">深入理解堆：malloc和内存池是怎么回事？？</a></p>
-<h1 id="页中断：fork、mmap背后的保护神"><a href="#页中断：fork、mmap背后的保护神" class="headerlink" title="页中断：fork、mmap背后的保护神"></a>页中断：fork、mmap背后的保护神</h1><p><a href="/attachments/编程高手必学的内存知识/10页中断：fork、mmap背后的保护神.pdf" target="_blank">页中断：fork、mmap背后的保护神</a></p>
-<h1 id="即时编译：高性能JVM的核心秘密"><a href="#即时编译：高性能JVM的核心秘密" class="headerlink" title="即时编译：高性能JVM的核心秘密"></a>即时编译：高性能JVM的核心秘密</h1><p><a href="/attachments/编程高手必学的内存知识/11即时编译：高性能JVM的核心秘密.pdf" target="_blank">即时编译：高性能JVM的核心秘密</a></p>
-<h1 id="内存虚拟化：云原生时代的奠基者"><a href="#内存虚拟化：云原生时代的奠基者" class="headerlink" title="内存虚拟化：云原生时代的奠基者"></a>内存虚拟化：云原生时代的奠基者</h1><p><a href="/attachments/编程高手必学的内存知识/12内存虚拟化：云原生时代的奠基者.pdf" target="_blank">内存虚拟化：云原生时代的奠基者</a></p>
-<h1 id="存储电路：计算机存储芯片的电路结构是怎样的？"><a href="#存储电路：计算机存储芯片的电路结构是怎样的？" class="headerlink" title="存储电路：计算机存储芯片的电路结构是怎样的？"></a>存储电路：计算机存储芯片的电路结构是怎样的？</h1><p><a href="/attachments/编程高手必学的内存知识/13存储电路：计算机存储芯片的电路结构是怎样的？.pdf" target="_blank">存储电路：计算机存储芯片的电路结构是怎样的？</a></p>
-<h1 id="CPUCache：访存速度是如何大幅提升的？"><a href="#CPUCache：访存速度是如何大幅提升的？" class="headerlink" title="CPUCache：访存速度是如何大幅提升的？"></a>CPUCache：访存速度是如何大幅提升的？</h1><p><a href="/attachments/编程高手必学的内存知识/14CPUCache：访存速度是如何大幅提升的？.pdf" target="_blank">CPUCache：访存速度是如何大幅提升的？</a></p>
-<h1 id="MESI协议：多核CPU是如何同步高速缓存的？"><a href="#MESI协议：多核CPU是如何同步高速缓存的？" class="headerlink" title="MESI协议：多核CPU是如何同步高速缓存的？"></a>MESI协议：多核CPU是如何同步高速缓存的？</h1><p><a href="/attachments/编程高手必学的内存知识/15MESI协议：多核CPU是如何同步高速缓存的？.pdf" target="_blank">MESI协议：多核CPU是如何同步高速缓存的？</a></p>
-<h1 id="内存模型：有了MESI为什么还需要内存屏障？"><a href="#内存模型：有了MESI为什么还需要内存屏障？" class="headerlink" title="内存模型：有了MESI为什么还需要内存屏障？"></a>内存模型：有了MESI为什么还需要内存屏障？</h1><p><a href="/attachments/编程高手必学的内存知识/16内存模型：有了MESI为什么还需要内存屏障？.pdf" target="_blank">内存模型：有了MESI为什么还需要内存屏障？</a></p>
-<h1 id="NUMA：非均匀访存带来了哪些提升与挑战？"><a href="#NUMA：非均匀访存带来了哪些提升与挑战？" class="headerlink" title="NUMA：非均匀访存带来了哪些提升与挑战？"></a>NUMA：非均匀访存带来了哪些提升与挑战？</h1><p><a href="/attachments/编程高手必学的内存知识/17NUMA：非均匀访存带来了哪些提升与挑战？.pdf" target="_blank">NUMA：非均匀访存带来了哪些提升与挑战？</a></p>
-<h1 id="Java内存模型：Java中的volatile有什么用？"><a href="#Java内存模型：Java中的volatile有什么用？" class="headerlink" title="Java内存模型：Java中的volatile有什么用？"></a>Java内存模型：Java中的volatile有什么用？</h1><p><a href="/attachments/编程高手必学的内存知识/18Java内存模型：Java中的volatile有什么用？.pdf" target="_blank">Java内存模型：Java中的volatile有什么用？</a></p>
-<h1 id="Scavenge：基于copy的垃圾回收算法"><a href="#Scavenge：基于copy的垃圾回收算法" class="headerlink" title="Scavenge：基于copy的垃圾回收算法"></a>Scavenge：基于copy的垃圾回收算法</h1><p><a href="/attachments/编程高手必学的内存知识/20Scavenge：基于copy的垃圾回收算法.pdf" target="_blank">Scavenge：基于copy的垃圾回收算法</a></p>
-<h1 id="分代算法：基于生命周期的内存管理"><a href="#分代算法：基于生命周期的内存管理" class="headerlink" title="分代算法：基于生命周期的内存管理"></a>分代算法：基于生命周期的内存管理</h1><p><a href="/attachments/编程高手必学的内存知识/21分代算法：基于生命周期的内存管理.pdf" target="_blank">分代算法：基于生命周期的内存管理</a></p>
-<h1 id="G1GC：分区回收算法说的是什么？"><a href="#G1GC：分区回收算法说的是什么？" class="headerlink" title="G1GC：分区回收算法说的是什么？"></a>G1GC：分区回收算法说的是什么？</h1><p><a href="/attachments/编程高手必学的内存知识/22G1GC：分区回收算法说的是什么？.pdf" target="_blank">G1GC：分区回收算法说的是什么？</a></p>
-<h1 id="PauselessGC：挑战无暂停的垃圾回收"><a href="#PauselessGC：挑战无暂停的垃圾回收" class="headerlink" title="PauselessGC：挑战无暂停的垃圾回收"></a>PauselessGC：挑战无暂停的垃圾回收</h1><p><a href="/attachments/编程高手必学的内存知识/23PauselessGC：挑战无暂停的垃圾回收.pdf" target="_blank">PauselessGC：挑战无暂停的垃圾回收</a></p>
-<h1 id="GC实例：Python和Go的内存管理机制是怎样的？"><a href="#GC实例：Python和Go的内存管理机制是怎样的？" class="headerlink" title="GC实例：Python和Go的内存管理机制是怎样的？"></a>GC实例：Python和Go的内存管理机制是怎样的？</h1><p><a href="/attachments/编程高手必学的内存知识/24GC实例：Python和Go的内存管理机制是怎样的？.pdf" target="_blank">GC实例：Python和Go的内存管理机制是怎样的？</a></p>
+<h1>动态链接（上）：地址无关代码是如何生成的？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/07动态链接（上）：地址无关代码是如何生成的？.pdf" target="_blank">动态链接（上）：地址无关代码是如何生成的？</a></p>
+<h1>动态链接（下）：延迟绑定与动态链接器是什么？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/08动态链接（下）：延迟绑定与动态链接器是什么？.pdf" target="_blank">动态链接（下）：延迟绑定与动态链接器是什么？</a></p>
+<h1>深入理解堆：malloc和内存池是怎么回事？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/09深入理解堆：malloc和内存池是怎么回事？.pdf" target="_blank">深入理解堆：malloc和内存池是怎么回事？？</a></p>
+<h1>页中断：fork、mmap背后的保护神</h1>
+<p><a href="/attachments/编程高手必学的内存知识/10页中断：fork、mmap背后的保护神.pdf" target="_blank">页中断：fork、mmap背后的保护神</a></p>
+<h1>即时编译：高性能JVM的核心秘密</h1>
+<p><a href="/attachments/编程高手必学的内存知识/11即时编译：高性能JVM的核心秘密.pdf" target="_blank">即时编译：高性能JVM的核心秘密</a></p>
+<h1>内存虚拟化：云原生时代的奠基者</h1>
+<p><a href="/attachments/编程高手必学的内存知识/12内存虚拟化：云原生时代的奠基者.pdf" target="_blank">内存虚拟化：云原生时代的奠基者</a></p>
+<h1>存储电路：计算机存储芯片的电路结构是怎样的？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/13存储电路：计算机存储芯片的电路结构是怎样的？.pdf" target="_blank">存储电路：计算机存储芯片的电路结构是怎样的？</a></p>
+<h1>CPUCache：访存速度是如何大幅提升的？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/14CPUCache：访存速度是如何大幅提升的？.pdf" target="_blank">CPUCache：访存速度是如何大幅提升的？</a></p>
+<h1>MESI协议：多核CPU是如何同步高速缓存的？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/15MESI协议：多核CPU是如何同步高速缓存的？.pdf" target="_blank">MESI协议：多核CPU是如何同步高速缓存的？</a></p>
+<h1>内存模型：有了MESI为什么还需要内存屏障？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/16内存模型：有了MESI为什么还需要内存屏障？.pdf" target="_blank">内存模型：有了MESI为什么还需要内存屏障？</a></p>
+<h1>NUMA：非均匀访存带来了哪些提升与挑战？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/17NUMA：非均匀访存带来了哪些提升与挑战？.pdf" target="_blank">NUMA：非均匀访存带来了哪些提升与挑战？</a></p>
+<h1>Java内存模型：Java中的volatile有什么用？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/18Java内存模型：Java中的volatile有什么用？.pdf" target="_blank">Java内存模型：Java中的volatile有什么用？</a></p>
+<h1>Scavenge：基于copy的垃圾回收算法</h1>
+<p><a href="/attachments/编程高手必学的内存知识/20Scavenge：基于copy的垃圾回收算法.pdf" target="_blank">Scavenge：基于copy的垃圾回收算法</a></p>
+<h1>分代算法：基于生命周期的内存管理</h1>
+<p><a href="/attachments/编程高手必学的内存知识/21分代算法：基于生命周期的内存管理.pdf" target="_blank">分代算法：基于生命周期的内存管理</a></p>
+<h1>G1GC：分区回收算法说的是什么？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/22G1GC：分区回收算法说的是什么？.pdf" target="_blank">G1GC：分区回收算法说的是什么？</a></p>
+<h1>PauselessGC：挑战无暂停的垃圾回收</h1>
+<p><a href="/attachments/编程高手必学的内存知识/23PauselessGC：挑战无暂停的垃圾回收.pdf" target="_blank">PauselessGC：挑战无暂停的垃圾回收</a></p>
+<h1>GC实例：Python和Go的内存管理机制是怎样的？</h1>
+<p><a href="/attachments/编程高手必学的内存知识/24GC实例：Python和Go的内存管理机制是怎样的？.pdf" target="_blank">GC实例：Python和Go的内存管理机制是怎样的？</a></p>
 
     </div>
 
@@ -512,7 +538,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么可用内存会远超物理内存？"><span class="nav-number">1.</span> <span class="nav-text">为什么可用内存会远超物理内存？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#X86体系结构中的实模式和保护模式"><span class="nav-number">2.</span> <span class="nav-text">X86体系结构中的实模式和保护模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存布局：应用程序是如何安排数据的？"><span class="nav-number">3.</span> <span class="nav-text">内存布局：应用程序是如何安排数据的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#IA-32机器上的Linux进程内存布局"><span class="nav-number">3.1.</span> <span class="nav-text">IA-32机器上的Linux进程内存布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-64机器上的Linux进程内存布局"><span class="nav-number">3.2.</span> <span class="nav-text">Intel 64机器上的Linux进程内存布局</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#深入理解栈：从CPU和函数的视角看栈的管理"><span class="nav-number">4.</span> <span class="nav-text">深入理解栈：从CPU和函数的视角看栈的管理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#栈的魔法：从栈切换的角度理解进程和协程"><span class="nav-number">5.</span> <span class="nav-text">栈的魔法：从栈切换的角度理解进程和协程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#静态链接：变量与内存地址是如何映射的？"><span class="nav-number">6.</span> <span class="nav-text">静态链接：变量与内存地址是如何映射的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#动态链接（上）：地址无关代码是如何生成的？"><span class="nav-number">7.</span> <span class="nav-text">动态链接（上）：地址无关代码是如何生成的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#动态链接（下）：延迟绑定与动态链接器是什么？"><span class="nav-number">8.</span> <span class="nav-text">动态链接（下）：延迟绑定与动态链接器是什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#深入理解堆：malloc和内存池是怎么回事？"><span class="nav-number">9.</span> <span class="nav-text">深入理解堆：malloc和内存池是怎么回事？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#页中断：fork、mmap背后的保护神"><span class="nav-number">10.</span> <span class="nav-text">页中断：fork、mmap背后的保护神</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#即时编译：高性能JVM的核心秘密"><span class="nav-number">11.</span> <span class="nav-text">即时编译：高性能JVM的核心秘密</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存虚拟化：云原生时代的奠基者"><span class="nav-number">12.</span> <span class="nav-text">内存虚拟化：云原生时代的奠基者</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#存储电路：计算机存储芯片的电路结构是怎样的？"><span class="nav-number">13.</span> <span class="nav-text">存储电路：计算机存储芯片的电路结构是怎样的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CPUCache：访存速度是如何大幅提升的？"><span class="nav-number">14.</span> <span class="nav-text">CPUCache：访存速度是如何大幅提升的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MESI协议：多核CPU是如何同步高速缓存的？"><span class="nav-number">15.</span> <span class="nav-text">MESI协议：多核CPU是如何同步高速缓存的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存模型：有了MESI为什么还需要内存屏障？"><span class="nav-number">16.</span> <span class="nav-text">内存模型：有了MESI为什么还需要内存屏障？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#NUMA：非均匀访存带来了哪些提升与挑战？"><span class="nav-number">17.</span> <span class="nav-text">NUMA：非均匀访存带来了哪些提升与挑战？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Java内存模型：Java中的volatile有什么用？"><span class="nav-number">18.</span> <span class="nav-text">Java内存模型：Java中的volatile有什么用？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Scavenge：基于copy的垃圾回收算法"><span class="nav-number">19.</span> <span class="nav-text">Scavenge：基于copy的垃圾回收算法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分代算法：基于生命周期的内存管理"><span class="nav-number">20.</span> <span class="nav-text">分代算法：基于生命周期的内存管理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#G1GC：分区回收算法说的是什么？"><span class="nav-number">21.</span> <span class="nav-text">G1GC：分区回收算法说的是什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#PauselessGC：挑战无暂停的垃圾回收"><span class="nav-number">22.</span> <span class="nav-text">PauselessGC：挑战无暂停的垃圾回收</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GC实例：Python和Go的内存管理机制是怎样的？"><span class="nav-number">23.</span> <span class="nav-text">GC实例：Python和Go的内存管理机制是怎样的？</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">为什么可用内存会远超物理内存？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">X86体系结构中的实模式和保护模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">内存布局：应用程序是如何安排数据的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#IA-32机器上的Linux进程内存布局"><span class="nav-number">3.1.</span> <span class="nav-text">IA-32机器上的Linux进程内存布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intel-64机器上的Linux进程内存布局"><span class="nav-number">3.2.</span> <span class="nav-text">Intel 64机器上的Linux进程内存布局</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">深入理解栈：从CPU和函数的视角看栈的管理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">栈的魔法：从栈切换的角度理解进程和协程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">静态链接：变量与内存地址是如何映射的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">动态链接（上）：地址无关代码是如何生成的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">8.</span> <span class="nav-text">动态链接（下）：延迟绑定与动态链接器是什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">9.</span> <span class="nav-text">深入理解堆：malloc和内存池是怎么回事？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">10.</span> <span class="nav-text">页中断：fork、mmap背后的保护神</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">11.</span> <span class="nav-text">即时编译：高性能JVM的核心秘密</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">12.</span> <span class="nav-text">内存虚拟化：云原生时代的奠基者</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">13.</span> <span class="nav-text">存储电路：计算机存储芯片的电路结构是怎样的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">14.</span> <span class="nav-text">CPUCache：访存速度是如何大幅提升的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">15.</span> <span class="nav-text">MESI协议：多核CPU是如何同步高速缓存的？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">16.</span> <span class="nav-text">内存模型：有了MESI为什么还需要内存屏障？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">17.</span> <span class="nav-text">NUMA：非均匀访存带来了哪些提升与挑战？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">18.</span> <span class="nav-text">Java内存模型：Java中的volatile有什么用？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">19.</span> <span class="nav-text">Scavenge：基于copy的垃圾回收算法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">20.</span> <span class="nav-text">分代算法：基于生命周期的内存管理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">21.</span> <span class="nav-text">G1GC：分区回收算法说的是什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">22.</span> <span class="nav-text">PauselessGC：挑战无暂停的垃圾回收</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">23.</span> <span class="nav-text">GC实例：Python和Go的内存管理机制是怎样的？</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -590,7 +616,7 @@
 <div class="copyright">
   
   &copy; 2019 – 
-  <span itemprop="copyrightYear">2023</span>
+  <span itemprop="copyrightYear">2024</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
