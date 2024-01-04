@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="深入拆解 Java 虚拟机 读书笔记作者： 郑雨迪">
+  <meta name="description" content="深入拆解 Java 虚拟机 读书笔记 作者： 郑雨迪">
 <meta name="keywords" content="Java,JVM,读书笔记,原创">
 <meta property="og:type" content="website">
 <meta property="og:title" content="深入拆解 Java 虚拟机 笔记">
 <meta property="og:url" content="https://jiankunking.com/bak/deeply-disassemble-the-java-virtual-machine.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="深入拆解 Java 虚拟机 读书笔记作者： 郑雨迪">
+<meta property="og:description" content="深入拆解 Java 虚拟机 读书笔记 作者： 郑雨迪">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2020-05-16T02:59:07.841Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入拆解 Java 虚拟机 笔记">
-<meta name="twitter:description" content="深入拆解 Java 虚拟机 读书笔记作者： 郑雨迪">
+<meta name="twitter:description" content="深入拆解 Java 虚拟机 读书笔记 作者： 郑雨迪">
 
 <link rel="canonical" href="https://jiankunking.com/bak/deeply-disassemble-the-java-virtual-machine.html">
 
@@ -243,16 +243,20 @@
       
       
       <div class="post-body">
-          <p>深入拆解 Java 虚拟机 读书笔记<br>作者： 郑雨迪</p>
+          <p>深入拆解 Java 虚拟机 读书笔记<br>
+作者： 郑雨迪</p>
 <a id="more"></a>
-
-<h1 id="Java代码是怎么运行的？"><a href="#Java代码是怎么运行的？" class="headerlink" title="Java代码是怎么运行的？"></a>Java代码是怎么运行的？</h1><h2 id="Java-虚拟机具体是怎样运行-Java-字节码的？"><a href="#Java-虚拟机具体是怎样运行-Java-字节码的？" class="headerlink" title="Java 虚拟机具体是怎样运行 Java 字节码的？"></a>Java 虚拟机具体是怎样运行 Java 字节码的？</h2><p>从虚拟机视角来看，执行 Java 代码首先需要将它编译而成的 class 文件加载到 Java 虚拟机中。加载后的 Java 类会被存放于方法区（Method Area）中。实际运行时，虚拟机会执行方法区内的代码。</p>
-<p>Java 虚拟机会将栈细分为面向 Java 方法的 Java 方法栈，面向本地方法（用 C++ 写的 native 方法）的本地方法栈，以及存放各个线程执行位置的 PC 寄存器。<br><img data-src="/images/deeply-disassemble-the-java-virtual-machine/1.png"></p>
+<h1>Java代码是怎么运行的？</h1>
+<h2 id="Java-虚拟机具体是怎样运行-Java-字节码的？">Java 虚拟机具体是怎样运行 Java 字节码的？</h2>
+<p>从虚拟机视角来看，执行 Java 代码首先需要将它编译而成的 class 文件加载到 Java 虚拟机中。加载后的 Java 类会被存放于方法区（Method Area）中。实际运行时，虚拟机会执行方法区内的代码。</p>
+<p>Java 虚拟机会将栈细分为面向 Java 方法的 Java 方法栈，面向本地方法（用 C++ 写的 native 方法）的本地方法栈，以及存放各个线程执行位置的 PC 寄存器。<br>
+<img data-src="/images/deeply-disassemble-the-java-virtual-machine/1.png" alt></p>
 <p>在运行过程中，每当调用进入一个 Java 方法，Java 虚拟机会在当前线程的 Java 方法栈中生成一个栈帧，用以存放局部变量以及字节码的操作数。这个栈帧的大小是提前计算好的，而且 Java 虚拟机不要求栈帧在内存空间里连续分布。</p>
 <p>当退出当前执行的方法时，不管是正常返回还是异常返回，Java 虚拟机均会弹出当前线程的当前栈帧，并将之舍弃。</p>
 <p>在 HotSpot 里面，翻译过程有两种形式：第一种是解释执行，即逐条将字节码翻译成机器码并执行；第二种是即时编译（Just-In-Time compilation，JIT），即将一个方法中包含的所有字节码编译成机器码后再执行。</p>
-<p><img data-src="/images/deeply-disassemble-the-java-virtual-machine/2.png"></p>
-<h2 id="Java-虚拟机的运行效率究竟是怎么样的？"><a href="#Java-虚拟机的运行效率究竟是怎么样的？" class="headerlink" title="Java 虚拟机的运行效率究竟是怎么样的？"></a>Java 虚拟机的运行效率究竟是怎么样的？</h2><p>即时编译建立在程序符合二八定律的假设上，也就是百分之二十的代码占据了百分之八十的计算资源。</p>
+<p><img data-src="/images/deeply-disassemble-the-java-virtual-machine/2.png" alt></p>
+<h2 id="Java-虚拟机的运行效率究竟是怎么样的？">Java 虚拟机的运行效率究竟是怎么样的？</h2>
+<p>即时编译建立在程序符合二八定律的假设上，也就是百分之二十的代码占据了百分之八十的计算资源。</p>
 <p>对于占据大部分的不常用的代码，我们无需耗费时间将其编译成机器码，而是采取解释执行的方式运行；另一方面，对于仅占据小部分的热点代码，我们则可以将其编译成机器码，以达到理想的运行速度。</p>
 <p>为了满足不同用户场景的需要，HotSpot 内置了多个即时编译器：C1、C2 和 Graal。Graal 是 Java 10 正式引入的实验性即时编译器。</p>
 <p>之所以引入多个即时编译器，是为了在编译时间和生成代码的执行效率之间进行取舍。C1 又叫做Client 编译器，面向的是对启动性能有要求的客户端 GUI 程序，采用的优化手段相对简单，因此编译时间较短。</p>
@@ -321,7 +325,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Java代码是怎么运行的？"><span class="nav-number">1.</span> <span class="nav-text">Java代码是怎么运行的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-虚拟机具体是怎样运行-Java-字节码的？"><span class="nav-number">1.1.</span> <span class="nav-text">Java 虚拟机具体是怎样运行 Java 字节码的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-虚拟机的运行效率究竟是怎么样的？"><span class="nav-number">1.2.</span> <span class="nav-text">Java 虚拟机的运行效率究竟是怎么样的？</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">Java代码是怎么运行的？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-虚拟机具体是怎样运行-Java-字节码的？"><span class="nav-number">1.1.</span> <span class="nav-text">Java 虚拟机具体是怎样运行 Java 字节码的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-虚拟机的运行效率究竟是怎么样的？"><span class="nav-number">1.2.</span> <span class="nav-text">Java 虚拟机的运行效率究竟是怎么样的？</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
