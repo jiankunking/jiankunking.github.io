@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">156</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">155</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -279,7 +279,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3.3k</span>
+              <span>3.4k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -302,8 +302,8 @@
 <p>客户中心梳理</p>
 </blockquote>
 <a id="more"></a>
-<h1>现状</h1>
-<p>客户数据分散在多个系统之间，而这多个系统中又有三个最为主要的系统：365、Y、E。</p>
+
+<h1 id="现状"><a href="#现状" class="headerlink" title="现状"></a>现状</h1><p>客户数据分散在多个系统之间，而这多个系统中又有三个最为主要的系统：365、Y、E。</p>
 <ul>
 <li>365的客户账号登陆用的是CAS</li>
 <li>E、Y系统定时同步CAS数据，自己维护了一份数据</li>
@@ -314,23 +314,20 @@
 <p>这里的客户账号主要是公司的经销商、各级门店的员工。</p>
 </blockquote>
 <p>客户与To C用户两者之间最大的区别在于：账号注册、账户管理的不同。客户账号的注册主要是通过分配，而非自己注册。</p>
-<h1>服务层面</h1>
-<p>服务主要拆分为以下几部分：</p>
+<h1 id="服务层面"><a href="#服务层面" class="headerlink" title="服务层面"></a>服务层面</h1><p>服务主要拆分为以下几部分：</p>
 <ul>
 <li>OpenApi：客户中心网关、OAuth部分</li>
 <li>账户服务：与账户相关的服务</li>
-<li>短信服务：
-<ul>
+<li>短信服务：<ul>
 <li>将集团Web Services短信服务转换成HTTP REST服务（下面简称SMS服务）</li>
 <li>Nginx 代理（组内服务发送短信是调用SMS服务，SMS服务再通过Nginx代理调用集团短信服务）</li>
 </ul>
 </li>
 <li>后台管理服务：公告通知</li>
 </ul>
-<p>更新细致的描述如下图：<br>
-<img data-src="/images/customer-center-design/%E5%AE%A2%E6%88%B7%E4%B8%AD%E5%BF%83%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84.png" alt="服务架构图"></p>
-<h1>OAuth</h1>
-<!-- > 本文OAuth 2.0的授权类型为授权码（OAuth 2.0 Grant Types：Authorization Code） -->
+<p>更新细致的描述如下图：<br><img data-src="/images/customer-center-design/%E5%AE%A2%E6%88%B7%E4%B8%AD%E5%BF%83%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84.png" alt="服务架构图"></p>
+<h1 id="OAuth"><a href="#OAuth" class="headerlink" title="OAuth"></a>OAuth</h1><!-- > 本文OAuth 2.0的授权类型为授权码（OAuth 2.0 Grant Types：Authorization Code） -->
+
 <p>OAuth部分主要是熟悉下面这个图，只是有时扮演OAuth Server、有时扮演OAuth Client而已。</p>
 <blockquote>
 <p>比如微信登陆，OpenApi就是微信OAuth Server的client。</p>
@@ -339,72 +336,58 @@
 <p>OAuth涉及的点有：</p>
 <ul>
 <li>Authorization Code：有效期内只能使用一次</li>
-<li>Access Token是采用JWT还是一个随机字符串？
-<ul>
+<li>Access Token是采用JWT还是一个随机字符串？<ul>
 <li>JWT不依赖存储，但一旦颁发无法取消其有效性</li>
 <li>随机字符串一般都是一个字符ID，具体的数据是存储在Redis中</li>
 </ul>
 </li>
-<li>OAuth 框架选择
-<ul>
-<li>Java
-<ul>
+<li>OAuth 框架选择<ul>
+<li>Java<ul>
 <li><a href="https://github.com/spring-projects/spring-security" target="_blank" rel="noopener">Spring Security</a></li>
-<li><a href="http://shiro.apache.org" target="_blank" rel="noopener">Shiro</a></li>
+<li><a href="http://shiro.apache.org/" target="_blank" rel="noopener">Shiro</a></li>
 </ul>
 </li>
-<li>Golang
-<ul>
+<li>Golang<ul>
 <li><a href="https://github.com/openshift/osin" target="_blank" rel="noopener">OpenShift OSIN</a></li>
-<li>…</li>
+<li>……</li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
-<h2 id="OAuth-Server">OAuth Server</h2>
-<p>OAuth Server需要做以下事情：</p>
+<h2 id="OAuth-Server"><a href="#OAuth-Server" class="headerlink" title="OAuth Server"></a>OAuth Server</h2><p>OAuth Server需要做以下事情：</p>
 <ul>
-<li>/authorize接口，负责校验是否登录（比如校验Header中bear令牌）及登陆账号是否需要别的操作（比如账号合并时的登陆账号id是一个临时id，这时需要强制跳转到账号合并、选择的页面，通过用户选择将多个账号合并为一个账号）
-<ul>
+<li>&#x2F;authorize接口，负责校验是否登录（比如校验Header中bear令牌）及登陆账号是否需要别的操作（比如账号合并时的登陆账号id是一个临时id，这时需要强制跳转到账号合并、选择的页面，通过用户选择将多个账号合并为一个账号）<ul>
 <li>已登录，设置Cookie，跳转请求authorize接口参数中的redirect_uri并携带code及state</li>
-<li>未登录，跳转鉴权中心的登陆页
-<ul>
+<li>未登录，跳转鉴权中心的登陆页<ul>
 <li>用户在鉴权中心的登录页输入用户名密码,校验通过，跳转请求authorize接口参数中的redirect_uri并携带code及state</li>
 </ul>
 </li>
 </ul>
 </li>
-<li>/token接口，负责校验code，颁发access_token及refresh_token</li>
-<li>/refresh_token接口，负责通过refresh_token刷新access_token</li>
-<li>/logout接口，清理Cookie</li>
+<li>&#x2F;token接口，负责校验code，颁发access_token及refresh_token</li>
+<li>&#x2F;refresh_token接口，负责通过refresh_token刷新access_token</li>
+<li>&#x2F;logout接口，清理Cookie</li>
 </ul>
 <blockquote>
-<p>code分为两种情况：一种是通过浏览器传递给接入方后端；一种是通过移动端获取到code后，通过调用接入方后端接口传递给接入方后端。<br>
-redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。</p>
+<p>code分为两种情况：一种是通过浏览器传递给接入方后端；一种是通过移动端获取到code后，通过调用接入方后端接口传递给接入方后端。<br>redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。</p>
 </blockquote>
-<h2 id="OAuth-Client">OAuth Client</h2>
-<p>OAuth Client对接OAuth Server需要做以下事情：</p>
+<h2 id="OAuth-Client"><a href="#OAuth-Client" class="headerlink" title="OAuth Client"></a>OAuth Client</h2><p>OAuth Client对接OAuth Server需要做以下事情：</p>
 <ul>
-<li>拦截请求，校验是否已登录
-<ul>
+<li>拦截请求，校验是否已登录<ul>
 <li>已登录，放行</li>
-<li>未登录，跳转OAuth Server的/authorize接口接口
-<ul>
+<li>未登录，跳转OAuth Server的&#x2F;authorize接口接口<ul>
 <li>根据code获取用户信息，设置Cookie、颁发自己的token（access_token、refresh_token）</li>
 </ul>
 </li>
 </ul>
 </li>
-<li>/token接口，调用鉴权中心的密码模式校验密码，获取用户信息，颁发access_token、refresh_token</li>
-<li>/refresh_token接口，负责通过refresh_token刷新access_token</li>
-<li>对于Web端而言，打开首页的时候，先调用me或者profile等接口获取用户信息
-<ul>
+<li>&#x2F;token接口，调用鉴权中心的密码模式校验密码，获取用户信息，颁发access_token、refresh_token</li>
+<li>&#x2F;refresh_token接口，负责通过refresh_token刷新access_token</li>
+<li>对于Web端而言，打开首页的时候，先调用me或者profile等接口获取用户信息<ul>
 <li>如果能获取到，则意味着登录成功</li>
-<li>如果获取不到，则前端调用后端/login接口
-<ul>
-<li>后端/login接口（接口需要传递参数redirect_uri）校验是否登录
-<ul>
+<li>如果获取不到，则前端调用后端&#x2F;login接口<ul>
+<li>后端&#x2F;login接口（接口需要传递参数redirect_uri）校验是否登录<ul>
 <li>未登录，跳转鉴权中心的登陆页</li>
 <li>已登录，跳转参数redirect_uri</li>
 </ul>
@@ -413,24 +396,20 @@ redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。<
 </li>
 </ul>
 </li>
-<li>对于移动端而言，调用/token接口</li>
-<li>/logout接口，清理自己设置的Cookie，再调用鉴权中心的登出接口</li>
-<li>/callback接口，供OAuth Server回调</li>
+<li>对于移动端而言，调用&#x2F;token接口</li>
+<li>&#x2F;logout接口，清理自己设置的Cookie，再调用鉴权中心的登出接口</li>
+<li>&#x2F;callback接口，供OAuth Server回调</li>
 </ul>
-<h1>实现</h1>
-<h2 id="一期">一期</h2>
-<p>从服务架构图中可以看出，业务逻辑最复杂的是账户服务。</p>
+<h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><h2 id="一期"><a href="#一期" class="headerlink" title="一期"></a>一期</h2><p>从服务架构图中可以看出，业务逻辑最复杂的是账户服务。</p>
 <p>账户服务的复杂的地方主要在：</p>
 <ul>
 <li>数据清理逻辑服务（多系统账户合并）</li>
 <li>多系统迭代替换时间不一致</li>
 </ul>
-<h3 id="账户合并">账户合并</h3>
-<p>下面简单说一下多系统账户合并的逻辑：</p>
+<h3 id="账户合并"><a href="#账户合并" class="headerlink" title="账户合并"></a>账户合并</h3><p>下面简单说一下多系统账户合并的逻辑：</p>
 <ul>
 <li>多账户合并在账户首次登陆的时候进行（账户登录，需要区分出是否是首次登陆）</li>
-<li>检验账户是否需要合并的逻辑是：当前登陆账户名、手机号在多个系统之间重复
-<ul>
+<li>检验账户是否需要合并的逻辑是：当前登陆账户名、手机号在多个系统之间重复<ul>
 <li>账户名登陆不仅仅需要校验账户名，还需要校验账户名对应的手机号</li>
 <li>手机号登陆不仅仅需要校验手机号，还需要校验手机号对应的账户名</li>
 </ul>
@@ -440,8 +419,7 @@ redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。<
 <blockquote>
 <p>这部分开发的时候，有个坑就是业务人员本身不熟悉自己的业务，合并的细节基本都是开发人员通过数据库数据自己梳理，再与业务人员确认。</p>
 </blockquote>
-<h3 id="切换">切换</h3>
-<p>系统很多，但登陆用到的主要有两部分：</p>
+<h3 id="切换"><a href="#切换" class="headerlink" title="切换"></a>切换</h3><p>系统很多，但登陆用到的主要有两部分：</p>
 <ul>
 <li>CAS登陆（大部分系统客户用的都是CAS登陆）</li>
 <li>Y、E系统，该系统自己维护了一份客户账号数据</li>
@@ -461,28 +439,22 @@ redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。<
 <li>发送短信验证码</li>
 </ul>
 <p>基本上都是输入一样，但最终处理的时候校验、操作的表都有所不同，这个可以通过命令模式来处理。</p>
-<p>将统一账户的处理逻辑、CAS账户的处理逻辑分别放置到Receiver中，通过不同的Command来起到隔离而又不会重复代码的作用。</p>
+<p>将统一账户的处理逻辑、CAS账户的处理逻辑分别放置到Receiver中，通过不同的Command来起到隔离而又不会重复代码的作用。 </p>
 <blockquote>
 <p>命令模式：将一个请求封装为一个对象，使发出请求的责任和执行请求的责任分割开。这样两者之间通过命令对象进行沟通，这样方便将命令对象进行储存、传递、调用、增加与管理。</p>
 </blockquote>
-<h2 id="二期">二期</h2>
-<p>对接之前未对接的Y、E系统，这时E系统已经合并到Y系统了，所以这时只需要对接Y系统就好。</p>
+<h2 id="二期"><a href="#二期" class="headerlink" title="二期"></a>二期</h2><p>对接之前未对接的Y、E系统，这时E系统已经合并到Y系统了，所以这时只需要对接Y系统就好。</p>
 <p>对接Y系统主要是根据各种业务规则进行账号清洗、合并。</p>
 <p><img data-src="/images/customer-center-design/%E6%95%B0%E6%8D%AE%E6%B8%85%E6%B4%97.png" alt="数据清洗"></p>
-<h1>其它</h1>
-<h2 id="短信发送">短信发送</h2>
-<p>1、线程池发送（以防短信服务不稳，造成OOM,设定BlockingQueue长度）<br>
-2、抽象短信服务基类BaseVerificationCodeSender，因为有可能对接多个短信服务，但线程池及需要做的事是一样的。</p>
+<h1 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h1><h2 id="短信发送"><a href="#短信发送" class="headerlink" title="短信发送"></a>短信发送</h2><p>1、线程池发送（以防短信服务不稳，造成OOM,设定BlockingQueue长度）<br>2、抽象短信服务基类BaseVerificationCodeSender，因为有可能对接多个短信服务，但线程池及需要做的事是一样的。</p>
 <p><img data-src="/images/customer-center-design/CocSmsVerificationCodeSender.png" alt="具体的实现类"></p>
-<h2 id="验证码校验">验证码校验</h2>
-<p>由于集团短信服务不太稳定，所以每类（登陆、忘记密码、修改手机号等）验证码缓存最多三个未过期的短信验证码。</p>
+<h2 id="验证码校验"><a href="#验证码校验" class="headerlink" title="验证码校验"></a>验证码校验</h2><p>由于集团短信服务不太稳定，所以每类（登陆、忘记密码、修改手机号等）验证码缓存最多三个未过期的短信验证码。</p>
 <blockquote>
 <p>只要验证了一个，该手机号缓存某类的验证码，均失效。</p>
 </blockquote>
-<h2 id="其它">其它</h2>
-<p>略</p>
-<h1>附录</h1>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">+--------+                               +---------------+</span><br><span class="line">|        |--(A)- Authorization Request -&gt;|   Resource    |</span><br><span class="line">|        |                               |     Owner     |</span><br><span class="line">|        |&lt;-(B)-- Authorization Grant ---|               |</span><br><span class="line">|        |                               +---------------+</span><br><span class="line">|        |</span><br><span class="line">|        |                               +---------------+</span><br><span class="line">|        |--(C)-- Authorization Grant --&gt;| Authorization |</span><br><span class="line">| Client |                               |     Server    |</span><br><span class="line">|        |&lt;-(D)----- Access Token -------|               |</span><br><span class="line">|        |                               +---------------+</span><br><span class="line">|        |</span><br><span class="line">|        |                               +---------------+</span><br><span class="line">|        |--(E)----- Access Token ------&gt;|    Resource   |</span><br><span class="line">|        |                               |     Server    |</span><br><span class="line">|        |&lt;-(F)--- Protected Resource ---|               |</span><br><span class="line">+--------+                               +---------------+</span><br></pre></td></tr></table></figure>
+<h2 id="其它-1"><a href="#其它-1" class="headerlink" title="其它"></a>其它</h2><p>略</p>
+<h1 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">+--------+                               +---------------+</span><br><span class="line">|        |--(A)- Authorization Request -&gt;|   Resource    |</span><br><span class="line">|        |                               |     Owner     |</span><br><span class="line">|        |&lt;-(B)-- Authorization Grant ---|               |</span><br><span class="line">|        |                               +---------------+</span><br><span class="line">|        |</span><br><span class="line">|        |                               +---------------+</span><br><span class="line">|        |--(C)-- Authorization Grant --&gt;| Authorization |</span><br><span class="line">| Client |                               |     Server    |</span><br><span class="line">|        |&lt;-(D)----- Access Token -------|               |</span><br><span class="line">|        |                               +---------------+</span><br><span class="line">|        |</span><br><span class="line">|        |                               +---------------+</span><br><span class="line">|        |--(E)----- Access Token ------&gt;|    Resource   |</span><br><span class="line">|        |                               |     Server    |</span><br><span class="line">|        |&lt;-(F)--- Protected Resource ---|               |</span><br><span class="line">+--------+                               +---------------+</span><br></pre></td></tr></table></figure>
+
 
     </div>
 
@@ -646,7 +618,7 @@ redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。<
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">现状</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">服务层面</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">OAuth</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#OAuth-Server"><span class="nav-number">3.1.</span> <span class="nav-text">OAuth Server</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OAuth-Client"><span class="nav-number">3.2.</span> <span class="nav-text">OAuth Client</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#一期"><span class="nav-number">4.1.</span> <span class="nav-text">一期</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#账户合并"><span class="nav-number">4.1.1.</span> <span class="nav-text">账户合并</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#切换"><span class="nav-number">4.1.2.</span> <span class="nav-text">切换</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二期"><span class="nav-number">4.2.</span> <span class="nav-text">二期</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#短信发送"><span class="nav-number">5.1.</span> <span class="nav-text">短信发送</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证码校验"><span class="nav-number">5.2.</span> <span class="nav-text">验证码校验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它"><span class="nav-number">5.3.</span> <span class="nav-text">其它</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">附录</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#现状"><span class="nav-number">1.</span> <span class="nav-text">现状</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#服务层面"><span class="nav-number">2.</span> <span class="nav-text">服务层面</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#OAuth"><span class="nav-number">3.</span> <span class="nav-text">OAuth</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#OAuth-Server"><span class="nav-number">3.1.</span> <span class="nav-text">OAuth Server</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OAuth-Client"><span class="nav-number">3.2.</span> <span class="nav-text">OAuth Client</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">4.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#一期"><span class="nav-number">4.1.</span> <span class="nav-text">一期</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#账户合并"><span class="nav-number">4.1.1.</span> <span class="nav-text">账户合并</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#切换"><span class="nav-number">4.1.2.</span> <span class="nav-text">切换</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二期"><span class="nav-number">4.2.</span> <span class="nav-text">二期</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">5.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#短信发送"><span class="nav-number">5.1.</span> <span class="nav-text">短信发送</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证码校验"><span class="nav-number">5.2.</span> <span class="nav-text">验证码校验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它-1"><span class="nav-number">5.3.</span> <span class="nav-text">其它</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#附录"><span class="nav-number">6.</span> <span class="nav-text">附录</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -662,7 +634,7 @@ redirect_uri、post_logout_redirect_uri 需要校验是否与配置的一样。<
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">156</span>
+          <span class="site-state-item-count">155</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

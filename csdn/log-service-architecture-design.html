@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。 集群规模：Elasticsearch集群数10+，单集群数据量30T左右。">
+  <meta name="description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。集群规模：Elasticsearch集群数10+，单集群数据量30T左右。">
 <meta name="keywords" content="Architecture,Log,Elasticsearch,Filebeat,原创">
 <meta property="og:type" content="website">
 <meta property="og:title" content="日志服务架构设计">
 <meta property="og:url" content="https://jiankunking.com/csdn/log-service-architecture-design.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。 集群规模：Elasticsearch集群数10+，单集群数据量30T左右。">
+<meta property="og:description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。集群规模：Elasticsearch集群数10+，单集群数据量30T左右。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2021-01-20T13:54:26.308Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="日志服务架构设计">
-<meta name="twitter:description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。 集群规模：Elasticsearch集群数10+，单集群数据量30T左右。">
+<meta name="twitter:description" content="在满足业务需求的前提下，代码、架构，越简单，越稳定。集群规模：Elasticsearch集群数10+，单集群数据量30T左右。">
 
 <link rel="canonical" href="https://jiankunking.com/csdn/log-service-architecture-design.html">
 
@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">156</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">155</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -244,24 +244,21 @@
       
       <div class="post-body">
           <blockquote>
-<p>在满足业务需求的前提下，代码、架构，越简单，越稳定。<br>
-集群规模：Elasticsearch集群数10+，单集群数据量30T左右。</p>
+<p>在满足业务需求的前提下，代码、架构，越简单，越稳定。<br>集群规模：Elasticsearch集群数10+，单集群数据量30T左右。</p>
 </blockquote>
 <a id="more"></a>
-<h1>NOW</h1>
-<p><img data-src="/images/log-service-architecture-design/now-architecture.png" alt></p>
-<h1>前言</h1>
-<p>最近想把之前做过的日志项目及个人的思考梳理一下，于是有了本文。</p>
-<h1>背景</h1>
-<p>我们这边应用部署的环境比较复杂，主要有以下几种：</p>
+
+
+<h1 id="NOW"><a href="#NOW" class="headerlink" title="NOW"></a>NOW</h1><p><img data-src="/images/log-service-architecture-design/now-architecture.png"></p>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>最近想把之前做过的日志项目及个人的思考梳理一下，于是有了本文。</p>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>我们这边应用部署的环境比较复杂，主要有以下几种：</p>
 <ul>
 <li>机器直接部署</li>
 <li>通过原生docker部署</li>
 <li>通过kubernetes集群部署</li>
 </ul>
 <p>部署环境不统一，导致查看应用日志很不方便。</p>
-<h1>业务需求</h1>
-<p>与部署环境对应，对于日志收集需求分为以下几类：</p>
+<h1 id="业务需求"><a href="#业务需求" class="headerlink" title="业务需求"></a>业务需求</h1><p>与部署环境对应，对于日志收集需求分为以下几类：</p>
 <ul>
 <li>机器上的文本日志（直接运行在物理机或者虚拟机中的应用日志）</li>
 <li>运行在docker容器中的应用日志</li>
@@ -278,11 +275,9 @@
 <li>支持部署到业务自己的集群中</li>
 </ul>
 <p>需求已经明确了，下面看一下业界方案。</p>
-<h1>业界日志系统架构</h1>
-<p><img data-src="/images/log-service-architecture-design/%E6%97%A5%E5%BF%97%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84.png" alt></p>
+<h1 id="业界日志系统架构"><a href="#业界日志系统架构" class="headerlink" title="业界日志系统架构"></a>业界日志系统架构</h1><p><img data-src="/images/log-service-architecture-design/%E6%97%A5%E5%BF%97%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84.png"></p>
 <ul>
-<li>Collector的作用是：
-<ul>
+<li>Collector的作用是：<ul>
 <li>清洗、汇聚数据，减少对于后端集群的压力。</li>
 <li>安全，不允许Agent直连kafka等内部集群，保证一定的安全性，即使后端发生调整也能保证对于Agent连接、认证方式的稳定。</li>
 </ul>
@@ -297,41 +292,34 @@
 <li>这一整套架构，不利于单独部署（比如某个业务应用部署机房网络是隔离的，而且项目又不大，只能提供有限的几台机器，这时候如果需要部署业界这套架构的话，资源就会比较受限，如果想做到即支持业界架构组件的可插拔（比如可灵活的决定是否需要Collector、MQ），那么就需要运维几套配置或代码）</li>
 <li>最关键的就是其中组件提供的功能，我们目前用不到。比如MQ的削峰填谷、多次消费。</li>
 </ul>
-<h1>组件选择</h1>
-<p>选择组件，我们这边主要是从以下几个方面进行考量的：</p>
+<h1 id="组件选择"><a href="#组件选择" class="headerlink" title="组件选择"></a>组件选择</h1><p>选择组件，我们这边主要是从以下几个方面进行考量的：</p>
 <ol>
 <li>组件对应的开源生态完整、活跃度高</li>
 <li>对应的技术栈是我们所熟悉的，我们这边语言技术栈主要是Java、Go，如果组件语言是C、Ruby，应该就被排除了。</li>
 <li>运维成本</li>
 <li>易部署、性能好</li>
 </ol>
-<h2 id="Agent">Agent</h2>
-<p>一提到日志收集方案，大家第一个想到的肯定是ELK(Elasticsearch、Logstash、Kibana )，但Logstash依赖于JVM不管是性能还是简洁性，都不是日志收集agent的首选。</p>
+<h2 id="Agent"><a href="#Agent" class="headerlink" title="Agent"></a>Agent</h2><p>一提到日志收集方案，大家第一个想到的肯定是ELK(Elasticsearch、Logstash、Kibana )，但Logstash依赖于JVM不管是性能还是简洁性，都不是日志收集agent的首选。</p>
 <p>个人感觉一个好的agent应该是资源占用少，性能好，不依赖别的组件，可以独立部署。而Logstash明显不符合这几点要求，也许正是基于这些考虑elastic推出了Filebeat。</p>
-<h2 id="Collector、MQ">Collector、MQ</h2>
-<p>Elasticsearch集群在部署的时候，一般都是提前估计好容量、机器、shard等信息，因为Elasticsearch集群运行后，再水平拓展，比较麻烦，而我们这边由于业务及成本限制无法很好的预估容量，所以就结合公司实际要求：使用日志服务的业务方自带机器，也就是业务方会有独立的Elasticsearch集群。</p>
+<h2 id="Collector、MQ"><a href="#Collector、MQ" class="headerlink" title="Collector、MQ"></a>Collector、MQ</h2><p>Elasticsearch集群在部署的时候，一般都是提前估计好容量、机器、shard等信息，因为Elasticsearch集群运行后，再水平拓展，比较麻烦，而我们这边由于业务及成本限制无法很好的预估容量，所以就结合公司实际要求：使用日志服务的业务方自带机器，也就是业务方会有独立的Elasticsearch集群。</p>
 <p>每个业务方都使用自己的Elasticsearch集群，所以集群压力不会很大，从而Collector、MQ这两个组件对于我们的作用也就很小了。</p>
-<h2 id="ETL">ETL</h2>
-<p>因为Elasticsearch Ingest Node完全可以满足我们的解析需求，所以就没有必要再引入Logstash等相关组件了。</p>
-<p>到这里，基本可以看出我们的架构如下：<br>
-<img data-src="/images/log-service-architecture-design/%E7%B2%BE%E7%AE%80%E6%9E%B6%E6%9E%84.png" alt></p>
+<h2 id="ETL"><a href="#ETL" class="headerlink" title="ETL"></a>ETL</h2><p>因为Elasticsearch Ingest Node完全可以满足我们的解析需求，所以就没有必要再引入Logstash等相关组件了。</p>
+<p>到这里，基本可以看出我们的架构如下：<br><img data-src="/images/log-service-architecture-design/%E7%B2%BE%E7%AE%80%E6%9E%B6%E6%9E%84.png"></p>
 <blockquote>
 <p>架构设计的几个原则：</p>
 <ul>
-<li>合适优于业界领先</li>
+<li>合适优于业界领先 </li>
 <li>简单优于复杂</li>
 <li>演化优于一步到位</li>
 </ul>
 </blockquote>
-<h1>具体实现</h1>
-<p>基于需求及EFK套件，梳理我们场景中特有的东西：</p>
+<h1 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h1><p>基于需求及EFK套件，梳理我们场景中特有的东西：</p>
 <ul>
 <li>docker日志的场景比较单一，都是通过之前一个产品A发布部署的，其docker命名规则比较统一，可以通过截取docker.container.name来获取应用名字；同时在部署的时候，可以知道部署目标机器的ip，这样就可以通过应用+ip来作为实例名称。</li>
 <li>k8s场景也比较统一，都是通过之前一个产品B发布部署的，其pod命名规则比较统一，可以通过截取kubernetes.pod.name来获取应用名字（但需要通过namespaces关联到tenant，再通过tenant与项目一一对应）；k8s中的pod.name就是唯一的，以此来作为实例名称即可。</li>
 <li>文本日志：因为文本日志主要的场景是已经裸机部署的应用，这种场景下，不存在应用自动迁移的情况，所以文本日志的应用名称、实例名称可以在部署的时候打上标签即可。</li>
 </ul>
-<p>具体规则及解析见下图（实例部分处理暂未标注）：<br>
-<img data-src="/images/log-service-architecture-design/%E6%94%B6%E9%9B%86%E5%BA%94%E7%94%A8%E6%96%87%E6%9C%AC%E6%97%A5%E5%BF%97.png" alt></p>
+<p>具体规则及解析见下图（实例部分处理暂未标注）：<br><img data-src="/images/log-service-architecture-design/%E6%94%B6%E9%9B%86%E5%BA%94%E7%94%A8%E6%96%87%E6%9C%AC%E6%97%A5%E5%BF%97.png"></p>
 <blockquote>
 <p>推荐写日志到文本文件中，使用标准输出就好。</p>
 </blockquote>
@@ -368,20 +356,14 @@
 
 > 前提：能要求使用方，按照某种规则打印日志。
 > 监控发展：监控基本就是先打通链路trace，然后再在上报信息或者日志信息中，加强业务方面标识，即给监控添加业务维度方面的视角。 -->
-<h1>演进（二期）</h1>
-<p><img data-src="/images/log-service-architecture-design/%E6%97%A5%E5%BF%97%E8%A7%A3%E6%9E%90.png" alt></p>
-<h1>集群规模</h1>
-<p>Elasticsearch集群10+，单集群数据量30T左右。</p>
-<h1>其它</h1>
-<h2 id="DaemonSet">DaemonSet</h2>
-<p>以DaemonSet方式部署Filebeat来收集日志，其实收集也是宿主机/var/lib/docker/containers目录下的日志。<br>
-Running Filebeat on Kubernetes</p>
-<h2 id="Sidecar">Sidecar</h2>
-<p>一个POD中运行一个sidecar的日志agent容器，用于采集该POD主容器产生的日志。</p>
+
+<h1 id="演进（二期）"><a href="#演进（二期）" class="headerlink" title="演进（二期）"></a>演进（二期）</h1><p><img data-src="/images/log-service-architecture-design/%E6%97%A5%E5%BF%97%E8%A7%A3%E6%9E%90.png"></p>
+<h1 id="集群规模"><a href="#集群规模" class="headerlink" title="集群规模"></a>集群规模</h1><p>Elasticsearch集群10+，单集群数据量30T左右。</p>
+<h1 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h1><h2 id="DaemonSet"><a href="#DaemonSet" class="headerlink" title="DaemonSet"></a>DaemonSet</h2><p>以DaemonSet方式部署Filebeat来收集日志，其实收集也是宿主机&#x2F;var&#x2F;lib&#x2F;docker&#x2F;containers目录下的日志。<br>Running Filebeat on Kubernetes</p>
+<h2 id="Sidecar"><a href="#Sidecar" class="headerlink" title="Sidecar"></a>Sidecar</h2><p>一个POD中运行一个sidecar的日志agent容器，用于采集该POD主容器产生的日志。</p>
 <p>莫名想起了istio。</p>
 <blockquote>
-<p>Filebeat可以以sidecar模式来进行容器日志的收集，也就是filebeat和具体的服务容器部署在同一个pod内，指定收集日志的路径或文件，&gt; 即可将日志发送到指定位置或Elasticsearch这类的搜索引擎。<br>
-每个pod内部署filebeat的模式，好处是和具体的应用服务低耦合，可扩展性强，不过需要在yaml进行额外配置。</p>
+<p>Filebeat可以以sidecar模式来进行容器日志的收集，也就是filebeat和具体的服务容器部署在同一个pod内，指定收集日志的路径或文件，&gt; 即可将日志发送到指定位置或Elasticsearch这类的搜索引擎。<br>每个pod内部署filebeat的模式，好处是和具体的应用服务低耦合，可扩展性强，不过需要在yaml进行额外配置。</p>
 </blockquote>
 
       </div>
@@ -445,7 +427,7 @@ Running Filebeat on Kubernetes</p>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">NOW</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">业务需求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">业界日志系统架构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">组件选择</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Agent"><span class="nav-number">6.1.</span> <span class="nav-text">Agent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Collector、MQ"><span class="nav-number">6.2.</span> <span class="nav-text">Collector、MQ</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ETL"><span class="nav-number">6.3.</span> <span class="nav-text">ETL</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">具体实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">8.</span> <span class="nav-text">演进（二期）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">9.</span> <span class="nav-text">集群规模</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">10.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#DaemonSet"><span class="nav-number">10.1.</span> <span class="nav-text">DaemonSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sidecar"><span class="nav-number">10.2.</span> <span class="nav-text">Sidecar</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#NOW"><span class="nav-number">1.</span> <span class="nav-text">NOW</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">2.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">3.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#业务需求"><span class="nav-number">4.</span> <span class="nav-text">业务需求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#业界日志系统架构"><span class="nav-number">5.</span> <span class="nav-text">业界日志系统架构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#组件选择"><span class="nav-number">6.</span> <span class="nav-text">组件选择</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Agent"><span class="nav-number">6.1.</span> <span class="nav-text">Agent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Collector、MQ"><span class="nav-number">6.2.</span> <span class="nav-text">Collector、MQ</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ETL"><span class="nav-number">6.3.</span> <span class="nav-text">ETL</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#具体实现"><span class="nav-number">7.</span> <span class="nav-text">具体实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#演进（二期）"><span class="nav-number">8.</span> <span class="nav-text">演进（二期）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#集群规模"><span class="nav-number">9.</span> <span class="nav-text">集群规模</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">10.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#DaemonSet"><span class="nav-number">10.1.</span> <span class="nav-text">DaemonSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sidecar"><span class="nav-number">10.2.</span> <span class="nav-text">Sidecar</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -461,7 +443,7 @@ Running Filebeat on Kubernetes</p>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">156</span>
+          <span class="site-state-item-count">155</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

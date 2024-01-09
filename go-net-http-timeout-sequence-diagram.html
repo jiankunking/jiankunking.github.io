@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="翻译自：The complete guide to Go net/http timeouts 地址：https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/">
+  <meta name="description" content="翻译自：The complete guide to Go net&amp;#x2F;http timeouts地址：https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/">
 <meta name="keywords" content="原创,翻译,Go,net&#x2F;http,Http,Timeout">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[译]关于Go net&#x2F;http 超时完全指南">
 <meta property="og:url" content="https://jiankunking.com/go-net-http-timeout-sequence-diagram.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="翻译自：The complete guide to Go net/http timeouts 地址：https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/">
+<meta property="og:description" content="翻译自：The complete guide to Go net&amp;#x2F;http timeouts地址：https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2021-02-27T01:41:44.007Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[译]关于Go net&#x2F;http 超时完全指南">
-<meta name="twitter:description" content="翻译自：The complete guide to Go net/http timeouts 地址：https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/">
+<meta name="twitter:description" content="翻译自：The complete guide to Go net&amp;#x2F;http timeouts地址：https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/">
 
 <link rel="canonical" href="https://jiankunking.com/go-net-http-timeout-sequence-diagram.html">
 
@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">156</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">155</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -299,69 +299,69 @@
 
       
         <blockquote>
-<p>翻译自：The complete guide to Go net/http timeouts<br>
-地址：<a href="https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/" target="_blank" rel="noopener">https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/</a></p>
+<p>翻译自：The complete guide to Go net&#x2F;http timeouts<br>地址：<a href="https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/" target="_blank" rel="noopener">https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/</a></p>
 </blockquote>
 <a id="more"></a>
+
 <p>使用Go编写HTTP服务器或客户端时，超时是最容易出错的最容易发生的事情:一个错误可能在很长一段时间内没有任何影响，直到网络出现故障并挂起该进程为止。</p>
 <p>HTTP是一个复杂的多阶段协议，因此没有一个适合所有超时的解决方案。考虑一下流端点、JSON API和<a href="https://en.wikipedia.org/wiki/Comet_%28programming%29" target="_blank" rel="noopener">Comet</a>端点。实际上，默认设置通常不是您想要的。</p>
 <p>在本文中，我将介绍在服务器端和客户端都可能会导致应用超时的各个阶段，并探讨解决超时的不同方法。</p>
-<h1>SetDeadline</h1>
-<p>首先，您需要了解Go用于实现超时的网络原语:Deadlines。</p>
-<p><a href="https://golang.org/pkg/net/#Conn" target="_blank" rel="noopener">net.Conn</a>使用Set[Read|Write]Deadline(time.Time)方法公开，Deadlines是绝对时间，一旦到时，所有I/O操作都会因超时错误而失败。</p>
-<p>Deadlines不是超时。一旦设置，它们就会永久生效(直到下一次调用SetDeadline)，不管在此期间是否使用连接以及如何使用连接。因此，要使用SetDeadline建立超时，您必须在每次读/写操作之前调用它。</p>
-<p>实际开发中，你并不需要直接调用SetDeadline，而是在标准库net/http中使用更高层次的超时设置。但是，请记住，所有超时都是根据Deadlines实现的，因此它们不会在每次发送或接收数据时重置。</p>
-<h1>Server Timeouts</h1>
-<p><a href="https://blog.cloudflare.com/exposing-go-on-the-internet/" target="_blank" rel="noopener">&quot;So you want to expose Go on the Internet&quot;</a>一文提供了有关服务器超时的更多信息，尤其是有关HTTP/2和Go 1.7的信息。</p>
-<p><img data-src="/images/go-net-http-timeout-sequence-diagram/%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%B6%85%E6%97%B6.png" alt></p>
+<h1 id="SetDeadline"><a href="#SetDeadline" class="headerlink" title="SetDeadline"></a>SetDeadline</h1><p>首先，您需要了解Go用于实现超时的网络原语:Deadlines。</p>
+<p><a href="https://golang.org/pkg/net/#Conn" target="_blank" rel="noopener">net.Conn</a>使用Set[Read|Write]Deadline(time.Time)方法公开，Deadlines是绝对时间，一旦到时，所有I&#x2F;O操作都会因超时错误而失败。</p>
+<p>Deadlines不是超时。一旦设置，它们就会永久生效(直到下一次调用SetDeadline)，不管在此期间是否使用连接以及如何使用连接。因此，要使用SetDeadline建立超时，您必须在每次读&#x2F;写操作之前调用它。</p>
+<p>实际开发中，你并不需要直接调用SetDeadline，而是在标准库net&#x2F;http中使用更高层次的超时设置。但是，请记住，所有超时都是根据Deadlines实现的，因此它们不会在每次发送或接收数据时重置。</p>
+<h1 id="Server-Timeouts"><a href="#Server-Timeouts" class="headerlink" title="Server Timeouts"></a>Server Timeouts</h1><p><a href="https://blog.cloudflare.com/exposing-go-on-the-internet/" target="_blank" rel="noopener">“So you want to expose Go on the Internet”</a>一文提供了有关服务器超时的更多信息，尤其是有关HTTP&#x2F;2和Go 1.7的信息。</p>
+<p><img data-src="/images/go-net-http-timeout-sequence-diagram/%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%B6%85%E6%97%B6.png"></p>
 <p>对于暴露于Internet的HTTP服务器来说，设置客户端链接超时，是至关重要的。否则，非常缓慢或消失的客户端可能会泄漏文件描述符，最终导致以下情况:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http: Accept error: accept tcp [::]:80: accept4: too many open files; retrying in 5ms</span><br></pre></td></tr></table></figure>
+
 <p>http.Server有两个设置超时的方法:ReadTimeout和WriteTimeout。你可以显式地设置它们：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">srv := &amp;http.Server&#123;</span><br><span class="line">    ReadTimeout: 5 * time.Second,</span><br><span class="line">    WriteTimeout: 10 * time.Second,</span><br><span class="line">&#125;</span><br><span class="line">log.Println(srv.ListenAndServe())</span><br></pre></td></tr></table></figure>
-<p>ReadTimeout的时间计算是从连接被接受(accept)到request body完全被读取(if you do read the body, otherwise to the end of the headers)。net/http的内部实现是在<a href="https://github.com/golang/go/blob/3ba31558d1bca8ae6d2f03209b4cae55381175b3/src/net/http/server.go#L750" target="_blank" rel="noopener">Accept之后立即调用SetReadDeadline</a>。</p>
+
+<p>ReadTimeout的时间计算是从连接被接受(accept)到request body完全被读取(if you do read the body, otherwise to the end of the headers)。net&#x2F;http的内部实现是在<a href="https://github.com/golang/go/blob/3ba31558d1bca8ae6d2f03209b4cae55381175b3/src/net/http/server.go#L750" target="_blank" rel="noopener">Accept之后立即调用SetReadDeadline</a>。</p>
 <p>WriteTimeout的时间计算正常是从request header的读取结束开始，到response write结束为止(也就是ServeHTTP的生命周期), 它是通过在<a href="https://github.com/golang/go/blob/3ba31558d1bca8ae6d2f03209b4cae55381175b3/src/net/http/server.go#L753-L755" target="_blank" rel="noopener">readRequest方法结束的时候调用SetWriteDeadline</a>实现的。</p>
 <p>但是，当连接为HTTPS时，会在<a href="https://github.com/golang/go/blob/3ba31558d1bca8ae6d2f03209b4cae55381175b3/src/net/http/server.go#L1477-L1483" target="_blank" rel="noopener">Accept之后立即调用SetWriteDeadline</a>，所以它的时间计算也包括 TLS握手时的写的时间。令人讨厌的是，这意味着(仅在这种情况下)WriteTimeout最终将包括Header和读取body第一个字节这段时间。</p>
 <p>当你处理不可信的客户端和网络的时候，你应该同时设置读写超时，这样客户端就不会因为读慢或者写慢长久的持有这个连接了。</p>
 <p>最后,还有<a href="https://golang.org/pkg/net/http/#TimeoutHandler" target="_blank" rel="noopener">http.TimeoutHandler</a>。它不是一个Server参数，而是一个Handler包装函数，限制了ServeHTTP调用的最大持续时间。它缓存response, 如果deadline超过了则发送504 Gateway Timeout错误。 注意这个功能在1.6 中有问题，在1.6.2中改正了。</p>
-<h1>http.ListenAndServe is doing it wrong</h1>
-<p>顺便说一句，这意味着绕过诸如http.ListenAndServe，http.ListenAndServeTLS和http.Serve之类的http.Server的程序包级便捷功能不适用于公共Internet服务器。</p>
+<h1 id="http-ListenAndServe-is-doing-it-wrong"><a href="#http-ListenAndServe-is-doing-it-wrong" class="headerlink" title="http.ListenAndServe is doing it wrong"></a>http.ListenAndServe is doing it wrong</h1><p>顺便说一句，这意味着绕过诸如http.ListenAndServe，http.ListenAndServeTLS和http.Serve之类的http.Server的程序包级便捷功能不适用于公共Internet服务器。</p>
 <p>因为这些函数默认关闭了超时设置，也无法手动设置。使用这些函数，将很快泄露连接，然后耗尽文件描述符。对于这点，我至少犯了6次以上这样的错误。</p>
 <p>对此，你应该使用http.server。在创建http.server实例的时候，调用相应的方法指定ReadTimeout（读取超时时间）和WriteTimeout（写超时时间），在以下会有一些案例。</p>
-<h1>About streaming</h1>
-<p>非常烦人的是，无法从ServeHTTP访问底层net.Conn，因此打算流式传输响应的服务器被迫取消WriteTimeout的设置（这也可能是默认情况下它们为0的原因）。这是因为没有net.Conn访问，就无法在每次Write之前调用SetWriteDeadline来实现适当的空闲（不是绝对）超时。</p>
+<h1 id="About-streaming"><a href="#About-streaming" class="headerlink" title="About streaming"></a>About streaming</h1><p>非常烦人的是，无法从ServeHTTP访问底层net.Conn，因此打算流式传输响应的服务器被迫取消WriteTimeout的设置（这也可能是默认情况下它们为0的原因）。这是因为没有net.Conn访问，就无法在每次Write之前调用SetWriteDeadline来实现适当的空闲（不是绝对）超时。</p>
 <p>同样，也没有办法取消一个被阻塞的ResponseWriter。由于无法确认ResponseWriter.Close支持并发写操作。因此，也没有办法使用计时器手动构建超时。</p>
 <p>这意味着流媒体服务器面对一个低速客户端时，将无法有效保障自身的效率、稳定</p>
 <p>我提交了<a href="https://github.com/golang/go/issues/16100" target="_blank" rel="noopener">一个问题和一些建议</a>，期待反馈。</p>
 <blockquote>
 <p>译者注：: 原文作者此处的说法有问题，其实通过Hijack是可以获取到net.Conn的。</p>
 </blockquote>
-<p><img data-src="/images/go-net-http-timeout-sequence-diagram/Hijack%E8%8E%B7%E5%8F%96conn.png" alt></p>
-<h1>Client Timeouts</h1>
-<p><img data-src="/images/go-net-http-timeout-sequence-diagram/%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B6%85%E6%97%B6.png" alt></p>
+<p><img data-src="/images/go-net-http-timeout-sequence-diagram/Hijack%E8%8E%B7%E5%8F%96conn.png"></p>
+<h1 id="Client-Timeouts"><a href="#Client-Timeouts" class="headerlink" title="Client Timeouts"></a>Client Timeouts</h1><p><img data-src="/images/go-net-http-timeout-sequence-diagram/%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B6%85%E6%97%B6.png"></p>
 <p>客户端超时，可以很简单，也可以很复杂，取决于你怎么用。但同样重要的是：要防止资源泄漏和阻塞。</p>
 <p>最简单的使用超时的方式是<a href="https://golang.org/pkg/net/http/#Client" target="_blank" rel="noopener">http.Client</a>。它涵盖整个交互过程，从发起连接(如果未重用连接)到接收响应报文结束。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">c := &amp;http.Client&#123;</span><br><span class="line">    Timeout: 15 * time.Second,</span><br><span class="line">&#125;</span><br><span class="line">resp, err := c.Get(&quot;https://jiankunking.com&quot;)</span><br></pre></td></tr></table></figure>
+
 <p>与服务端情况类似，程序包级别的功能（例如http.Get）可以使用<a href="https://golang.org/pkg/net/http/#DefaultClient" target="_blank" rel="noopener">没有超时的客户端</a>，因此在开放的Internet上使用非常危险。</p>
 <p>还有其它一些方法，可以让你进行更精细的超时控制：</p>
 <ul>
 <li>net.Dialer.Timeout 限制创建一个TCP连接使用的时间（如果需要一个新的链接）</li>
 <li>http.Transport.TLSHandshakeTimeout 限制TLS握手使用的时间</li>
 <li>http.Transport.ResponseHeaderTimeout 限制读取响应报文头使用的时间</li>
-<li>http.Transport.ExpectContinueTimeout 限制客户端在发送一个包含：100-continue的http报文头后，等待收到一个go-ahead响应报文所用的时间。<a href="https://github.com/golang/go/issues/14391" target="_blank" rel="noopener">在1.6中，此设置对HTTP/2无效</a>。（<a href="https://github.com/golang/go/commit/406752b640fcc56a9287b8454564cffe2f0021c1#diff-6951e7593bfb1e773c9121df44df1c36R179" target="_blank" rel="noopener">在1.6.2中提供了一个特定的封装DefaultTransport</a>）</li>
+<li>http.Transport.ExpectContinueTimeout 限制客户端在发送一个包含：100-continue的http报文头后，等待收到一个go-ahead响应报文所用的时间。<a href="https://github.com/golang/go/issues/14391" target="_blank" rel="noopener">在1.6中，此设置对HTTP&#x2F;2无效</a>。（<a href="https://github.com/golang/go/commit/406752b640fcc56a9287b8454564cffe2f0021c1#diff-6951e7593bfb1e773c9121df44df1c36R179" target="_blank" rel="noopener">在1.6.2中提供了一个特定的封装DefaultTransport</a>）</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">c := &amp;http.Client&#123;</span><br><span class="line">    Transport: &amp;http.Transport&#123;</span><br><span class="line">        Dial: (&amp;net.Dialer&#123;</span><br><span class="line">                Timeout:   30 * time.Second,</span><br><span class="line">                KeepAlive: 30 * time.Second,</span><br><span class="line">        &#125;).Dial,</span><br><span class="line">        TLSHandshakeTimeout:   10 * time.Second,</span><br><span class="line">        ResponseHeaderTimeout: 10 * time.Second,</span><br><span class="line">        ExpectContinueTimeout: 1 * time.Second,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>据我了解，尚没有限制发送请求使用时间的机制。目前的解决方案是，在客户端方法返回后，通过time.Timer来个手工控制读取请求信息的时间（参见下面的“如何取消请求”）。</p>
 <p>最后，在新的1.7版本中，提供了http.Transport.IdleConnTimeout。它用于控制一个闲置连接在连接池中的保留时间，而不考虑一个客户端请求被阻塞在哪个阶段。</p>
 <p>请注意，客户端将使用默认的重定向机制。由于http.Transport是一个底层的系统机制，没有重定向概念，因此http.Client.Timeout涵盖了用于重定向花费的时间，而更精细的超时控，可以根据请求的不同，进行定制。</p>
-<h1>Cancel and Context</h1>
-<p>net/http提供了两种方式取消一个client的请求: Request.Cancel以及Go 1.7新加的Context。</p>
+<h1 id="Cancel-and-Context"><a href="#Cancel-and-Context" class="headerlink" title="Cancel and Context"></a>Cancel and Context</h1><p>net&#x2F;http提供了两种方式取消一个client的请求: Request.Cancel以及Go 1.7新加的Context。</p>
 <p>Request.Cancel是一个可选channel。在Request.Timeout被触发时，Request.Cancel将被设置并关闭，进而促使请求中断（基本上“撤销”都采用相同的机制，在写此文时，我发现一个1.7中的bug，所有的撤销操作，都会当作一个超时错误返回）。</p>
 <p>我们可以使用Request.Cancel和time.Timer来构建一个细粒度的超时控制，以允许流传输，每次成功从Body读取一些数据时，都将截止日期推迟:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">	&quot;io&quot;</span><br><span class="line">	&quot;io/ioutil&quot;</span><br><span class="line">	&quot;log&quot;</span><br><span class="line">	&quot;net/http&quot;</span><br><span class="line">	&quot;time&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	c := make(chan struct&#123;&#125;)</span><br><span class="line">	timer := time.AfterFunc(5*time.Second, func() &#123;</span><br><span class="line">		close(c)</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">        // Serve 256 bytes every second.</span><br><span class="line">	req, err := http.NewRequest(&quot;GET&quot;, &quot;http://httpbin.org/range/2048?duration=8&amp;chunk_size=256&quot;, nil)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Fatal(err)</span><br><span class="line">	&#125;</span><br><span class="line">	req.Cancel = c</span><br><span class="line"></span><br><span class="line">	log.Println(&quot;Sending request...&quot;)</span><br><span class="line">	resp, err := http.DefaultClient.Do(req)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Fatal(err)</span><br><span class="line">	&#125;</span><br><span class="line">	defer resp.Body.Close()</span><br><span class="line"></span><br><span class="line">	log.Println(&quot;Reading body...&quot;)</span><br><span class="line">	for &#123;</span><br><span class="line">		timer.Reset(2 * time.Second)</span><br><span class="line">                // Try instead: timer.Reset(50 * time.Millisecond)</span><br><span class="line">		_, err = io.CopyN(ioutil.Discard, resp.Body, 256)</span><br><span class="line">		if err == io.EOF &#123;</span><br><span class="line">			break</span><br><span class="line">		&#125; else if err != nil &#123;</span><br><span class="line">			log.Fatal(err)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在上面这个例子中，我们在请求阶段，设置了一个5秒钟的超时。但读取响应报文阶段，我们需要读8次，至少8秒钟的时间。每次读操作，设置2秒钟的超时。采用这样的机制，我们可以无限制的获取流媒体，而不用担心阻塞的风险。如果我们没有在2秒钟内读取到任何数据，io.CopyN将返回错误信息：net/http: request canceled.。</p>
-<p>context包升级了，进入到标准库中。<a href="https://blog.golang.org/context" target="_blank" rel="noopener">关于Contexts，我们有大量需要学习的东西</a>。基于本文的主旨，你首先应该知道的是：Contexts将替代Request.Cancel，不再建议(反对)使用Request.Cancel。</p>
+
+<p>在上面这个例子中，我们在请求阶段，设置了一个5秒钟的超时。但读取响应报文阶段，我们需要读8次，至少8秒钟的时间。每次读操作，设置2秒钟的超时。采用这样的机制，我们可以无限制的获取流媒体，而不用担心阻塞的风险。如果我们没有在2秒钟内读取到任何数据，io.CopyN将返回错误信息：net&#x2F;http: request canceled.。</p>
+<p> context包升级了，进入到标准库中。<a href="https://blog.golang.org/context" target="_blank" rel="noopener">关于Contexts，我们有大量需要学习的东西</a>。基于本文的主旨，你首先应该知道的是：Contexts将替代Request.Cancel，不再建议(反对)使用Request.Cancel。</p>
 <p>为了使用Contexts来撤销一个请求，我们需要创建一个新的Context以及它的基于context.WithCancel的cancel()函数，同时还有创建一个基于Request.WithContext的Request。当我们要撤销一个请求时，我们其实际是通过cancel()函数撤销相应的Context（取代原有的关闭Cancel channel的方式）：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">ctx, cancel := context.WithCancel(context.TODO())</span><br><span class="line">timer := time.AfterFunc(5*time.Second, func() &#123;</span><br><span class="line">	cancel()</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">req, err := http.NewRequest(&quot;GET&quot;, &quot;http://httpbin.org/range/2048?duration=8&amp;chunk_size=256&quot;, nil)</span><br><span class="line">if err != nil &#123;</span><br><span class="line">	log.Fatal(err)</span><br><span class="line">&#125;</span><br><span class="line">req = req.WithContext(ctx)</span><br></pre></td></tr></table></figure>
+
 <p>Context好处还在于如果parent context被取消的时候(在context.WithCancel调用的时候传递进来的)，子context也会取消， 消息会进行传递。</p>
 
     </div>
@@ -466,8 +466,8 @@
       <i class="fa fa-chevron-left"></i> 重构：改善既有代码的设计 笔记
     </a></div>
       <div class="post-nav-item">
-    <a href="/how-to-choose-a-message-queue.html" rel="next" title="该如何选择消息队列？">
-      该如何选择消息队列？ <i class="fa fa-chevron-right"></i>
+    <a href="/how-to-start-learning-open-source-code.html" rel="next" title="学习开源代码该如何入手？">
+      学习开源代码该如何入手？ <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -528,7 +528,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">SetDeadline</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Server Timeouts</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">http.ListenAndServe is doing it wrong</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">About streaming</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">Client Timeouts</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">Cancel and Context</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#SetDeadline"><span class="nav-number">1.</span> <span class="nav-text">SetDeadline</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Server-Timeouts"><span class="nav-number">2.</span> <span class="nav-text">Server Timeouts</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#http-ListenAndServe-is-doing-it-wrong"><span class="nav-number">3.</span> <span class="nav-text">http.ListenAndServe is doing it wrong</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#About-streaming"><span class="nav-number">4.</span> <span class="nav-text">About streaming</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Client-Timeouts"><span class="nav-number">5.</span> <span class="nav-text">Client Timeouts</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Cancel-and-Context"><span class="nav-number">6.</span> <span class="nav-text">Cancel and Context</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -544,7 +544,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">156</span>
+          <span class="site-state-item-count">155</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
