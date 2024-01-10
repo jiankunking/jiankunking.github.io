@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Golang 代码设计及规范">
+<meta name="keywords" content="Go,Design,转载">
+<meta property="og:type" content="website">
+<meta property="og:title" content="[转]Go 设计模式">
+<meta property="og:url" content="https://jiankunking.com/bak/go-solid-design.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="Golang 代码设计及规范">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-04-23T06:31:47.059Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[转]Go 设计模式">
+<meta name="twitter:description" content="Golang 代码设计及规范">
+
+<link rel="canonical" href="https://jiankunking.com/bak/go-solid-design.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : false,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>[转]Go 设计模式 | 衣舞晨风
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121070942-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">衣舞晨风</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">151</span></a>
+
+  </li>
+        <li class="menu-item menu-item-书籍">
+
+    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>书籍</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">215</span></a>
+
+  </li>
+        <li class="menu-item menu-item-友链">
+
+    <a href="/links/" rel="section"><i class="fa fa-external-link-alt fa-fw"></i>友链</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+  
+  
+
+          <div class="content page posts-expand">
+            
+
+    
+    
+    
+    <div class="post-block" lang="zh-CN">
+      <header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">[转]Go 设计模式
+</h1>
+
+<div class="post-meta">
+  
+
+</div>
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+          <blockquote>
+<p>Golang 代码设计及规范</p>
+</blockquote>
+<a id="more"></a>
+<h1>代码评审</h1>
+<p>为什么要代码评审？ 如果代码评审是要捕捉糟糕的代码，那么你如何知道你审查的代码是好的还是糟糕的？</p>
+<p>我在找一些客观的方式来谈论代码的好坏属性。</p>
+<h1>糟糕的代码</h1>
+<p>你可能会在代码审查中遇到以下这些糟糕的代码：</p>
+<ul>
+<li>Rigid - 代码是否死板？它是否有强类型或参数以至于修改起来很困难？</li>
+<li>Fragile - 代码是否脆弱？对代码做轻微的改变是否就会引起程序极大的破坏？</li>
+<li>Immobile - 代码是否很难重构？</li>
+<li>Complex - 代码是否过于复杂，是否过度设计？</li>
+<li>Verbose - 代码是否过于冗长而使用起来很费劲？当查阅代码是否很难看出来代码在做什么？</li>
+</ul>
+<p>当你做代码审查的时候是否会很高兴看到这些词语？</p>
+<p>当然不会。</p>
+<h1>好的设计</h1>
+<p>如果有一些描述优秀的设计属性的方式就更好了，不仅仅是糟糕的设计，是否能在客观条件下做？</p>
+<h2 id="SOLID">SOLID</h2>
+<p>在2002年，Robert Martin的《Agile Software Development, Principles, Patterns, and Practices》书中提到了五个可重用软件设计的原则 - “SOLID”（英文首字母缩略字）:</p>
+<ul>
+<li>Single Responsibility Principle - 单一功能原则</li>
+<li>Open/Closed Principle - 开闭原则</li>
+<li>Liskov Substitution Principle - 里氏替换原则</li>
+<li>Interface Segregation Principle - 接口隔离原则</li>
+<li>Dependency Inversion Principle - 依赖反转原则</li>
+</ul>
+<p>这本书有点点过时，使用的语言也是十多年前的。但是，或许SOLID原则的某些方面可以给我们一个有关如何谈论一个精心设计的Go语言程序的线索。</p>
+<h3 id="Single-Responsibility-Principle">Single Responsibility Principle</h3>
+<blockquote>
+<p>A class should have one, and only one, reason to change. –Robert C Martin</p>
+</blockquote>
+<p>现在Go语言显然没有classses - 相反，我们有更为强大的组合的概念 - 但是如果你可以看到过去class的使用，我认为这里有其价值。</p>
+<p>为什么一段代码应该只有一个原因改变如此重要？当然，和你自己的代码要修改比较起来，发现自己代码所依赖的代码要修改会更令人头疼。而且，当你的代码不得不要修改的时候，它应该对直接的刺激有反应，而不应该是一个间接伤害的受害者。</p>
+<p>所以，代码有单一功能原则从而有最少的原因来改变。</p>
+<h4 id="Coupling-Cohesion-耦合与内聚">Coupling&amp;Cohesion - 耦合与内聚</h4>
+<p>这两个词语描绘了修改一段软件代码是何等的简单或困难。</p>
+<p>Coupling - 耦合是两个东西一起改变 - 一个移动会引发另一个移动。<br>
+Cohesion - 内聚是相关联但又隔离，一种相互吸引的力量。</p>
+<p>在软件方面，内聚是形容代码段自然吸引到另一个的属性。</p>
+<p>要描述Go语言的耦合与内聚，我们可以要谈论一下functions和methods，当讨论单一功能原则时它们很常见，但是我相信它始于Go语言的package模型。</p>
+<h4 id="Pakcage命名">Pakcage命名</h4>
+<p>在Go语言中，所有的代码都在某个package中。好的package设计始于他的命名。package名字不仅描述了它的目的而且还是一个命名空间的前缀。Go语言标准库里有一些好的例子：</p>
+<ul>
+<li>net/http - 提供了http客户端和服务</li>
+<li>os/exec - 执行外部的命令</li>
+<li>encoding/json - 实现了JSON的编码与解码</li>
+</ul>
+<p>在你自己的项目中使用其他pakcage时要用import声明，它会在两个package之间建立一个源码级的耦合。</p>
+<h4 id="糟糕的pakcage命名">糟糕的pakcage命名</h4>
+<p>关注于命名并不是在卖弄。糟糕的命名会失去罗列其目的的机会。</p>
+<p>比如说server、private、common、utils 这些糟糕的命名都很常见。这些package就像是一个混杂的场所，因为他们好多都是没有原因地经常改变。</p>
+<h4 id="Go语言的UNIX哲学">Go语言的UNIX哲学</h4>
+<p>以我的观点，涉及到解耦设计必须要提及Doug Mcllroy的Unix哲学：小巧而锋利的工具的结合解决更大的任务或者通常原创作者并没有预想到的任务。</p>
+<p>我认为Go语言的Package体现了UNIX哲学精神。实际上每个package自身就是一个具有单一原则的变化单元的小型Go语言项目。</p>
+<h3 id="Open-Closed-Principle">Open/Closed Principle</h3>
+<p>Bertrand Meyer曾经写道：</p>
+<blockquote>
+<p>Software entities should be open for extension, but closed for modification. –Bertrand Meyer, Object-Oriented Software Construction</p>
+</blockquote>
+<p>该建议如何应用到现在的编程语言上：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">type A struct &#123;</span><br><span class="line">        year int</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (a A) Greet() &#123; fmt.Println(&quot;Hello GolangUK&quot;, a.year) &#125;</span><br><span class="line"></span><br><span class="line">type B struct &#123;</span><br><span class="line">        A</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (b B) Greet() &#123; fmt.Println(&quot;Welcome to GolangUK&quot;, b.year) &#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">        var a A</span><br><span class="line">        a.year = 2016</span><br><span class="line">        var b B</span><br><span class="line">        b.year = 2016</span><br><span class="line">        a.Greet() // Hello GolangUK 2016</span><br><span class="line">        b.Greet() // Welcome to GolangUK 2016</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>typeA有一个year字段以及Greet方法。 typeB嵌入了A做为字段，从而，使B提供的Greet方法遮蔽了A的，调用时可以看到B的方法覆盖了A。</p>
+<p>但是嵌入不仅仅是对于方法，它还能提供嵌入type的字段访问。如你所见，由于A和B都在同一个package内，B可以访问A的私有year字段就像B已经声明过。</p>
+<p>因此嵌入是一个强大的工具，它允许Go语言type对扩展是开放的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">type Cat struct &#123;</span><br><span class="line">        Name string</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (c Cat) Legs() int &#123; return 4 &#125;</span><br><span class="line"></span><br><span class="line">func (c Cat) PrintLegs() &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type OctoCat struct &#123;</span><br><span class="line">        Cat</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (o OctoCat) Legs() int &#123; return 5 &#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">        var octo OctoCat</span><br><span class="line">        fmt.Println(octo.Legs()) // 5</span><br><span class="line">        octo.PrintLegs()         // I have 4 legs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在上边这个例子中，typeCat有Legs方法来计算它有几条腿。我们嵌入Cat到一个新的typeOctoCat中，并声明Octocats有五条腿。然而，尽管OctoCat定义了自己有五条腿，但是PrintLegs方法被调用时会返回4。</p>
+<p>这是因为PrintLegs在typeCat中定义。它会将Cat做为它的接收者，因此它会使用Cat的Legs方法。Cat并不了解已嵌入的type，因此它的嵌入方法不能被修改。</p>
+<p>由此，我们可以说<font color="DeepPink"><strong>Go语言的types对扩展开放，但是对修改是关闭的。</strong></font></p>
+<p>事实上，Go语言接收者的方法仅仅是带有预先声明形式的参数的function的语法糖而已：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">func (c Cat) PrintLegs() &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func PrintLegs(c Cat) &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>第一个function的接收者就是你传进去的参数，而且由于Go语言不知道重载，所以说OctoCats并不能替换普通的Cats，这就引出了接下来一个原则：</p>
+<h3 id="Liskov-Substitution-Principle">Liskov Substitution Principle</h3>
+<p>该原则由Barbara Liskov提出，大致上,它规定了两种类型如果调用者不能区分出他们行为的不同，那么他们是可替代的。</p>
+<p>基于class的编程语言，里氏替换原则通常被解释为一个抽象基类的各种具体子类的规范。但是Go语言没有class或者inheritance（继承），因此就不能以抽象类的层次结构实现替换。</p>
+<h4 id="Interfaces">Interfaces</h4>
+<p>相反，Go语言的interface才有权替换。在Go语言中，type不需要声明他们具体要实现的某个interface，相反的，任何想要实现interface的type仅需提供与interface声明所匹配的方法。</p>
+<p>就Go语言而言，隐式的interface要比显式的更令人满意，这也深刻地影响着他们使用的方式。</p>
+<p><font color="DeepPink"><strong>精心设计的interface更可能是小巧的，流行的做法是一个interface只包含一个方法。逻辑上来讲小巧的interface使实现变得简单，反之就很难做到。</strong></font>这就导致了由常见行为连接的简单实现而组成的package。</p>
+<h4 id="io-Reader">io.Reader</h4>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">type Reader interface &#123;</span><br><span class="line">        // Read reads up to len(buf) bytes into buf.</span><br><span class="line">        Read(buf []byte) (n int, err error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我最喜爱的Go语言interface - io.Reader</p>
+<p>interface io.Reader非常简单，Read读取数据到提供的buffer，并返回调用者读取数据的bytes的数量以及读取期间的任何错误。它看起来简单但是很强大。</p>
+<p>因为io.Reader可以处理任何能转换为bytes流的数据，我们可以在任何事情上构建readers：string常量、byte数组、标准输入、网络数据流、gzip后的tar文件以及通过ssh远程执行的命令的标准输出。</p>
+<p>所有这些实现对于另外一个都是可替换的，因为他们都履行了相同的简单合同。</p>
+<p>因此，里氏替换原则在Go语言的应用，可以用 Jim Weirich 的格言来总结：</p>
+<blockquote>
+<p>Require no more, promise no less. –Jim Weirich</p>
+</blockquote>
+<p>接下来就到了”SOLID”第四个原则。</p>
+<h3 id="Interface-Segregation-Principle">Interface Segregation Principle</h3>
+<blockquote>
+<p>Clients should not be forced to depend on methods they do not use. –Robert C. Martin</p>
+</blockquote>
+<p>在Go语言中，接口隔离原则的应用是指一个方法来完成其工作的孤立行为的过程。举个“栗子”，编写方法来保存一个文档结构到磁盘的任务。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Save writes the contents of doc to the file f.</span><br><span class="line">func Save(f *os.File, doc *Document) error</span><br></pre></td></tr></table></figure>
+<p>我可以这样定义这个Save方法，使用*os.File做为保存Document的文件。但是这样做会有一些问题。</p>
+<p>Save方法排除了保存数据到网络位置的选项。假如过后要加入网络储存的需求，那么该方法就需要修改也就意味着要影响到所有使用该方法的调用者。</p>
+<p>因为Save直接地操作磁盘上的文件，测试起来很不方便。要验证其操作，测试不得不在文件被写入后读取其内容。另外测试必须确保f被写入一个临时的位置而且过后还要删除。</p>
+<p>*os.File还包含了许多跟Save无关的方法，像读取路径以及检查路径是否是软连接。如果Save方法只使用*os.File相关的部分将会非常有用。</p>
+<p>我们如何做呢？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied ReadWriterCloser.</span><br><span class="line">func Save(rwc io.ReadWriteCloser, doc *Document) error</span><br></pre></td></tr></table></figure>
+<p>使用io.ReadWriteCloser来应用接口隔离原则，这样就重新定义了Save方法使用一个interface来描述更为通用的类型。</p>
+<p>随着修改，任何实现了io.ReadWriteCloser接口的type都可以代替之前的*os.File。这使得Save不仅扩展了它的应用范围同时也给Save的调用者说明了type *os.File哪些方法是操作相关的。</p>
+<p>做为Save的作者，我没有了在*os.File上调用无关的方法选项了，因为他们都被隐藏于io.ReadWriteCloser接口。我们可以进一步地应用接口隔离原则。</p>
+<p>首先，Save方法不太可能会保持单一功能原则，因为它要读取的文件内容应该是另外一段代码的责任。因此我们可以缩小接口范围，只传入writing和closing。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied WriteCloser.</span><br><span class="line">func Save(wc io.WriteCloser, doc *Document) error</span><br></pre></td></tr></table></figure>
+<p>其次，通过向Save提供一种机制来关闭它的数据流，会导致另外一个问题：wc会在什么情况下关闭。Save可能会无条件的调用Close或在成功的情况下调用Close。</p>
+<p>如果它想要在写入document之后再写入额外的数据时会引起Save的调用者一个问题。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">type NopCloser struct &#123;</span><br><span class="line">        io.Writer</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// Close has no effect on the underlying writer.</span><br><span class="line">func (c *NopCloser) Close() error &#123; return nil &#125;</span><br></pre></td></tr></table></figure>
+<p>一个原始解决方案回事定义一个新的type，在其内嵌入io.Writer以及重写Close方法来阻止Save方法关闭底层数据流。</p>
+<p>但是这样可能会违反里氏替换原则，如果NopCloser并没有关闭任何东西。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied Writer.</span><br><span class="line">func Save(w io.Writer, doc *Document) error</span><br></pre></td></tr></table></figure>
+<p>一个更好的解决办法是重新定义Save只传入io.Writer，剥离它的所有责任除了写入数据到数据流。</p>
+<p>通过对Save方法应用接口隔离原则，同时得到了最具体以及最通用的需求函数。我们现在可以使用Save方法来保存数据到任何实现了io.Writer的地方。</p>
+<blockquote>
+<p><font color="DeepPink"><strong>A great rule of thumb for Go is accept interfaces, return structs.</strong></font> –Jack Lindamood</p>
+</blockquote>
+<h3 id="Dependency-Inversion-Principle">Dependency Inversion Principle</h3>
+<blockquote>
+<p>High-level modules should not depend on low-level modules. Both should depend on abstractions. Abstractions should not depend on details. Details should depend on abstractions. –Robert C. Martin</p>
+</blockquote>
+<p>对于Go语言来讲，依赖反转意味着什么呢?</p>
+<p>如果你应用以上所有的原则，代码已经被分解成离散的有明确责任和目的的package，你的代码应该描述了它的依赖interface以及这些interface应该只描述他们需要的功能行为。换句话说就是他们不会再过多的改变。</p>
+<p>因此，我认为Martin所讲的在Go语言的应用是context，即你import graph（译注：后文用“导入图”代替）的结构。</p>
+<p>在Go语言中，你的导入图必须是非循环。不遵守此非循环的需求会导致编译错误，但是更为严重的是它代表了一系列的设计错误。</p>
+<p>所有条件都相同的情况下精心设计的导入图应该是广泛的以及相对平坦的，而不是又高又窄。如果你有一个package的函数在没有其他package的情况下就无法操作，也许这就表明了代码没有考虑pakcage的边界。</p>
+<p>依赖反转原则鼓励你尽可能地像导入图一样在main package或者最高层级的处理程序内对具体细节负责，让低层级代码来处理抽象的接口。</p>
+<h2 id="“SOLID”-Go语言设计">“SOLID” Go语言设计</h2>
+<p>回顾一下，当应用到Go语言设计中，每个“SOLID”原则都是强有力的声明，但是加在一起他们有一个中心主题。</p>
+<ul>
+<li>单一功能原则鼓励你在package中构建functions、types以及方法表现出自然的凝聚力。types属于彼此，functions为单一目的服务。</li>
+<li>开闭原则鼓励你使用嵌入将简单的type组合成更为复杂的。</li>
+<li><font color="DeepPink"><strong>里氏替换原则鼓励你在package之间表达依赖关系时用interface，而非具体类型。</strong></font>通过定义小巧的interface，我们可以更有信心地切实满足其合约。</li>
+<li>接口隔离原则鼓励你仅取决于所需行为来定义函数和方法。<font color="DeepPink"><strong>如果你的函数仅仅需要有一个方法的interface做为参数，那么它很有可能只有一个责任。</strong></font></li>
+<li>依赖反转原则鼓励你在编译时将package所依赖的东西移除 - 在Go语言中我们可以看到这样做使得运行时用到的某个特定的package的import声明的数量减少。</li>
+</ul>
+<p>如果总结这个演讲（译注：该篇文章取自Dave大神在Golang UK Conference 2016的演讲文字内容，文章结尾处有YouTube链接）它可能会是： &gt; interfaces let you apply the SOLID principles to Go programs</p>
+<p>因为interface描绘了他们的pakcage的规定，而不是如何规定的。换个说法就是“解耦”，这确实是我们的目标，因为解耦的软件修改起来更容易。</p>
+<p>就像Sandi Metz提到的：</p>
+<blockquote>
+<p>Design is the art of arranging code that needs to work today, and to be easy to change forever. –Sandi Metz</p>
+</blockquote>
+<p>因为如果Go语言想要成为公司长期投资的编程语言，Go程序的维护，更容易的变更将是他们决定的关键因素。</p>
+<h1>结尾</h1>
+<p>Go语言程序员应当讨论更多的是设计而非框架。我们应当不惜一切代价地关注重用而非性能。</p>
+<p>我想要看到是今天的人们谈论关于如何使用编程语言，无论是设计解决方案还是解决实际问题的选择和局限性。</p>
+<p>我想要听到的是人们谈论如何通过精心设计、解耦、重用以及适应变化的方式来设计Go语言程序。</p>
+<h1>…还有一点</h1>
+<p>我们需要告诉世界优秀的软件该如何编写。告诉他们使用Go语言如何编写优秀的、可组合的及易于变化的软件。</p>
+<p>原文链接：<a href="http://dave.cheney.net/2016/08/20/solid-go-design" target="_blank" rel="noopener">http://dave.cheney.net/2016/08/20/solid-go-design</a></p>
+<blockquote>
+<p>本文转载自：<br>
+<a href="https://blog.gokit.info/post/go-solid-design/" target="_blank" rel="noopener">https://blog.gokit.info/post/go-solid-design/</a></p>
+</blockquote>
+
+      </div>
+      
+      
+      
+    </div>
+    
+
+    
+    
+    
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">代码评审</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">糟糕的代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">好的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#SOLID"><span class="nav-number">3.1.</span> <span class="nav-text">SOLID</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Single-Responsibility-Principle"><span class="nav-number">3.1.1.</span> <span class="nav-text">Single Responsibility Principle</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Coupling-Cohesion-耦合与内聚"><span class="nav-number">3.1.1.1.</span> <span class="nav-text">Coupling&amp;Cohesion - 耦合与内聚</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Pakcage命名"><span class="nav-number">3.1.1.2.</span> <span class="nav-text">Pakcage命名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#糟糕的pakcage命名"><span class="nav-number">3.1.1.3.</span> <span class="nav-text">糟糕的pakcage命名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Go语言的UNIX哲学"><span class="nav-number">3.1.1.4.</span> <span class="nav-text">Go语言的UNIX哲学</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Open-Closed-Principle"><span class="nav-number">3.1.2.</span> <span class="nav-text">Open/Closed Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Liskov-Substitution-Principle"><span class="nav-number">3.1.3.</span> <span class="nav-text">Liskov Substitution Principle</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Interfaces"><span class="nav-number">3.1.3.1.</span> <span class="nav-text">Interfaces</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#io-Reader"><span class="nav-number">3.1.3.2.</span> <span class="nav-text">io.Reader</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Interface-Segregation-Principle"><span class="nav-number">3.1.4.</span> <span class="nav-text">Interface Segregation Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dependency-Inversion-Principle"><span class="nav-number">3.1.5.</span> <span class="nav-text">Dependency Inversion Principle</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#“SOLID”-Go语言设计"><span class="nav-number">3.2.</span> <span class="nav-text">“SOLID” Go语言设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">结尾</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">…还有一点</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jiankunking"
+      src="/images/avatar/avatar.png">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">151</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">215</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https://blog.csdn.net/jiankunking" rel="noopener" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">1.2m</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/muse.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
+  </script>
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5e2e6dc5bd7af549261d',
+      clientSecret: 'f37069692932676f0ad9fbfecb5164aee191fe23',
+      repo        : 'blog-comments',
+      owner       : 'jiankunking',
+      admin       : ['jiankunking'],
+      id          : 'c32271aa7b146e77309df219ba71e5be',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

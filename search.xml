@@ -450,9 +450,9 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Network</tag>
         <tag>原创</tag>
         <tag>ElasticSearch</tag>
+        <tag>Network</tag>
         <tag>Disk</tag>
       </tags>
   </entry>
@@ -1330,39 +1330,50 @@
     <title>[转]腾讯万亿级 Elasticsearch 内存效率提升解密</title>
     <url>/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption.html</url>
     <content><![CDATA[<p><strong>大家可以着重看下 FST 部分</strong></p>
-<p>原文地址:<br><a href="https://cloud.tencent.com/developer/article/1636527" target="_blank" rel="noopener">https://cloud.tencent.com/developer/article/1636527</a></p>
+<p><font color="DeepPink"> <strong>FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。</strong> </font></p>
 <a id="more"></a>
-
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/1.png"></p>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/1.png" alt></p>
 <p>Elasticsearch( ES）是一款功能强大的开源分布式实时搜索引擎，在日志分析(主要应用场景）、企业级搜索、时序分析等领域有广泛应用，几乎是各大公司搜索分析引擎的开源首选方案。</p>
 <p>Tencent ES 是内核级深度优化的 ES 分支，持续地进行高可用、高性能、低成本等全方位优化，已支撑的单集群规模达到千级节点、万亿级吞吐。Tencent ES 已在公司内部开源，同时也积极贡献开源社区，截止目前已向社区提交 PR 25+。</p>
 <p>腾讯联合 Elastic 官方在腾讯云上提供了内核增强版 ES 云服务，支撑公司内部云、外部云、专有云达 60PB+ 的数据存储，服务 蘑菇街、知乎、B 站、凤凰网等业内头部客户。</p>
 <p>本文主要介绍 Tencent ES 的主要优化点之一：零拷贝 内存 Off Heap，提升内存使用效率，降低存储成本。最终达到，在读写性能与源生逻辑一致的前提下，堆内存使用率降低 80%，单节点存储量从 5TB 提升至 50TB 的效果。</p>
-<h1 id="问题：日志分析场景数据量大，ES-内存瓶颈导致存储成本较高"><a href="#问题：日志分析场景数据量大，ES-内存瓶颈导致存储成本较高" class="headerlink" title="问题：日志分析场景数据量大，ES 内存瓶颈导致存储成本较高"></a>问题：日志分析场景数据量大，ES 内存瓶颈导致存储成本较高</h1><p>上节提到，日志分析是 ES 的主要应用场景(占比60%），而日志数据的特点显著：</p>
+<h1>问题：日志分析场景数据量大，ES 内存瓶颈导致存储成本较高</h1>
+<p>上节提到，日志分析是 ES 的主要应用场景(占比60%），而日志数据的特点显著：</p>
 <ul>
 <li>数据量大，成本是主要诉求：我们大批线上大客户，数据量在几百 TB 甚至 PB 级，单集群占用几百台机器。如此规模的数据量，带来了较高的成本，甚至有些客户吐槽，日志的存储成本已超越产品自身的成本。</li>
 <li>数据访问冷热特性明显：如下图所示，日志访问近多远少，历史极少访问却占用大量成本。</li>
 </ul>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/2.png"></p>
-<h2 id="分析：成本瓶颈在哪里：堆内存使用率过高"><a href="#分析：成本瓶颈在哪里：堆内存使用率过高" class="headerlink" title="分析：成本瓶颈在哪里：堆内存使用率过高"></a>分析：成本瓶颈在哪里：堆内存使用率过高</h2><p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/3.png"></p>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/2.png" alt></p>
+<h2 id="分析：成本瓶颈在哪里：堆内存使用率过高">分析：成本瓶颈在哪里：堆内存使用率过高</h2>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/3.png" alt></p>
 <p>我们对线上售卖的集群做硬件成本分析后，发现成本主要在磁盘和内存。</p>
 <p>为了降低磁盘成本，我们采取冷热分离、Rollup、备份归档、数据裁剪等多种方式降成本。在冷热分离的集群，我们通过大容量的冷存储机型，来存储历史数据，使得磁盘成本下降 60% 左右。</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/4.png"></p>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/4.png" alt></p>
 <p>问题也随之而来：如上图所示，大容量的冷机型，存在磁盘使用率过低的问题( 40 % 以下），原因是堆内存使用率过高了( 70 % 左右），制约磁盘使用率无法提升。(其中单节点磁盘使用率 40%，约 13TB 左右，这已经是 Tencent ES 优化后的效果，源生只能支持到5 TB 左右）</p>
 <p>所以，为了提升低成本的冷机型磁盘使用率，同时也为了降低内存成本，我们需要降低 ES 的堆内存使用率。</p>
-<h2 id="堆内存使用率为什么会高？"><a href="#堆内存使用率为什么会高？" class="headerlink" title="堆内存使用率为什么会高？"></a>堆内存使用率为什么会高？</h2><p>ES 是通过 JAVA 语言编写的，在介绍如何降低堆内存使用率之前，先了解下 JAVA 的堆内存：</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/5.png"></p>
+<h2 id="堆内存使用率为什么会高？">堆内存使用率为什么会高？</h2>
+<p>ES 是通过 JAVA 语言编写的，在介绍如何降低堆内存使用率之前，先了解下 JAVA 的堆内存：</p>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/5.png" alt></p>
 <ul>
 <li>堆内存就是由 JVM (JAVA虚拟机）管理的内存。建立在堆内存中的对象有生命周期管理机制，由垃圾回收机时自动回收过期对象占用的内存。</li>
 <li>堆外内存是由用户程序管理的内存，堆外内存中的对象过期时，需要由用户代码显示释放。1.运营侧调整装箱策略能否解决问题？了解了 JAVA 堆内存后，我们看，能否通过调整运营策略来提升堆内存容量呢？</li>
-<li>堆内存分配大一点行不行？<br>　超过32GB，指针压缩失效，内存浪费， 50GB堆内存性能与31GB接近且垃圾回收压力大，也影响性能</li>
-<li>多节点部署提高堆内存总量是否可行？<br>　多节点部署，占用机器量更大，用户成本上升<br>　大客户节点数过多(几百个），集群元数据管理瓶颈，可用性下降<br>　反向推动云上用户拆分集群，阻力很大</li>
+<li>堆内存分配大一点行不行？<br>
+　超过32GB，指针压缩失效，内存浪费， 50GB堆内存性能与31GB接近且垃圾回收压力大，也影响性能</li>
+<li>多节点部署提高堆内存总量是否可行？<br>
+　多节点部署，占用机器量更大，用户成本上升<br>
+　大客户节点数过多(几百个），集群元数据管理瓶颈，可用性下降<br>
+　反向推动云上用户拆分集群，阻力很大</li>
 </ul>
 <p>所以，简单的运营侧策略调整无法解决堆内存使用率过高的问题。那么我们就需要确认 ES 的堆内存是被什么数据占用了，能否优化。</p>
-<h3 id="堆内存被什么数据占用了？"><a href="#堆内存被什么数据占用了？" class="headerlink" title="堆内存被什么数据占用了？"></a>堆内存被什么数据占用了？</h3><p>我们对线上集群的堆内存分布情况做统计分析后，发现绝大部分堆内存主要被 FST（ Finite State Transducer ）占用了：</p>
-<p>FST 内存占用量占分堆内存总量的 50% ~ 70%<br>FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。<br>因此，我们的目标就是就是通过内核层的优化，降低 FST 的堆内存占用量。</p>
-<h1 id="方案：降低-FST-堆内存占用量"><a href="#方案：降低-FST-堆内存占用量" class="headerlink" title="方案：降低 FST 堆内存占用量"></a>方案：降低 FST 堆内存占用量</h1><h2 id="什么是-FST-？"><a href="#什么是-FST-？" class="headerlink" title="什么是 FST ？"></a>什么是 FST ？</h2><p>在介绍具体的方案前，先来了解下 FST 到底是什么。</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/6.png"></p>
+<h3 id="堆内存被什么数据占用了？">堆内存被什么数据占用了？</h3>
+<p>我们对线上集群的堆内存分布情况做统计分析后，发现绝大部分堆内存主要被 FST（ Finite State Transducer ）占用了：</p>
+<p>FST 内存占用量占分堆内存总量的 50% ~ 70%<br>
+FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。<br>
+因此，我们的目标就是就是通过内核层的优化，降低 FST 的堆内存占用量。</p>
+<h1>方案：降低 FST 堆内存占用量</h1>
+<h2 id="什么是-FST-？">什么是 FST ？</h2>
+<p>在介绍具体的方案前，先来了解下 FST 到底是什么。</p>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/6.png" alt></p>
 <p>如上图所示，ES 底层存储采用 Lucene（搜索引擎），写入时会根据原始数据的内容，分词，然后生成倒排索引。</p>
 <p>查询时，先通过查询倒排索引找到数据地址（DocID）），再读取原始数据（行存数据、列存数据）。</p>
 <p>但由于 Lucene 会为原始数据中的每个词都生成倒排索引，数据量较大。所以倒排索引对应的倒排表被存放在磁盘上。这样如果每次查询都直接读取磁盘上的倒排表，再查询目标关键词，会有很多次磁盘 IO，严重影响查询性能。</p>
@@ -1376,43 +1387,64 @@
 <li>用户查询时，先通过关键词（Term）查询内存中的 FST ，找到该 Term 对应的 Block 首地址。再读磁盘上的分词表，将该 Block 加载到内存，遍历该 Block ，查找到目标 Term 对应的DocID。再按照一定的排序规则，生成DocID的优先级队列，再按该队列的顺序读取磁盘中的原始数据（行存或列存）。</li>
 </ul>
 <p>由此可知，FST常驻堆内内存，无法被 GC 回收 ， 长期占用 50% ~ 70% 的堆内存 ！</p>
-<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>既然 FST 是常驻堆内内存，导致堆内存使用率过高，那么解决问题的思路有两种：</p>
+<h2 id="解决方案">解决方案</h2>
+<p>既然 FST 是常驻堆内内存，导致堆内存使用率过高，那么解决问题的思路有两种：</p>
 <ul>
 <li>降低 FST 在堆内的内存使用量</li>
 <li>将 FST 从堆内存（OnHeap，有32GB容量限制）移到堆外内存（OffHeap）。因为堆外内存无容量上限，可通过扩充机器内存来提升容量。 （堆外内存容量限制近似为 物理内存 - JAVA堆内存）</li>
 </ul>
 <p>自然也就有了相应方案：</p>
-<h3 id="解决方案一：降低-FST-在堆内的内存使用量"><a href="#解决方案一：降低-FST-在堆内的内存使用量" class="headerlink" title="解决方案一：降低 FST 在堆内的内存使用量"></a>解决方案一：降低 FST 在堆内的内存使用量</h3><p>在 Tencent ES 成立前期，我们采用过这种方案。具体的做法是，将 FST 对应的 Block 大小，从 25 ~ 48，放大一倍至 49 ~ 96 。这样，在 关键词 Term 数相同的情况下，Block 数量降低了一倍，对应的 FST 内存理论上也会下降一倍。</p>
+<h3 id="解决方案一：降低-FST-在堆内的内存使用量">解决方案一：降低 FST 在堆内的内存使用量</h3>
+<p>在 Tencent ES 成立前期，我们采用过这种方案。具体的做法是，将 FST 对应的 Block 大小，从 25 ~ 48，放大一倍至 49 ~ 96 。这样，在 关键词 Term 数相同的情况下，Block 数量降低了一倍，对应的 FST 内存理论上也会下降一倍。</p>
 <ul>
 <li>优点：我们实测发现，这种方案下，FST 的堆内存占用量下降了 40% 左右。</li>
-<li>缺点：<ul>
+<li>缺点：
+<ul>
 <li>由于 Block内的 Term 数变多了，那么每次遍历 Block 查找目标 Term 时，需要从磁盘读取的数据量更大了，因此也带来了明显的查询性能损耗，约 20% 。</li>
 <li>该方案只是让 FST 占用的内存下降了一半，仍无法控制 FST 占用的内存总量。不同场景下，FST 数据量大小差异也很大，在全文检索的字段较多时，仍然存在 FST 内存过高的问题。</li>
 </ul>
 </li>
 </ul>
 <p>由此我们可以看出，简单的降低 FST 的堆内存使用量，并不是一个普适性的方案，需要更为通用、彻底限制住 FST 总大小的方案。</p>
-<h3 id="解决方案二：-将-FST-从堆内存（OnHeap）移到堆外内存（OffHeap）"><a href="#解决方案二：-将-FST-从堆内存（OnHeap）移到堆外内存（OffHeap）" class="headerlink" title="解决方案二： 将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap）"></a>解决方案二： 将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap）</h3><p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/7.png"></p>
+<h3 id="解决方案二：-将-FST-从堆内存（OnHeap）移到堆外内存（OffHeap）">解决方案二： 将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap）</h3>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/7.png" alt></p>
 <p>将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap），几乎可以完全释放 FST 在堆内存占据的使用空间，这也是 JAVA 实践方向上一个普遍使用的方案。对于 JAVA 的堆内存不足，将部分内存移到堆外内存（OffHeap）的问题，ES 社区 和 其他 JAVA 系产品都有相应的解决方案。</p>
-<h4 id="1-ES-社区方案："><a href="#1-ES-社区方案：" class="headerlink" title="1.ES 社区方案："></a>1.<a href="https://jiankunking.com/significantly-decrease-your-elasticsearch-heap-memory-usage.html">ES 社区方案</a>：</h4><p>该方案是将 FST 从堆内存中剔除， 直接交由 MMAP 管理。FST 在磁盘上也是有对应的持久化文件的，Lucene 的 .tip 文件，该方案每次查询时直接通过 MMap 读取 .tip 文件，通过文件系统缓存 FST 数据。</p>
-<p>优点：这种方实现简单，代码改动量小<br>缺点：<br>我们早期也试用过这种方式实现，但是由于 MMAP 属于 page cache 可能被系统回收掉。而且 ES 的大查询也会使用大量的系统缓存导致 FST 占用的内存被冲掉，瞬间产生较多的读盘操作，从而带来性能的 N 倍损耗，容易产生查询毛刺。特别是在 SATA 盘上，严重时查询时延有 10 倍的毛刺。<br><a href="https://jiankunking.com/significantly-decrease-your-elasticsearch-heap-memory-usage.html">Lucene 8.x 、ES 7.x 后才支持该功能，存量的 6.x 用户无法使用</a>。</p>
-<h4 id="2-HBase-方案"><a href="#2-HBase-方案" class="headerlink" title="2.HBase 方案"></a>2.HBase 方案</h4><p>HBase的方案是，在堆外搭建一个Cache，将其一部分堆内存（Bucket Cache，Data Block 缓存）移到堆外，释放堆内内存。</p>
-<p>优点：数据缓存放在堆外，释放大量堆内内存<br>缺点：<br>淘汰策略完全依赖 LRU 策略<br>只是把数据缓存放置在堆外，索引的缓存还在堆内</p>
-<h4 id="3-Tencent-ES-方案"><a href="#3-Tencent-ES-方案" class="headerlink" title="3.Tencent ES 方案"></a>3.Tencent ES 方案</h4><p>我们的方案总体上接近HBase的方案，相比之下：</p>
-<p>优点：<br>相比于 ES 社区方案，我们堆外的 Cache 保证 FST 的内存空间不受系统影响。<br>相比于 HBase 方案，我们实现了更精准的数据淘汰策略，提高了内存使用率。也通过多级 Cache 解决性能问题，所以我们敢于把索引放置在堆外。</p>
-<h2 id="实现：全链路-0-拷贝-FST-OffHeap-Cache"><a href="#实现：全链路-0-拷贝-FST-OffHeap-Cache" class="headerlink" title="实现：全链路 0 拷贝 FST OffHeap Cache"></a>实现：全链路 0 拷贝 FST OffHeap Cache</h2><p>下面通过将由浅入深地向大家介绍我们实现 FST OffHeap 的过程，及其中碰见的问题和解决方案。</p>
+<h4 id="1-ES-社区方案：">1.<a href="https://jiankunking.com/significantly-decrease-your-elasticsearch-heap-memory-usage.html">ES 社区方案</a>：</h4>
+<p>该方案是将 FST 从堆内存中剔除， 直接交由 MMAP 管理。FST 在磁盘上也是有对应的持久化文件的，Lucene 的 .tip 文件，该方案每次查询时直接通过 MMap 读取 .tip 文件，通过文件系统缓存 FST 数据。</p>
+<p>优点：这种方实现简单，代码改动量小<br>
+缺点：<br>
+我们早期也试用过这种方式实现，但是由于 MMAP 属于 page cache 可能被系统回收掉。而且 ES 的大查询也会使用大量的系统缓存导致 FST 占用的内存被冲掉，瞬间产生较多的读盘操作，从而带来性能的 N 倍损耗，容易产生查询毛刺。特别是在 SATA 盘上，严重时查询时延有 10 倍的毛刺。<br>
+<a href="https://jiankunking.com/significantly-decrease-your-elasticsearch-heap-memory-usage.html">Lucene 8.x 、ES 7.x 后才支持该功能，存量的 6.x 用户无法使用</a>。</p>
+<h4 id="2-HBase-方案">2.HBase 方案</h4>
+<p>HBase的方案是，在堆外搭建一个Cache，将其一部分堆内存（Bucket Cache，Data Block 缓存）移到堆外，释放堆内内存。</p>
+<p>优点：数据缓存放在堆外，释放大量堆内内存<br>
+缺点：<br>
+淘汰策略完全依赖 LRU 策略<br>
+只是把数据缓存放置在堆外，索引的缓存还在堆内</p>
+<h4 id="3-Tencent-ES-方案">3.Tencent ES 方案</h4>
+<p>我们的方案总体上接近HBase的方案，相比之下：</p>
+<p>优点：<br>
+相比于 ES 社区方案，我们堆外的 Cache 保证 FST 的内存空间不受系统影响。<br>
+相比于 HBase 方案，我们实现了更精准的数据淘汰策略，提高了内存使用率。也通过多级 Cache 解决性能问题，所以我们敢于把索引放置在堆外。</p>
+<h2 id="实现：全链路-0-拷贝-FST-OffHeap-Cache">实现：全链路 0 拷贝 FST OffHeap Cache</h2>
+<p>下面通过将由浅入深地向大家介绍我们实现 FST OffHeap 的过程，及其中碰见的问题和解决方案。</p>
 <p>总体架构</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/8.png"></p>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/8.png" alt></p>
 <p>在实现 OffHeap 方案的初期，我们的架构如上图所示。</p>
 <p>先来看下源生逻辑是怎样访问 FST 的：</p>
 <ul>
-<li><p>数据写入：ES 的一次 Refresh &#x2F; Merge 动作，会生成一个新的 Lucene Segment，相应的在磁盘上生成该 Segment 对应的各种数据文件。其中 .tip 文件里面存储的就是该 Segment 各个字段的 FST 信息。在生成 .tip 文件后，Lucene 也会将每个字段（ Field ）的 FST 数据解析后，拷贝至该 Field 在 OnHeap 内存中的对象里，作为一个成员变量永驻内存，直到该 Segment 被删除 （ Index被删除、Segment Merge 时 ）。<br>数据查询：查询时，直接访问 OnHeap 的 FST 。<br>再来看下优化后的 Tencent ES 是怎样访问 FST 的：</p>
+<li>
+<p>数据写入：ES 的一次 Refresh / Merge 动作，会生成一个新的 Lucene Segment，相应的在磁盘上生成该 Segment 对应的各种数据文件。其中 .tip 文件里面存储的就是该 Segment 各个字段的 FST 信息。在生成 .tip 文件后，Lucene 也会将每个字段（ Field ）的 FST 数据解析后，拷贝至该 Field 在 OnHeap 内存中的对象里，作为一个成员变量永驻内存，直到该 Segment 被删除 （ Index被删除、Segment Merge 时 ）。<br>
+数据查询：查询时，直接访问 OnHeap 的 FST 。<br>
+再来看下优化后的 Tencent ES 是怎样访问 FST 的：</p>
 </li>
-<li><p>数据写入： 在 OffHeap 内存放置一个 LRU Cache，在生成新的 Segment 时，不再将 .tip 中的 FST 数据拷贝至 OffHeap LRU Cache。将其对应的 Key 放置在 OnHeap 的 Field 中，不再将 FST 拷贝至 OnHeap 的 Field 中。这样就把 FST 从 OnHeap 移到了 OffHeap。<br>数据查询：查询时，通过 OnHeap Field 中保存的 Key，去 OffHeap LRU Cache 中查询 FST 数据，将其拷贝至 OnHeap后，做查询操作。若 Cache Miss ，则从磁盘的 .tip 文件中的相应位置读取该 Field 对应的 FST 做查询，同时将其放置到 OffHeap LRU Cache 中。</p>
+<li>
+<p>数据写入： 在 OffHeap 内存放置一个 LRU Cache，在生成新的 Segment 时，不再将 .tip 中的 FST 数据拷贝至 OffHeap LRU Cache。将其对应的 Key 放置在 OnHeap 的 Field 中，不再将 FST 拷贝至 OnHeap 的 Field 中。这样就把 FST 从 OnHeap 移到了 OffHeap。<br>
+数据查询：查询时，通过 OnHeap Field 中保存的 Key，去 OffHeap LRU Cache 中查询 FST 数据，将其拷贝至 OnHeap后，做查询操作。若 Cache Miss ，则从磁盘的 .tip 文件中的相应位置读取该 Field 对应的 FST 做查询，同时将其放置到 OffHeap LRU Cache 中。</p>
 </li>
 </ul>
 <p>将两种方案做个对比，如下表所示：</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/9.png"></p>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/9.png" alt></p>
 <p>那么可以总结出 Tencent ES 优化后的 FST 访问逻辑的优势和劣势：</p>
 <ul>
 <li>优势：在 OnHeap 我们用 100B 左右的 Key 置换 MB 级别的 FST，大大降低的内存占用量，使得单节点最大支持的磁盘数据量有了 5 倍以上的提升。</li>
@@ -1420,16 +1452,20 @@
 </ul>
 <p>所以，我们要对 OffHeap LRU Cache 的读写路径做优化，减少 Copy 次数，提升读写性能。</p>
 <p>具体的实现方案是全链路零拷贝 OffHeap FST 访问逻辑。</p>
-<h3 id="全链路零拷贝-OffHeap-FST-访问逻辑"><a href="#全链路零拷贝-OffHeap-FST-访问逻辑" class="headerlink" title="全链路零拷贝 OffHeap FST 访问逻辑"></a>全链路零拷贝 OffHeap FST 访问逻辑</h3><p>ES 源生逻辑访问 FST 只支持堆内的操作，怎样做到让它能直接访问堆外的数据呢？</p>
-<p>为此，我们做了两方面优化：<br><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/10.png"></p>
+<h3 id="全链路零拷贝-OffHeap-FST-访问逻辑">全链路零拷贝 OffHeap FST 访问逻辑</h3>
+<p>ES 源生逻辑访问 FST 只支持堆内的操作，怎样做到让它能直接访问堆外的数据呢？</p>
+<p>为此，我们做了两方面优化：<br>
+<img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/10.png" alt></p>
 <ul>
 <li>OffHeap LRU Cache： 改造读数据逻辑，Cache 只返回数据地址，封装为一个 Buffer，堆内只存数据地址，这样就把 FST 的访问从先拷贝至 OnHeap 再访问优化为直读 OffHeap 内存。</li>
 <li>ES：重构 FST 读写逻辑，实现 FST 访问直读 OffHeap 内存：</li>
 <li>FST 抽象为一个 FST Buffer，对外提供 FST 形式的各种访问接口。内部实现按 FST 的数据结构读取 OffHeap Buffer的逻辑，作为访问 OffHeap FST 的代理。</li>
 <li>将 ES 访问 FST 的所有链路全部改造为 FST Buffer 接口的形式，优化 FST 的读写路径如下所示：</li>
 </ul>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/11.png"></p>
+<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/11.png" alt></p>
 <p>剩余部分略</p>
+<h1>原文地址</h1>
+<p><a href="https://cloud.tencent.com/developer/article/1636527" target="_blank" rel="noopener">https://cloud.tencent.com/developer/article/1636527</a></p>
 ]]></content>
       <tags>
         <tag>Performance</tag>
@@ -1640,9 +1676,9 @@
         <category>网关</category>
       </categories>
       <tags>
+        <tag>权限</tag>
         <tag>网关</tag>
         <tag>路由</tag>
-        <tag>权限</tag>
         <tag>Gin</tag>
         <tag>Golang</tag>
         <tag>ReverseProxy</tag>
@@ -1787,8 +1823,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
       </tags>
@@ -1886,8 +1922,8 @@
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
       </tags>
@@ -2808,9 +2844,9 @@
       </categories>
       <tags>
         <tag>ElasticSearch</tag>
-        <tag>翻译</tag>
         <tag>Plugin</tag>
         <tag>Docker</tag>
+        <tag>翻译</tag>
       </tags>
   </entry>
   <entry>
@@ -4045,21 +4081,6 @@
       </tags>
   </entry>
   <entry>
-    <title>杂书推荐</title>
-    <url>/recommended-leisure-books.html</url>
-    <content><![CDATA[<p>对个人影响比较大的几本书。</p>
-<a id="more"></a>
-
-<p>1、<a href="https://jiankunking.com/status-anxiety-notes.html">《身份的焦虑》–阿兰·德波顿</a><br>2、《工作漂流》–稻泉连</p>
-]]></content>
-      <categories>
-        <category>读书</category>
-      </categories>
-      <tags>
-        <tag>读书</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>[转]7.7 版本中的新改进：显著降低 Elasticsearch 堆内存使用量</title>
     <url>/significantly-decrease-your-elasticsearch-heap-memory-usage.html</url>
     <content><![CDATA[<blockquote>
@@ -4663,9 +4684,9 @@
         <tag>Performance</tag>
         <tag>原创</tag>
         <tag>ElasticSearch</tag>
+        <tag>翻译</tag>
         <tag>Cluster</tag>
         <tag>Tuning</tag>
-        <tag>翻译</tag>
       </tags>
   </entry>
   <entry>
@@ -5624,9 +5645,9 @@
         <tag>原创</tag>
         <tag>翻译</tag>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
         <tag>Volatile</tag>
       </tags>
   </entry>
@@ -5659,9 +5680,9 @@
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
         <tag>ReentrantLock</tag>
       </tags>
   </entry>
@@ -6645,10 +6666,10 @@
         <tag>Performance</tag>
         <tag>原创</tag>
         <tag>ElasticSearch</tag>
+        <tag>翻译</tag>
         <tag>Cluster</tag>
         <tag>Size</tag>
         <tag>Tuning</tag>
-        <tag>翻译</tag>
       </tags>
   </entry>
   <entry>
@@ -6689,8 +6710,8 @@
         <category>Network</category>
       </categories>
       <tags>
-        <tag>Network</tag>
         <tag>原创</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -6814,8 +6835,8 @@
       </categories>
       <tags>
         <tag>读书笔记</tag>
-        <tag>Network</tag>
         <tag>原创</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -9279,8 +9300,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>Microservice</tag>
       </tags>
   </entry>
@@ -9546,8 +9567,8 @@ use one vs other -->
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>OAuth</tag>
         <tag>Login</tag>
       </tags>
@@ -9945,81 +9966,6 @@ use one vs other -->
         <tag>GC</tag>
         <tag>JVM</tag>
         <tag>ZGC</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>[转]如何用Linux命令行管理网络：11个你必须知道的命令</title>
-    <url>/how-to-work-with-network-from-linux-terminal.html</url>
-    <content><![CDATA[<blockquote>
-<p>如何用Linux命令行管理网络：11个你必须知道的命令</p>
-</blockquote>
-<a id="more"></a>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/network-commands-header.png" alt="网络命令"></p>
-<p>无论你是要下载文件、诊断网络问题、管理网络接口，还是查看网络的统计数据，都有终端命令可以来完成。这篇文章收集了久经考验靠谱的命令，也收集了几个比较新的命令。</p>
-<p>多数命令都可以在图形桌面执行，即使是没什么终端使用经验的<code>Linux</code>用户也会常常执行命令来使用<code>ping</code>或是其它的网络诊断工具。</p>
-<h2 id="curl-wget"><a href="#curl-wget" class="headerlink" title="curl &amp; wget"></a><code>curl</code> &amp; <code>wget</code></h2><p>使用<code>curl</code>或<code>wget</code>命令，不用离开终端就可以下载文件。如你用<code>curl</code>，键入<code>curl -O</code>后面跟一个文件路径。<code>wget</code>则不需要任何选项。下载的文件在当前目录。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -O website.com/file</span><br><span class="line">wget website.com/file</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/curl.png" alt="curl"></p>
-<h2 id="ping"><a href="#ping" class="headerlink" title="ping"></a><code>ping</code></h2><p><code>ping</code>发送<code>ECHO_REQUEST</code>包到你指定的地址。这样你可以很方便确认你的电脑和<code>Internet</code>或是一个指定的<code>IP</code>地址是不是通的。使用<code>-c</code>开关，可以指定发送<code>ECHO_REQUEST</code>包的个数。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ping -c 4 google.com</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/ping.png" alt="ping"></p>
-<h2 id="tracepath-traceroute"><a href="#tracepath-traceroute" class="headerlink" title="tracepath &amp; traceroute"></a><code>tracepath</code> &amp; <code>traceroute</code></h2><p><code>tracepath</code>命令和<code>traceroute</code>命令功能类似，但不需要<code>root</code>权限。并且<code>Ubuntu</code>预装了这个命令，<code>traceroute</code>命令没有预装的。<code>tracepath</code>追踪出到指定的目的地址的网络路径，并给出在路径上的每一跳（<code>hop</code>）。如果你的网络有问题或是慢了，<code>tracepath</code>可以查出网络在哪里断了或是慢了。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tracepath example.com</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/tracepath.png" alt="tracepath"></p>
-<h2 id="mtr"><a href="#mtr" class="headerlink" title="mtr"></a><code>mtr</code></h2><p><code>mtr</code>命令把<code>ping</code>命令和<code>tracepath</code>命令合成了一个。<code>mtr</code>会持续发包，并显示每一跳ping所用的时间。也会显示过程中的任何问题，在下面的示例中，可以看到在第6跳丢了超过20%的包。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mtr howtogeek.com</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/mtr.png" alt="mtr"></p>
-<p>键入<code>q</code>或是<code>CTRL + C</code>来退出命令。</p>
-<h2 id="host"><a href="#host" class="headerlink" title="host"></a><code>host</code></h2><p><code>host</code>命令用来做<code>DNS</code>查询。如果命令参数是域名，命令会输出关联的<code>IP</code>；如果命令参数是<code>IP</code>，命令则输出关联的域名。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">host howtogeek.com</span><br><span class="line">host 208.43.115.82</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/host.png" alt="host"></p>
-<h2 id="whois"><a href="#whois" class="headerlink" title="whois"></a><code>whois</code></h2><p><code>whois</code>命令输出指定站点的<code>whois</code>记录，可以查看到更多如谁注册和持有这个站点这样的信息。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">whois example.com</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/whois.png" alt="whois"></p>
-<h2 id="ifplugstatus"><a href="#ifplugstatus" class="headerlink" title="ifplugstatus"></a><code>ifplugstatus</code></h2><p><code>ifplugstatus</code>命令可以告诉你是否有网线插到在网络接口上。这个命令<code>Ubuntu</code>没有预装，通过下面的命令来安装：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">sudo apt-get install ifplugd</span><br></pre></td></tr></table></figure>
-
-<p>这个命令可以查看所有网络接口的状态，或是指定网络接口的状态：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ifplugstatus</span><br><span class="line">ifplugstatus eth0</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/ifplugstatus.png" alt="ifplugstatus"></p>
-<p>命令输出『<code>Link beat detected</code>』（检测到连接心跳）表示有网线插着，如没有则会输出『<code>unplugged</code>』（未插入）。</p>
-<h2 id="ifconfig"><a href="#ifconfig" class="headerlink" title="ifconfig"></a><code>ifconfig</code></h2><p><code>ifconfig</code>用于输出网络接口配置、调优和Debug的各种选项。可以快捷地查看<code>IP</code>地址和其它网络接口的信息。键入<code>ifconfig</code>查看所有启用的网络接口的状态，包括它们的名字。可以指定网络接口的名字来只显示这一个接口的信息。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ifconfig</span><br><span class="line">ifconfig eth0</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/ifconfig.png" alt="ifconfig"></p>
-<h2 id="ifdown-ifup"><a href="#ifdown-ifup" class="headerlink" title="ifdown &amp; ifup"></a><code>ifdown</code> &amp; <code>ifup</code></h2><p><code>ifdown</code>和<code>ifup</code>命令和运行<code>ifconfig up</code>，<code>ifconfig down</code>的功能一样。给定网络接口的名字可以只禁用或启用这一个接口。需要<code>root</code>权限，所以在<code>Ubuntu</code>上需要使用<code>sudo</code>来运行。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">sudo ifdown eth0</span><br><span class="line">sudo ifup eth0</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/ifdown-ifup.png" alt="ifdown &amp; ifup"></p>
-<p>在<code>Linux</code>桌面系统上运行这2个命令，很可能会输出出错信息。<code>Linux</code>桌面通过使用网络管理器（<code>NetworkManager</code>）来管理你的网络接口。不过在没有安装网络管理器的服务器版上，这2个命令仍然可用。</p>
-<p>如果确实要在命令行上配置网络管理器，用<code>nmcli</code>命令。</p>
-<h2 id="dhclient"><a href="#dhclient" class="headerlink" title="dhclient"></a><code>dhclient</code></h2><p><code>dhclient</code>命令可以释放你的电脑的<code>IP</code>地址并从<code>DHCP</code>服务器上获得一个新的。需要<code>root</code>权限，所以在<code>Ubuntu</code>上需要<code>sudo</code>。无选项运行命令获取新<code>IP</code>，或指定<code>-r</code>开关来释放当前的<code>IP</code>地址。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">sudo dhclient -r</span><br><span class="line">sudo dhclient</span><br></pre></td></tr></table></figure>
-
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/dhclient.png" alt="dhclient"></p>
-<h2 id="netstat"><a href="#netstat" class="headerlink" title="netstat"></a><code>netstat</code></h2><p><code>netstat</code>命令可以显示网络接口的很多统计信息，包括打开的<code>socket</code>和路由表。无选项运行命令显示打开的<code>socket</code>。</p>
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/netstat.png" alt="netstat"></p>
-<p>这条命令还有很多功能。比如，<code>netstat -p</code>命令可以显示打开的<code>socket</code>对应的程序。</p>
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/netstat-p.png" alt="netstat -p"></p>
-<p><code>netstat -s</code>则显示所有端口的详细统计信息。</p>
-<p><img data-src="/images/how-to-work-with-network-from-linux-terminal/netstat-s.png" alt="netstat -s"></p>
-<h2 id="原文"><a href="#原文" class="headerlink" title="原文"></a><code>原文</code></h2><p><a href="https://github.com/oldratlee/translations/blob/master/how-to-work-with-network-from-linux-terminal/README.md" target="_blank" rel="noopener">https://github.com/oldratlee/translations/blob/master/how-to-work-with-network-from-linux-terminal/README.md</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Network</tag>
-        <tag>转载</tag>
-        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -10767,166 +10713,6 @@ use one vs other -->
       </tags>
   </entry>
   <entry>
-    <title>[转]Go 设计模式</title>
-    <url>/go-solid-design.html</url>
-    <content><![CDATA[<blockquote>
-<p>Golang 代码设计及规范</p>
-</blockquote>
-<a id="more"></a>
-
-<h1 id="代码评审"><a href="#代码评审" class="headerlink" title="代码评审"></a>代码评审</h1><p>为什么要代码评审？ 如果代码评审是要捕捉糟糕的代码，那么你如何知道你审查的代码是好的还是糟糕的？</p>
-<p>我在找一些客观的方式来谈论代码的好坏属性。</p>
-<h1 id="糟糕的代码"><a href="#糟糕的代码" class="headerlink" title="糟糕的代码"></a>糟糕的代码</h1><p>你可能会在代码审查中遇到以下这些糟糕的代码：</p>
-<ul>
-<li>Rigid - 代码是否死板？它是否有强类型或参数以至于修改起来很困难？</li>
-<li>Fragile - 代码是否脆弱？对代码做轻微的改变是否就会引起程序极大的破坏？</li>
-<li>Immobile - 代码是否很难重构？</li>
-<li>Complex - 代码是否过于复杂，是否过度设计？</li>
-<li>Verbose - 代码是否过于冗长而使用起来很费劲？当查阅代码是否很难看出来代码在做什么？</li>
-</ul>
-<p>当你做代码审查的时候是否会很高兴看到这些词语？</p>
-<p>当然不会。</p>
-<h1 id="好的设计"><a href="#好的设计" class="headerlink" title="好的设计"></a>好的设计</h1><p>如果有一些描述优秀的设计属性的方式就更好了，不仅仅是糟糕的设计，是否能在客观条件下做？</p>
-<h2 id="SOLID"><a href="#SOLID" class="headerlink" title="SOLID"></a>SOLID</h2><p>在2002年，Robert Martin的《Agile Software Development, Principles, Patterns, and Practices》书中提到了五个可重用软件设计的原则 - “SOLID”（英文首字母缩略字）:</p>
-<ul>
-<li>Single Responsibility Principle - 单一功能原则</li>
-<li>Open&#x2F;Closed Principle - 开闭原则</li>
-<li>Liskov Substitution Principle - 里氏替换原则</li>
-<li>Interface Segregation Principle - 接口隔离原则</li>
-<li>Dependency Inversion Principle - 依赖反转原则</li>
-</ul>
-<p>这本书有点点过时，使用的语言也是十多年前的。但是，或许SOLID原则的某些方面可以给我们一个有关如何谈论一个精心设计的Go语言程序的线索。</p>
-<h3 id="Single-Responsibility-Principle"><a href="#Single-Responsibility-Principle" class="headerlink" title="Single Responsibility Principle"></a>Single Responsibility Principle</h3><blockquote>
-<p>A class should have one, and only one, reason to change. –Robert C Martin</p>
-</blockquote>
-<p>现在Go语言显然没有classses - 相反，我们有更为强大的组合的概念 - 但是如果你可以看到过去class的使用，我认为这里有其价值。</p>
-<p>为什么一段代码应该只有一个原因改变如此重要？当然，和你自己的代码要修改比较起来，发现自己代码所依赖的代码要修改会更令人头疼。而且，当你的代码不得不要修改的时候，它应该对直接的刺激有反应，而不应该是一个间接伤害的受害者。</p>
-<p>所以，代码有单一功能原则从而有最少的原因来改变。</p>
-<h4 id="Coupling-Cohesion-耦合与内聚"><a href="#Coupling-Cohesion-耦合与内聚" class="headerlink" title="Coupling&amp;Cohesion - 耦合与内聚"></a>Coupling&amp;Cohesion - 耦合与内聚</h4><p>这两个词语描绘了修改一段软件代码是何等的简单或困难。</p>
-<p>Coupling - 耦合是两个东西一起改变 - 一个移动会引发另一个移动。<br>Cohesion - 内聚是相关联但又隔离，一种相互吸引的力量。</p>
-<p>在软件方面，内聚是形容代码段自然吸引到另一个的属性。</p>
-<p>要描述Go语言的耦合与内聚，我们可以要谈论一下functions和methods，当讨论单一功能原则时它们很常见，但是我相信它始于Go语言的package模型。</p>
-<h4 id="Pakcage命名"><a href="#Pakcage命名" class="headerlink" title="Pakcage命名"></a>Pakcage命名</h4><p>在Go语言中，所有的代码都在某个package中。好的package设计始于他的命名。package名字不仅描述了它的目的而且还是一个命名空间的前缀。Go语言标准库里有一些好的例子： </p>
-<ul>
-<li>net&#x2F;http - 提供了http客户端和服务 </li>
-<li>os&#x2F;exec - 执行外部的命令 </li>
-<li>encoding&#x2F;json - 实现了JSON的编码与解码</li>
-</ul>
-<p>在你自己的项目中使用其他pakcage时要用import声明，它会在两个package之间建立一个源码级的耦合。</p>
-<h4 id="糟糕的pakcage命名"><a href="#糟糕的pakcage命名" class="headerlink" title="糟糕的pakcage命名"></a>糟糕的pakcage命名</h4><p>关注于命名并不是在卖弄。糟糕的命名会失去罗列其目的的机会。</p>
-<p>比如说server、private、common、utils 这些糟糕的命名都很常见。这些package就像是一个混杂的场所，因为他们好多都是没有原因地经常改变。</p>
-<h4 id="Go语言的UNIX哲学"><a href="#Go语言的UNIX哲学" class="headerlink" title="Go语言的UNIX哲学"></a>Go语言的UNIX哲学</h4><p>以我的观点，涉及到解耦设计必须要提及Doug Mcllroy的Unix哲学：小巧而锋利的工具的结合解决更大的任务或者通常原创作者并没有预想到的任务。</p>
-<p>我认为Go语言的Package体现了UNIX哲学精神。实际上每个package自身就是一个具有单一原则的变化单元的小型Go语言项目。</p>
-<h3 id="Open-Closed-Principle"><a href="#Open-Closed-Principle" class="headerlink" title="Open&#x2F;Closed Principle"></a>Open&#x2F;Closed Principle</h3><p>Bertrand Meyer曾经写道： </p>
-<blockquote>
-<p>Software entities should be open for extension, but closed for modification. –Bertrand Meyer, Object-Oriented Software Construction</p>
-</blockquote>
-<p>该建议如何应用到现在的编程语言上：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">type A struct &#123;</span><br><span class="line">        year int</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (a A) Greet() &#123; fmt.Println(&quot;Hello GolangUK&quot;, a.year) &#125;</span><br><span class="line"></span><br><span class="line">type B struct &#123;</span><br><span class="line">        A</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (b B) Greet() &#123; fmt.Println(&quot;Welcome to GolangUK&quot;, b.year) &#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">        var a A</span><br><span class="line">        a.year = 2016</span><br><span class="line">        var b B</span><br><span class="line">        b.year = 2016</span><br><span class="line">        a.Greet() // Hello GolangUK 2016</span><br><span class="line">        b.Greet() // Welcome to GolangUK 2016</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>typeA有一个year字段以及Greet方法。 typeB嵌入了A做为字段，从而，使B提供的Greet方法遮蔽了A的，调用时可以看到B的方法覆盖了A。</p>
-<p>但是嵌入不仅仅是对于方法，它还能提供嵌入type的字段访问。如你所见，由于A和B都在同一个package内，B可以访问A的私有year字段就像B已经声明过。</p>
-<p>因此嵌入是一个强大的工具，它允许Go语言type对扩展是开放的。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">type Cat struct &#123;</span><br><span class="line">        Name string</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (c Cat) Legs() int &#123; return 4 &#125;</span><br><span class="line"></span><br><span class="line">func (c Cat) PrintLegs() &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type OctoCat struct &#123;</span><br><span class="line">        Cat</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (o OctoCat) Legs() int &#123; return 5 &#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">        var octo OctoCat</span><br><span class="line">        fmt.Println(octo.Legs()) // 5</span><br><span class="line">        octo.PrintLegs()         // I have 4 legs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在上边这个例子中，typeCat有Legs方法来计算它有几条腿。我们嵌入Cat到一个新的typeOctoCat中，并声明Octocats有五条腿。然而，尽管OctoCat定义了自己有五条腿，但是PrintLegs方法被调用时会返回4。</p>
-<p>这是因为PrintLegs在typeCat中定义。它会将Cat做为它的接收者，因此它会使用Cat的Legs方法。Cat并不了解已嵌入的type，因此它的嵌入方法不能被修改。</p>
-<p>由此，我们可以说<font color="DeepPink"><strong>Go语言的types对扩展开放，但是对修改是关闭的。</strong></font></p>
-<p>事实上，Go语言接收者的方法仅仅是带有预先声明形式的参数的function的语法糖而已：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (c Cat) PrintLegs() &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func PrintLegs(c Cat) &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>第一个function的接收者就是你传进去的参数，而且由于Go语言不知道重载，所以说OctoCats并不能替换普通的Cats，这就引出了接下来一个原则：</p>
-<h3 id="Liskov-Substitution-Principle"><a href="#Liskov-Substitution-Principle" class="headerlink" title="Liskov Substitution Principle"></a>Liskov Substitution Principle</h3><p>该原则由Barbara Liskov提出，大致上,它规定了两种类型如果调用者不能区分出他们行为的不同，那么他们是可替代的。</p>
-<p>基于class的编程语言，里氏替换原则通常被解释为一个抽象基类的各种具体子类的规范。但是Go语言没有class或者inheritance（继承），因此就不能以抽象类的层次结构实现替换。</p>
-<h4 id="Interfaces"><a href="#Interfaces" class="headerlink" title="Interfaces"></a>Interfaces</h4><p>相反，Go语言的interface才有权替换。在Go语言中，type不需要声明他们具体要实现的某个interface，相反的，任何想要实现interface的type仅需提供与interface声明所匹配的方法。</p>
-<p>就Go语言而言，隐式的interface要比显式的更令人满意，这也深刻地影响着他们使用的方式。</p>
-<p><font color="DeepPink"><strong>精心设计的interface更可能是小巧的，流行的做法是一个interface只包含一个方法。逻辑上来讲小巧的interface使实现变得简单，反之就很难做到。</strong></font>这就导致了由常见行为连接的简单实现而组成的package。</p>
-<h4 id="io-Reader"><a href="#io-Reader" class="headerlink" title="io.Reader"></a>io.Reader</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">type Reader interface &#123;</span><br><span class="line">        // Read reads up to len(buf) bytes into buf.</span><br><span class="line">        Read(buf []byte) (n int, err error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我最喜爱的Go语言interface - io.Reader</p>
-<p>interface io.Reader非常简单，Read读取数据到提供的buffer，并返回调用者读取数据的bytes的数量以及读取期间的任何错误。它看起来简单但是很强大。</p>
-<p>因为io.Reader可以处理任何能转换为bytes流的数据，我们可以在任何事情上构建readers：string常量、byte数组、标准输入、网络数据流、gzip后的tar文件以及通过ssh远程执行的命令的标准输出。</p>
-<p>所有这些实现对于另外一个都是可替换的，因为他们都履行了相同的简单合同。</p>
-<p>因此，里氏替换原则在Go语言的应用，可以用 Jim Weirich 的格言来总结：</p>
-<blockquote>
-<p>Require no more, promise no less. –Jim Weirich</p>
-</blockquote>
-<p>接下来就到了”SOLID”第四个原则。</p>
-<h3 id="Interface-Segregation-Principle"><a href="#Interface-Segregation-Principle" class="headerlink" title="Interface Segregation Principle"></a>Interface Segregation Principle</h3><blockquote>
-<p>Clients should not be forced to depend on methods they do not use. –Robert C. Martin</p>
-</blockquote>
-<p>在Go语言中，接口隔离原则的应用是指一个方法来完成其工作的孤立行为的过程。举个“栗子”，编写方法来保存一个文档结构到磁盘的任务。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">// Save writes the contents of doc to the file f.</span><br><span class="line">func Save(f *os.File, doc *Document) error</span><br></pre></td></tr></table></figure>
-
-<p>我可以这样定义这个Save方法，使用*os.File做为保存Document的文件。但是这样做会有一些问题。</p>
-<p>Save方法排除了保存数据到网络位置的选项。假如过后要加入网络储存的需求，那么该方法就需要修改也就意味着要影响到所有使用该方法的调用者。</p>
-<p>因为Save直接地操作磁盘上的文件，测试起来很不方便。要验证其操作，测试不得不在文件被写入后读取其内容。另外测试必须确保f被写入一个临时的位置而且过后还要删除。</p>
-<p>*os.File还包含了许多跟Save无关的方法，像读取路径以及检查路径是否是软连接。如果Save方法只使用*os.File相关的部分将会非常有用。</p>
-<p>我们如何做呢？</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied ReadWriterCloser.</span><br><span class="line">func Save(rwc io.ReadWriteCloser, doc *Document) error</span><br></pre></td></tr></table></figure>
-
-<p>使用io.ReadWriteCloser来应用接口隔离原则，这样就重新定义了Save方法使用一个interface来描述更为通用的类型。</p>
-<p>随着修改，任何实现了io.ReadWriteCloser接口的type都可以代替之前的*os.File。这使得Save不仅扩展了它的应用范围同时也给Save的调用者说明了type *os.File哪些方法是操作相关的。</p>
-<p>做为Save的作者，我没有了在*os.File上调用无关的方法选项了，因为他们都被隐藏于io.ReadWriteCloser接口。我们可以进一步地应用接口隔离原则。</p>
-<p>首先，Save方法不太可能会保持单一功能原则，因为它要读取的文件内容应该是另外一段代码的责任。因此我们可以缩小接口范围，只传入writing和closing。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied WriteCloser.</span><br><span class="line">func Save(wc io.WriteCloser, doc *Document) error</span><br></pre></td></tr></table></figure>
-
-<p>其次，通过向Save提供一种机制来关闭它的数据流，会导致另外一个问题：wc会在什么情况下关闭。Save可能会无条件的调用Close或在成功的情况下调用Close。</p>
-<p>如果它想要在写入document之后再写入额外的数据时会引起Save的调用者一个问题。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">type NopCloser struct &#123;</span><br><span class="line">        io.Writer</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// Close has no effect on the underlying writer.</span><br><span class="line">func (c *NopCloser) Close() error &#123; return nil &#125;</span><br></pre></td></tr></table></figure>
-
-<p>一个原始解决方案回事定义一个新的type，在其内嵌入io.Writer以及重写Close方法来阻止Save方法关闭底层数据流。</p>
-<p>但是这样可能会违反里氏替换原则，如果NopCloser并没有关闭任何东西。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied Writer.</span><br><span class="line">func Save(w io.Writer, doc *Document) error</span><br></pre></td></tr></table></figure>
-
-<p>一个更好的解决办法是重新定义Save只传入io.Writer，剥离它的所有责任除了写入数据到数据流。</p>
-<p>通过对Save方法应用接口隔离原则，同时得到了最具体以及最通用的需求函数。我们现在可以使用Save方法来保存数据到任何实现了io.Writer的地方。</p>
-<blockquote>
-<p><font color="DeepPink"><strong>A great rule of thumb for Go is accept interfaces, return structs.</strong></font> –Jack Lindamood</p>
-</blockquote>
-<h3 id="Dependency-Inversion-Principle"><a href="#Dependency-Inversion-Principle" class="headerlink" title="Dependency Inversion Principle"></a>Dependency Inversion Principle</h3><blockquote>
-<p>High-level modules should not depend on low-level modules. Both should depend on abstractions. Abstractions should not depend on details. Details should depend on abstractions. –Robert C. Martin</p>
-</blockquote>
-<p>对于Go语言来讲，依赖反转意味着什么呢?</p>
-<p>如果你应用以上所有的原则，代码已经被分解成离散的有明确责任和目的的package，你的代码应该描述了它的依赖interface以及这些interface应该只描述他们需要的功能行为。换句话说就是他们不会再过多的改变。</p>
-<p>因此，我认为Martin所讲的在Go语言的应用是context，即你import graph（译注：后文用“导入图”代替）的结构。</p>
-<p>在Go语言中，你的导入图必须是非循环。不遵守此非循环的需求会导致编译错误，但是更为严重的是它代表了一系列的设计错误。</p>
-<p>所有条件都相同的情况下精心设计的导入图应该是广泛的以及相对平坦的，而不是又高又窄。如果你有一个package的函数在没有其他package的情况下就无法操作，也许这就表明了代码没有考虑pakcage的边界。</p>
-<p>依赖反转原则鼓励你尽可能地像导入图一样在main package或者最高层级的处理程序内对具体细节负责，让低层级代码来处理抽象的接口。</p>
-<h2 id="“SOLID”-Go语言设计"><a href="#“SOLID”-Go语言设计" class="headerlink" title="“SOLID” Go语言设计"></a>“SOLID” Go语言设计</h2><p>回顾一下，当应用到Go语言设计中，每个“SOLID”原则都是强有力的声明，但是加在一起他们有一个中心主题。</p>
-<ul>
-<li>单一功能原则鼓励你在package中构建functions、types以及方法表现出自然的凝聚力。types属于彼此，functions为单一目的服务。</li>
-<li>开闭原则鼓励你使用嵌入将简单的type组合成更为复杂的。</li>
-<li><font color="DeepPink"><strong>里氏替换原则鼓励你在package之间表达依赖关系时用interface，而非具体类型。</strong></font>通过定义小巧的interface，我们可以更有信心地切实满足其合约。</li>
-<li>接口隔离原则鼓励你仅取决于所需行为来定义函数和方法。<font color="DeepPink"><strong>如果你的函数仅仅需要有一个方法的interface做为参数，那么它很有可能只有一个责任。</strong></font></li>
-<li>依赖反转原则鼓励你在编译时将package所依赖的东西移除 - 在Go语言中我们可以看到这样做使得运行时用到的某个特定的package的import声明的数量减少。</li>
-</ul>
-<p>如果总结这个演讲（译注：该篇文章取自Dave大神在Golang UK Conference 2016的演讲文字内容，文章结尾处有YouTube链接）它可能会是： &gt; interfaces let you apply the SOLID principles to Go programs</p>
-<p>因为interface描绘了他们的pakcage的规定，而不是如何规定的。换个说法就是“解耦”，这确实是我们的目标，因为解耦的软件修改起来更容易。</p>
-<p>就像Sandi Metz提到的：</p>
-<blockquote>
-<p>Design is the art of arranging code that needs to work today, and to be easy to change forever. –Sandi Metz</p>
-</blockquote>
-<p>因为如果Go语言想要成为公司长期投资的编程语言，Go程序的维护，更容易的变更将是他们决定的关键因素。</p>
-<h1 id="结尾"><a href="#结尾" class="headerlink" title="结尾"></a>结尾</h1><p>Go语言程序员应当讨论更多的是设计而非框架。我们应当不惜一切代价地关注重用而非性能。</p>
-<p>我想要看到是今天的人们谈论关于如何使用编程语言，无论是设计解决方案还是解决实际问题的选择和局限性。</p>
-<p>我想要听到的是人们谈论如何通过精心设计、解耦、重用以及适应变化的方式来设计Go语言程序。</p>
-<h1 id="…还有一点"><a href="#…还有一点" class="headerlink" title="…还有一点"></a>…还有一点</h1><p>我们需要告诉世界优秀的软件该如何编写。告诉他们使用Go语言如何编写优秀的、可组合的及易于变化的软件。</p>
-<p>原文链接：<a href="http://dave.cheney.net/2016/08/20/solid-go-design" target="_blank" rel="noopener">http://dave.cheney.net/2016/08/20/solid-go-design</a></p>
-<blockquote>
-<p>本文转载自：<br><a href="https://blog.gokit.info/post/go-solid-design/" target="_blank" rel="noopener">https://blog.gokit.info/post/go-solid-design/</a></p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>Go</category>
-      </categories>
-      <tags>
-        <tag>转载</tag>
-        <tag>Design</tag>
-        <tag>Go</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Golang 初始化顺序</title>
     <url>/golang-package-init-order.html</url>
     <content><![CDATA[<blockquote>
@@ -10970,447 +10756,6 @@ use one vs other -->
         <tag>Go</tag>
         <tag>Goroutine</tag>
         <tag>Thread</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>[转]Go 密码学应用</title>
-    <url>/golang-for-crypto-developers.html</url>
-    <content><![CDATA[<blockquote>
-<p>Go Crypto</p>
-</blockquote>
-<a id="more"></a>
-
-<h1 id="视频信息"><a href="#视频信息" class="headerlink" title="视频信息"></a>视频信息</h1><p>Go for Crypto Developers<br>by George Tankersley<br>at GopherCon 2016</p>
-<p><a href="https://www.youtube.com/watch?v=2r_KMzXB74w" target="_blank" rel="noopener">https://www.youtube.com/watch?v=2r_KMzXB74w</a></p>
-<p>幻灯地址：<a href="https://speakerdeck.com/gtank/crypto-for-go-developers" target="_blank" rel="noopener">https://speakerdeck.com/gtank/crypto-for-go-developers</a><br>代码：<a href="https://github.com/gtank/cryptopasta" target="_blank" rel="noopener">https://github.com/gtank/cryptopasta</a></p>
-<h1 id="Don’t-write-your-own-crypto"><a href="#Don’t-write-your-own-crypto" class="headerlink" title="Don’t write your own crypto"></a>Don’t write your own crypto</h1><p>很多人把这句话<font color="DeepPink"><strong>误解为</strong></font>不要使用加密、不要使用任何密码学的技术，因为你不够聪明。<font color="DeepPink"><strong>No。完全不是这个意思</strong></font>。</p>
-<p>这句话是说<font color="DeepPink"><strong>不要试图去发明创造那些加密类的算法</strong></font>。因为你不大可能会创造一个超过 AES 的加密算法、也不大可能会创造一个比 SHA 更好的 hash 算法。所以自己闭门造的算法一般意味着安全性的大大降低。</p>
-<p>全世界能干这件事情的人不超过5个，而且他们今天都不在这里。另外一半都是 <font color="DeepPink"><strong>Daniel J. Bernstein</strong></font> 干的（开个玩笑，不过这人很牛，今天我们在用的很多加密的东西都是他设计、实现的）。</p>
-<p>表面上好像这是个限制，其实这是个优势。因为我们<font color="DeepPink"><strong>不需要</strong></font>编写自己的加密算法，一切痛苦的工作都已经由别人做好了。我们只需要和搭积木一样去使用这些密码学工具就好了。</p>
-<h1 id="经常听到这样的建议"><a href="#经常听到这样的建议" class="headerlink" title="经常听到这样的建议"></a>经常听到这样的建议</h1><ul>
-<li>对传输中的数据用 TLS</li>
-<li>对静止的数据用 GPG</li>
-</ul>
-<h2 id="TLS"><a href="#TLS" class="headerlink" title="TLS"></a>TLS</h2><p>Go 可以很容易使用 TLS，因为必须的东西都内置了，从客户端到服务端。</p>
-<p>客户端</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">var minimalTLSConfig = &amp;tls.Config&#123;</span><br><span class="line">	MinVersion: tls.VersionTLS12,</span><br><span class="line">&#125;</span><br><span class="line">var tlsTransport = &amp;http.Transport&#123;</span><br><span class="line">	TLSClientConfig: minimalTLSConfig,</span><br><span class="line">&#125;</span><br><span class="line">var httpClient = &amp;http.Client&#123;</span><br><span class="line">	Transport: tlsTransport,</span><br><span class="line">	Timeout:   10 * time.Second,</span><br><span class="line">&#125;</span><br><span class="line">func MakeRequest() error &#123;</span><br><span class="line">	resp, err := httpClient.Get(&quot;https://www.google.com&quot;)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	// have fun</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里最重要的是 tls.VersionTLS12，因为低于 1.2 的话，会导致 Go 使用一些不安全的低版本的实现，所以这里限定 1.2 比较安全。而且大部分网站也都支持。</p>
-<p>服务端</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">var minimalTLSConfig = &amp;tls.Config&#123;</span><br><span class="line">	MinVersion:               tls.VersionTLS12,</span><br><span class="line">	PreferServerCipherSuites: true,</span><br><span class="line">&#125;</span><br><span class="line">var srv = &amp;http.Server&#123;</span><br><span class="line">	Addr:      &quot;localhost:8080&quot;,</span><br><span class="line">	TLSConfig: minimalTLSConfig,</span><br><span class="line">&#125;</span><br><span class="line">func handleReq(w http.ResponseWriter, r *http.Request) &#123;</span><br><span class="line">	fmt.Fprintf(w, &quot;Hello, world&quot;)</span><br><span class="line">&#125;</span><br><span class="line">func main() &#123;</span><br><span class="line">	http.HandleFunc(&quot;/&quot;, handleReq)</span><br><span class="line">	err := srv.ListenAndServeTLS(&quot;cert.pem&quot;, &quot;key.pem&quot;)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Fatal(err)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里和客户端一样，限定最小版本是 1.2，并且多了一个额外的参数，要求以服务器的 Cipher 优先，因此不按照客户端给的选择，而是按照Go服务端给的选择。因为 Go 的 TLS 包中有大量针对各种安全问题的调整，因此选择加密包的话，遵循 Go 内部的决定是最好的。</p>
-<h2 id="GPG"><a href="#GPG" class="headerlink" title="GPG"></a>GPG</h2><p>GPG 是为了人和人之间的交流信息，而不是机器和机器之间交流信息的。</p>
-<p>那么如何安全的使用 GPG 呢？答案就是<font color="DeepPink"><strong>不用GPG</strong></font>。因为作者觉得 GPG 太过阴谋论了，陷入了很多本不需要过多注意的区域，即使那么做了，也不见得更安全。</p>
-<h1 id="这个-Talk-不讲-TLS-和-GPG"><a href="#这个-Talk-不讲-TLS-和-GPG" class="headerlink" title="这个 Talk 不讲 TLS 和 GPG"></a>这个 Talk 不讲 TLS 和 GPG</h1><p>因为当你实现安全的信息系统的时候，通常不会用到这两个东西。TLS 和 GPG 有他们应用的场合，但是对于每天的密码学工作来说，基本都不用这两个工具：</p>
-<ul>
-<li>对文件计算散列</li>
-<li>生成随机 ID</li>
-<li>API 验证</li>
-<li>网站密码存储</li>
-<li>签名、加密 cookies</li>
-<li>JWT</li>
-<li>签名更新</li>
-</ul>
-<h1 id="在-Go-的-crypto-包里的算法可不都是好的算法"><a href="#在-Go-的-crypto-包里的算法可不都是好的算法" class="headerlink" title="在 Go 的 crypto 包里的算法可不都是好的算法"></a>在 Go 的 crypto 包里的算法可不都是好的算法</h1><h2 id="加密"><a href="#加密" class="headerlink" title="加密"></a>加密</h2><p>下列划掉的算法都不应该再使用了：</p>
-<ul>
-<li><del>DES</del></li>
-<li><pre><code class="3DES~~">
-</code></pre>
-</li>
-<li><del>RC4</del></li>
-<li><del>TEA</del></li>
-<li><del>XTEA</del></li>
-<li><del>Blowfish</del></li>
-<li>✔️ Twofish</li>
-<li><del>CAST5</del></li>
-<li>✔️ Salsa20</li>
-<li>✔️ AES</li>
-</ul>
-<p>只有 Twofish、Salsa20 和 AES 还算是安全的加密算法，但是 AES 在大部分的计算机上都有硬件加速。因此只剩下一个 AES 是最佳加密算法。</p>
-<h3 id="怎么使用-AES"><a href="#怎么使用-AES" class="headerlink" title="怎么使用 AES"></a>怎么使用 AES</h3><p>要注意，aesCipher.Encrypt() <font color="DeepPink"><strong>只会加密前16个字节</strong></font>。不少人掉到这个坑里了，结果不知道为啥就前几个字符是密文，后面全都是明文。解决办法就是<font color="DeepPink"><strong>不直接用AES</strong></font>，通过 Mode 来使用。</p>
-<p>Block cipher mode 一样有很多种选择：</p>
-<ul>
-<li><del>CBC</del></li>
-<li><del>CFB</del></li>
-<li><del>CTR</del></li>
-<li><del>OFB</del></li>
-<li>✔️ GCM</li>
-</ul>
-<p>这里只有 GCM 是<font color="DeepPink"><strong>验证的</strong></font>加密算法，因此别的都可以不选。</p>
-<h4 id="加密-1"><a href="#加密-1" class="headerlink" title="加密"></a>加密</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/aes&quot;</span><br><span class="line">	&quot;crypto/cipher&quot;</span><br><span class="line">	&quot;crypto/rand&quot;</span><br><span class="line">)</span><br><span class="line">func Encrypt(data []byte, key [32]byte) ([]byte, error) &#123;</span><br><span class="line">	//	初始化 block cipher</span><br><span class="line">	block, err := aes.NewCipher(key[:])</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	设置 block cipher mode</span><br><span class="line">	gcm, err := cipher.NewGCM(block)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	生成随机 nonce</span><br><span class="line">	nonce := make([]byte, gcm.NonceSize())</span><br><span class="line">	_, err = rand.Read(nonce)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	封装、返回</span><br><span class="line">	return gcm.Seal(nonce, nonce, data, nil), nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="解密"><a href="#解密" class="headerlink" title="解密"></a>解密</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/aes&quot;</span><br><span class="line">	&quot;crypto/cipher&quot;</span><br><span class="line">	&quot;crypto/rand&quot;</span><br><span class="line">)</span><br><span class="line">func Decrypt(ciphertext []byte, key [32]byte) (plaintext []byte, err error) &#123;</span><br><span class="line">	//	初始化 block cipher</span><br><span class="line">	block, err := aes.NewCipher(key[:])</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	设置 block cipher mode</span><br><span class="line">	gcm, err := cipher.NewGCM(block)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	返回解开的包，注意这里的 nonce 是直接取的。</span><br><span class="line">	return gcm.Open(nil,</span><br><span class="line">		ciphertext[:gcm.NonceSize()],</span><br><span class="line">		ciphertext[gcm.NonceSize():],</span><br><span class="line">		nil,</span><br><span class="line">	)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="哈希散列"><a href="#哈希散列" class="headerlink" title="哈希散列"></a>哈希散列</h2><p>将一大段数据使用 Hash 算法，希望得到一串数值，这串数值可以反映你的这段数据，任何数据变化，这串数值都不同。而且希望无法从这串数值反推数据。这就是密码学 Hash 函数要保证的。（<font color="DeepPink"><strong>注意：哈希不等于加密，很多人这点容易搞混</strong></font>）</p>
-<p>同样 Hash 函数一样有很多选择，一样是大部分都不用：</p>
-<ul>
-<li><del>MD4</del></li>
-<li><del>MD5</del></li>
-<li><del>RIPEMD160</del></li>
-<li><del>SHA1</del></li>
-<li>✔️ SHA2</li>
-<li>✔️ SHA3<br>选择 SHA3 并不是因为它比 SHA2 更新更好，而是因为它不同于 SHA1 和 SHA2。几年前密码学家已经开始担心，因为MD<font color="DeepPink"><strong>以及SHA</strong></font>的哈希算法本质太相似了，那么一旦这个依赖出现问题，就意味着这个体系的不再安全。因此开始寻找一种不同的算法。经过竞赛、挑选，最终 SHA3 脱颖而出。他本身是个很出色的 Hash 算法，同时其设计和之前的这几个算法完全不一样。</li>
-</ul>
-<p>但是由于 SHA3 并不被广泛支持，所以如果你明确知道你可以用 SHA3，那么就用 SHA3。其它情况用 SHA2。</p>
-<p>但是和加密一样，我们<font color="DeepPink"><strong>不应该直接使用 Hash 算法</strong></font>。因为可能会面临一系列的攻击：</p>
-<ul>
-<li>Length extension</li>
-<li>Rainbow tables</li>
-<li>Small number of possibilities (phone numbers)</li>
-<li>Salt? Peper?</li>
-</ul>
-<blockquote>
-<p>我们应该使用 HMAC，而不要直接用 Hash</p>
-</blockquote>
-<h2 id="实现-Hash"><a href="#实现-Hash" class="headerlink" title="实现 Hash"></a>实现 Hash</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/hmac&quot;</span><br><span class="line">	&quot;crypto/sha512&quot;</span><br><span class="line">)</span><br><span class="line">func Hash(tag string, data []byte) []byte &#123;</span><br><span class="line">	h := hmac.New(sha512.New512_256, []byte(tag))</span><br><span class="line">	h.Write(data)</span><br><span class="line">	return h.Sum(nil)</span><br><span class="line">&#125;</span><br><span class="line">func ExampleHash() error &#123;</span><br><span class="line">	tag := &quot;hashing file for storage key&quot;</span><br><span class="line">	contents, err := ioutil.ReadFile(&quot;testfile&quot;)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return error</span><br><span class="line">	&#125;</span><br><span class="line">	digest := Hash(tag, contents)</span><br><span class="line">	fmt.Println(hex.EncodeToString(digest))</span><br><span class="line">&#125;</span><br><span class="line">//	Output:</span><br><span class="line">//	9f4c795d8ae5e207f19184ccebee6a606c1fdfe509c793614006d613580f03e1</span><br></pre></td></tr></table></figure>
-
-<h2 id="Hash-密码"><a href="#Hash-密码" class="headerlink" title="Hash 密码"></a>Hash 密码</h2><p>一般东西的 Hash 用刚才的就行了，但是<font color="DeepPink"><strong>除了密码Hash</strong></font>。密码 Hash 和数据 Hash 的特征完全不同。</p>
-<ul>
-<li><font color="DeepPink"><strong>数据</strong></font> Hash 希望的是 Hash 算法<font color="DeepPink"><strong>越快越好</strong></font></li>
-<li>而<font color="DeepPink"><strong>密码</strong></font> Hash 则希望 Hash 算法<font color="DeepPink"><strong>越慢越好</strong></font></li>
-</ul>
-<blockquote>
-<p>过快的密码哈希会导致暴力破解的成本降低。因此密码哈希需要特殊算法。</p>
-</blockquote>
-<h3 id="使用-bcrypt"><a href="#使用-bcrypt" class="headerlink" title="使用 bcrypt"></a>使用 bcrypt</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;golang.org/x/crypto/bcrypt&quot;</span><br><span class="line">)</span><br><span class="line">func HashPassword(password []byte) ([]byte, error) &#123;</span><br><span class="line">	return bcrypt.GenerateFromPassword(password, 14)</span><br><span class="line">&#125;</span><br><span class="line">func CheckPasswordHash(hash, password []byte) error &#123;</span><br><span class="line">	return bcrypt.CompareHashAndPassword(hash, password)</span><br><span class="line">&#125;</span><br><span class="line">func Example() &#123;</span><br><span class="line">	myPassword := []byte(&quot;password&quot;)</span><br><span class="line">	hashed, err := HashPassword(myPassword)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(string(hashed))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>14 是计算量的复杂度，14 是个比较好的值，如果觉得性能无法接受，可以降到 12，但是不要再低了。</p>
-<h2 id="签名"><a href="#签名" class="headerlink" title="签名"></a>签名</h2><p>首先是有一对密钥，一个是公钥、一个是私钥。任何拥有私钥的人可以对一段信息签名，而所有拥有公钥的人都可以来验证这个消息确实是由那个人签名的。</p>
-<p>通过签名可以确保两件事情：</p>
-<ul>
-<li>消息未曾被篡改</li>
-<li>是谁发出的这个消息</li>
-</ul>
-<p>和前面一样，Go 有很多签名算法可以选择：</p>
-<ul>
-<li>RSA<ul>
-<li><del>PKCS1v15</del></li>
-<li>PSS</li>
-</ul>
-</li>
-<li>ECDSA<ul>
-<li>✔️ P256</li>
-<li><del>P385</del></li>
-<li><del>P521</del></li>
-</ul>
-</li>
-<li>Ed25519</li>
-</ul>
-<p>这次和前面不同，签名算法的安全更多的<font color="DeepPink"><strong>不是取决于算法选择，而是取决于你是怎么使用的</strong></font>。</p>
-<p>比如这里比较推荐使用 ECDSA&#x2F;P256，但是要注意，当初 PS3 被黑，被解出私钥就是用的这个算法，当时是由于那个算法实现是非常烂的。幸运的是 Go 没这个问题。所以相对于其他语言，Go 可以使用这个比较安全的签名算法。</p>
-<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><p>生成密钥</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/ecdsa&quot;</span><br><span class="line">	&quot;crypto/elliptic&quot;</span><br><span class="line">	&quot;crypto/rand&quot;</span><br><span class="line">)</span><br><span class="line">func NewSigningKey() (*ecdsa.PrivateKey, error) &#123;</span><br><span class="line">	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>签名数据</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func Sign(data []byte, priv *ecdsa.PrivateKey) ([]byte, error) &#123;</span><br><span class="line">	digest := sha256.Sum256(data)</span><br><span class="line">	r, s, err := ecdsa.Sign(rand.Reader, priv, digest[:])</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	encode the signature &#123;R, S&#125;</span><br><span class="line">	params := priv.Curve.Params()</span><br><span class="line">	curveByteSize := params.P.BitLen() / 8</span><br><span class="line">	rBytes, sBytes := r.Bytes(), s.Bytes()</span><br><span class="line">	signature := make([]byte, curveByteSize * 2)</span><br><span class="line">	copy(signature[curveByteSize - len(rBytes):], rBytes)</span><br><span class="line">	copy(signature[curveByteSize*2 - len(sBytes):], sBytes)</span><br><span class="line">	return signature, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>验证签名</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/ecdsa&quot;</span><br><span class="line">	&quot;crypto/sha256&quot;</span><br><span class="line">	&quot;math/big&quot;</span><br><span class="line">)</span><br><span class="line">//	验证成功返回 true，否则 false</span><br><span class="line">func Verify(data, sig []byte, pub *ecdsa.PublicKey) bool &#123;</span><br><span class="line">	digest := sha256.Sum256(data)</span><br><span class="line">	curveByteSize := pub.Curve.Params().P.BitLen() / 8</span><br><span class="line">	r, s := new(big.Int), new(big.Int)</span><br><span class="line">	r.SetBytes(signature[:curveByteSize])</span><br><span class="line">	s.SetBytes(signature[curveByteSize:])</span><br><span class="line">	return ecdsa.Verify(pub, digest[:], r, s)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
-      <categories>
-        <category>Go</category>
-      </categories>
-      <tags>
-        <tag>转载</tag>
-        <tag>Go</tag>
-        <tag>Crypto</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>[转]gRPC 从学习到生产</title>
-    <url>/golang-grpc-from-tutorial-to-production.html</url>
-    <content><![CDATA[<blockquote>
-<p>gRPC Practice<br>了解gRPC，更知REST</p>
-</blockquote>
-<a id="more"></a>
-
-<h1 id="视频信息"><a href="#视频信息" class="headerlink" title="视频信息"></a>视频信息</h1><p>grpc: From Tutorial to Production<br>by Alan Shreve<br>at GopherCon 2017</p>
-<p><a href="https://www.youtube.com/watch?v=7FZ6ZyzGex0" target="_blank" rel="noopener">https://www.youtube.com/watch?v=7FZ6ZyzGex0</a></p>
-<p>博文：<a href="https://about.sourcegraph.com/go/grpc-in-production-alan-shreve/" target="_blank" rel="noopener">https://about.sourcegraph.com/go/grpc-in-production-alan-shreve/</a></p>
-<h1 id="微服务之间应该如何通讯？"><a href="#微服务之间应该如何通讯？" class="headerlink" title="微服务之间应该如何通讯？"></a>微服务之间应该如何通讯？</h1><p>答案就是：<font color="DeepPink"><strong>SOAP</strong></font>……好吧，开个玩笑，当然不可能是 SOAP 了。</p>
-<p>现在流行的做法是 <font color="DeepPink"><strong>HTTP + JSON (REST API)</strong></font></p>
-<p>Alan 说“如果这辈子再也不写另一个 REST 客户端库的话，那就可以很幸福的死去了……😂”，因为这是最无聊的事情，一遍一遍的在做同样的事情。</p>
-<h1 id="为什么-REST-API-不好用？"><a href="#为什么-REST-API-不好用？" class="headerlink" title="为什么 REST API 不好用？"></a>为什么 REST API 不好用？</h1><ul>
-<li>实现 Stream 太难了</li>
-<li>而双向的流就根本不可能</li>
-<li>很难对操作建立模型</li>
-<li>效率很差，文本表示对于网络来说并不是最好的选择</li>
-<li>而且，其实服务内部根本不是 RESTful 的方式，这只是 HTTP endpoint</li>
-<li>很难在一个请求中取得多个资源数据 （反例看 GraphQL）</li>
-<li>没有正式的（机器可读的）API约束<ul>
-<li>因此写客户端需要人类<ul>
-<li>而且因为👷很贵，而且不喜欢写客户端</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h1 id="什么是-gRPC"><a href="#什么是-gRPC" class="headerlink" title="什么是 gRPC"></a>什么是 gRPC</h1><blockquote>
-<p>gPRC 是高性能、开源、通用的 RPC 框架。</p>
-</blockquote>
-<p>与其讲解定义，不如来实际做个东西更清楚。</p>
-<h1 id="建一个缓存服务"><a href="#建一个缓存服务" class="headerlink" title="建一个缓存服务"></a>建一个缓存服务</h1><p>使用 gRPC 这类东西，我们并非开始于写 Go 代码，我们是从撰写 gRPC 的 <a href="https://developers.google.com/protocol-buffers/docs/overview" target="_blank" rel="noopener">IDL</a> 开始的。</p>
-<h2 id="app-proto"><a href="#app-proto" class="headerlink" title="app.proto"></a>app.proto</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">syntax = &quot;proto3&quot;</span><br><span class="line">package rpc;</span><br><span class="line">service Cache &#123;</span><br><span class="line">  rpc Store(StoreReq) returns (StoreResp) &#123;&#125;</span><br><span class="line">  rpc Get(GetReq) returns (GetResp) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message StoreReq &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">&#125;</span><br><span class="line">message StoreResp &#123;</span><br><span class="line">&#125;</span><br><span class="line">message GetReq &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">&#125;</span><br><span class="line">message GetResp &#123;</span><br><span class="line">  bytes val = 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>当写了这个文件后，我们立刻拥有了 <font color="DeepPink"><strong>9</strong></font> 种语言的客户端的库。</p>
-<ul>
-<li>C++</li>
-<li>Java(and Android)</li>
-<li>Python</li>
-<li>Go</li>
-<li>Ruby</li>
-<li>C#</li>
-<li>Javascript(node.js)</li>
-<li>Objective-C (iOS!)</li>
-<li>PHP</li>
-</ul>
-<p>同时，我们也拥有了 <font color="DeepPink"><strong>7</strong></font> 种语言的服务端的 API Stub：</p>
-<ul>
-<li>C++</li>
-<li>Java</li>
-<li>Python</li>
-<li>Go</li>
-<li>Ruby</li>
-<li>C#</li>
-<li>Javascript(node.js)</li>
-</ul>
-<h2 id="server-go"><a href="#server-go" class="headerlink" title="server.go"></a>server.go</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func serverMain() &#123;</span><br><span class="line">  if err := runServer(); err != nil &#123;</span><br><span class="line">    fmt.Fprintf(os.Stderr, &quot;Failed to run cache server: %s\n&quot;, err)</span><br><span class="line">    os.Exit(1)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">func runServer() error &#123;</span><br><span class="line">  srv := grpc.NewServer()</span><br><span class="line">  rpc.RegisterCacheServer(srv, &amp;CacheService&#123;&#125;)</span><br><span class="line">  l, err := net.Listen(&quot;tcp&quot;, &quot;localhost:5051&quot;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br><span class="line">  //  block</span><br><span class="line">  return srv.Serve(l)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>暂时先不实现 CacheService，先放个空的，稍后再实现。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">type CacheService struct &#123;</span><br><span class="line">&#125;</span><br><span class="line">func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) &#123;</span><br><span class="line">  return nil, fmt.Errorf(&quot;unimplemented&quot;)</span><br><span class="line">&#125;</span><br><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  return nil, fmt.Errorf(&quot;unimplemented&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="client-go"><a href="#client-go" class="headerlink" title="client.go"></a>client.go</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func clientMain() &#123;</span><br><span class="line">  if err != runClient(); err != nil &#123;</span><br><span class="line">    fmt.Fprintf(os.Stderr, &quot;failed: %v\n&quot;, err)</span><br><span class="line">    os.Exit(1)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">func runClient() error &#123;</span><br><span class="line">  //  建立连接</span><br><span class="line">  conn, err := grpc.Dial(&quot;localhost:5053&quot;, grpc.WithInsecure())</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to dial server: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  cache := rpc.NewCacheClient(conn)</span><br><span class="line">  //  调用 grpc 的 store() 方法存储键值对 &#123; &quot;gopher&quot;: &quot;con&quot; &#125;</span><br><span class="line">  _, err = cache.Store(context.Background(), &amp;rpc.StoreReq&#123;Key: &quot;gopher&quot;, Val: []byte(&quot;con&quot;)&#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to store: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  //  调用 grpc 的 get() 方法取回键为 `gopher` 的值</span><br><span class="line">  resp, err := cache.Get(context.Background(), &amp;rpc.GetReq&#123;Key: &quot;gopher&quot;&#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to get: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  //  输出</span><br><span class="line">  fmt.Printf(&quot;Got cached value %s\n&quot;, resp.Val)</span><br><span class="line">  return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="这不就是-WSDL-么？"><a href="#这不就是-WSDL-么？" class="headerlink" title="这不就是 WSDL 么？"></a>这不就是 WSDL 么？</h2><p>或许有些人会认为这和 <font color="DeepPink"><strong>WSDL</strong></font> 也太像了，这么想没有错，因为 gRPC 在借鉴之前的 SOAP&#x2F;WSDL 的错误基础上，也吸取了他们优秀的地方。</p>
-<ul>
-<li>和 XML 关系没那么紧(grpc 是可插拔式的，可以换成各种底层表述)</li>
-<li>写过 XML&#x2F;XSD 的人都知道这些服务定义太繁重了，gRPC 没有这个问题</li>
-<li>WSDL这类有完全不必要的复杂度、和基本不需要的功能（两步 commit）</li>
-<li>WSDL 不灵活、而且无法前向兼容（不像 <a href="https://developers.google.com/protocol-buffers/" target="_blank" rel="noopener">protobuf</a>）</li>
-<li>SOAP&#x2F;WSDL 性能太差，以及无法使用流</li>
-<li>但是WSDL中的机器可以理解的API定义确实是个好东西</li>
-</ul>
-<h2 id="实现具体的-CacheService"><a href="#实现具体的-CacheService" class="headerlink" title="实现具体的 CacheService"></a>实现具体的 CacheService</h2><p>server.go</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">type CacheService struct &#123;</span><br><span class="line">  store map[string][]byte</span><br><span class="line">&#125;</span><br><span class="line">func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) &#123;</span><br><span class="line">  val := s.store[req.Key]</span><br><span class="line">  return &amp;rpc.GetResp&#123;Val: val&#125;, nil</span><br><span class="line">&#125;</span><br><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  s.store[req.Key] = req.Val</span><br><span class="line">  return &amp;rpc.StoreResp&#123;&#125;, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>注意这里没有锁，你可以想想他们中有，因为将来他们会被并发的调用的。</p>
-<h2 id="错误处理"><a href="#错误处理" class="headerlink" title="错误处理"></a>错误处理</h2><p>当然，gRPC 支持错误处理。假设改写上面的 Get()，对不存在的键进行报错：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (s *CacheService) Get(ctx context.Context, req *rpc.GetReq) (*rpc.GetResp, error) &#123;</span><br><span class="line">  val, ok := s.store[req.Key]</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return nil, status.Errorf(code.NotFound, &quot;Key not found %s&quot;, req.Key)</span><br><span class="line">  &#125;</span><br><span class="line">  return &amp;rpc.GetResp&#123;Val: val&#125;, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="加密传输"><a href="#加密传输" class="headerlink" title="加密传输"></a>加密传输</h2><p>如果这样的代码打算去部署的话，一定会被 <a href="https://en.wikipedia.org/wiki/Site_reliability_engineering" target="_blank" rel="noopener">SRE</a> 拦截下来，因为所有通讯必须加密传输。</p>
-<p>在 gRPC 中添加 TLS 加密传输很容易。比如我们修改 runServer() 添加 TLS 加密传输。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runServer() error &#123;</span><br><span class="line">  tlsCreds, err := credentials.NewServerTLSFromFile(&quot;tls.crt&quot;, &quot;tls.key&quot;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br><span class="line">  srv := grpc.NewServer(grpc.Creds(tlsCreds))</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>同样，我们也需要修改一下 runClient()。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  tlsCreds := credentials.NewTLS(&amp;tls.Config(InsecureSkipVerify: true))</span><br><span class="line">  conn, err := grpc.Dial(&quot;localhost:5051&quot;, grpc.WithTransportCredentials(tlsCreds))</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h1 id="生产环境如何使用-gRPC"><a href="#生产环境如何使用-gRPC" class="headerlink" title="生产环境如何使用 gRPC"></a>生产环境如何使用 gRPC</h1><ul>
-<li>HTTP&#x2F;2</li>
-<li>protobuf serialization (pluggable)</li>
-<li>客户端会和 grpc 服务器打开一个长连接<ul>
-<li>对于每一个 RPC 调用都将是一个新的 HTTP&#x2F;2 stream</li>
-<li>允许模拟飞行模式的 RPC 调用</li>
-</ul>
-</li>
-<li>允许客户端 <font color="DeepPink"><strong>和</strong></font> 服务端 Streaming</li>
-</ul>
-<h2 id="gRPC-的实现"><a href="#gRPC-的实现" class="headerlink" title="gRPC 的实现"></a>gRPC 的实现</h2><p>现在有3个高性能的、事件驱动的实现</p>
-<ul>
-<li>C<ul>
-<li>Ruby, Python, Node.js, PHP, C#, Objective-C, C++ 都是对这个 C core 实现的绑定</li>
-<li>PHP 则是通过 PECL 和这个实现的绑定</li>
-</ul>
-</li>
-<li>Java<ul>
-<li>Netty + BoringSSL 通过 JNI</li>
-</ul>
-</li>
-<li>Go<ul>
-<li>纯 Go 实现，使用了 Go 标准库的 crypto&#x2F;tls</li>
-</ul>
-</li>
-</ul>
-<h2 id="gRPC-从哪来的"><a href="#gRPC-从哪来的" class="headerlink" title="gRPC 从哪来的"></a>gRPC 从哪来的</h2><ul>
-<li>最初是 Google 的一个团队创建的</li>
-<li>更早期的是 Google 一个内部项目叫做 stubby</li>
-<li>这个 gRPC 是其下一代开源项目，并且现在不仅仅是 Google 在使用，很多公司都在贡献代码<ul>
-<li>当然，Google 还是主要代码贡献者</li>
-</ul>
-</li>
-</ul>
-<h2 id="生产环境案例：多租户"><a href="#生产环境案例：多租户" class="headerlink" title="生产环境案例：多租户"></a>生产环境案例：多租户</h2><p>上线生产后，发现有一部分客户产生了大量的键值，询问得知，有的客户希望对所有东西都缓存，这显然不是对我们这个缓存服务很好的事情。</p>
-<p>我们希望限制这种行为，但对于当前系统而言，无法满足这种需求，因此我们需要修改实现，对每个客户发放客户 token，那么我们就可以约束特定客户最多可以建立多少键值，避免系统滥用。这就成为了多租户的缓存服务。</p>
-<p>和之前一样，我们还是从 IDL 开始，我们需要修改接口，增加 account_token 项。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">message StoreReq &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">  string account_token = 3;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>同样，我们需要有独立的服务针对账户服务，来获取账户所允许的缓存键数：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">service Accounts &#123;</span><br><span class="line">  rpc GetByToken(GetByTokenReq) return (GetByTokenResp) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message GetByTokenReq &#123;</span><br><span class="line">  string token = 1;</span><br><span class="line">&#125;</span><br><span class="line">message GetByTokenResp &#123;</span><br><span class="line">  Account account = 1;</span><br><span class="line">&#125;</span><br><span class="line">message Account &#123;</span><br><span class="line">  int64 max_cache_keys = 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里建立了一个新的 Accounts 服务，并且有一个 GetByToken() 方法，给入 token，返回一个 Account 类型的结果，而 Account 内有 max_cache_keys 键对应最大可缓存的键值数。</p>
-<p>现在我们进一步修改 <font color="DeepPink"><strong>client.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  cache := rpc.NewCacheClient(conn)</span><br><span class="line">  _, err = cache.Store(context.Background(), &amp;rpc.StoreReq&#123;</span><br><span class="line">    AccountToken: &quot;inconshreveable&quot;,</span><br><span class="line">    Key:          &quot;gopher&quot;,</span><br><span class="line">    Val:          []byte(&quot;con&quot;),</span><br><span class="line">  &#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to store: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>服务端的改变要稍微大一些，但不过分。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">type CacheService struct &#123;</span><br><span class="line">  accounts      rpc.AccountsClient</span><br><span class="line">  store         map[string][]byte</span><br><span class="line">  keysByAccount map[string]int64</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>注意这里的 accounts 是一个 grpc 的客户端，因为我们这个服务，同时也是另一个 grpc 服务的客户端。所以在接下来的 Store() 实现中，我们需要先通过 accounts 调用另一个服务取得账户信息。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  //  调用另一个服务取得账户信息，包含其键值限制</span><br><span class="line">  resp, err := s.accounts.GetByToken(context.Background(), &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return nil, err</span><br><span class="line">  &#125;</span><br><span class="line">  //  检查是否超量使用</span><br><span class="line">  if s.keysByAccount[req.AccountToken] &gt;= resp.Account.MaxCacheKeys &#123;</span><br><span class="line">    return nil, status.Errorf(codes.FailedPrecondition, &quot;Account %s exceeds max key limit %d&quot;, req.AccountToken, resp.Account.MaxCacheKeys)</span><br><span class="line">  &#125;</span><br><span class="line">  //  如果键不存在，需要新加键值，那么我们就对计数器加一</span><br><span class="line">  if _, ok := s.store[req.Key]; !ok &#123;</span><br><span class="line">    s.keysByAccount[req.AccountToken] += 1</span><br><span class="line">  &#125;</span><br><span class="line">  //  保存键值</span><br><span class="line">  s.store[req.Key] = req.Val</span><br><span class="line">  return &amp;rpc.StoreResp&#123;&#125;, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="生产环境案例：性能"><a href="#生产环境案例：性能" class="headerlink" title="生产环境案例：性能"></a>生产环境案例：性能</h2><p>上面的问题解决了，我们服务又恢复了正常，不会有用户建立过多的键值了。但是很快，我们就又收到了其他用户发来的新的 issue，很多人反应说新系统变慢了，没有达到 <a href="https://en.wikipedia.org/wiki/Service-level_agreement" target="_blank" rel="noopener">SLA</a> 的要求。</p>
-<p>可是我们根本不知道到底发生了什么，于是意识到了，我们的程序没有任何可观察性（Observability），换句话说，我们的程序没有任何计量系统来统计性能相关的数据。</p>
-<p>我们先从最简单的做起，添加日志。</p>
-<p>我们先从 <font color="DeepPink"><strong>client.go</strong></font> 开始，增加一些测量和计数以及日志输出。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">//  开始计时</span><br><span class="line">start := time.Now()</span><br><span class="line">_, err = cache.Store(context.Background(), &amp;rpc.StoreReq&#123;</span><br><span class="line">  AccountToken: &quot;inconshreveable&quot;,</span><br><span class="line">  Key:          &quot;gopher&quot;,</span><br><span class="line">  Val:          []byte(&quot;con&quot;),</span><br><span class="line">&#125;)</span><br><span class="line">//  计算 cache.Store() 调用时间</span><br><span class="line">log.Printf(&quot;cache.Store duration %s&quot;, time.Since(start))</span><br><span class="line">if err != nil &#123;</span><br><span class="line">  return fmt.Errorf(&quot;failed to store: %v&quot;, err)</span><br><span class="line">&#125;</span><br><span class="line">//  再次开始计时</span><br><span class="line">start = time.Now()</span><br><span class="line">//  调用 grpc 的 get() 方法取回键为 `gopher` 的值</span><br><span class="line">resp, err := cache.Get(context.Background(), &amp;rpc.GetReq&#123;Key: &quot;gopher&quot;&#125;)</span><br><span class="line">//  计算 cache.Get() 调用时间</span><br><span class="line">log.Printf(&quot;cache.Get duration %s&quot;, time.Since(start))</span><br><span class="line">if err != nil &#123;</span><br><span class="line">  return fmt.Errorf(&quot;failed to get: %v&quot;, err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>同样，在服务端也这么处理。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  //  开始计时</span><br><span class="line">  start := time.Now()</span><br><span class="line">  //  调用另一个服务取得账户信息，包含其键值限制</span><br><span class="line">  resp, err := s.accounts.GetByToken(context.Background(), &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  //  输出 account.GetByToken() 的调用时间</span><br><span class="line">  log.Printf(&quot;accounts.GetByToken duration %s&quot;, time.Since(start))</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>经过这些修改后，我们发现一样的事情在反反复复的做，那么有什么办法可以改变这种无聊的做法么？查阅 grpc 文档后，看到有一个叫做 <font color="DeepPink"><strong>Client Interceptor</strong></font> 的东西。</p>
-<p>这相当于是一个中间件，但是是在客户端。当客户端进行 rpc 调用的时候，这个中间件先会被调用，因此这个中间件可以对调用进行一层包装，然后再进行调用。</p>
-<p>为了实现这个功能，我们创建一个新的文件，叫做 interceptor.go：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func WithClientInterceptor() grpc.DialOption &#123;</span><br><span class="line">  return grpc.WithUnaryInterceptor(clientInterceptor)</span><br><span class="line">&#125;</span><br><span class="line">func clientInterceptor(</span><br><span class="line">  ctx context.Context,</span><br><span class="line">  method string,</span><br><span class="line">  req interface&#123;&#125;,</span><br><span class="line">  reply interface&#123;&#125;,</span><br><span class="line">  cc *grpc.ClientConn,</span><br><span class="line">  invoker grpc.UnaryInvoker,</span><br><span class="line">  opts ...grpc.CallOption,</span><br><span class="line">) error &#123;</span><br><span class="line">  start := time.Now()</span><br><span class="line">  err := invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">  log.Printf(&quot;invoke remote method=%s duration=%s error=%v&quot;, method, time.Since(start), err)</span><br><span class="line">  return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们有了这个 WithClientInterceptor() 之后，可以在 grpc.Dial() 的时候注册进去。<br><font color="DeepPink"><strong>client.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  conn, err := grpc.Dial(&quot;localhost:5051&quot;,</span><br><span class="line">    grpc.WithTransportCredentials(tlsCreds),</span><br><span class="line">    WithClientInterceptor())</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>注册之后，所有的 grpc 调用都会经过我们注册的 clientInterceptor()，因此所有的时间就都有统计了，而不用每个函数内部反反复复的添加时间、计量、输出。</p>
-<p>添加了客户端的这个计量后，自然而然就联想到服务端是不是也可以做同样的事情？经过查看文档，可以，有个叫做 <font color="DeepPink"><strong>Server Interceptor</strong></font> 的东西。</p>
-<p>同样的做法，我们在服务端添加 interceptor.go，并且添加 ServerInterceptor() 函数。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func ServerInterceptor() grpc.ServerOption &#123;</span><br><span class="line">  return grpc.UnaryInterceptor(serverInterceptor)</span><br><span class="line">&#125;</span><br><span class="line">func serverInterceptor(</span><br><span class="line">  ctx context.Context,</span><br><span class="line">  req interface&#123;&#125;,</span><br><span class="line">  info *grpc.UnaryServerInfo,</span><br><span class="line">  handler grpc.UnaryHandler,</span><br><span class="line">) (interface&#123;&#125;, error) &#123;</span><br><span class="line">  start := time.Now()</span><br><span class="line">  resp, err := handler(ctx, req)</span><br><span class="line">  log.Printf(&quot;invoke server method=%s duration=%s error=%v&quot;,</span><br><span class="line">    info.FullMethod,</span><br><span class="line">    time.Since(start),</span><br><span class="line">    err)</span><br><span class="line">  return resp, err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>和客户端一样，需要在 runServer() 的时候注册我们定义的这个中间件。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runServer() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  srv := grpc.NewServer(grpc.Creds(tlsCreds), ServerInterceptor())</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="生产环境案例：超时"><a href="#生产环境案例：超时" class="headerlink" title="生产环境案例：超时"></a>生产环境案例：超时</h2><p>添加了日志后，我们终于在日志中发现，&#x2F;rpc.Accounts&#x2F;GetByToken&#x2F; 花了好长的时间。我们需要对这个操作设置超时。<br><font color="DeepPink"><strong>server.go</strong></font> </p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  accountsCtx, _ := context.WithTimeout(context.Background(), 2 * time.Second)</span><br><span class="line">  resp, err := s.accounts.GetByToken(accountsCtx, &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里操作很简单，直接使用标准库中 context.WithTimeout() 就可以了。</p>
-<h2 id="生产环境案例：上下文传递"><a href="#生产环境案例：上下文传递" class="headerlink" title="生产环境案例：上下文传递"></a>生产环境案例：上下文传递</h2><p>经过上面修改后，客户依旧抱怨说没有满足 SLA，仔细一想也对。就算这里约束了 2 秒钟，客户端调用还需要时间，别的代码在中间也有时间开销。而且有的客户说，我们这里需要1秒钟，而不是2秒钟。</p>
-<p>好吧，让我们把这个时间设定推向调用方。</p>
-<p>首先我们要求在客户端进行调用时间约束的设定：<br><font color="DeepPink"><strong>client.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  ctx, _ := context.WithTimeout(context.Background(), time.Second)</span><br><span class="line">  _, err = cache.Store(ctx, &amp;rpc.StoreReq&#123;Key: &quot;gopher&quot;, Val: []byte(&quot;con&quot;)&#125;)</span><br><span class="line">  ...</span><br><span class="line">  ctx, _ = context.WithTimeout(context.Background(), 50*time.Millisecond)</span><br><span class="line">  resp, err := cache.Get(ctx, &amp;rpc.GetReq&#123;Key: &quot;gopher&quot;&#125;)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>然后在服务端，我们将上下文传递。直接取调用方的 ctx。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  resp, err := s.accounts.GetByToken(ctx, &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="生产环境案例：GRPC-Metadata"><a href="#生产环境案例：GRPC-Metadata" class="headerlink" title="生产环境案例：GRPC Metadata"></a>生产环境案例：GRPC Metadata</h2><p>上面的问题都解决了，终于可以松一口气了。可是客户又提新的需求了……😅，说我们能不能增加一个 Dry Run 的标志，就是说我希望你做所有需要做的事情，除了真的修改键值库。</p>
-<p>GRPC metadata，也称为 GRPC 的 Header。就像 HTTP 头一样，可以有一些 Metadata 信息传递过来。使用 metadata，可以让我们的 Dry Run 的实现变得更简洁，不必每个 RPC 方法内都实现一遍检查 Dry Run 标志的逻辑，我们可以独立出来。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (s *CacheService) Store(ctx context.Context, req *rpc.StoreReq) (*rpc.StoreResp, error) &#123;</span><br><span class="line">  resp, err := s.accounts.GetByToken(ctx, &amp;rpc.GetByTokenReq&#123;</span><br><span class="line">    Token: req.AccountToken,</span><br><span class="line">  &#125;)</span><br><span class="line">  if !dryRun(ctx) &#123;</span><br><span class="line">    if _, ok := s.store[req.Key]; !ok &#123;</span><br><span class="line">      s.keysByAccount[req.AccountToke] += 1</span><br><span class="line">    &#125;</span><br><span class="line">    s.store[req.Key] = req.Val</span><br><span class="line">  &#125;</span><br><span class="line">  return &amp;rpc.StoreResp&#123;&#125;, nil</span><br><span class="line">&#125;</span><br><span class="line">func dryRun(ctx context.Context) bool &#123;</span><br><span class="line">  md, ok := metadata.FromContext(ctx)</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return false</span><br><span class="line">  &#125;</span><br><span class="line">  val, ok := md[&quot;dry-run&quot;]</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return false</span><br><span class="line">  &#125;</span><br><span class="line">  if len(val) &lt; 1 &#123;</span><br><span class="line">    return false</span><br><span class="line">  &#125;</span><br><span class="line">  return val[0] == &quot;1&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>当然，这么做是有妥协的，因为通用化后就失去了类型检查的能力。</p>
-<p>在客户端调用的时候，则需要根据情况添加 dry-run 参数给 metadata。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  ctx, _ := context.WithTimeout(context.Background(), time.Second)</span><br><span class="line">  ctx = metadata.NewContext(ctx, metadata.Pairs(&quot;dry-run&quot;, &quot;1&quot;))</span><br><span class="line">  _, err = cache.Store(ctx, &amp;rpc.StoreReq&#123;Key: &quot;gopher&quot;, Val: []byte(&quot;con&quot;)&#125;)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="生产环境案例：Retry"><a href="#生产环境案例：Retry" class="headerlink" title="生产环境案例：Retry"></a>生产环境案例：Retry</h2><p>实现了 Dry Run 以为可以休息了，之前抱怨慢的客户又来抱怨了，虽然有超时控制，满足 SLA，但是服务那边还是慢，总超时不成功。检查了一下，发现是网络上的事情，我们没有太多可以做的事情。为了解决客户的问题，我们来添加一个重试的机制。</p>
-<p>我们可以对每一个 gRPC 调用添加一个 Retry 机制，我们也可以像之前计时统计那样，使用 Interceptor 吧？</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func clientInterceptor(...) error &#123;</span><br><span class="line">  var (</span><br><span class="line">    start     = time.Now()</span><br><span class="line">    attempts  = 0</span><br><span class="line">    err       error</span><br><span class="line">    backoff   retryBackOff</span><br><span class="line">  )</span><br><span class="line">  for &#123;</span><br><span class="line">    attempts += 1</span><br><span class="line">    select &#123;</span><br><span class="line">    case &lt;-ctx.Done():</span><br><span class="line">      err = status.Errorf(codes.DeadlineExceeded, &quot;timeout reached before next retry attempt&quot;)</span><br><span class="line">    case &lt;-backoff.Next():</span><br><span class="line">      startAttempt := time.Now()</span><br><span class="line">      err = invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">      if err != nil &#123;</span><br><span class="line">        log.Printf(...)</span><br><span class="line">        continue</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    break</span><br><span class="line">  &#125;</span><br><span class="line">  log.Printf(...)</span><br><span class="line">  return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>看起来还不错，然后就打算发布这个代码了。结果提交审核的时候被打回来了，说这个代码不合理，因为如果是<font color="DeepPink"><strong>非幂等（non-idempotent）</strong></font> 的操作，这样就会导致多次执行，改变期望结果了。</p>
-<p>看来我们得针对幂等和非幂等操作区别对待了。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">silo.FireZeMissiles(NotIdempotent(ctx), req)</span><br></pre></td></tr></table></figure>
-
-<p>嗯，当然，没这个东西。所以我们需要自己来创造一个标记，通过 context，来标明操作是否幂等。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func NotIdempotent(ctx context.Context) context.Context &#123;</span><br><span class="line">  return context.WithValue(ctx, &quot;idempotent&quot;, false)</span><br><span class="line">&#125;</span><br><span class="line">func isIdempotent(ctx context.Context) bool &#123;</span><br><span class="line">  val, ok := ctx.Value(&quot;idempotent&quot;).(bool)</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return true</span><br><span class="line">  &#125;</span><br><span class="line">  return val</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>然后在我们的 clientInterceptor() 实现中加入 isIdempotent() 判断：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func clientInterceptor(...) error &#123;</span><br><span class="line">  var (</span><br><span class="line">    start     = time.Now()</span><br><span class="line">    attempts  = 0</span><br><span class="line">    err       error</span><br><span class="line">    backoff   retryBackOff</span><br><span class="line">  )</span><br><span class="line">  for &#123;</span><br><span class="line">    attempts += 1</span><br><span class="line">    select &#123;</span><br><span class="line">    case &lt;-ctx.Done():</span><br><span class="line">      err = status.Errorf(codes.DeadlineExceeded, &quot;timeout reached before next retry attempt&quot;)</span><br><span class="line">    case &lt;-backoff.Next():</span><br><span class="line">      startAttempt := time.Now()</span><br><span class="line">      err = invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">      if err != nil &amp;&amp; isIdempotent(ctx) &#123;</span><br><span class="line">        log.Printf(...)</span><br><span class="line">        continue</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    break</span><br><span class="line">  &#125;</span><br><span class="line">  log.Printf(...)</span><br><span class="line">  return err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这样当调用失败后，客户端检查发现是幂等的情况，才重试，否则不重试。避免了非幂等操作的反复操作。</p>
-<h2 id="生产环境案例：结构化错误"><a href="#生产环境案例：结构化错误" class="headerlink" title="生产环境案例：结构化错误"></a>生产环境案例：结构化错误</h2><p>感觉没啥问题了，于是部署上线了。可是运行一段时间后，发现有些不对劲。所有成功的RPC调用，也就是说这个操作本身是正确的，都没有问题，超时重试也正常。但是所有失败的 RPC 调用都不对了，所有失败的 RPC 调用，都返回超时，而不是错误本身。这里说的失败，不是说网络问题导致超时啥的，而是说请求本身的失败，比如之前提到的，Get() 不存在的键，应该返回错误；或者 Store() 超过了配额，应该返回错误，这类错误在日志中都没看到，反而都对应了超时。</p>
-<p>经过分析发现，服务端该报错都报错，没啥问题，但是客户端不对，本应该返回错误给调用方的地方，客户端代码反而又开始重试这个操作了。看来之前重试的代码还有问题。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">err = invoker(ctx, method, req, reply, cc, opts...)</span><br><span class="line">if err != nil &amp;&amp; isIdempotent(ctx) &#123;</span><br><span class="line">  log.Printf(...)</span><br><span class="line">  continue</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>如果仔细观察这部分代码，会发现，无论 err 是什么，只要非 nil，我们就重试。其实这是不对的，我们只有针对某些错误重试，比如网络问题之类的，而不应该对我们希望返回给调用方的错误重试，那没有意义。</p>
-<p>那么问题就变成了，我们到底应该怎么对 err 判断来决定是否重试？</p>
-<ul>
-<li>可以使用不同的 Error Code，特定的 Code 需要 Retry，其它的不需要，那就需要自定义 gRPC 错误码；</li>
-<li>我们也可以定义一个 Error 类型的数据，里面包含了某种标志位，来告知是否值得 retry</li>
-<li>或者干脆把错误码放到 Response 的消息里，确保每个消息都有一个我们定义的错误码，来标明是否需要 retry。</li>
-</ul>
-<p>所以，我们需要的是一个完整的结构化的错误信息，而不是简单的一个 Error Code 和字符串。当然这条路不好走，但是我们已经做了这么多了，坚持一下还是可以克服的。</p>
-<p>这里我们还是从 IDL 开始：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">message Error &#123;</span><br><span class="line">  int64 code = 1;</span><br><span class="line">  string messsage = 2;</span><br><span class="line">  bool temporary = 3;</span><br><span class="line">  int64 userErrorCode = 4;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>然后我们实现这个 Error 类型。<br><font color="DeepPink"><strong>rpc&#x2F;error.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (e *Error) Error() string &#123;</span><br><span class="line">  return e.Message</span><br><span class="line">&#125;</span><br><span class="line">func Errorf(code codes.Code, temporary bool, msg string, args ..interface&#123;&#125;) error &#123;</span><br><span class="line">  return &amp;Error&#123;</span><br><span class="line">    Code:      int64(code),</span><br><span class="line">    Message:   fmt.Sprintf(msg, args...),</span><br><span class="line">    Temporary: temporary,</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>有这两个函数，我们可以显示和构造这个 Error 类型的变量了，但是我们该怎么把错误消息传回客户端呢？然后问题就开始变的繁琐起来了：<br><font color="DeepPink"><strong>rpc&#x2F;error.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func MarshalError (err error, ctx context.Context) error &#123;</span><br><span class="line">  rerr, ok := err.(*Error)</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br><span class="line">  pberr, marshalerr := pb.Marshal(rerr)</span><br><span class="line">  if marshalerr == nil &#123;</span><br><span class="line">    md := metadata.Pairs(&quot;rpc-error&quot;, base64.StdEncoding.EncodeToString(pberr))</span><br><span class="line">    _ = grpc.SetTrailer(ctx, md)</span><br><span class="line">  &#125;</span><br><span class="line">  return status.Errorf(codes.Code(rerr.Code), rerr.Message)</span><br><span class="line">&#125;</span><br><span class="line">func UnmarshalError(err error, md metadata.MD) *Error &#123;</span><br><span class="line">  vals, ok := md[&quot;rpc-error&quot;]</span><br><span class="line">  if !ok &#123;</span><br><span class="line">    return nil</span><br><span class="line">  &#125;</span><br><span class="line">  buf, err := base64.StdEncoding.DecodeString(vals[0])</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return nil</span><br><span class="line">  &#125;</span><br><span class="line">  var rerr Error</span><br><span class="line">  if err := pb.Unmarshal(buf, &amp;rerr); err != nil &#123;</span><br><span class="line">    return nil</span><br><span class="line">  &#125;</span><br><span class="line">  return &amp;rerr</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><font color="DeepPink"><strong>interceptor.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func serverInterceptor (</span><br><span class="line">  ctx context.Context,</span><br><span class="line">  req interface&#123;&#125;,</span><br><span class="line">  info *grpc.UnaryServerInfo,</span><br><span class="line">  handler grpc.UnaryHandler,</span><br><span class="line">) (interface&#123;&#125;, error) &#123;</span><br><span class="line">  start := time.Now()</span><br><span class="line">  resp, err := handler(ctx, req)</span><br><span class="line">  err = rpc.MarshalError(err, ctx)</span><br><span class="line">  log.Print(...)</span><br><span class="line">  return resp, err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>it’s ugly，but works.</p>
-<p>这是在 gRPC 不支持高级 Error 的情况下，怎么去 work around 这个问题，并且凑合用起来。现在这么做，错误就可以跨主机边界传递了。</p>
-<h2 id="生产环境案例：Dump"><a href="#生产环境案例：Dump" class="headerlink" title="生产环境案例：Dump"></a>生产环境案例：Dump</h2><p>又有客户前来提需求了，有的客户说我们可以存、也可以取，但是如何才能把里面所有的数据都获取下来？于是有了需求，希望实现 Dump() 操作，可以取回所有数据。</p>
-<p>现在已经轻车熟路了，我们先改 IDL，添加一个 Dump() 函数。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">service Cache &#123;</span><br><span class="line">  rpc Store(StoreReq) returns (StoreResp) &#123;&#125;</span><br><span class="line">  rpc Get(GetReq) returns (GetResp) &#123;&#125;</span><br><span class="line">  rpc Dump(DumpReq) returns (DumpResp) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message DumpReq&#123;</span><br><span class="line">&#125;</span><br><span class="line">message DumpResp &#123;</span><br><span class="line">  repeated DumpItem items = 1;</span><br><span class="line">&#125;</span><br><span class="line">message DumpItem &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里 DumpResp 里面用的是 repeated，因为 protobuf 里面不知道为啥不叫 array。</p>
-<h2 id="生产环境案例：流量控制"><a href="#生产环境案例：流量控制" class="headerlink" title="生产环境案例：流量控制"></a>生产环境案例：流量控制</h2><p>新功能 Dump 上线了，结果发现大家都很喜欢 Dump，有很多人在 Dump，结果服务器的内存开始不够了。于是我们需要一些限制手段，可以控制流量。</p>
-<p>查阅了文档后，发现我们可以控制同时最大有多少并发可以访问，以及可以多频繁的来访问服务。<br><font color="DeepPink"><strong>server.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runServer() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  srv := grpc.NewServer(grpc.Creds(tlsCreds),</span><br><span class="line">    ServerInterceptor(),</span><br><span class="line">    grpc.MaxConcurrentStreams(64),</span><br><span class="line">    grpc.InTapHandle(NewTap().Handler))</span><br><span class="line">  rpc.RegisterCacheServer(srv, NewCacheService(accounts))</span><br><span class="line">  l, err := net.Listen(&quot;tcp&quot;, &quot;localhost:5051&quot;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return err</span><br><span class="line">  &#125;</span><br><span class="line">  l = netutil.LimitListener(l, 1024)</span><br><span class="line">  return srv.Serve(l)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里使用了 netutil.LimitListener(l, 1024) 控制了总共可以有多少个连接，然后用 grpc.MaxConcurrentStreams(64) 指定了每个 grpc 的连接可以有多少个并发流(stream)。这两个结合起来基本控制了并发的总数。</p>
-<p>但是 gRPC 里没有地方限定可以多频繁的访问。因此这里用了 grpc.InTapHandle(NewTap().Handler)) 来进行定制，这是在更靠前的位置执行的。</p>
-<p><font color="DeepPink"><strong>tap.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">type Tap struct &#123;</span><br><span class="line">  lim *rate.Limiter</span><br><span class="line">&#125;</span><br><span class="line">func NewTap() *Tap &#123;</span><br><span class="line">  return &amp;Tap(rate.NewLimiter(150, 5))</span><br><span class="line">&#125;</span><br><span class="line">func (t *Tap) Handler(ctx context.Context, info *tap.Info) (context.Context, error) &#123;</span><br><span class="line">  if !t.lim.Allow() &#123;</span><br><span class="line">    return nil, status.Errorf(codes.ResourceExhausted, &quot;service is over rate limit&quot;)</span><br><span class="line">  &#125;</span><br><span class="line">  return ctx, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="生产环境案例：Streaming"><a href="#生产环境案例：Streaming" class="headerlink" title="生产环境案例：Streaming"></a>生产环境案例：Streaming</h2><p>之前的方案部署后，内存终于降下来了，但是还没休息，就发现大家越来越喜欢用这个缓存服务，内存又不够用了。这个时候我们就开始思考，是不是可以调整一下设计，不是每次 Dump 就立即在内存生成完整的返回数组，而是以流的形式，按需发回。<br><font color="DeepPink"><strong>app.proto</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">syntax = &quot;proto3&quot;;</span><br><span class="line">package rpc;</span><br><span class="line">service Cache &#123;</span><br><span class="line">  rpc Store(StoreReq) returns (StoreResp) &#123;&#125;</span><br><span class="line">  rpc Get(GetReq) returns (GetResp) &#123;&#125;</span><br><span class="line">  rpc Dump(DumpReq) returns (stream DumpItem) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">message DumpReq&#123;</span><br><span class="line">&#125;</span><br><span class="line">message DumpItem &#123;</span><br><span class="line">  string key = 1;</span><br><span class="line">  bytes val = 2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里不再使用数组性质的 repeated，而是用 stream，客户端请求 Dump() 后，将结果以流的形式发回去。<br><font color="DeepPink"><strong>server.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func (s *CacheService) Dump(req *rpc.DumpReq, stream rpc.Cache_DumpServer) error &#123;</span><br><span class="line">  for k, v := range s.store &#123;</span><br><span class="line">    stream.Send(&amp;rpc.DumpItem&#123;</span><br><span class="line">      Key: k,</span><br><span class="line">      Val: v,</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line">  return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们修改 Dump() 的实现，对于每个记录，利用 stream.Send() 发送到流。</p>
-<p>注意这里我们没有 context，只有个 stream。<br><font color="DeepPink"><strong>client.go</strong></font></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">func runClient() error &#123;</span><br><span class="line">  ...</span><br><span class="line">  stream, err := cache.Dump(context.Background(), &amp;rpc.DumpReq&#123;&#125;)</span><br><span class="line">  if err != nil &#123;</span><br><span class="line">    return fmt.Errorf(&quot;failed to dump: %v&quot;, err)</span><br><span class="line">  &#125;</span><br><span class="line">  for &#123;</span><br><span class="line">    item, err := stream.Recv()</span><br><span class="line">    if err == io.EOF &#123;</span><br><span class="line">      break</span><br><span class="line">    &#125;</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">      return fmt.Errorf(&quot;failed to stream item: %v&quot;, err)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="生产环境案例：横向扩展、负载均衡"><a href="#生产环境案例：横向扩展、负载均衡" class="headerlink" title="生产环境案例：横向扩展、负载均衡"></a>生产环境案例：横向扩展、负载均衡</h2><p>使用流后，服务器性能提高了很多，但是，我们的服务太吸引人了，用户越来越多，结果又内存不够了。这时候我们审查代码，感觉能做的事情都做了，或许是时候从单一服务器，扩展为多个服务器，然后之间使用负载均衡。</p>
-<p>gRPC 是长连接性质的通讯，因此如果一个客户端连接了一个 gRPC Endpoint，那么他就会一直连接到一个固定的服务器，因此多服务器的负载均衡对同一个客户端来说是没有意义的，不会因为这个客户端有大量的请求而导致分散请求到不同的服务器上去。</p>
-<p>如果我们希望客户端可以利用多服务器的机制，我们就需要更智能的客户端，让客户端意识到服务器存在多个副本，因此客户端建立多条连接到不同的服务器，这样就可以让单一客户端利用负载均衡的横向扩展能力。</p>
-<h2 id="生产环境案例：多语言协作"><a href="#生产环境案例：多语言协作" class="headerlink" title="生产环境案例：多语言协作"></a>生产环境案例：多语言协作</h2><p>在复杂的环境中，我们 gRPC 的客户端（甚至服务端）可能是不同语言平台的。这其实是 gRPC 的优势，可以比较容易的实现跨语言平台的通讯。</p>
-<p>比如我们可以做一个 Python 客户端：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">import grpc</span><br><span class="line">import rpc_pb2 as rpc</span><br><span class="line">channel = grpc.insecure_channel(&apos;localhost:5051&apos;)</span><br><span class="line">cache_svc = rpc.CacheStub(channel)</span><br><span class="line">resp = cache_svc.Get(rpc.GetReq(</span><br><span class="line">  key=&quot;gopher&quot;,</span><br><span class="line">))</span><br><span class="line">print resp.val</span><br></pre></td></tr></table></figure>
-
-<p>一个不是很爽的地方是虽然 gRPC 的跨语言通讯很方便，但是各个语言的实现都比较随意，比如 Go 中叫做 CacheClient()，而 Python 中则叫做 CacheStub()。这里没有什么特别的原因非不一样的名字，就是由于不同的作者实现的时候按照自己的想法命名的。</p>
-<h1 id="gRPC-尚不完美的地方"><a href="#gRPC-尚不完美的地方" class="headerlink" title="gRPC 尚不完美的地方"></a>gRPC 尚不完美的地方</h1><ul>
-<li>负载均衡</li>
-<li>结构化的错误信息</li>
-<li>还不支持浏览器的 JS （某种角度上讲，这是最常用的客户端）</li>
-<li>还经常发生 API 改变（即使都1.0了）</li>
-<li>某些语言实现的文档非常差</li>
-<li>没有跨语言的标准化的做法</li>
-</ul>
-<h1 id="gRPC-在生产环境中的用例"><a href="#gRPC-在生产环境中的用例" class="headerlink" title="gRPC 在生产环境中的用例"></a>gRPC 在生产环境中的用例</h1><ul>
-<li>ngrok，所有内部20多个通讯都走的是 gRPC</li>
-<li>Square，将内部的通讯都换成了 gRPC，是最早使用 gRPC 的用户和贡献者</li>
-<li>CoreOS，etcd v3 完全走的是 gRPC</li>
-<li>Google，Google Cloud Service（PubSub, Speech Rec）走的是 gRPC</li>
-<li>Netflix, Yik Yak, VSCO, Cockroach, …</li>
-</ul>
-<h1 id="gRPC-未来的变化"><a href="#gRPC-未来的变化" class="headerlink" title="gRPC 未来的变化"></a>gRPC 未来的变化</h1><ul>
-<li>想了解未来的变化可以查看：<ul>
-<li><a href="https://github.com/grpc/proposal" target="_blank" rel="noopener">grpc&#x2F;proposal</a></li>
-<li><a href="https://groups.google.com/forum/#!forum/grpc-io" target="_blank" rel="noopener">grpc-io 邮件列表</a></li>
-</ul>
-</li>
-<li>新的语言支持（<a href="https://github.com/grpc/grpc-swift" target="_blank" rel="noopener">Swift</a> 和 <a href="https://github.com/grpc/grpc-haskell" target="_blank" rel="noopener">Haskell</a>正在试验阶段）</li>
-<li>稳定性、可靠性、性能的提高</li>
-<li>增加更多细化的 API 来支持自定义的行为（连接管理、频道跟踪）</li>
-<li>浏览器的 JS</li>
-</ul>
-<blockquote>
-<p>本文转载自：<br><a href="https://blog.lab99.org/post/golang-2017-10-04-video-understanding-channels.html#fa-song-jie-shou" target="_blank" rel="noopener">https://blog.lab99.org/post/golang-2017-10-04-video-understanding-channels.html#fa-song-jie-shou</a></p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>Go</category>
-      </categories>
-      <tags>
-        <tag>转载</tag>
-        <tag>Go</tag>
-        <tag>gRPC</tag>
       </tags>
   </entry>
   <entry>
@@ -14931,6 +14276,69 @@ table th:nth-of-type(2) {
       </tags>
   </entry>
   <entry>
+    <title>查看MySQL InnoDB 表索引的高度</title>
+    <url>/view-the-height-of-mysql-innodb-table-indexes.html</url>
+    <content><![CDATA[<p>在看《MySQL技术内幕：InnoDB存储引擎》B+树索引章节中看到这么一句话：</p>
+<p>但是B+索引在数据库中有一个特点就是高扇出性，因此在数据库中，B+树的高度一般都在2-4层，也就是说查找某一键值的行记录时最多只需要2-4次IO。因为当前一般的机械磁盘每秒至少可以做100次IO，2-4次的IO意味着查询时间只需要0.02-0.04秒。</p>
+<p>那么，当一个表很大的时候，索引还是是2-4层吗？那么这时搜索子节点会不会很慢？</p>
+<p>下面通过user库中的uc_users表，来验证一下。</p>
+<p>表结构如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE TABLE `uc_users` (</span><br><span class="line">  `id` bigint(20) NOT NULL AUTO_INCREMENT,</span><br><span class="line">  `username` varchar(40) DEFAULT NULL COMMENT &apos;username (login principal)&apos;,</span><br><span class="line">  `connection_id` bigint(20) DEFAULT NULL COMMENT &apos;username (login principal)&apos;,</span><br><span class="line">  `email` varchar(254) DEFAULT NULL COMMENT &apos;email (login principal)&apos;,</span><br><span class="line">  `email_verified` tinyint(1) NOT NULL DEFAULT &apos;0&apos;,</span><br><span class="line">  `phone_number` varchar(20) DEFAULT NULL COMMENT &apos;mobile phone number (login principal?)&apos;,</span><br><span class="line">  `phone_verified` tinyint(1) NOT NULL DEFAULT &apos;0&apos;,</span><br><span class="line">  `display_name` varchar(40) DEFAULT NULL COMMENT &apos;name for displaying&apos;,</span><br><span class="line">  `nickname` varchar(40) DEFAULT NULL COMMENT &apos;nickname&apos;,</span><br><span class="line">  `given_name` varchar(40) DEFAULT NULL COMMENT &apos;given name or first name&apos;,</span><br><span class="line">  `family_name` varchar(40) DEFAULT NULL COMMENT &apos;family name or surname&apos;,</span><br><span class="line">  `middle_name` varchar(40) DEFAULT NULL COMMENT &apos;middle name&apos;,</span><br><span class="line">  `avatar_url` varchar(2000) DEFAULT NULL COMMENT &apos;avatar image url&apos;,</span><br><span class="line">  `password` varchar(255) DEFAULT NULL COMMENT &apos;password hash (login credential)&apos;,</span><br><span class="line">  `password_strength` int(11) DEFAULT NULL COMMENT &apos;password strength&apos;,</span><br><span class="line">  `enabled` tinyint(1) NOT NULL DEFAULT &apos;1&apos;,</span><br><span class="line">  `locked` tinyint(1) NOT NULL DEFAULT &apos;0&apos;,</span><br><span class="line">  `type` smallint(6) NOT NULL COMMENT &apos;type (for lite-auth)&apos;,</span><br><span class="line">  `source` varchar(100) DEFAULT NULL COMMENT &apos;where user come from&apos;,</span><br><span class="line">  `last_login_at` timestamp NULL DEFAULT NULL,</span><br><span class="line">  `gender` varchar(10) DEFAULT NULL,</span><br><span class="line">  `birth_date` varchar(10) DEFAULT NULL,</span><br><span class="line">  `zone_info` varchar(20) DEFAULT NULL,</span><br><span class="line">  `locale` varchar(20) DEFAULT NULL,</span><br><span class="line">  `website` varchar(2000) DEFAULT NULL,</span><br><span class="line">  `address` varchar(1000) DEFAULT NULL,</span><br><span class="line">  `metadata` varchar(5000) DEFAULT NULL,</span><br><span class="line">  `created_at` timestamp NULL DEFAULT NULL,</span><br><span class="line">  `updated_at` timestamp NULL DEFAULT NULL,</span><br><span class="line">  `external_source` varchar(255) DEFAULT NULL,</span><br><span class="line">  `external_id` varchar(255) DEFAULT NULL,</span><br><span class="line">  `reg_client_id` varchar(128) DEFAULT NULL,</span><br><span class="line">  `version` int(11) DEFAULT NULL,</span><br><span class="line">  PRIMARY KEY (`id`),</span><br><span class="line">  KEY `index_phone_number` (`phone_number`),</span><br><span class="line">  KEY `index_email` (`email`),</span><br><span class="line">  KEY `index_username` (`username`),</span><br><span class="line">  KEY `index_created_at` (`created_at`),</span><br><span class="line">  KEY `index_updated_at` (`updated_at`)</span><br><span class="line">) ENGINE=InnoDB AUTO_INCREMENT=2022228456 DEFAULT CHARSET=utf8 COMMENT=&apos;user table&apos;;</span><br></pre></td></tr></table></figure>
+<p>索引信息如下：<br>
+<img data-src="/images/view-the-height-of-mysql-innodb-table-indexes/%E7%B4%A2%E5%BC%95%E4%BF%A1%E6%81%AF.png" alt></p>
+<p>数据量：5968 8046<br>
+<img data-src="/images/view-the-height-of-mysql-innodb-table-indexes/%E8%A1%A8%E6%95%B0%E6%8D%AE%E9%87%8F.png" alt></p>
+<p>查看index level 通过<a href="https://github.com/jiankunking/innodb_ruby" target="_blank" rel="noopener">innodb_ruby</a>查看。<br>
+具体语法参见：<a href="https://github.com/jeremycole/innodb_ruby" target="_blank" rel="noopener">https://github.com/jeremycole/innodb_ruby/wiki</a></p>
+<p><img data-src="/images/view-the-height-of-mysql-innodb-table-indexes/innodb_ruby.png" alt></p>
+<h1>方法一</h1>
+<p>1、登陆mysql对应机器，找到mysql数据存放位置</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ps -ef | grep mysql</span><br></pre></td></tr></table></figure>
+<p><img data-src="/images/view-the-height-of-mysql-innodb-table-indexes/mysql%E8%BF%9B%E7%A8%8B.png" alt></p>
+<p>2、找到ibdata文件位置</p>
+<p><img data-src="/images/view-the-height-of-mysql-innodb-table-indexes/ibdata.png" alt></p>
+<p>3、执行如下命令</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">innodb_space -s ibdata1 -T user/uc_users space-indexes</span><br></pre></td></tr></table></figure>
+<p>执行结果如下：</p>
+<p><img data-src="/images/view-the-height-of-mysql-innodb-table-indexes/innodb_space%E6%89%A7%E8%A1%8C%E7%BB%93%E6%9E%9C.png" alt></p>
+<ul>
+<li>id：表示此索引的ID。</li>
+<li>name：索引的名称，PRIMARY代表的就是聚集索引，因为InnoDB表是聚集索引组织表，行记录就是聚集索引；idx_c就是辅助索引的名称。</li>
+<li>root：索引中根节点的page号，可以看出聚集索引的Root节点是第3号page（前0、1、2号Page已经被使用），辅助索引的根节点是第4、5、6、7、8个page。</li>
+<li>fseg：page的说明，internal表示非叶子节点或属于根节点，leaf表示叶子节点（也就是数据页）。</li>
+<li>used：索引使用了多少个page，可以看出聚集索引的非叶子节点使用了1819个page，叶子节点使用了1112265个page。</li>
+<li>allocated：索引分配了多少个page，可以看出聚集索引的非叶子节点分配了2522个page，叶子节点分配了1271136个page。</li>
+<li>fill_factor：索引的填充度，used/allocated表示填充度，也就是实际使用的大小百分比。</li>
+</ul>
+<p>现在我们知道了Root节点页后，就可以使用innodb_ruby的另外一个功能，打印页结构信息，需要了解InnoDB页结构。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># 这里查看是索引中根节点的page号为3的索引信息 即主键索引id列</span><br><span class="line"># 从返回结果中可以看到index_id=&gt;55</span><br><span class="line">innodb_space -s ibdata1 -T user/uc_users -p 3 page-dump</span><br></pre></td></tr></table></figure>
+<p>执行结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[root@uoc-db2 mysql3306]# innodb_space -s ibdata1 -T user/uc_users -p 3 page-dump</span><br><span class="line">#&lt;Innodb::Page::Index:0x00000002dc04b8&gt;:</span><br><span class="line"></span><br><span class="line">fil header:</span><br><span class="line">&#123;:checksum=&gt;2973709054,</span><br><span class="line"> :offset=&gt;3,</span><br><span class="line"> :prev=&gt;nil,</span><br><span class="line"> :next=&gt;nil,</span><br><span class="line"> :lsn=&gt;47538913608,</span><br><span class="line"> :type=&gt;:INDEX,</span><br><span class="line"> :flush_lsn=&gt;0,</span><br><span class="line"> :space_id=&gt;31&#125;</span><br><span class="line"></span><br><span class="line">fil trailer:</span><br><span class="line">&#123;:checksum=&gt;2973709054, :lsn_low32=&gt;294273352&#125;</span><br><span class="line"></span><br><span class="line">page header:</span><br><span class="line">&#123;:n_dir_slots=&gt;2,</span><br><span class="line"> :heap_top=&gt;225,</span><br><span class="line"> :garbage_offset=&gt;192,</span><br><span class="line"> :garbage_size=&gt;42,</span><br><span class="line"> :last_insert_offset=&gt;0,</span><br><span class="line"> :direction=&gt;:left,</span><br><span class="line"> :n_direction=&gt;1,</span><br><span class="line"> :n_recs=&gt;3,</span><br><span class="line"> :max_trx_id=&gt;0,</span><br><span class="line"> :level=&gt;3,</span><br><span class="line"> :index_id=&gt;55,</span><br><span class="line"> :n_heap=&gt;7,</span><br><span class="line"> :format=&gt;:compact&#125;</span><br><span class="line"></span><br><span class="line">fseg header:</span><br><span class="line">&#123;:leaf=&gt;</span><br><span class="line">  &lt;Innodb::Inode space=&lt;Innodb::Space file=&quot;user/uc_users.ibd&quot;, page_size=16384, pages=2044416&gt;, fseg=2&gt;,</span><br><span class="line"> :internal=&gt;</span><br><span class="line">  &lt;Innodb::Inode space=&lt;Innodb::Space file=&quot;user/uc_users.ibd&quot;, page_size=16384, pages=2044416&gt;, fseg=1&gt;&#125;</span><br><span class="line"></span><br><span class="line">sizes:</span><br><span class="line">  header           120</span><br><span class="line">  trailer            8</span><br><span class="line">  directory          4</span><br><span class="line">  free           16189</span><br><span class="line">  used             195</span><br><span class="line">  record            63</span><br><span class="line">  per record     21.00</span><br><span class="line"></span><br><span class="line">page directory:</span><br><span class="line">[99, 112]</span><br><span class="line"></span><br><span class="line">system records:</span><br><span class="line">&#123;:offset=&gt;99,</span><br><span class="line"> :header=&gt;</span><br><span class="line">  &#123;:next=&gt;129,</span><br><span class="line">   :type=&gt;:infimum,</span><br><span class="line">   :heap_number=&gt;0,</span><br><span class="line">   :n_owned=&gt;1,</span><br><span class="line">   :min_rec=&gt;false,</span><br><span class="line">   :deleted=&gt;false,</span><br><span class="line">   :length=&gt;5&#125;,</span><br><span class="line"> :next=&gt;129,</span><br><span class="line"> :data=&gt;&quot;infimum\x00&quot;,</span><br><span class="line"> :length=&gt;8&#125;</span><br><span class="line">&#123;:offset=&gt;112,</span><br><span class="line"> :header=&gt;</span><br><span class="line">  &#123;:next=&gt;112,</span><br><span class="line">   :type=&gt;:supremum,</span><br><span class="line">   :heap_number=&gt;1,</span><br><span class="line">   :n_owned=&gt;4,</span><br><span class="line">   :min_rec=&gt;false,</span><br><span class="line">   :deleted=&gt;false,</span><br><span class="line">   :length=&gt;5&#125;,</span><br><span class="line"> :next=&gt;112,</span><br><span class="line"> :data=&gt;&quot;supremum&quot;,</span><br><span class="line"> :length=&gt;8&#125;</span><br><span class="line"></span><br><span class="line">garbage records:</span><br><span class="line">&#123;:format=&gt;:compact,</span><br><span class="line"> :offset=&gt;192,</span><br><span class="line"> :header=&gt;</span><br><span class="line">  &#123;:next=&gt;171,</span><br><span class="line">   :type=&gt;:node_pointer,</span><br><span class="line">   :heap_number=&gt;5,</span><br><span class="line">   :n_owned=&gt;0,</span><br><span class="line">   :min_rec=&gt;false,</span><br><span class="line">   :deleted=&gt;false,</span><br><span class="line">   :nulls=&gt;[],</span><br><span class="line">   :lengths=&gt;&#123;&#125;,</span><br><span class="line">   :externs=&gt;[],</span><br><span class="line">   :length=&gt;5&#125;,</span><br><span class="line"> :next=&gt;171,</span><br><span class="line"> :type=&gt;:clustered,</span><br><span class="line"> :key=&gt;[&#123;:name=&gt;&quot;id&quot;, :type=&gt;&quot;BIGINT&quot;, :value=&gt;2002372990&#125;],</span><br><span class="line"> :row=&gt;[],</span><br><span class="line"> :sys=&gt;[],</span><br><span class="line"> :child_page_number=&gt;1206485,</span><br><span class="line"> :length=&gt;12&#125;</span><br><span class="line"></span><br><span class="line">&#123;:format=&gt;:compact,</span><br><span class="line"> :offset=&gt;171,</span><br><span class="line"> :header=&gt;</span><br><span class="line">  &#123;:next=&gt;171,</span><br><span class="line">   :type=&gt;:node_pointer,</span><br><span class="line">   :heap_number=&gt;4,</span><br><span class="line">   :n_owned=&gt;0,</span><br><span class="line">   :min_rec=&gt;false,</span><br><span class="line">   :deleted=&gt;false,</span><br><span class="line">   :nulls=&gt;[],</span><br><span class="line">   :lengths=&gt;&#123;&#125;,</span><br><span class="line">   :externs=&gt;[],</span><br><span class="line">   :length=&gt;5&#125;,</span><br><span class="line"> :next=&gt;171,</span><br><span class="line"> :type=&gt;:clustered,</span><br><span class="line"> :key=&gt;[&#123;:name=&gt;&quot;id&quot;, :type=&gt;&quot;BIGINT&quot;, :value=&gt;55861094&#125;],</span><br><span class="line"> :row=&gt;[],</span><br><span class="line"> :sys=&gt;[],</span><br><span class="line"> :child_page_number=&gt;948104,</span><br><span class="line"> :length=&gt;12&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">records:</span><br><span class="line">&#123;:format=&gt;:compact,</span><br><span class="line"> :offset=&gt;129,</span><br><span class="line"> :header=&gt;</span><br><span class="line">  &#123;:next=&gt;150,</span><br><span class="line">   :type=&gt;:node_pointer,</span><br><span class="line">   :heap_number=&gt;2,</span><br><span class="line">   :n_owned=&gt;0,</span><br><span class="line">   :min_rec=&gt;true,</span><br><span class="line">   :deleted=&gt;false,</span><br><span class="line">   :nulls=&gt;[],</span><br><span class="line">   :lengths=&gt;&#123;&#125;,</span><br><span class="line">   :externs=&gt;[],</span><br><span class="line">   :length=&gt;5&#125;,</span><br><span class="line"> :next=&gt;150,</span><br><span class="line"> :type=&gt;:clustered,</span><br><span class="line"> :key=&gt;[&#123;:name=&gt;&quot;id&quot;, :type=&gt;&quot;BIGINT&quot;, :value=&gt;1&#125;],</span><br><span class="line"> :row=&gt;[],</span><br><span class="line"> :sys=&gt;[],</span><br><span class="line"> :child_page_number=&gt;375704,</span><br><span class="line"> :length=&gt;12&#125;</span><br><span class="line"></span><br><span class="line">&#123;:format=&gt;:compact,</span><br><span class="line"> :offset=&gt;150,</span><br><span class="line"> :header=&gt;</span><br><span class="line">  &#123;:next=&gt;213,</span><br><span class="line">   :type=&gt;:node_pointer,</span><br><span class="line">   :heap_number=&gt;3,</span><br><span class="line">   :n_owned=&gt;0,</span><br><span class="line">   :min_rec=&gt;false,</span><br><span class="line">   :deleted=&gt;false,</span><br><span class="line">   :nulls=&gt;[],</span><br><span class="line">   :lengths=&gt;&#123;&#125;,</span><br><span class="line">   :externs=&gt;[],</span><br><span class="line">   :length=&gt;5&#125;,</span><br><span class="line"> :next=&gt;213,</span><br><span class="line"> :type=&gt;:clustered,</span><br><span class="line"> :key=&gt;[&#123;:name=&gt;&quot;id&quot;, :type=&gt;&quot;BIGINT&quot;, :value=&gt;47377252&#125;],</span><br><span class="line"> :row=&gt;[],</span><br><span class="line"> :sys=&gt;[],</span><br><span class="line"> :child_page_number=&gt;948104,</span><br><span class="line"> :length=&gt;12&#125;</span><br><span class="line"></span><br><span class="line">&#123;:format=&gt;:compact,</span><br><span class="line"> :offset=&gt;213,</span><br><span class="line"> :header=&gt;</span><br><span class="line">  &#123;:next=&gt;112,</span><br><span class="line">   :type=&gt;:node_pointer,</span><br><span class="line">   :heap_number=&gt;6,</span><br><span class="line">   :n_owned=&gt;0,</span><br><span class="line">   :min_rec=&gt;false,</span><br><span class="line">   :deleted=&gt;false,</span><br><span class="line">   :nulls=&gt;[],</span><br><span class="line">   :lengths=&gt;&#123;&#125;,</span><br><span class="line">   :externs=&gt;[],</span><br><span class="line">   :length=&gt;5&#125;,</span><br><span class="line"> :next=&gt;112,</span><br><span class="line"> :type=&gt;:clustered,</span><br><span class="line"> :key=&gt;[&#123;:name=&gt;&quot;id&quot;, :type=&gt;&quot;BIGINT&quot;, :value=&gt;68265101&#125;],</span><br><span class="line"> :row=&gt;[],</span><br><span class="line"> :sys=&gt;[],</span><br><span class="line"> :child_page_number=&gt;1644800,</span><br><span class="line"> :length=&gt;12&#125;</span><br></pre></td></tr></table></figure>
+<p>页结构信息中有一个level字段，表示的就是Root节点页的高度，同样，level + 1就等于这个索引的高度。</p>
+<p>比如再看看phone_number索引列（page号为4），结果如下：<br>
+<a href="https://github.com/jiankunking/backups/blob/master/mysql/index/phone_number.page.contents" target="_blank" rel="noopener">https://github.com/jiankunking/backups/blob/master/mysql/index/phone_number.page.contents</a></p>
+<h1>方法二</h1>
+<p>1、查看innodb_page_size</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SHOW GLOBAL STATUS LIKE &apos;Innodb_page_size&apos;;</span><br></pre></td></tr></table></figure>
+<p>执行结果如下：</p>
+<p><img data-src="/images/view-the-height-of-mysql-innodb-table-indexes/innodb_page_size%E6%89%A7%E8%A1%8C%E7%BB%93%E6%9E%9C.png" alt></p>
+<p>2、通过hexdump这样的工具就可以快速定位到所需要的树高度信息</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexdump -s 49216 -n 02 uc_users.ibd</span><br></pre></td></tr></table></figure>
+<p>执行结果如下：<br>
+<img data-src="/images/view-the-height-of-mysql-innodb-table-indexes/hexdump%E6%89%A7%E8%A1%8C%E7%BB%93%E6%9E%9C.png" alt></p>
+<p>查看uc_users表，49216表示的是316384+64（这里innodb_page_size设置为了16384，如果是8192就是38192），即第3个页偏移量64位置开始读取2个字节，这里PAGE_LEVEL为00 03，那么索引的高度就为4。</p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>InnoDB</tag>
+        <tag>Index</tag>
+        <tag>height</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>异地多活高可用架构设计</title>
     <url>/multi-live-high-available-architecture-design.html</url>
     <content><![CDATA[<blockquote>
@@ -15051,8 +14459,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>Multi-Live</tag>
         <tag>High-Available</tag>
       </tags>
@@ -15192,8 +14600,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>PaaS</tag>
       </tags>
   </entry>
@@ -15591,9 +14999,9 @@ table th:nth-of-type(2) {
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
         <tag>ReentrantReadWriteLock</tag>
       </tags>
   </entry>
@@ -15638,9 +15046,9 @@ table th:nth-of-type(2) {
       </categories>
       <tags>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
         <tag>Condition</tag>
       </tags>
   </entry>
@@ -15984,8 +15392,8 @@ table th:nth-of-type(2) {
         <category>Architecture</category>
       </categories>
       <tags>
-        <tag>Architecture</tag>
         <tag>原创</tag>
+        <tag>Architecture</tag>
         <tag>ElasticSearch</tag>
         <tag>Log</tag>
         <tag>Filebeat</tag>
@@ -16248,8 +15656,8 @@ Connection: close
         <category>Network</category>
       </categories>
       <tags>
-        <tag>Network</tag>
         <tag>转载</tag>
+        <tag>Network</tag>
         <tag>HTTP</tag>
       </tags>
   </entry>
@@ -16390,9 +15798,9 @@ Connection: close
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
         <tag>Volatile</tag>
       </tags>
   </entry>
@@ -16718,9 +16126,9 @@ Connection: close
       <tags>
         <tag>原创</tag>
         <tag>Java</tag>
+        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
-        <tag>JDK</tag>
       </tags>
   </entry>
   <entry>
