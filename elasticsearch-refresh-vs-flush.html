@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">150</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">151</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -158,7 +158,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">211</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">212</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -302,25 +302,21 @@
 <p>Elasticsearch Refresh和Flush区别</p>
 </blockquote>
 <a id="more"></a>
-<h1><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-refresh.html" target="_blank" rel="noopener">Refresh</a></h1>
-<p>使用refresh API显式刷新一个或多个索引。 如果请求以数据流为目标，则刷新该流的后台索引。<font color="DeepPink"><strong>刷新使自上次刷新以来对索引执行的所有操作都可用于搜索。</strong></font></p>
+
+<h1 id="Refresh"><a href="#Refresh" class="headerlink" title="Refresh"></a><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-refresh.html" target="_blank" rel="noopener">Refresh</a></h1><p>使用refresh API显式刷新一个或多个索引。 如果请求以数据流为目标，则刷新该流的后台索引。<font color="DeepPink"><strong>刷新使自上次刷新以来对索引执行的所有操作都可用于搜索。</strong></font></p>
 <p><font color="DeepPink"><strong>默认情况下，Elasticsearch会定期每秒刷新一次索引，但仅在最近30秒内收到搜索请求的索引上刷新。</strong></font>也可以使用index.refresh_interval设置更改此默认间隔。</p>
 <p>刷新请求是同步的，并且在刷新操作完成之前不会返回响应。</p>
-<h1><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html#flush-api-desc" target="_blank" rel="noopener">Flush</a></h1>
-<p>通过刷新data stream或者index将当前仅存储在事务日志中的数据永久存储到Lucene索引中。当Elasticsearch重启时，会重放事务日志中未刷新到Lucene索引的数据，从而将Elasticsearch恢复到重启前的状态。</p>
+<h1 id="Flush"><a href="#Flush" class="headerlink" title="Flush"></a><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html#flush-api-desc" target="_blank" rel="noopener">Flush</a></h1><p>通过刷新data stream或者index将当前仅存储在事务日志中的数据永久存储到Lucene索引中。当Elasticsearch重启时，会重放事务日志中未刷新到Lucene索引的数据，从而将Elasticsearch恢复到重启前的状态。</p>
 <blockquote>
-<p>默认情况下，Elasticsearch使用内存启发式，以便根据需要自动触发刷新操作，以便清除内存。<br>
-Elasticsearch automatically triggers flushes as needed, using heuristics that trade off the size of the unflushed transaction log against the cost of performing each flush.</p>
+<p>默认情况下，Elasticsearch使用内存启发式，以便根据需要自动触发刷新操作，以便清除内存。<br>Elasticsearch automatically triggers flushes as needed, using heuristics that trade off the size of the unflushed transaction log against the cost of performing each flush.</p>
 </blockquote>
 <p><font color="DeepPink"><strong>一旦一个操作被刷新，它就会永久存储在Lucene索引中。</strong></font>这意味着不需要在事务日志中维护它的额外副本，除非出于某些<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-translog.html#index-modules-translog-retention" target="_blank" rel="noopener">其他原因而保留它</a>。事务日志由多个文件组成，称为generations，一旦不再需要生成文件，Elasticsearch将删除它们，释放磁盘空间。</p>
 <p>使用flush API也可以在一个或多个索引上触发刷新，尽管用户很少需要直接调用这个API。如果在对一些文档建立索引之后调用flush API，那么成功的响应表明Elasticsearch已经flush了所有在调用flush API之前建立索引的文档。</p>
 <p>translog的<a href="https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html" target="_blank" rel="noopener">Flush</a>是Elasticsearch在后台自动运行的。默认情况下Elasticsearch每隔5s会去检测要不要<a href="https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html" target="_blank" rel="noopener">Flush</a> translog，默认条件是:每30分钟主动进行一次<a href="https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html#flush-api-desc" target="_blank" rel="noopener">Flush</a>或者当translog文件大小大于512MB主动进行一次<a href="https://www.elastic.co/guide/en/Elasticsearch/reference/current/indices-flush.html" target="_blank" rel="noopener">Flush</a>。<font color="DeepPink"><strong>默认配置下，每次index、bulk、delete、update完成的时候，会触发Flush translog到磁盘上,然后才返回200 OK。</strong></font>这个提高了数据安全性，但是会对写入的性能造成不小的影响。</p>
 <p>在写入效率优先的情况下，可以在index template里设置如下参数：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&quot;index.translog.durability&quot;:&quot;async&quot;(默认是request) </span><br><span class="line">&quot;index.translog.sync_interval&quot;:30s (默认是5s)</span><br></pre></td></tr></table></figure>
-<h1>小结</h1>
-<p>简而言之，_refresh用于使新文档在搜索时可见。<br>
-反过来，_flush用于在硬盘上持久化内存段。<br>
-_flush不会影响Elasticsearch中文档的可见性，因为搜索是在内存段中进行的，而_refresh会影响它们的可见性。</p>
+
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>简而言之，_refresh用于使新文档在搜索时可见。<br>反过来，_flush用于在硬盘上持久化内存段。<br>_flush不会影响Elasticsearch中文档的可见性，因为搜索是在内存段中进行的，而_refresh会影响它们的可见性。</p>
 
     </div>
 
@@ -484,7 +480,7 @@ _flush不会影响Elasticsearch中文档的可见性，因为搜索是在内存�
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">Refresh</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Flush</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">小结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Refresh"><span class="nav-number">1.</span> <span class="nav-text">Refresh</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Flush"><span class="nav-number">2.</span> <span class="nav-text">Flush</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">3.</span> <span class="nav-text">小结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -500,19 +496,19 @@ _flush不会影响Elasticsearch中文档的可见性，因为搜索是在内存�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">150</span>
+          <span class="site-state-item-count">151</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">39</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">211</span>
+        <span class="site-state-item-count">212</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
