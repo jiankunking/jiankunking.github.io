@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-10-14T01:17:13.778Z">
+<meta property="og:updated_time" content="2024-04-18T07:10:54.892Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL InnoDB存储引擎：分区表">
 <meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
@@ -254,7 +254,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-10-14 09:17:13" itemprop="dateModified" datetime="2019-10-14T09:17:13+08:00">2019-10-14</time>
+                <time title="修改时间：2024-04-18 15:10:54" itemprop="dateModified" datetime="2024-04-18T15:10:54+08:00">2024-04-18</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -308,7 +308,7 @@
 <p>MySQL数据库在5.1版本时添加了对分区的支持，<font color="DeepPink"><strong>分区的过程是将一个表或索引分解为多个更小、更可管理的部分。就访问数据库的应用而言，从逻辑上讲，只有一个表或一个索引，但是在物理上这个表或索引可能由数十个物理分区组成。每个分区都是独立的对象，可以独自处理，也可以作为一个更大对象的一部分进行处理。</strong></font></p>
 <p>MySQL数据库支持的分区类型为<font color="DeepPink"><strong>水平分区</strong></font>（指将同一个表中不同行的记录分配到不同的物理文件中），并不支持垂直分区（指将同一表中不同列的记录分配到不同的物理文件中）。此外，<font color="DeepPink"><strong>MySQL数据库的分区是局部分区索引，一个分区中既存放了数据又存放了索引。</strong></font>而全局分区是指，数据存放在各个分区中，但是所有数据的索引放在一个对象中。目前，MySQL数据库还不支持全局分区。</p>
 <p>可以通过以下命令来查看当前数据库是否启用了分区功能：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show global variables like &apos;%partition%&apos;;</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| Variable_name     | Value |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| have_partitioning | YES   |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">1 row in set (0.04 sec)</span><br><span class="line"> </span><br><span class="line">mysql&gt; show plugins</span><br><span class="line">*************************** 43. row ***************************</span><br><span class="line">   Name: partition</span><br><span class="line"> Status: ACTIVE</span><br><span class="line">   Type: STORAGE ENGINE</span><br><span class="line">Library: NULL</span><br><span class="line">License: GPL</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; show global variables like &apos;%partition%&apos;;</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| Variable_name     | Value |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| have_partitioning | YES   |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">1 row in set (0.04 sec)</span><br><span class="line"> </span><br><span class="line">MySQL&gt; show plugins</span><br><span class="line">*************************** 43. row ***************************</span><br><span class="line">   Name: partition</span><br><span class="line"> Status: ACTIVE</span><br><span class="line">   Type: STORAGE ENGINE</span><br><span class="line">Library: NULL</span><br><span class="line">License: GPL</span><br></pre></td></tr></table></figure>
 <p>有时候可能会有这么一种误区，只要启用了分区，数据库就会运行的更快。这个结论结论是存在很多问题的，就经验来看，分区可能会给某些SQL语句性能带来提高，但是分区主要用于数据库高可用性的管理。在OLTP应用中，对于分区的使用应该非常小心，总之，如果只是一味地使用分区，而不理解分区是如何工作的，也不清楚你的应用如何使用分区，那么分区极有可能会对性能产生负面的影响。</p>
 <h1>MySQL分区类型</h1>
 <h2 id="RANGE分区">RANGE分区</h2>
