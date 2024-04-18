@@ -247,11 +247,10 @@
 <p>Golang 代码设计及规范</p>
 </blockquote>
 <a id="more"></a>
-<h1>代码评审</h1>
-<p>为什么要代码评审？ 如果代码评审是要捕捉糟糕的代码，那么你如何知道你审查的代码是好的还是糟糕的？</p>
+
+<h1 id="代码评审"><a href="#代码评审" class="headerlink" title="代码评审"></a>代码评审</h1><p>为什么要代码评审？ 如果代码评审是要捕捉糟糕的代码，那么你如何知道你审查的代码是好的还是糟糕的？</p>
 <p>我在找一些客观的方式来谈论代码的好坏属性。</p>
-<h1>糟糕的代码</h1>
-<p>你可能会在代码审查中遇到以下这些糟糕的代码：</p>
+<h1 id="糟糕的代码"><a href="#糟糕的代码" class="headerlink" title="糟糕的代码"></a>糟糕的代码</h1><p>你可能会在代码审查中遇到以下这些糟糕的代码：</p>
 <ul>
 <li>Rigid - 代码是否死板？它是否有强类型或参数以至于修改起来很困难？</li>
 <li>Fragile - 代码是否脆弱？对代码做轻微的改变是否就会引起程序极大的破坏？</li>
@@ -261,71 +260,63 @@
 </ul>
 <p>当你做代码审查的时候是否会很高兴看到这些词语？</p>
 <p>当然不会。</p>
-<h1>好的设计</h1>
-<p>如果有一些描述优秀的设计属性的方式就更好了，不仅仅是糟糕的设计，是否能在客观条件下做？</p>
-<h2 id="SOLID">SOLID</h2>
-<p>在2002年，Robert Martin的《Agile Software Development, Principles, Patterns, and Practices》书中提到了五个可重用软件设计的原则 - “SOLID”（英文首字母缩略字）:</p>
+<h1 id="好的设计"><a href="#好的设计" class="headerlink" title="好的设计"></a>好的设计</h1><p>如果有一些描述优秀的设计属性的方式就更好了，不仅仅是糟糕的设计，是否能在客观条件下做？</p>
+<h2 id="SOLID"><a href="#SOLID" class="headerlink" title="SOLID"></a>SOLID</h2><p>在2002年，Robert Martin的《Agile Software Development, Principles, Patterns, and Practices》书中提到了五个可重用软件设计的原则 - “SOLID”（英文首字母缩略字）:</p>
 <ul>
 <li>Single Responsibility Principle - 单一功能原则</li>
-<li>Open/Closed Principle - 开闭原则</li>
+<li>Open&#x2F;Closed Principle - 开闭原则</li>
 <li>Liskov Substitution Principle - 里氏替换原则</li>
 <li>Interface Segregation Principle - 接口隔离原则</li>
 <li>Dependency Inversion Principle - 依赖反转原则</li>
 </ul>
 <p>这本书有点点过时，使用的语言也是十多年前的。但是，或许SOLID原则的某些方面可以给我们一个有关如何谈论一个精心设计的Go语言程序的线索。</p>
-<h3 id="Single-Responsibility-Principle">Single Responsibility Principle</h3>
-<blockquote>
+<h3 id="Single-Responsibility-Principle"><a href="#Single-Responsibility-Principle" class="headerlink" title="Single Responsibility Principle"></a>Single Responsibility Principle</h3><blockquote>
 <p>A class should have one, and only one, reason to change. –Robert C Martin</p>
 </blockquote>
 <p>现在Go语言显然没有classses - 相反，我们有更为强大的组合的概念 - 但是如果你可以看到过去class的使用，我认为这里有其价值。</p>
 <p>为什么一段代码应该只有一个原因改变如此重要？当然，和你自己的代码要修改比较起来，发现自己代码所依赖的代码要修改会更令人头疼。而且，当你的代码不得不要修改的时候，它应该对直接的刺激有反应，而不应该是一个间接伤害的受害者。</p>
 <p>所以，代码有单一功能原则从而有最少的原因来改变。</p>
-<h4 id="Coupling-Cohesion-耦合与内聚">Coupling&amp;Cohesion - 耦合与内聚</h4>
-<p>这两个词语描绘了修改一段软件代码是何等的简单或困难。</p>
-<p>Coupling - 耦合是两个东西一起改变 - 一个移动会引发另一个移动。<br>
-Cohesion - 内聚是相关联但又隔离，一种相互吸引的力量。</p>
+<h4 id="Coupling-Cohesion-耦合与内聚"><a href="#Coupling-Cohesion-耦合与内聚" class="headerlink" title="Coupling&amp;Cohesion - 耦合与内聚"></a>Coupling&amp;Cohesion - 耦合与内聚</h4><p>这两个词语描绘了修改一段软件代码是何等的简单或困难。</p>
+<p>Coupling - 耦合是两个东西一起改变 - 一个移动会引发另一个移动。<br>Cohesion - 内聚是相关联但又隔离，一种相互吸引的力量。</p>
 <p>在软件方面，内聚是形容代码段自然吸引到另一个的属性。</p>
 <p>要描述Go语言的耦合与内聚，我们可以要谈论一下functions和methods，当讨论单一功能原则时它们很常见，但是我相信它始于Go语言的package模型。</p>
-<h4 id="Pakcage命名">Pakcage命名</h4>
-<p>在Go语言中，所有的代码都在某个package中。好的package设计始于他的命名。package名字不仅描述了它的目的而且还是一个命名空间的前缀。Go语言标准库里有一些好的例子：</p>
+<h4 id="Pakcage命名"><a href="#Pakcage命名" class="headerlink" title="Pakcage命名"></a>Pakcage命名</h4><p>在Go语言中，所有的代码都在某个package中。好的package设计始于他的命名。package名字不仅描述了它的目的而且还是一个命名空间的前缀。Go语言标准库里有一些好的例子： </p>
 <ul>
-<li>net/http - 提供了http客户端和服务</li>
-<li>os/exec - 执行外部的命令</li>
-<li>encoding/json - 实现了JSON的编码与解码</li>
+<li>net&#x2F;http - 提供了http客户端和服务 </li>
+<li>os&#x2F;exec - 执行外部的命令 </li>
+<li>encoding&#x2F;json - 实现了JSON的编码与解码</li>
 </ul>
 <p>在你自己的项目中使用其他pakcage时要用import声明，它会在两个package之间建立一个源码级的耦合。</p>
-<h4 id="糟糕的pakcage命名">糟糕的pakcage命名</h4>
-<p>关注于命名并不是在卖弄。糟糕的命名会失去罗列其目的的机会。</p>
+<h4 id="糟糕的pakcage命名"><a href="#糟糕的pakcage命名" class="headerlink" title="糟糕的pakcage命名"></a>糟糕的pakcage命名</h4><p>关注于命名并不是在卖弄。糟糕的命名会失去罗列其目的的机会。</p>
 <p>比如说server、private、common、utils 这些糟糕的命名都很常见。这些package就像是一个混杂的场所，因为他们好多都是没有原因地经常改变。</p>
-<h4 id="Go语言的UNIX哲学">Go语言的UNIX哲学</h4>
-<p>以我的观点，涉及到解耦设计必须要提及Doug Mcllroy的Unix哲学：小巧而锋利的工具的结合解决更大的任务或者通常原创作者并没有预想到的任务。</p>
+<h4 id="Go语言的UNIX哲学"><a href="#Go语言的UNIX哲学" class="headerlink" title="Go语言的UNIX哲学"></a>Go语言的UNIX哲学</h4><p>以我的观点，涉及到解耦设计必须要提及Doug Mcllroy的Unix哲学：小巧而锋利的工具的结合解决更大的任务或者通常原创作者并没有预想到的任务。</p>
 <p>我认为Go语言的Package体现了UNIX哲学精神。实际上每个package自身就是一个具有单一原则的变化单元的小型Go语言项目。</p>
-<h3 id="Open-Closed-Principle">Open/Closed Principle</h3>
-<p>Bertrand Meyer曾经写道：</p>
+<h3 id="Open-Closed-Principle"><a href="#Open-Closed-Principle" class="headerlink" title="Open&#x2F;Closed Principle"></a>Open&#x2F;Closed Principle</h3><p>Bertrand Meyer曾经写道： </p>
 <blockquote>
 <p>Software entities should be open for extension, but closed for modification. –Bertrand Meyer, Object-Oriented Software Construction</p>
 </blockquote>
 <p>该建议如何应用到现在的编程语言上：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">type A struct &#123;</span><br><span class="line">        year int</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (a A) Greet() &#123; fmt.Println(&quot;Hello GolangUK&quot;, a.year) &#125;</span><br><span class="line"></span><br><span class="line">type B struct &#123;</span><br><span class="line">        A</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (b B) Greet() &#123; fmt.Println(&quot;Welcome to GolangUK&quot;, b.year) &#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">        var a A</span><br><span class="line">        a.year = 2016</span><br><span class="line">        var b B</span><br><span class="line">        b.year = 2016</span><br><span class="line">        a.Greet() // Hello GolangUK 2016</span><br><span class="line">        b.Greet() // Welcome to GolangUK 2016</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>typeA有一个year字段以及Greet方法。 typeB嵌入了A做为字段，从而，使B提供的Greet方法遮蔽了A的，调用时可以看到B的方法覆盖了A。</p>
 <p>但是嵌入不仅仅是对于方法，它还能提供嵌入type的字段访问。如你所见，由于A和B都在同一个package内，B可以访问A的私有year字段就像B已经声明过。</p>
 <p>因此嵌入是一个强大的工具，它允许Go语言type对扩展是开放的。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">type Cat struct &#123;</span><br><span class="line">        Name string</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (c Cat) Legs() int &#123; return 4 &#125;</span><br><span class="line"></span><br><span class="line">func (c Cat) PrintLegs() &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type OctoCat struct &#123;</span><br><span class="line">        Cat</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (o OctoCat) Legs() int &#123; return 5 &#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">        var octo OctoCat</span><br><span class="line">        fmt.Println(octo.Legs()) // 5</span><br><span class="line">        octo.PrintLegs()         // I have 4 legs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>在上边这个例子中，typeCat有Legs方法来计算它有几条腿。我们嵌入Cat到一个新的typeOctoCat中，并声明Octocats有五条腿。然而，尽管OctoCat定义了自己有五条腿，但是PrintLegs方法被调用时会返回4。</p>
 <p>这是因为PrintLegs在typeCat中定义。它会将Cat做为它的接收者，因此它会使用Cat的Legs方法。Cat并不了解已嵌入的type，因此它的嵌入方法不能被修改。</p>
 <p>由此，我们可以说<font color="DeepPink"><strong>Go语言的types对扩展开放，但是对修改是关闭的。</strong></font></p>
 <p>事实上，Go语言接收者的方法仅仅是带有预先声明形式的参数的function的语法糖而已：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">func (c Cat) PrintLegs() &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func PrintLegs(c Cat) &#123;</span><br><span class="line">        fmt.Printf(&quot;I have %d legs\n&quot;, c.Legs())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>第一个function的接收者就是你传进去的参数，而且由于Go语言不知道重载，所以说OctoCats并不能替换普通的Cats，这就引出了接下来一个原则：</p>
-<h3 id="Liskov-Substitution-Principle">Liskov Substitution Principle</h3>
-<p>该原则由Barbara Liskov提出，大致上,它规定了两种类型如果调用者不能区分出他们行为的不同，那么他们是可替代的。</p>
+<h3 id="Liskov-Substitution-Principle"><a href="#Liskov-Substitution-Principle" class="headerlink" title="Liskov Substitution Principle"></a>Liskov Substitution Principle</h3><p>该原则由Barbara Liskov提出，大致上,它规定了两种类型如果调用者不能区分出他们行为的不同，那么他们是可替代的。</p>
 <p>基于class的编程语言，里氏替换原则通常被解释为一个抽象基类的各种具体子类的规范。但是Go语言没有class或者inheritance（继承），因此就不能以抽象类的层次结构实现替换。</p>
-<h4 id="Interfaces">Interfaces</h4>
-<p>相反，Go语言的interface才有权替换。在Go语言中，type不需要声明他们具体要实现的某个interface，相反的，任何想要实现interface的type仅需提供与interface声明所匹配的方法。</p>
+<h4 id="Interfaces"><a href="#Interfaces" class="headerlink" title="Interfaces"></a>Interfaces</h4><p>相反，Go语言的interface才有权替换。在Go语言中，type不需要声明他们具体要实现的某个interface，相反的，任何想要实现interface的type仅需提供与interface声明所匹配的方法。</p>
 <p>就Go语言而言，隐式的interface要比显式的更令人满意，这也深刻地影响着他们使用的方式。</p>
 <p><font color="DeepPink"><strong>精心设计的interface更可能是小巧的，流行的做法是一个interface只包含一个方法。逻辑上来讲小巧的interface使实现变得简单，反之就很难做到。</strong></font>这就导致了由常见行为连接的简单实现而组成的package。</p>
-<h4 id="io-Reader">io.Reader</h4>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">type Reader interface &#123;</span><br><span class="line">        // Read reads up to len(buf) bytes into buf.</span><br><span class="line">        Read(buf []byte) (n int, err error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="io-Reader"><a href="#io-Reader" class="headerlink" title="io.Reader"></a>io.Reader</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">type Reader interface &#123;</span><br><span class="line">        // Read reads up to len(buf) bytes into buf.</span><br><span class="line">        Read(buf []byte) (n int, err error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>我最喜爱的Go语言interface - io.Reader</p>
 <p>interface io.Reader非常简单，Read读取数据到提供的buffer，并返回调用者读取数据的bytes的数量以及读取期间的任何错误。它看起来简单但是很强大。</p>
 <p>因为io.Reader可以处理任何能转换为bytes流的数据，我们可以在任何事情上构建readers：string常量、byte数组、标准输入、网络数据流、gzip后的tar文件以及通过ssh远程执行的命令的标准输出。</p>
@@ -335,36 +326,39 @@ Cohesion - 内聚是相关联但又隔离，一种相互吸引的力量。</p>
 <p>Require no more, promise no less. –Jim Weirich</p>
 </blockquote>
 <p>接下来就到了”SOLID”第四个原则。</p>
-<h3 id="Interface-Segregation-Principle">Interface Segregation Principle</h3>
-<blockquote>
+<h3 id="Interface-Segregation-Principle"><a href="#Interface-Segregation-Principle" class="headerlink" title="Interface Segregation Principle"></a>Interface Segregation Principle</h3><blockquote>
 <p>Clients should not be forced to depend on methods they do not use. –Robert C. Martin</p>
 </blockquote>
 <p>在Go语言中，接口隔离原则的应用是指一个方法来完成其工作的孤立行为的过程。举个“栗子”，编写方法来保存一个文档结构到磁盘的任务。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Save writes the contents of doc to the file f.</span><br><span class="line">func Save(f *os.File, doc *Document) error</span><br></pre></td></tr></table></figure>
+
 <p>我可以这样定义这个Save方法，使用*os.File做为保存Document的文件。但是这样做会有一些问题。</p>
 <p>Save方法排除了保存数据到网络位置的选项。假如过后要加入网络储存的需求，那么该方法就需要修改也就意味着要影响到所有使用该方法的调用者。</p>
 <p>因为Save直接地操作磁盘上的文件，测试起来很不方便。要验证其操作，测试不得不在文件被写入后读取其内容。另外测试必须确保f被写入一个临时的位置而且过后还要删除。</p>
 <p>*os.File还包含了许多跟Save无关的方法，像读取路径以及检查路径是否是软连接。如果Save方法只使用*os.File相关的部分将会非常有用。</p>
 <p>我们如何做呢？</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied ReadWriterCloser.</span><br><span class="line">func Save(rwc io.ReadWriteCloser, doc *Document) error</span><br></pre></td></tr></table></figure>
+
 <p>使用io.ReadWriteCloser来应用接口隔离原则，这样就重新定义了Save方法使用一个interface来描述更为通用的类型。</p>
 <p>随着修改，任何实现了io.ReadWriteCloser接口的type都可以代替之前的*os.File。这使得Save不仅扩展了它的应用范围同时也给Save的调用者说明了type *os.File哪些方法是操作相关的。</p>
 <p>做为Save的作者，我没有了在*os.File上调用无关的方法选项了，因为他们都被隐藏于io.ReadWriteCloser接口。我们可以进一步地应用接口隔离原则。</p>
 <p>首先，Save方法不太可能会保持单一功能原则，因为它要读取的文件内容应该是另外一段代码的责任。因此我们可以缩小接口范围，只传入writing和closing。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied WriteCloser.</span><br><span class="line">func Save(wc io.WriteCloser, doc *Document) error</span><br></pre></td></tr></table></figure>
+
 <p>其次，通过向Save提供一种机制来关闭它的数据流，会导致另外一个问题：wc会在什么情况下关闭。Save可能会无条件的调用Close或在成功的情况下调用Close。</p>
 <p>如果它想要在写入document之后再写入额外的数据时会引起Save的调用者一个问题。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">type NopCloser struct &#123;</span><br><span class="line">        io.Writer</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// Close has no effect on the underlying writer.</span><br><span class="line">func (c *NopCloser) Close() error &#123; return nil &#125;</span><br></pre></td></tr></table></figure>
+
 <p>一个原始解决方案回事定义一个新的type，在其内嵌入io.Writer以及重写Close方法来阻止Save方法关闭底层数据流。</p>
 <p>但是这样可能会违反里氏替换原则，如果NopCloser并没有关闭任何东西。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// Save writes the contents of doc to the supplied Writer.</span><br><span class="line">func Save(w io.Writer, doc *Document) error</span><br></pre></td></tr></table></figure>
+
 <p>一个更好的解决办法是重新定义Save只传入io.Writer，剥离它的所有责任除了写入数据到数据流。</p>
 <p>通过对Save方法应用接口隔离原则，同时得到了最具体以及最通用的需求函数。我们现在可以使用Save方法来保存数据到任何实现了io.Writer的地方。</p>
 <blockquote>
 <p><font color="DeepPink"><strong>A great rule of thumb for Go is accept interfaces, return structs.</strong></font> –Jack Lindamood</p>
 </blockquote>
-<h3 id="Dependency-Inversion-Principle">Dependency Inversion Principle</h3>
-<blockquote>
+<h3 id="Dependency-Inversion-Principle"><a href="#Dependency-Inversion-Principle" class="headerlink" title="Dependency Inversion Principle"></a>Dependency Inversion Principle</h3><blockquote>
 <p>High-level modules should not depend on low-level modules. Both should depend on abstractions. Abstractions should not depend on details. Details should depend on abstractions. –Robert C. Martin</p>
 </blockquote>
 <p>对于Go语言来讲，依赖反转意味着什么呢?</p>
@@ -373,8 +367,7 @@ Cohesion - 内聚是相关联但又隔离，一种相互吸引的力量。</p>
 <p>在Go语言中，你的导入图必须是非循环。不遵守此非循环的需求会导致编译错误，但是更为严重的是它代表了一系列的设计错误。</p>
 <p>所有条件都相同的情况下精心设计的导入图应该是广泛的以及相对平坦的，而不是又高又窄。如果你有一个package的函数在没有其他package的情况下就无法操作，也许这就表明了代码没有考虑pakcage的边界。</p>
 <p>依赖反转原则鼓励你尽可能地像导入图一样在main package或者最高层级的处理程序内对具体细节负责，让低层级代码来处理抽象的接口。</p>
-<h2 id="“SOLID”-Go语言设计">“SOLID” Go语言设计</h2>
-<p>回顾一下，当应用到Go语言设计中，每个“SOLID”原则都是强有力的声明，但是加在一起他们有一个中心主题。</p>
+<h2 id="“SOLID”-Go语言设计"><a href="#“SOLID”-Go语言设计" class="headerlink" title="“SOLID” Go语言设计"></a>“SOLID” Go语言设计</h2><p>回顾一下，当应用到Go语言设计中，每个“SOLID”原则都是强有力的声明，但是加在一起他们有一个中心主题。</p>
 <ul>
 <li>单一功能原则鼓励你在package中构建functions、types以及方法表现出自然的凝聚力。types属于彼此，functions为单一目的服务。</li>
 <li>开闭原则鼓励你使用嵌入将简单的type组合成更为复杂的。</li>
@@ -389,16 +382,13 @@ Cohesion - 内聚是相关联但又隔离，一种相互吸引的力量。</p>
 <p>Design is the art of arranging code that needs to work today, and to be easy to change forever. –Sandi Metz</p>
 </blockquote>
 <p>因为如果Go语言想要成为公司长期投资的编程语言，Go程序的维护，更容易的变更将是他们决定的关键因素。</p>
-<h1>结尾</h1>
-<p>Go语言程序员应当讨论更多的是设计而非框架。我们应当不惜一切代价地关注重用而非性能。</p>
+<h1 id="结尾"><a href="#结尾" class="headerlink" title="结尾"></a>结尾</h1><p>Go语言程序员应当讨论更多的是设计而非框架。我们应当不惜一切代价地关注重用而非性能。</p>
 <p>我想要看到是今天的人们谈论关于如何使用编程语言，无论是设计解决方案还是解决实际问题的选择和局限性。</p>
 <p>我想要听到的是人们谈论如何通过精心设计、解耦、重用以及适应变化的方式来设计Go语言程序。</p>
-<h1>…还有一点</h1>
-<p>我们需要告诉世界优秀的软件该如何编写。告诉他们使用Go语言如何编写优秀的、可组合的及易于变化的软件。</p>
+<h1 id="…还有一点"><a href="#…还有一点" class="headerlink" title="…还有一点"></a>…还有一点</h1><p>我们需要告诉世界优秀的软件该如何编写。告诉他们使用Go语言如何编写优秀的、可组合的及易于变化的软件。</p>
 <p>原文链接：<a href="http://dave.cheney.net/2016/08/20/solid-go-design" target="_blank" rel="noopener">http://dave.cheney.net/2016/08/20/solid-go-design</a></p>
 <blockquote>
-<p>本文转载自：<br>
-<a href="https://blog.gokit.info/post/go-solid-design/" target="_blank" rel="noopener">https://blog.gokit.info/post/go-solid-design/</a></p>
+<p>本文转载自：<br><a href="https://blog.gokit.info/post/go-solid-design/" target="_blank" rel="noopener">https://blog.gokit.info/post/go-solid-design/</a></p>
 </blockquote>
 
       </div>
@@ -462,7 +452,7 @@ Cohesion - 内聚是相关联但又隔离，一种相互吸引的力量。</p>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">代码评审</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">糟糕的代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">好的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#SOLID"><span class="nav-number">3.1.</span> <span class="nav-text">SOLID</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Single-Responsibility-Principle"><span class="nav-number">3.1.1.</span> <span class="nav-text">Single Responsibility Principle</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Coupling-Cohesion-耦合与内聚"><span class="nav-number">3.1.1.1.</span> <span class="nav-text">Coupling&amp;Cohesion - 耦合与内聚</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Pakcage命名"><span class="nav-number">3.1.1.2.</span> <span class="nav-text">Pakcage命名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#糟糕的pakcage命名"><span class="nav-number">3.1.1.3.</span> <span class="nav-text">糟糕的pakcage命名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Go语言的UNIX哲学"><span class="nav-number">3.1.1.4.</span> <span class="nav-text">Go语言的UNIX哲学</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Open-Closed-Principle"><span class="nav-number">3.1.2.</span> <span class="nav-text">Open/Closed Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Liskov-Substitution-Principle"><span class="nav-number">3.1.3.</span> <span class="nav-text">Liskov Substitution Principle</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Interfaces"><span class="nav-number">3.1.3.1.</span> <span class="nav-text">Interfaces</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#io-Reader"><span class="nav-number">3.1.3.2.</span> <span class="nav-text">io.Reader</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Interface-Segregation-Principle"><span class="nav-number">3.1.4.</span> <span class="nav-text">Interface Segregation Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dependency-Inversion-Principle"><span class="nav-number">3.1.5.</span> <span class="nav-text">Dependency Inversion Principle</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#“SOLID”-Go语言设计"><span class="nav-number">3.2.</span> <span class="nav-text">“SOLID” Go语言设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">结尾</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">…还有一点</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#代码评审"><span class="nav-number">1.</span> <span class="nav-text">代码评审</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#糟糕的代码"><span class="nav-number">2.</span> <span class="nav-text">糟糕的代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#好的设计"><span class="nav-number">3.</span> <span class="nav-text">好的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#SOLID"><span class="nav-number">3.1.</span> <span class="nav-text">SOLID</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Single-Responsibility-Principle"><span class="nav-number">3.1.1.</span> <span class="nav-text">Single Responsibility Principle</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Coupling-Cohesion-耦合与内聚"><span class="nav-number">3.1.1.1.</span> <span class="nav-text">Coupling&amp;Cohesion - 耦合与内聚</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Pakcage命名"><span class="nav-number">3.1.1.2.</span> <span class="nav-text">Pakcage命名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#糟糕的pakcage命名"><span class="nav-number">3.1.1.3.</span> <span class="nav-text">糟糕的pakcage命名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Go语言的UNIX哲学"><span class="nav-number">3.1.1.4.</span> <span class="nav-text">Go语言的UNIX哲学</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Open-Closed-Principle"><span class="nav-number">3.1.2.</span> <span class="nav-text">Open/Closed Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Liskov-Substitution-Principle"><span class="nav-number">3.1.3.</span> <span class="nav-text">Liskov Substitution Principle</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Interfaces"><span class="nav-number">3.1.3.1.</span> <span class="nav-text">Interfaces</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#io-Reader"><span class="nav-number">3.1.3.2.</span> <span class="nav-text">io.Reader</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Interface-Segregation-Principle"><span class="nav-number">3.1.4.</span> <span class="nav-text">Interface Segregation Principle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dependency-Inversion-Principle"><span class="nav-number">3.1.5.</span> <span class="nav-text">Dependency Inversion Principle</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#“SOLID”-Go语言设计"><span class="nav-number">3.2.</span> <span class="nav-text">“SOLID” Go语言设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结尾"><span class="nav-number">4.</span> <span class="nav-text">结尾</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#…还有一点"><span class="nav-number">5.</span> <span class="nav-text">…还有一点</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
