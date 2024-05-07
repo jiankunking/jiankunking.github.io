@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">151</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">152</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">212</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">214</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -247,36 +247,30 @@
 <p>Go Crypto</p>
 </blockquote>
 <a id="more"></a>
-<h1>视频信息</h1>
-<p>Go for Crypto Developers<br>
-by George Tankersley<br>
-at GopherCon 2016</p>
+
+<h1 id="视频信息"><a href="#视频信息" class="headerlink" title="视频信息"></a>视频信息</h1><p>Go for Crypto Developers<br>by George Tankersley<br>at GopherCon 2016</p>
 <p><a href="https://www.youtube.com/watch?v=2r_KMzXB74w" target="_blank" rel="noopener">https://www.youtube.com/watch?v=2r_KMzXB74w</a></p>
-<p>幻灯地址：<a href="https://speakerdeck.com/gtank/crypto-for-go-developers" target="_blank" rel="noopener">https://speakerdeck.com/gtank/crypto-for-go-developers</a><br>
-代码：<a href="https://github.com/gtank/cryptopasta" target="_blank" rel="noopener">https://github.com/gtank/cryptopasta</a></p>
-<h1>Don’t write your own crypto</h1>
-<p>很多人把这句话<font color="DeepPink"><strong>误解为</strong></font>不要使用加密、不要使用任何密码学的技术，因为你不够聪明。<font color="DeepPink"><strong>No。完全不是这个意思</strong></font>。</p>
+<p>幻灯地址：<a href="https://speakerdeck.com/gtank/crypto-for-go-developers" target="_blank" rel="noopener">https://speakerdeck.com/gtank/crypto-for-go-developers</a><br>代码：<a href="https://github.com/gtank/cryptopasta" target="_blank" rel="noopener">https://github.com/gtank/cryptopasta</a></p>
+<h1 id="Don’t-write-your-own-crypto"><a href="#Don’t-write-your-own-crypto" class="headerlink" title="Don’t write your own crypto"></a>Don’t write your own crypto</h1><p>很多人把这句话<font color="DeepPink"><strong>误解为</strong></font>不要使用加密、不要使用任何密码学的技术，因为你不够聪明。<font color="DeepPink"><strong>No。完全不是这个意思</strong></font>。</p>
 <p>这句话是说<font color="DeepPink"><strong>不要试图去发明创造那些加密类的算法</strong></font>。因为你不大可能会创造一个超过 AES 的加密算法、也不大可能会创造一个比 SHA 更好的 hash 算法。所以自己闭门造的算法一般意味着安全性的大大降低。</p>
 <p>全世界能干这件事情的人不超过5个，而且他们今天都不在这里。另外一半都是 <font color="DeepPink"><strong>Daniel J. Bernstein</strong></font> 干的（开个玩笑，不过这人很牛，今天我们在用的很多加密的东西都是他设计、实现的）。</p>
 <p>表面上好像这是个限制，其实这是个优势。因为我们<font color="DeepPink"><strong>不需要</strong></font>编写自己的加密算法，一切痛苦的工作都已经由别人做好了。我们只需要和搭积木一样去使用这些密码学工具就好了。</p>
-<h1>经常听到这样的建议</h1>
-<ul>
+<h1 id="经常听到这样的建议"><a href="#经常听到这样的建议" class="headerlink" title="经常听到这样的建议"></a>经常听到这样的建议</h1><ul>
 <li>对传输中的数据用 TLS</li>
 <li>对静止的数据用 GPG</li>
 </ul>
-<h2 id="TLS">TLS</h2>
-<p>Go 可以很容易使用 TLS，因为必须的东西都内置了，从客户端到服务端。</p>
+<h2 id="TLS"><a href="#TLS" class="headerlink" title="TLS"></a>TLS</h2><p>Go 可以很容易使用 TLS，因为必须的东西都内置了，从客户端到服务端。</p>
 <p>客户端</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">var minimalTLSConfig = &amp;tls.Config&#123;</span><br><span class="line">	MinVersion: tls.VersionTLS12,</span><br><span class="line">&#125;</span><br><span class="line">var tlsTransport = &amp;http.Transport&#123;</span><br><span class="line">	TLSClientConfig: minimalTLSConfig,</span><br><span class="line">&#125;</span><br><span class="line">var httpClient = &amp;http.Client&#123;</span><br><span class="line">	Transport: tlsTransport,</span><br><span class="line">	Timeout:   10 * time.Second,</span><br><span class="line">&#125;</span><br><span class="line">func MakeRequest() error &#123;</span><br><span class="line">	resp, err := httpClient.Get(&quot;https://www.google.com&quot;)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	// have fun</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>这里最重要的是 tls.VersionTLS12，因为低于 1.2 的话，会导致 Go 使用一些不安全的低版本的实现，所以这里限定 1.2 比较安全。而且大部分网站也都支持。</p>
 <p>服务端</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">var minimalTLSConfig = &amp;tls.Config&#123;</span><br><span class="line">	MinVersion:               tls.VersionTLS12,</span><br><span class="line">	PreferServerCipherSuites: true,</span><br><span class="line">&#125;</span><br><span class="line">var srv = &amp;http.Server&#123;</span><br><span class="line">	Addr:      &quot;localhost:8080&quot;,</span><br><span class="line">	TLSConfig: minimalTLSConfig,</span><br><span class="line">&#125;</span><br><span class="line">func handleReq(w http.ResponseWriter, r *http.Request) &#123;</span><br><span class="line">	fmt.Fprintf(w, &quot;Hello, world&quot;)</span><br><span class="line">&#125;</span><br><span class="line">func main() &#123;</span><br><span class="line">	http.HandleFunc(&quot;/&quot;, handleReq)</span><br><span class="line">	err := srv.ListenAndServeTLS(&quot;cert.pem&quot;, &quot;key.pem&quot;)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Fatal(err)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>这里和客户端一样，限定最小版本是 1.2，并且多了一个额外的参数，要求以服务器的 Cipher 优先，因此不按照客户端给的选择，而是按照Go服务端给的选择。因为 Go 的 TLS 包中有大量针对各种安全问题的调整，因此选择加密包的话，遵循 Go 内部的决定是最好的。</p>
-<h2 id="GPG">GPG</h2>
-<p>GPG 是为了人和人之间的交流信息，而不是机器和机器之间交流信息的。</p>
+<h2 id="GPG"><a href="#GPG" class="headerlink" title="GPG"></a>GPG</h2><p>GPG 是为了人和人之间的交流信息，而不是机器和机器之间交流信息的。</p>
 <p>那么如何安全的使用 GPG 呢？答案就是<font color="DeepPink"><strong>不用GPG</strong></font>。因为作者觉得 GPG 太过阴谋论了，陷入了很多本不需要过多注意的区域，即使那么做了，也不见得更安全。</p>
-<h1>这个 Talk 不讲 TLS 和 GPG</h1>
-<p>因为当你实现安全的信息系统的时候，通常不会用到这两个东西。TLS 和 GPG 有他们应用的场合，但是对于每天的密码学工作来说，基本都不用这两个工具：</p>
+<h1 id="这个-Talk-不讲-TLS-和-GPG"><a href="#这个-Talk-不讲-TLS-和-GPG" class="headerlink" title="这个 Talk 不讲 TLS 和 GPG"></a>这个 Talk 不讲 TLS 和 GPG</h1><p>因为当你实现安全的信息系统的时候，通常不会用到这两个东西。TLS 和 GPG 有他们应用的场合，但是对于每天的密码学工作来说，基本都不用这两个工具：</p>
 <ul>
 <li>对文件计算散列</li>
 <li>生成随机 ID</li>
@@ -286,50 +280,45 @@ at GopherCon 2016</p>
 <li>JWT</li>
 <li>签名更新</li>
 </ul>
-<h1>在 Go 的 crypto 包里的算法可不都是好的算法</h1>
-<h2 id="加密">加密</h2>
-<p>下列划掉的算法都不应该再使用了：</p>
+<h1 id="在-Go-的-crypto-包里的算法可不都是好的算法"><a href="#在-Go-的-crypto-包里的算法可不都是好的算法" class="headerlink" title="在 Go 的 crypto 包里的算法可不都是好的算法"></a>在 Go 的 crypto 包里的算法可不都是好的算法</h1><h2 id="加密"><a href="#加密" class="headerlink" title="加密"></a>加密</h2><p>下列划掉的算法都不应该再使用了：</p>
 <ul>
-<li><s>DES</s></li>
-<li>
-<pre><code class="language-3DES~~"></code></pre>
+<li><del>DES</del></li>
+<li><pre><code class="3DES~~">
+</code></pre>
 </li>
-<li><s>RC4</s></li>
-<li><s>TEA</s></li>
-<li><s>XTEA</s></li>
-<li><s>Blowfish</s></li>
+<li><del>RC4</del></li>
+<li><del>TEA</del></li>
+<li><del>XTEA</del></li>
+<li><del>Blowfish</del></li>
 <li>✔️ Twofish</li>
-<li><s>CAST5</s></li>
+<li><del>CAST5</del></li>
 <li>✔️ Salsa20</li>
 <li>✔️ AES</li>
 </ul>
 <p>只有 Twofish、Salsa20 和 AES 还算是安全的加密算法，但是 AES 在大部分的计算机上都有硬件加速。因此只剩下一个 AES 是最佳加密算法。</p>
-<h3 id="怎么使用-AES">怎么使用 AES</h3>
-<p>要注意，aesCipher.Encrypt() <font color="DeepPink"><strong>只会加密前16个字节</strong></font>。不少人掉到这个坑里了，结果不知道为啥就前几个字符是密文，后面全都是明文。解决办法就是<font color="DeepPink"><strong>不直接用AES</strong></font>，通过 Mode 来使用。</p>
+<h3 id="怎么使用-AES"><a href="#怎么使用-AES" class="headerlink" title="怎么使用 AES"></a>怎么使用 AES</h3><p>要注意，aesCipher.Encrypt() <font color="DeepPink"><strong>只会加密前16个字节</strong></font>。不少人掉到这个坑里了，结果不知道为啥就前几个字符是密文，后面全都是明文。解决办法就是<font color="DeepPink"><strong>不直接用AES</strong></font>，通过 Mode 来使用。</p>
 <p>Block cipher mode 一样有很多种选择：</p>
 <ul>
-<li><s>CBC</s></li>
-<li><s>CFB</s></li>
-<li><s>CTR</s></li>
-<li><s>OFB</s></li>
+<li><del>CBC</del></li>
+<li><del>CFB</del></li>
+<li><del>CTR</del></li>
+<li><del>OFB</del></li>
 <li>✔️ GCM</li>
 </ul>
 <p>这里只有 GCM 是<font color="DeepPink"><strong>验证的</strong></font>加密算法，因此别的都可以不选。</p>
-<h4 id="加密-v2">加密</h4>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/aes&quot;</span><br><span class="line">	&quot;crypto/cipher&quot;</span><br><span class="line">	&quot;crypto/rand&quot;</span><br><span class="line">)</span><br><span class="line">func Encrypt(data []byte, key [32]byte) ([]byte, error) &#123;</span><br><span class="line">	//	初始化 block cipher</span><br><span class="line">	block, err := aes.NewCipher(key[:])</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	设置 block cipher mode</span><br><span class="line">	gcm, err := cipher.NewGCM(block)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	生成随机 nonce</span><br><span class="line">	nonce := make([]byte, gcm.NonceSize())</span><br><span class="line">	_, err = rand.Read(nonce)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	封装、返回</span><br><span class="line">	return gcm.Seal(nonce, nonce, data, nil), nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="解密">解密</h4>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/aes&quot;</span><br><span class="line">	&quot;crypto/cipher&quot;</span><br><span class="line">	&quot;crypto/rand&quot;</span><br><span class="line">)</span><br><span class="line">func Decrypt(ciphertext []byte, key [32]byte) (plaintext []byte, err error) &#123;</span><br><span class="line">	//	初始化 block cipher</span><br><span class="line">	block, err := aes.NewCipher(key[:])</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	设置 block cipher mode</span><br><span class="line">	gcm, err := cipher.NewGCM(block)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	返回解开的包，注意这里的 nonce 是直接取的。</span><br><span class="line">	return gcm.Open(nil,</span><br><span class="line">		ciphertext[:gcm.NonceSize()],</span><br><span class="line">		ciphertext[gcm.NonceSize():],</span><br><span class="line">		nil,</span><br><span class="line">	)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="哈希散列">哈希散列</h2>
-<p>将一大段数据使用 Hash 算法，希望得到一串数值，这串数值可以反映你的这段数据，任何数据变化，这串数值都不同。而且希望无法从这串数值反推数据。这就是密码学 Hash 函数要保证的。（<font color="DeepPink"><strong>注意：哈希不等于加密，很多人这点容易搞混</strong></font>）</p>
+<h4 id="加密-1"><a href="#加密-1" class="headerlink" title="加密"></a>加密</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/aes&quot;</span><br><span class="line">	&quot;crypto/cipher&quot;</span><br><span class="line">	&quot;crypto/rand&quot;</span><br><span class="line">)</span><br><span class="line">func Encrypt(data []byte, key [32]byte) ([]byte, error) &#123;</span><br><span class="line">	//	初始化 block cipher</span><br><span class="line">	block, err := aes.NewCipher(key[:])</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	设置 block cipher mode</span><br><span class="line">	gcm, err := cipher.NewGCM(block)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	生成随机 nonce</span><br><span class="line">	nonce := make([]byte, gcm.NonceSize())</span><br><span class="line">	_, err = rand.Read(nonce)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	封装、返回</span><br><span class="line">	return gcm.Seal(nonce, nonce, data, nil), nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="解密"><a href="#解密" class="headerlink" title="解密"></a>解密</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/aes&quot;</span><br><span class="line">	&quot;crypto/cipher&quot;</span><br><span class="line">	&quot;crypto/rand&quot;</span><br><span class="line">)</span><br><span class="line">func Decrypt(ciphertext []byte, key [32]byte) (plaintext []byte, err error) &#123;</span><br><span class="line">	//	初始化 block cipher</span><br><span class="line">	block, err := aes.NewCipher(key[:])</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	设置 block cipher mode</span><br><span class="line">	gcm, err := cipher.NewGCM(block)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	返回解开的包，注意这里的 nonce 是直接取的。</span><br><span class="line">	return gcm.Open(nil,</span><br><span class="line">		ciphertext[:gcm.NonceSize()],</span><br><span class="line">		ciphertext[gcm.NonceSize():],</span><br><span class="line">		nil,</span><br><span class="line">	)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="哈希散列"><a href="#哈希散列" class="headerlink" title="哈希散列"></a>哈希散列</h2><p>将一大段数据使用 Hash 算法，希望得到一串数值，这串数值可以反映你的这段数据，任何数据变化，这串数值都不同。而且希望无法从这串数值反推数据。这就是密码学 Hash 函数要保证的。（<font color="DeepPink"><strong>注意：哈希不等于加密，很多人这点容易搞混</strong></font>）</p>
 <p>同样 Hash 函数一样有很多选择，一样是大部分都不用：</p>
 <ul>
-<li><s>MD4</s></li>
-<li><s>MD5</s></li>
-<li><s>RIPEMD160</s></li>
-<li><s>SHA1</s></li>
+<li><del>MD4</del></li>
+<li><del>MD5</del></li>
+<li><del>RIPEMD160</del></li>
+<li><del>SHA1</del></li>
 <li>✔️ SHA2</li>
-<li>✔️ SHA3<br>
-选择 SHA3 并不是因为它比 SHA2 更新更好，而是因为它不同于 SHA1 和 SHA2。几年前密码学家已经开始担心，因为MD<font color="DeepPink"><strong>以及SHA</strong></font>的哈希算法本质太相似了，那么一旦这个依赖出现问题，就意味着这个体系的不再安全。因此开始寻找一种不同的算法。经过竞赛、挑选，最终 SHA3 脱颖而出。他本身是个很出色的 Hash 算法，同时其设计和之前的这几个算法完全不一样。</li>
+<li>✔️ SHA3<br>选择 SHA3 并不是因为它比 SHA2 更新更好，而是因为它不同于 SHA1 和 SHA2。几年前密码学家已经开始担心，因为MD<font color="DeepPink"><strong>以及SHA</strong></font>的哈希算法本质太相似了，那么一旦这个依赖出现问题，就意味着这个体系的不再安全。因此开始寻找一种不同的算法。经过竞赛、挑选，最终 SHA3 脱颖而出。他本身是个很出色的 Hash 算法，同时其设计和之前的这几个算法完全不一样。</li>
 </ul>
 <p>但是由于 SHA3 并不被广泛支持，所以如果你明确知道你可以用 SHA3，那么就用 SHA3。其它情况用 SHA2。</p>
 <p>但是和加密一样，我们<font color="DeepPink"><strong>不应该直接使用 Hash 算法</strong></font>。因为可能会面临一系列的攻击：</p>
@@ -342,10 +331,9 @@ at GopherCon 2016</p>
 <blockquote>
 <p>我们应该使用 HMAC，而不要直接用 Hash</p>
 </blockquote>
-<h2 id="实现-Hash">实现 Hash</h2>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/hmac&quot;</span><br><span class="line">	&quot;crypto/sha512&quot;</span><br><span class="line">)</span><br><span class="line">func Hash(tag string, data []byte) []byte &#123;</span><br><span class="line">	h := hmac.New(sha512.New512_256, []byte(tag))</span><br><span class="line">	h.Write(data)</span><br><span class="line">	return h.Sum(nil)</span><br><span class="line">&#125;</span><br><span class="line">func ExampleHash() error &#123;</span><br><span class="line">	tag := &quot;hashing file for storage key&quot;</span><br><span class="line">	contents, err := ioutil.ReadFile(&quot;testfile&quot;)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return error</span><br><span class="line">	&#125;</span><br><span class="line">	digest := Hash(tag, contents)</span><br><span class="line">	fmt.Println(hex.EncodeToString(digest))</span><br><span class="line">&#125;</span><br><span class="line">//	Output:</span><br><span class="line">//	9f4c795d8ae5e207f19184ccebee6a606c1fdfe509c793614006d613580f03e1</span><br></pre></td></tr></table></figure>
-<h2 id="Hash-密码">Hash 密码</h2>
-<p>一般东西的 Hash 用刚才的就行了，但是<font color="DeepPink"><strong>除了密码Hash</strong></font>。密码 Hash 和数据 Hash 的特征完全不同。</p>
+<h2 id="实现-Hash"><a href="#实现-Hash" class="headerlink" title="实现 Hash"></a>实现 Hash</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/hmac&quot;</span><br><span class="line">	&quot;crypto/sha512&quot;</span><br><span class="line">)</span><br><span class="line">func Hash(tag string, data []byte) []byte &#123;</span><br><span class="line">	h := hmac.New(sha512.New512_256, []byte(tag))</span><br><span class="line">	h.Write(data)</span><br><span class="line">	return h.Sum(nil)</span><br><span class="line">&#125;</span><br><span class="line">func ExampleHash() error &#123;</span><br><span class="line">	tag := &quot;hashing file for storage key&quot;</span><br><span class="line">	contents, err := ioutil.ReadFile(&quot;testfile&quot;)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return error</span><br><span class="line">	&#125;</span><br><span class="line">	digest := Hash(tag, contents)</span><br><span class="line">	fmt.Println(hex.EncodeToString(digest))</span><br><span class="line">&#125;</span><br><span class="line">//	Output:</span><br><span class="line">//	9f4c795d8ae5e207f19184ccebee6a606c1fdfe509c793614006d613580f03e1</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hash-密码"><a href="#Hash-密码" class="headerlink" title="Hash 密码"></a>Hash 密码</h2><p>一般东西的 Hash 用刚才的就行了，但是<font color="DeepPink"><strong>除了密码Hash</strong></font>。密码 Hash 和数据 Hash 的特征完全不同。</p>
 <ul>
 <li><font color="DeepPink"><strong>数据</strong></font> Hash 希望的是 Hash 算法<font color="DeepPink"><strong>越快越好</strong></font></li>
 <li>而<font color="DeepPink"><strong>密码</strong></font> Hash 则希望 Hash 算法<font color="DeepPink"><strong>越慢越好</strong></font></li>
@@ -353,11 +341,10 @@ at GopherCon 2016</p>
 <blockquote>
 <p>过快的密码哈希会导致暴力破解的成本降低。因此密码哈希需要特殊算法。</p>
 </blockquote>
-<h3 id="使用-bcrypt">使用 bcrypt</h3>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;golang.org/x/crypto/bcrypt&quot;</span><br><span class="line">)</span><br><span class="line">func HashPassword(password []byte) ([]byte, error) &#123;</span><br><span class="line">	return bcrypt.GenerateFromPassword(password, 14)</span><br><span class="line">&#125;</span><br><span class="line">func CheckPasswordHash(hash, password []byte) error &#123;</span><br><span class="line">	return bcrypt.CompareHashAndPassword(hash, password)</span><br><span class="line">&#125;</span><br><span class="line">func Example() &#123;</span><br><span class="line">	myPassword := []byte(&quot;password&quot;)</span><br><span class="line">	hashed, err := HashPassword(myPassword)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(string(hashed))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="使用-bcrypt"><a href="#使用-bcrypt" class="headerlink" title="使用 bcrypt"></a>使用 bcrypt</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;golang.org/x/crypto/bcrypt&quot;</span><br><span class="line">)</span><br><span class="line">func HashPassword(password []byte) ([]byte, error) &#123;</span><br><span class="line">	return bcrypt.GenerateFromPassword(password, 14)</span><br><span class="line">&#125;</span><br><span class="line">func CheckPasswordHash(hash, password []byte) error &#123;</span><br><span class="line">	return bcrypt.CompareHashAndPassword(hash, password)</span><br><span class="line">&#125;</span><br><span class="line">func Example() &#123;</span><br><span class="line">	myPassword := []byte(&quot;password&quot;)</span><br><span class="line">	hashed, err := HashPassword(myPassword)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(string(hashed))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>14 是计算量的复杂度，14 是个比较好的值，如果觉得性能无法接受，可以降到 12，但是不要再低了。</p>
-<h2 id="签名">签名</h2>
-<p>首先是有一对密钥，一个是公钥、一个是私钥。任何拥有私钥的人可以对一段信息签名，而所有拥有公钥的人都可以来验证这个消息确实是由那个人签名的。</p>
+<h2 id="签名"><a href="#签名" class="headerlink" title="签名"></a>签名</h2><p>首先是有一对密钥，一个是公钥、一个是私钥。任何拥有私钥的人可以对一段信息签名，而所有拥有公钥的人都可以来验证这个消息确实是由那个人签名的。</p>
 <p>通过签名可以确保两件事情：</p>
 <ul>
 <li>消息未曾被篡改</li>
@@ -365,28 +352,27 @@ at GopherCon 2016</p>
 </ul>
 <p>和前面一样，Go 有很多签名算法可以选择：</p>
 <ul>
-<li>RSA
-<ul>
-<li><s>PKCS1v15</s></li>
+<li>RSA<ul>
+<li><del>PKCS1v15</del></li>
 <li>PSS</li>
 </ul>
 </li>
-<li>ECDSA
-<ul>
+<li>ECDSA<ul>
 <li>✔️ P256</li>
-<li><s>P385</s></li>
-<li><s>P521</s></li>
+<li><del>P385</del></li>
+<li><del>P521</del></li>
 </ul>
 </li>
 <li>Ed25519</li>
 </ul>
 <p>这次和前面不同，签名算法的安全更多的<font color="DeepPink"><strong>不是取决于算法选择，而是取决于你是怎么使用的</strong></font>。</p>
-<p>比如这里比较推荐使用 ECDSA/P256，但是要注意，当初 PS3 被黑，被解出私钥就是用的这个算法，当时是由于那个算法实现是非常烂的。幸运的是 Go 没这个问题。所以相对于其他语言，Go 可以使用这个比较安全的签名算法。</p>
-<h3 id="实现">实现</h3>
-<p>生成密钥</p>
+<p>比如这里比较推荐使用 ECDSA&#x2F;P256，但是要注意，当初 PS3 被黑，被解出私钥就是用的这个算法，当时是由于那个算法实现是非常烂的。幸运的是 Go 没这个问题。所以相对于其他语言，Go 可以使用这个比较安全的签名算法。</p>
+<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><p>生成密钥</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/ecdsa&quot;</span><br><span class="line">	&quot;crypto/elliptic&quot;</span><br><span class="line">	&quot;crypto/rand&quot;</span><br><span class="line">)</span><br><span class="line">func NewSigningKey() (*ecdsa.PrivateKey, error) &#123;</span><br><span class="line">	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>签名数据</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">func Sign(data []byte, priv *ecdsa.PrivateKey) ([]byte, error) &#123;</span><br><span class="line">	digest := sha256.Sum256(data)</span><br><span class="line">	r, s, err := ecdsa.Sign(rand.Reader, priv, digest[:])</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, err</span><br><span class="line">	&#125;</span><br><span class="line">	//	encode the signature &#123;R, S&#125;</span><br><span class="line">	params := priv.Curve.Params()</span><br><span class="line">	curveByteSize := params.P.BitLen() / 8</span><br><span class="line">	rBytes, sBytes := r.Bytes(), s.Bytes()</span><br><span class="line">	signature := make([]byte, curveByteSize * 2)</span><br><span class="line">	copy(signature[curveByteSize - len(rBytes):], rBytes)</span><br><span class="line">	copy(signature[curveByteSize*2 - len(sBytes):], sBytes)</span><br><span class="line">	return signature, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>验证签名</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">	&quot;crypto/ecdsa&quot;</span><br><span class="line">	&quot;crypto/sha256&quot;</span><br><span class="line">	&quot;math/big&quot;</span><br><span class="line">)</span><br><span class="line">//	验证成功返回 true，否则 false</span><br><span class="line">func Verify(data, sig []byte, pub *ecdsa.PublicKey) bool &#123;</span><br><span class="line">	digest := sha256.Sum256(data)</span><br><span class="line">	curveByteSize := pub.Curve.Params().P.BitLen() / 8</span><br><span class="line">	r, s := new(big.Int), new(big.Int)</span><br><span class="line">	r.SetBytes(signature[:curveByteSize])</span><br><span class="line">	s.SetBytes(signature[curveByteSize:])</span><br><span class="line">	return ecdsa.Verify(pub, digest[:], r, s)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
       </div>
@@ -450,7 +436,7 @@ at GopherCon 2016</p>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Don’t write your own crypto</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">经常听到这样的建议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TLS"><span class="nav-number">3.1.</span> <span class="nav-text">TLS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPG"><span class="nav-number">3.2.</span> <span class="nav-text">GPG</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">这个 Talk 不讲 TLS 和 GPG</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">在 Go 的 crypto 包里的算法可不都是好的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#加密"><span class="nav-number">5.1.</span> <span class="nav-text">加密</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#怎么使用-AES"><span class="nav-number">5.1.1.</span> <span class="nav-text">怎么使用 AES</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#加密-v2"><span class="nav-number">5.1.1.1.</span> <span class="nav-text">加密</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解密"><span class="nav-number">5.1.1.2.</span> <span class="nav-text">解密</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#哈希散列"><span class="nav-number">5.2.</span> <span class="nav-text">哈希散列</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现-Hash"><span class="nav-number">5.3.</span> <span class="nav-text">实现 Hash</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hash-密码"><span class="nav-number">5.4.</span> <span class="nav-text">Hash 密码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-bcrypt"><span class="nav-number">5.4.1.</span> <span class="nav-text">使用 bcrypt</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#签名"><span class="nav-number">5.5.</span> <span class="nav-text">签名</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#实现"><span class="nav-number">5.5.1.</span> <span class="nav-text">实现</span></a></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#视频信息"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Don’t-write-your-own-crypto"><span class="nav-number">2.</span> <span class="nav-text">Don’t write your own crypto</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#经常听到这样的建议"><span class="nav-number">3.</span> <span class="nav-text">经常听到这样的建议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TLS"><span class="nav-number">3.1.</span> <span class="nav-text">TLS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPG"><span class="nav-number">3.2.</span> <span class="nav-text">GPG</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#这个-Talk-不讲-TLS-和-GPG"><span class="nav-number">4.</span> <span class="nav-text">这个 Talk 不讲 TLS 和 GPG</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#在-Go-的-crypto-包里的算法可不都是好的算法"><span class="nav-number">5.</span> <span class="nav-text">在 Go 的 crypto 包里的算法可不都是好的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#加密"><span class="nav-number">5.1.</span> <span class="nav-text">加密</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#怎么使用-AES"><span class="nav-number">5.1.1.</span> <span class="nav-text">怎么使用 AES</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#加密-1"><span class="nav-number">5.1.1.1.</span> <span class="nav-text">加密</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解密"><span class="nav-number">5.1.1.2.</span> <span class="nav-text">解密</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#哈希散列"><span class="nav-number">5.2.</span> <span class="nav-text">哈希散列</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现-Hash"><span class="nav-number">5.3.</span> <span class="nav-text">实现 Hash</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hash-密码"><span class="nav-number">5.4.</span> <span class="nav-text">Hash 密码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-bcrypt"><span class="nav-number">5.4.1.</span> <span class="nav-text">使用 bcrypt</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#签名"><span class="nav-number">5.5.</span> <span class="nav-text">签名</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#实现"><span class="nav-number">5.5.1.</span> <span class="nav-text">实现</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -466,7 +452,7 @@ at GopherCon 2016</p>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">151</span>
+          <span class="site-state-item-count">152</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -478,7 +464,7 @@ at GopherCon 2016</p>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">212</span>
+        <span class="site-state-item-count">214</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
