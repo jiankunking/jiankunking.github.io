@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="翻译自：Elasticsearch Performance Tuning Practice at eBay地址：https://tech.ebayinc.com/engineering/elasticsearch-performance-tuning-practice-at-ebay">
-<meta name="keywords" content="Performance,原创,ElasticSearch,翻译,Cluster,Tuning">
+<meta name="keywords" content="Performance,原创,ElasticSearch,Cluster,Tuning,翻译">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[译]eBay Elasticsearch性能调优实践">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-performance-tuning-practice-at-ebay.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="翻译自：Elasticsearch Performance Tuning Practice at eBay地址：https://tech.ebayinc.com/engineering/elasticsearch-performance-tuning-practice-at-ebay">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2023-09-14T09:26:13.070Z">
+<meta property="og:updated_time" content="2024-05-14T03:07:47.611Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[译]eBay Elasticsearch性能调优实践">
 <meta name="twitter:description" content="翻译自：Elasticsearch Performance Tuning Practice at eBay地址：https://tech.ebayinc.com/engineering/elasticsearch-performance-tuning-practice-at-ebay">
@@ -254,7 +254,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-09-14 17:26:13" itemprop="dateModified" datetime="2023-09-14T17:26:13+08:00">2023-09-14</time>
+                <time title="修改时间：2024-05-14 11:07:47" itemprop="dateModified" datetime="2024-05-14T11:07:47+08:00">2024-05-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -355,21 +355,17 @@
 </ul>
 <h2 id="调优索引性能"><a href="#调优索引性能" class="headerlink" title="调优索引性能"></a>调优索引性能</h2><p>对于日志和监控等需要大量索引的场景，索引性能是关键指标。以下是一些建议。</p>
 <ul>
-<li>使用批量(bulk)请求。</li>
-<li>使用多个线程发送请求。</li>
-<li>增加刷新(refresh)间隔。每次刷新事件发生时，Elasticsearch都会创建一个新的Lucene段，然后合并它们。增加刷新间隔可以降低创建&#x2F;合并的成本。请注意，只有在刷新后才可以搜索文档。</li>
-</ul>
-<p><img data-src="/images/elasticsearch-performance-tuning-practice-at-ebay/Picture23.png" alt="Relationship between performance and refresh interval"></p>
-<p>从上图中可以看出，随着刷新间隔的增加，吞吐量增加，响应时间减少。我们可以使用下面的请求来检查我们有多少段，以及在刷新和合并上花费了多少时间。</p>
+<li><p>使用批量(bulk)请求。</p>
+</li>
+<li><p>使用多个线程发送请求。</p>
+</li>
+<li><p>增加刷新(refresh)间隔。每次刷新事件发生时，Elasticsearch都会创建一个新的Lucene段，然后合并它们。增加刷新间隔可以降低创建&#x2F;合并的成本。请注意，只有在刷新后才可以搜索文档。<br><img data-src="/images/elasticsearch-performance-tuning-practice-at-ebay/Picture23.png" alt="Relationship between performance and refresh interval"><br>从上图中可以看出，随着刷新间隔的增加，吞吐量增加，响应时间减少。我们可以使用下面的请求来检查我们有多少段，以及在刷新和合并上花费了多少时间。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET index_name/_stats?filter_path= indices.**.refresh,indices.**.segments,indices.**.merges</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>减少副本数量。Elasticsearch需要为每个索引请求将文档写入主分片和所有副本分片。显然，大的副本数会降低索引速度，但另一方面，它会提高搜索性能。我们将在本文后面讨论它。</li>
-</ul>
-<p><img data-src="/images/elasticsearch-performance-tuning-practice-at-ebay/Picture22.png" alt="Relationship between performance and replica number"></p>
-<p>从上图中，我们可以看到随着副本数的增加，吞吐量降低，响应时间增加。</p>
-<ul>
-<li>尽可能使用自动生成的ID。Elasticsearch可以确保自动生成的ID是唯一的，以避免版本查找。如果客户确实需要使用自定义ID，我们的建议是选择一个对Lucene友好的ID，例如零填充顺序ID，UUID-1或Nano time。这些ID具有一致的顺序模式，可以很好地压缩。相比之下，诸如UUID-4之类的ID本质上是随机的，这提供了较差的压缩并降低了Lucene的运行速度。</li>
+</li>
+<li><p>减少副本数量。Elasticsearch需要为每个索引请求将文档写入主分片和所有副本分片。显然，大的副本数会降低索引速度，但另一方面，它会提高搜索性能。我们将在本文后面讨论它。<br><img data-src="/images/elasticsearch-performance-tuning-practice-at-ebay/Picture22.png" alt="Relationship between performance and replica number"><br>从上图中，我们可以看到随着副本数的增加，吞吐量降低，响应时间增加。</p>
+</li>
+<li><p>尽可能使用自动生成的ID。Elasticsearch可以确保自动生成的ID是唯一的，以避免版本查找。如果客户确实需要使用自定义ID，我们的建议是选择一个对Lucene友好的ID，例如零填充顺序ID，UUID-1或Nano time。这些ID具有一致的顺序模式，可以很好地压缩。相比之下，诸如UUID-4之类的ID本质上是随机的，这提供了较差的压缩并降低了Lucene的运行速度。</p>
+</li>
 </ul>
 <h2 id="调优搜索性能"><a href="#调优搜索性能" class="headerlink" title="调优搜索性能"></a>调优搜索性能</h2><p>使用Elasticsearch的主要原因是为了支持对数据的搜索。用户应该能够快速找到所需的信息。搜索性能取决于很多因素。</p>
 <ul>
@@ -379,14 +375,9 @@
 <ul>
 <li><p>增加刷新(refresh)间隔。正如我们在调优索引性能部分中提到的那样，每次刷新时，Elasticsearch都会创建新的segment。增加刷新间隔将有助于减少段数并减少搜索的IO成本。并且，一旦刷新发生并更改了数据，缓存将无效。增加刷新间隔可以使Elasticsearch更有效地利用缓存。</p>
 </li>
-<li><p>增加副本数。Elasticsearch可以对主分片或副本分片执行搜索。您拥有的副本越多，搜索中可以用到的节点越多。</p>
+<li><p>增加副本数。Elasticsearch可以对主分片或副本分片执行搜索。您拥有的副本越多，搜索中可以用到的节点越多。<br><img data-src="/images/elasticsearch-performance-tuning-practice-at-ebay/Picture25.png" alt="Relationship between performance and replica number"><br>从上图可以看到，搜索吞吐量几乎与副本数成线性关系。请注意，在此测试中，测试群集具有足够的数据节点，以确保每个分片都具有排他节点。如果不能满足此条件，则搜索吞吐量将不那么理想。</p>
 </li>
-</ul>
-<p><img data-src="/images/elasticsearch-performance-tuning-practice-at-ebay/Picture25.png" alt="Relationship between performance and replica number"></p>
-<p>  从上图可以看到，搜索吞吐量几乎与副本数成线性关系。请注意，在此测试中，测试群集具有足够的数据节点，以确保每个分片都具有排他节点。如果不能满足此条件，则搜索吞吐量将不那么理想。</p>
-<ul>
-<li><p>尝试不同的分片数。”我应该为索引设置多少个碎片？”这可能是我们最常看到的问题。不幸的是，没有适用于所有情况的正确数字。这完全取决于您的情况。</p>
-<p>  分片数太小将使搜索无法扩展。例如，如果分片数设置为1，则索引中的所有文档都将存储在一个分片中。对于每次搜索，只能涉及一个节点。如果您有很多文档，那会很费时间。从另一方面说，创建具有太多分片的索引也对性能有害，因为Elasticsearch需要对所有分片运行查询，除非在请求中指定了路由key，然后才将所有返回的结果提取并合并在一起。</p>
+<li><p>尝试不同的分片数。”我应该为索引设置多少个碎片？”这可能是我们最常看到的问题。不幸的是，没有适用于所有情况的正确数字。这完全取决于您的情况。<br>  分片数太小将使搜索无法扩展。例如，如果分片数设置为1，则索引中的所有文档都将存储在一个分片中。对于每次搜索，只能涉及一个节点。如果您有很多文档，那会很费时间。从另一方面说，创建具有太多分片的索引也对性能有害，因为Elasticsearch需要对所有分片运行查询，除非在请求中指定了路由key，然后才将所有返回的结果提取并合并在一起。</p>
 <p>  根据我们的经验，如果索引小于1G，可以将分片数设置为1。对于大多数情况，我们可以将分片数保留为默认值5，但是如果分片大小超过30GB，则应增加分片数以将索引拆分为更多分片。创建索引后就无法更改分片数，但是我们可以创建一个新索引并使用reindex API来移动数据。</p>
 <p>  我们测试了一个索引，该索引包含1亿个文档，约为150GB。我们使用了100个线程来发送搜索请求。</p>
 </li>
@@ -398,25 +389,19 @@
 <ul>
 <li><p>节点查询缓存。<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-cache.html" target="_blank" rel="noopener">节点查询缓存</a>仅缓存在过滤器(filter)上下文中使用的查询。与查询(query)子句不同，过滤器子句是”是”或”否”的问题。Elasticsearch使用位集(bit set)机制来缓存过滤器结果，以便以后使用相同过滤器的查询将得到加速。请注意，只有包含超过10,000个文档（或总文档的3％，以较大者为准）的段(segments)将启用查询缓存。有关更多详细信息，请参阅<a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/filter-caching.html#_independent_query_caching" target="_blank" rel="noopener">缓存</a>。</p>
 <p>  我们可以使用以下请求来检查节点查询缓存是否有效。</p>
-</li>
-</ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">GET index_name/_stats?filter_path=indices.**.query_cache</span><br><span class="line">&#123;</span><br><span class="line">  &quot;indices&quot;: &#123;</span><br><span class="line">    &quot;index_name&quot;: &#123;</span><br><span class="line">      &quot;primaries&quot;: &#123;</span><br><span class="line">        &quot;query_cache&quot;: &#123;</span><br><span class="line">          &quot;memory_size_in_bytes&quot;: 46004616,</span><br><span class="line">          &quot;total_count&quot;: 1588886,</span><br><span class="line">          &quot;hit_count&quot;: 515001,</span><br><span class="line">          &quot;miss_count&quot;: 1073885,</span><br><span class="line">          &quot;cache_size&quot;: 630,</span><br><span class="line">          &quot;cache_count&quot;: 630,</span><br><span class="line">          &quot;evictions&quot;: 0</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      &quot;total&quot;: &#123;</span><br><span class="line">        &quot;query_cache&quot;: &#123;</span><br><span class="line">          &quot;memory_size_in_bytes&quot;: 46004616,</span><br><span class="line">          &quot;total_count&quot;: 1588886,</span><br><span class="line">          &quot;hit_count&quot;: 515001,</span><br><span class="line">          &quot;miss_count&quot;: 1073885,</span><br><span class="line">          &quot;cache_size&quot;: 630,</span><br><span class="line">          &quot;cache_count&quot;: 630,</span><br><span class="line">          &quot;evictions&quot;: 0</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ul>
+</li>
 <li><p>分片查询缓存。如果大多数查询是聚合查询，则应查看<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/%E5%88%86%E7%89%87-request-cache.html#_cache_invalidation" target="_blank" rel="noopener">分片查询缓存</a>，该缓存可以缓存聚合结果，以便Elasticsearch以很少的成本直接为请求提供服务。有几件事要注意:</p>
 <ul>
 <li>设置”size”:0。分片查询缓存仅缓存汇总结果和建议(suggestion)。它不会缓存命中，因此如果将size设置为非零，就不能从缓存中受益。</li>
 <li>有效负载JSON必须相同。分片查询缓存使用JSON主体作为缓存键，因此您需要确保JSON主体不变，并确保JSON主体中的键顺序相同。</li>
 <li>四舍五入查询时间。不要在查询中直接使用Date.now之类的变量。四舍五入。否则，每个请求都将具有不同的有效负载主体，这将使缓存始终无效。我们建议您将日期时间舍入为小时或天，以更有效地利用缓存。</li>
 </ul>
-<p> 我们可以使用下面的请求来检查分片查询缓存是否有效。</p>
-  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">GET index_name/_stats?filter_path=indices.**.request_cache</span><br><span class="line">&#123;</span><br><span class="line">  &quot;indices&quot;: &#123;</span><br><span class="line">    &quot;index_name&quot;: &#123;</span><br><span class="line">      &quot;primaries&quot;: &#123;</span><br><span class="line">        &quot;request_cache&quot;: &#123;</span><br><span class="line">          &quot;memory_size_in_bytes&quot;: 0,</span><br><span class="line">          &quot;evictions&quot;: 0,</span><br><span class="line">          &quot;hit_count&quot;: 541,</span><br><span class="line">          &quot;miss_count&quot;: 514098</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      &quot;total&quot;: &#123;</span><br><span class="line">        &quot;request_cache&quot;: &#123;</span><br><span class="line">          &quot;memory_size_in_bytes&quot;: 0,</span><br><span class="line">          &quot;evictions&quot;: 0,</span><br><span class="line">          &quot;hit_count&quot;: 982,</span><br><span class="line">          &quot;miss_count&quot;: 947321</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<p>我们可以使用下面的请求来检查分片查询缓存是否有效。<br>  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">GET index_name/_stats?filter_path=indices.**.request_cache</span><br><span class="line">&#123;</span><br><span class="line">  &quot;indices&quot;: &#123;</span><br><span class="line">    &quot;index_name&quot;: &#123;</span><br><span class="line">      &quot;primaries&quot;: &#123;</span><br><span class="line">        &quot;request_cache&quot;: &#123;</span><br><span class="line">          &quot;memory_size_in_bytes&quot;: 0,</span><br><span class="line">          &quot;evictions&quot;: 0,</span><br><span class="line">          &quot;hit_count&quot;: 541,</span><br><span class="line">          &quot;miss_count&quot;: 514098</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      &quot;total&quot;: &#123;</span><br><span class="line">        &quot;request_cache&quot;: &#123;</span><br><span class="line">          &quot;memory_size_in_bytes&quot;: 0,</span><br><span class="line">          &quot;evictions&quot;: 0,</span><br><span class="line">          &quot;hit_count&quot;: 982,</span><br><span class="line">          &quot;miss_count&quot;: 947321</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <ul>
 <li><p>仅检索必须字段。如果文档很大，并且只需要几个字段，请使用<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-fields.html#stored-fields" target="_blank" rel="noopener">stored_fields</a>检索需要的字段，而不是所有字段。</p>
 </li>
-<li><p>避免搜索停用词。诸如”a”和”the”之类的停用词可能会导致查询匹配结果数量激增。想象一下您有一百万个文档。搜索”fox”可能会返回数十次匹配，但是搜索”the fox”可能会返回索引中的所有文档，因为”the”几乎出现在所有文档中。Elasticsearch需要对所有命中结果进行评分和排序，以使诸如”the fox”之类的查询减慢整个系统的速度。您可以使用停止令牌过滤器(stop token filter)删除停用词，或使用”and”运算符将查询从”the fox”更改为”the AND fox”，以获得更精确的匹配结果。</p>
-<p>  如果索引中经常使用某些单词，但默认停用词列表中没有这些单词，则可以使用<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html#query-dsl-match-query-cutoff" target="_blank" rel="noopener">截止频率(cutoff-frequency)</a>来动态处理它们。</p>
+<li><p>避免搜索停用词。诸如”a”和”the”之类的停用词可能会导致查询匹配结果数量激增。想象一下您有一百万个文档。搜索”fox”可能会返回数十次匹配，但是搜索”the fox”可能会返回索引中的所有文档，因为”the”几乎出现在所有文档中。Elasticsearch需要对所有命中结果进行评分和排序，以使诸如”the fox”之类的查询减慢整个系统的速度。您可以使用停止令牌过滤器(stop token filter)删除停用词，或使用”and”运算符将查询从”the fox”更改为”the AND fox”，以获得更精确的匹配结果。如果索引中经常使用某些单词，但默认停用词列表中没有这些单词，则可以使用<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html#query-dsl-match-query-cutoff" target="_blank" rel="noopener">截止频率(cutoff-frequency)</a>来动态处理它们。</p>
 <ul>
 <li><p>如果您不关心文档的返回顺序，请按_doc排序。默认情况下，Elasticsearch使用”_score”字段按分数排序。如果您不关心顺序，则可以使用”sort”:”_ doc”让Elasticsearch按索引顺序返回匹配。</p>
 </li>
@@ -532,9 +517,9 @@
               <a href="/tags/performance/" rel="tag"># Performance</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
-              <a href="/tags/翻译/" rel="tag"># 翻译</a>
               <a href="/tags/cluster/" rel="tag"># Cluster</a>
               <a href="/tags/tuning/" rel="tag"># Tuning</a>
+              <a href="/tags/翻译/" rel="tag"># 翻译</a>
           </div>
 
         
