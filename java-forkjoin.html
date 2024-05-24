@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join）代码基于 OpenJDK 12">
+  <meta name="description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join） 代码基于 OpenJDK 12">
 <meta name="keywords" content="原创,Java,JUC,ForkJoin">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java ForkJoin 解析">
 <meta property="og:url" content="https://jiankunking.com/java-forkjoin.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join）代码基于 OpenJDK 12">
+<meta property="og:description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join） 代码基于 OpenJDK 12">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2019-09-16T13:31:27.033Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java ForkJoin 解析">
-<meta name="twitter:description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join）代码基于 OpenJDK 12">
+<meta name="twitter:description" content="本文主要想了解两个地方：如何窃取任务、task如何等待（join） 代码基于 OpenJDK 12">
 
 <link rel="canonical" href="https://jiankunking.com/java-forkjoin.html">
 
@@ -299,11 +299,12 @@
 
       
         <blockquote>
-<p>本文主要想了解两个地方：如何窃取任务、task如何等待（join）<br>代码基于 OpenJDK 12</p>
+<p>本文主要想了解两个地方：如何窃取任务、task如何等待（join）<br>
+代码基于 OpenJDK 12</p>
 </blockquote>
 <a id="more"></a>
-
-<h1 id="窃取算法（work-stealing）"><a href="#窃取算法（work-stealing）" class="headerlink" title="窃取算法（work-stealing）"></a>窃取算法（work-stealing）</h1><p>从<a href="/attachments/ForkJoin-Paper-DougLea.pdf" target="_blank">ForkJoin-Paper-DougLea</a>中可以看出:</p>
+<h1>窃取算法（work-stealing）</h1>
+<p>从<a href="/attachments/ForkJoin-Paper-DougLea.pdf" target="_blank">ForkJoin-Paper-DougLea</a>中可以看出:</p>
 <ul>
 <li>每个队列创建一个单独的线程来执行队列里的任务，线程和队列一一对应。</li>
 <li>队列使用的是双端队列，支持LIFO、FIFO。</li>
@@ -311,12 +312,14 @@
 <li>工作线程按照LIFO的顺序处理自己队列中数据。</li>
 <li>当一个工作线程处理完自己队列中数据的时候，会随机挑选一个工作线程，并“窃取”的该工作线程队列队尾的task。</li>
 </ul>
-<p><img data-src="/images/java-forkjoin/steal.png"></p>
+<p><img data-src="/images/java-forkjoin/steal.png" alt></p>
 <p>到了这里就可以知道，窃取任务从其他线程队列的尾部窃取的了。</p>
-<h2 id="窃取算法优缺点"><a href="#窃取算法优缺点" class="headerlink" title="窃取算法优缺点"></a>窃取算法优缺点</h2><p>工作窃取算法的优点：<font color="DeepPink"><strong>充分利用线程进行并行计算，减少了线程间的竞争。</strong></font><br>工作窃取算法的缺点：<font color="DeepPink"><strong>在某些情况下还是存在竞争，比如双端队列里只有一个任务时。并且该算法会消耗了更多的系统资源，比如创建多个线程和多个双端队列。</strong></font></p>
-<h1 id="Task-等待（join）"><a href="#Task-等待（join）" class="headerlink" title="Task 等待（join）"></a>Task 等待（join）</h1><p>Join方法的主要作用是阻塞当前线程并等待获取结果。具体代码如下：</p>
+<h2 id="窃取算法优缺点">窃取算法优缺点</h2>
+<p>工作窃取算法的优点：<font color="DeepPink"><strong>充分利用线程进行并行计算，减少了线程间的竞争。</strong></font><br>
+工作窃取算法的缺点：<font color="DeepPink"><strong>在某些情况下还是存在竞争，比如双端队列里只有一个任务时。并且该算法会消耗了更多的系统资源，比如创建多个线程和多个双端队列。</strong></font></p>
+<h1>Task 等待（join）</h1>
+<p>Join方法的主要作用是阻塞当前线程并等待获取结果。具体代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public final V join() &#123;</span><br><span class="line">    int s;</span><br><span class="line">    if (((s = doJoin()) &amp; ABNORMAL) != 0)</span><br><span class="line">        reportException(s);</span><br><span class="line">    return getRawResult();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>首先，它调用了doJoin()方法，通过doJoin()方法得到当前任务的状态来判断返回什么结果，任务状态有4种：已完成（NORMAL）、被取消（CANCELLED）、信号（SIGNAL）和出现异常（EXCEPTIONAL）。</p>
 <ul>
 <li>如果任务状态是已完成，则直接返回任务结果。</li>
@@ -325,7 +328,6 @@
 </ul>
 <p>让我们再来分析一下doJoin()方法的实现代码:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Implementation for join, get, quietlyJoin. Directly handles</span><br><span class="line"> * only cases of already-completed, external wait, and</span><br><span class="line"> * unfork+exec.  Others are relayed to ForkJoinPool.awaitJoin.</span><br><span class="line"> *</span><br><span class="line"> * @return status upon completion</span><br><span class="line"> */</span><br><span class="line">private int doJoin() &#123;</span><br><span class="line">    int s; Thread t; ForkJoinWorkerThread wt; ForkJoinPool.WorkQueue w;</span><br><span class="line">    return </span><br><span class="line">        //已完成,返回status</span><br><span class="line">    	(s = status) &lt; 0 ? s :</span><br><span class="line">    	//未完成,如果当前线程是ForkJoinWorkerThread,从该线程中取出workQueue,并尝试将</span><br><span class="line">        //当前task出队然后执行,执行的结果是完成则返回状态,否则使用当线程池所在的ForkJoinPool的awaitJoin方法等待</span><br><span class="line">        ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) ?</span><br><span class="line">        (w = (wt = (ForkJoinWorkerThread)t).workQueue).tryUnpush(this) &amp;&amp; (s = doExec()) &lt; 0 ? s : wt.pool.awaitJoin(w, this, 0L) :</span><br><span class="line">        //当前线程不是ForkJoinWorkerThread,调用externalAwaitDone方法</span><br><span class="line">        //externalAwaitDone: Blocks a non-worker-thread until completion.</span><br><span class="line">        externalAwaitDone();</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * Pops the given task only if it is at the current top.</span><br><span class="line"> */</span><br><span class="line">final boolean tryUnpush(ForkJoinTask&lt;?&gt; task) &#123;</span><br><span class="line">    boolean popped = false;</span><br><span class="line">    int s, cap; ForkJoinTask&lt;?&gt;[] a;</span><br><span class="line">    if ((a = array) != null &amp;&amp; (cap = a.length) &gt; 0 &amp;&amp;</span><br><span class="line">        (s = top) != base &amp;&amp;</span><br><span class="line">        (popped = QA.compareAndSet(a, (cap - 1) &amp; --s, task, null)))</span><br><span class="line">        TOP.setOpaque(this, s);</span><br><span class="line">    return popped;</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * Primary execution method for stolen tasks. Unless done, calls</span><br><span class="line"> * exec and records status if completed, but doesn&apos;t wait for</span><br><span class="line"> * completion otherwise.</span><br><span class="line"> *</span><br><span class="line"> * @return status on exit from this method</span><br><span class="line">*/</span><br><span class="line">final int doExec() &#123;</span><br><span class="line">    int s; boolean completed;</span><br><span class="line">    // 仅未完成的任务会运行,其他情况会忽略.</span><br><span class="line">    if ((s = status) &gt;= 0) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            //exec是abstract方法</span><br><span class="line">            //调用ForkJoinTask子类中exec</span><br><span class="line">            completed = exec();</span><br><span class="line">        &#125; catch (Throwable rex) &#123;</span><br><span class="line">            completed = false;</span><br><span class="line">            s = setExceptionalCompletion(rex);</span><br><span class="line">        &#125;</span><br><span class="line">        if (completed)</span><br><span class="line">            s = setDone();</span><br><span class="line">        &#125;</span><br><span class="line">        return s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>在doJoin()方法里，首先通过查看任务的状态，看任务是否已经执行完成，如果执行完成，则直接返回任务状态；如果没有执行完，则从任务队列中取出任务并执行。如果任务顺利执行完成，则设置任务状态为NORMAL，如果出现异常，则记录异常，并将任务状态设置为EXCEPTIONAL。</p>
 
     </div>
@@ -490,7 +492,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#窃取算法（work-stealing）"><span class="nav-number">1.</span> <span class="nav-text">窃取算法（work-stealing）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#窃取算法优缺点"><span class="nav-number">1.1.</span> <span class="nav-text">窃取算法优缺点</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Task-等待（join）"><span class="nav-number">2.</span> <span class="nav-text">Task 等待（join）</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">窃取算法（work-stealing）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#窃取算法优缺点"><span class="nav-number">1.1.</span> <span class="nav-text">窃取算法优缺点</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Task 等待（join）</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
