@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="本文整理自：《重构改善既有代码的设计》  作者：MartinFowler 出版时间：2015-08">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2024-08-30T07:33:10.758Z">
+<meta property="og:updated_time" content="2024-08-30T07:38:49.977Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="重构：改善既有代码的设计 笔记">
 <meta name="twitter:description" content="本文整理自：《重构改善既有代码的设计》  作者：MartinFowler 出版时间：2015-08">
@@ -254,7 +254,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-08-30 15:33:10" itemprop="dateModified" datetime="2024-08-30T15:33:10+08:00">2024-08-30</time>
+                <time title="修改时间：2024-08-30 15:38:49" itemprop="dateModified" datetime="2024-08-30T15:38:49+08:00">2024-08-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -351,15 +351,15 @@
 <h2 id="Middle-Man-中间人"><a href="#Middle-Man-中间人" class="headerlink" title="Middle Man 中间人"></a>Middle Man 中间人</h2><p>对象的基本特征之一就是封装——对外部世界隐藏其内部细节。封装往往伴随委托。比如说你问主管是否有时间参加一个会议,他就把这个消息”委托”给他的记事簿,然后才能回答你。很好,你没必要知道这位主管到底使用传统记事簿或电子记事簿亦或秘书来记录自己的约会。</p>
 <p>但是人们可能过度运用委托。你也许会看到某个类接口有一半的函数都委托给其他类,这样就是过度运用。这时应该使用Remove Middle Man,直接和真正负责的对象打交道。如果这样”不干实事”的函数只有少数几个,可以运用Inline Method把它们放进调用端。如果这些Middle Man还有其他行为,可以运用Replace Delegation with Inheritance把它变成实责对象的子类,这样你既可以扩展原对象的行为,又不必负担那么多的委托动作。</p>
 <h2 id="Inappropriate-Intimacy-过度亲密"><a href="#Inappropriate-Intimacy-过度亲密" class="headerlink" title="Inappropriate Intimacy 过度亲密"></a>Inappropriate Intimacy 过度亲密</h2><p>过分狎昵的类必须拆散。你可以采用Move Method和Move Field帮它们划清界线,从而减少狎昵行径。你也可以看看是否可以运用Change Bidirectional Association to Unidirectional让其中一个类对另一个斩断情丝。如果两个类实在是情投意合,可以运用Extract Class把两者共同点提炼到一个安全地点,让它们坦荡地使用这个新类。或者也可以尝试运用Hide Delegate让另一个类来为它们传递相思情。</p>
-<p><font color="DeepPink"><strong>继承往往造成过度亲密,因为子类对超类的了解总是超过后者的主观愿望。如果你觉得该让这个孩子独自生活了,请运用Replace Inheritance with Delegation让它离开继承体系。</strong></font></p>
+<p><font color="DeepPink"><strong>继承往往造成过度亲密,因为子类对父类的了解总是超过后者的主观愿望。如果你觉得该让这个孩子独自生活了,请运用Replace Inheritance with Delegation让它离开继承体系。</strong></font></p>
 <h2 id="Alternative-Classes-with-Different-Interfaces-异曲同工的类"><a href="#Alternative-Classes-with-Different-Interfaces-异曲同工的类" class="headerlink" title="Alternative Classes with Different Interfaces 异曲同工的类"></a>Alternative Classes with Different Interfaces 异曲同工的类</h2><p>如果两个函数做同一件事,却有着不同的签名,请运用Rename Method根据它们的用途重新命名。但这往往不够,请反复运用Move Method将某些行为移入类,直到两者的协议一致为止。如果你必须重复而赘余地移入代码才能完成这些,或许可运用Extract Superclass为自己赎点罪。</p>
 <h2 id="Incomplete-Library-Class-不完整的库类"><a href="#Incomplete-Library-Class-不完整的库类" class="headerlink" title="Incomplete Library Class 不完整的库类"></a>Incomplete Library Class 不完整的库类</h2><p>如果你只想修改库类的一两个函数,可以运用Introduce Foreign Method;如果想要添加一大堆额外行为,就得运用Introduce Local Extension。</p>
 <h2 id="Data-Class-数据类"><a href="#Data-Class-数据类" class="headerlink" title="Data Class 数据类"></a>Data Class 数据类</h2><p>所谓Data Class是指:它们拥有一些字段,以及用于访问(读写)这些字段的函数,除此之外一无长物。这样的类只是一种不会说话的数据容器,它们几乎一定被其他类过分细琐地操控着。这些类早期可能拥有public字段,果真如此你应该在别人注意到它们之前,立刻运用Encapsulate Field将它们封装起来。如果这些类内含容器类的字段,你应该检查它们是不是得到了恰当的封装:如果没有,就运用Encapsulate Collection把它们封装起来。对于那些不该被其他类修改的字段,请运用Remove Setting Method。</p>
 <p>然后,找出这些取值设值函数被其他类运用的地点。尝试以Move Method把那些调用行为搬移到Data Class。如果无法搬移整个函数,就运用Extract Method产生一个可被搬移的函数。不久之后你就可以运用Hide Method把这些取值&#x2F;设值函数隐藏起来了。</p>
-<h2 id="Refused-Bequest-拒绝继承"><a href="#Refused-Bequest-拒绝继承" class="headerlink" title="Refused Bequest 拒绝继承"></a>Refused Bequest 拒绝继承</h2><p>子类应该继承超类的函数和数据。但如果它们不想或不需要继承,又该怎么办呢?它们得到所有礼物,却只从中挑选几样来玩!</p>
-<p>按传统说法,这就意味着继承体系设计错误。你需要为这个子类新建一个兄弟类,再运用Push Down Method和Push Down Field把所有用不到的函数下推给那个兄弟。这样一来,超类就只持有所有子类共享的东西。你常常会听到这样的建议:所有超类都应该是抽象(abstract)的。</p>
+<h2 id="Refused-Bequest-拒绝继承"><a href="#Refused-Bequest-拒绝继承" class="headerlink" title="Refused Bequest 拒绝继承"></a>Refused Bequest 拒绝继承</h2><p>子类应该继承父类的函数和数据。但如果它们不想或不需要继承,又该怎么办呢?它们得到所有礼物,却只从中挑选几样来玩!</p>
+<p>按传统说法,这就意味着继承体系设计错误。你需要为这个子类新建一个兄弟类,再运用Push Down Method和Push Down Field把所有用不到的函数下推给那个兄弟。这样一来,父类就只持有所有子类共享的东西。你常常会听到这样的建议:所有父类都应该是抽象(abstract)的。</p>
 <p>既然使用”传统说法”这个略带贬义的词,你就可以猜到,我们不建议你这么做,起码不建议你每次都这么做。我们经常利用继承来复用一些行为,并发现这可以很好地应用于日常工作。这也是一种坏味道,我们不否认,但气味通常并不强烈。所以我们说:如果Refused Bequest引起困惑和问题,请遵循传统忠告。但不必认为你每次都得那么做。十有八九这种坏味道很淡,不值得理睬。</p>
-<p>如果子类复用了超类的行为(实现),却又不愿意支持超类的接口, Refused Bequest的坏味道就会变得浓烈。拒绝继承超类的实现,这一点我们不介意;但如果拒绝继承超类的接口,我们不以为然。不过即使你不愿意继承接口,也不要胡乱修改继承体系,应该运用Replace Inheritance with Delegation来达到目的</p>
+<p>如果子类复用了父类的行为(实现),却又不愿意支持父类的接口, Refused Bequest的坏味道就会变得浓烈。拒绝继承父类的实现,这一点我们不介意;但如果拒绝继承父类的接口,我们不以为然。不过即使你不愿意继承接口,也不要胡乱修改继承体系,应该运用Replace Inheritance with Delegation来达到目的</p>
 <h2 id="Comments-注释过多"><a href="#Comments-注释过多" class="headerlink" title="Comments 注释过多"></a>Comments 注释过多</h2><p>别担心,我们并不是说你不该写注释。从嗅觉上说, Comments不是一种坏味道,事实上它们还是一种香味呢。我们之所以要在这里提到 Comments,是因为人们常把它当作除臭剂来使用。常常会有这样的情况:你看到一段代码有着长长的注释,然后发现,这些注释之所以存在乃是因为代码很糟糕。这种情况的发生次数之多,实在令人吃惊。</p>
 <p>Comments可以带我们找到本章先前提到的各种坏味道。找到坏味道后,我们首先应该以各种重构手法把坏味道去除。完成之后我们常常会发现:注释已经变得多余了,因为代码已经清楚说明了一切。</p>
 <p>如果你需要注释来解释一块代码做了什么,试试Extract Method;如果函数已经提炼出来,但还是需要注释来解释其行为,试试Rename Method;如果你需要注释说明某些系统的需求规格,试试Introduce Assertion。</p>
@@ -536,7 +536,7 @@
 <h3 id="做法-4"><a href="#做法-4" class="headerlink" title="做法"></a>做法</h3><ul>
 <li>建立一个扩展类,将它作为原始类的子类或包装类。</li>
 <li>在扩展类中加入转型构造函数。<ul>
-<li>→<font color="DeepPink"><strong>所谓”转型构造函数”是指”接受原对象作为参数”的构造函数。如果采用子类化方案,那么转型构造函数应该调用适当的超类构造函数;如果采用包装类方案,那么转型构造函数应该将它得到的传入参数以实例变量的形式保存起来,用作接受委托的原对象。</strong></font></li>
+<li>→<font color="DeepPink"><strong>所谓”转型构造函数”是指”接受原对象作为参数”的构造函数。如果采用子类化方案,那么转型构造函数应该调用适当的父类构造函数;如果采用包装类方案,那么转型构造函数应该将它得到的传入参数以实例变量的形式保存起来,用作接受委托的原对象。</strong></font></li>
 </ul>
 </li>
 <li>在扩展类中加入新特性。</li>
@@ -588,20 +588,20 @@
 <li>修改该函数的签名,令它反映出新用法。</li>
 </ul>
 <h1 id="处理概括关系"><a href="#处理概括关系" class="headerlink" title="处理概括关系"></a>处理概括关系</h1><p>有一批重构手法专门用来处理类的概括关系(generalization,即继承关系),其中主要是将函数上下移动于继承体系之中。Pull Up Field和Pull Up Method都用于将特性向继承体系的上端移动,Push Down Method和Push Down Field则将特性向继承体系的下端移动。构造函数比较难以向上拉动,因此专门有一个Pull Up Constructor Body处理它。我们不会将构造函数往下推,因为Replace Constructor with Factory Method通常更管用。</p>
-<p>Pull Up Method过程中最麻烦的一点就是:<font color="DeepPink"><strong>被提升的函数可能会引用只出现于子类而不出现于超类的特性。如果被引用的是个函数,你可以将该函数也一同提升到超类,或者在超类中建立一个抽象函数。在此过程中,你可能需要修改某个函数的签名,或建立一个委托函数。</strong></font></p>
+<p>Pull Up Method过程中最麻烦的一点就是:<font color="DeepPink"><strong>被提升的函数可能会引用只出现于子类而不出现于父类的特性。如果被引用的是个函数,你可以将该函数也一同提升到父类,或者在父类中建立一个抽象函数。在此过程中,你可能需要修改某个函数的签名,或建立一个委托函数。</strong></font></p>
 <p><font color="DeepPink"><strong>如果两个函数相似但不相同,你或许可以先借助Form Template Method构造出相同的函数,然后再提升它们。</strong></font></p>
-<h2 id="Form-Template-Method-塑造模板函数"><a href="#Form-Template-Method-塑造模板函数" class="headerlink" title="Form Template Method 塑造模板函数"></a>Form Template Method 塑造模板函数</h2><p>你有一些子类,其中相应的某些函数以相同顺序执行类似的操作,但各个操作的细节上有所不同。<br>将这些操作分别放进独立函数中,并保持它们都有相同的签名,于是原函数也就变得相同了。然后将原函数上移至超类。</p>
+<h2 id="Form-Template-Method-塑造模板函数"><a href="#Form-Template-Method-塑造模板函数" class="headerlink" title="Form Template Method 塑造模板函数"></a>Form Template Method 塑造模板函数</h2><p>你有一些子类,其中相应的某些函数以相同顺序执行类似的操作,但各个操作的细节上有所不同。<br>将这些操作分别放进独立函数中,并保持它们都有相同的签名,于是原函数也就变得相同了。然后将原函数上移至父类。</p>
 <p><img data-src="/images/refactoring-improving-the-design-of-existing-code/%E5%A1%91%E9%80%A0%E6%A8%A1%E6%9D%BF%E5%87%BD%E6%95%B0.png"></p>
-<h3 id="动机-10"><a href="#动机-10" class="headerlink" title="动机"></a>动机</h3><p>继承是避免重复行为的一个强大工具。无论何时,只要你看见两个子类之中有类似的函数,就可以把它们提升到超类。但是如果这些函数并不完全相同该怎么办?我们仍有必要尽量避免重复,但又必须保持这些函数之间的实质差异。</p>
-<p>常见的一种情况是:<font color="DeepPink"><strong>两个函数以相同顺序执行大致相近的操作,但是各操作不完全相同。这种情况下我们可以将执行操作的序列移至超类,并借助多态保证各操作仍得以保持差异性。这样的函数被称为Template Method(模板函数）</strong></font></p>
-<h2 id="Replace-Inheritance-with-Delegation-以委托取代继承"><a href="#Replace-Inheritance-with-Delegation-以委托取代继承" class="headerlink" title="Replace Inheritance with Delegation 以委托取代继承"></a>Replace Inheritance with Delegation 以委托取代继承</h2><p>某个子类只使用超类接口中的一部分,或是根本不需要继承而来的数据。<br>在子类中新建一个字段用以保存超类;调整子类函数,令它改而委托超类;然后去掉两者之间的继承关系。</p>
+<h3 id="动机-10"><a href="#动机-10" class="headerlink" title="动机"></a>动机</h3><p>继承是避免重复行为的一个强大工具。无论何时,只要你看见两个子类之中有类似的函数,就可以把它们提升到父类。但是如果这些函数并不完全相同该怎么办?我们仍有必要尽量避免重复,但又必须保持这些函数之间的实质差异。</p>
+<p>常见的一种情况是:<font color="DeepPink"><strong>两个函数以相同顺序执行大致相近的操作,但是各操作不完全相同。这种情况下我们可以将执行操作的序列移至父类,并借助多态保证各操作仍得以保持差异性。这样的函数被称为Template Method(模板函数）</strong></font></p>
+<h2 id="Replace-Inheritance-with-Delegation-以委托取代继承"><a href="#Replace-Inheritance-with-Delegation-以委托取代继承" class="headerlink" title="Replace Inheritance with Delegation 以委托取代继承"></a>Replace Inheritance with Delegation 以委托取代继承</h2><p>某个子类只使用父类接口中的一部分,或是根本不需要继承而来的数据。<br>在子类中新建一个字段用以保存父类;调整子类函数,令它改而委托父类;然后去掉两者之间的继承关系。</p>
 <p><img data-src="/images/refactoring-improving-the-design-of-existing-code/%E4%BB%A5%E5%A7%94%E6%89%98%E5%8F%96%E4%BB%A3%E7%BB%A7%E6%89%BF.png"></p>
-<h3 id="动机-11"><a href="#动机-11" class="headerlink" title="动机"></a>动机</h3><p>继承是个好东西,但有时候它并不是你要的。你常常会遇到这样的情况:一开始继承了一个类,随后发现超类中的许多操作并不真正适用于子类。这种情况下,你所拥有的接口并未真正反映出子类的功能。或者,你可能发现你从超类中继承了大堆子类并不需要的数据,抑或你可能发现超类中的某些protected函数对子类并没有什么意义。</p>
-<p>你可以选择容忍,并接受传统说法:子类可以只使用超类功能的一部分。但这样做的结果是:代码传达的信息与你的意图南辕北辙—这是一种混淆,你应该将它去除。</p>
+<h3 id="动机-11"><a href="#动机-11" class="headerlink" title="动机"></a>动机</h3><p>继承是个好东西,但有时候它并不是你要的。你常常会遇到这样的情况:一开始继承了一个类,随后发现父类中的许多操作并不真正适用于子类。这种情况下,你所拥有的接口并未真正反映出子类的功能。或者,你可能发现你从父类中继承了大堆子类并不需要的数据,抑或你可能发现父类中的某些protected函数对子类并没有什么意义。</p>
+<p>你可以选择容忍,并接受传统说法:子类可以只使用父类功能的一部分。但这样做的结果是:代码传达的信息与你的意图南辕北辙—这是一种混淆,你应该将它去除。</p>
 <p><font color="DeepPink"><strong>如果以委托取代继承,你可以更清楚地表明:你只需要受托类的一部分功能。接口中的哪一部分应该被使用,哪一部分应该被忽略,完全由你主导控制。</strong></font>这样做的成本则是需要额外写出委托函数,但这些函数都非常简单,极少可能出错。</p>
 <h2 id="Replace-Delegation-with-Inheritance-以继承取代委托"><a href="#Replace-Delegation-with-Inheritance-以继承取代委托" class="headerlink" title="Replace Delegation with Inheritance 以继承取代委托"></a>Replace Delegation with Inheritance 以继承取代委托</h2><p>你在两个类之间使用委托关系,并经常为整个接口编写许多极简单的委托函数。<br>让委托类继承受托类。</p>
 <h3 id="动机-12"><a href="#动机-12" class="headerlink" title="动机"></a>动机</h3><p>本重构与Replace Inheritance with Delegation恰恰相反。如果你发现自己需要使用受托类中的所有函数,并且费了很大力气编写所有极简的委托函数,本重构可以帮助你轻松回头使用继承。</p>
-<p>两条告诫需牢记于心。首先,<font color="DeepPink"><strong>如果你并没有使用受托类的所有函数,那么就不应该使用Replace Delegation With Inheritance,因为子类应该总是遵循超类的接口。</strong></font>如果过多的委托函数让你烦心,你有别的选择:你可以通过Remove Middle Man让客户端自己调用受托函数,也可以使用Extract Superclass将两个类接口相同的部分提炼到超类中,然后让两个类都继承这个新的超类;你还可以用类似的手法使用Extract Interface。</p>
+<p>两条告诫需牢记于心。首先,<font color="DeepPink"><strong>如果你并没有使用受托类的所有函数,那么就不应该使用Replace Delegation With Inheritance,因为子类应该总是遵循父类的接口。</strong></font>如果过多的委托函数让你烦心,你有别的选择:你可以通过Remove Middle Man让客户端自己调用受托函数,也可以使用Extract Superclass将两个类接口相同的部分提炼到父类中,然后让两个类都继承这个新的父类;你还可以用类似的手法使用Extract Interface。</p>
 <p>另一种需要当心的情况是:受托对象被不止一个其他对象共享,而且受托对象是可变的。在这种情况下,你就不能将委托关系替换为继承关系,因为这样就无法再共享数据了。数据共享是必须由委托关系承担的一种责任,你无法把它转给继承关系。如果受托对象是不可变的,数据共享就不成问题,因为你大可放心地复制对象,谁都不会知道。</p>
 <h1 id="大型重构"><a href="#大型重构" class="headerlink" title="大型重构"></a>大型重构</h1><p>要指出继承体系是否承担了两项不同的责任并不困难:<font color="DeepPink"><strong>如果继承体系中的某一特定层级上的所有类,其子类名称都以相同的形容词开始,那么这个体系很可能就是承担着两项不同的责任。</strong></font></p>
 <h1 id="重构，复用与现实"><a href="#重构，复用与现实" class="headerlink" title="重构，复用与现实"></a>重构，复用与现实</h1><p>关于研究,Ralph Johnson给我上了重要的一课:如果有人(文章读者或是演讲会听众)说”我不懂”或者不打算接受它,那就是我们的失败。我们有责任努力发展自己的思想,并将它清楚表达出来。</p>
