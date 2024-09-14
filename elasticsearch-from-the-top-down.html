@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="注意:原文发表时间是14年,所以实现有可能与新版不一致. 原文地址:https://www.elastic.co/cn/blog/found-elasticsearch-top-down">
-<meta name="keywords" content="原创,Architecture,ElasticSearch,Lucene">
+  <meta name="description" content="注意:原文发表时间是14年,所以实现有可能与新版不一致.原文地址:https://www.elastic.co/cn/blog/found-elasticsearch-top-down">
+<meta name="keywords" content="原创,ElasticSearch,Lucene,Architecture">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[译]自上而下认识Elasticsearch">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-from-the-top-down.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="注意:原文发表时间是14年,所以实现有可能与新版不一致. 原文地址:https://www.elastic.co/cn/blog/found-elasticsearch-top-down">
+<meta property="og:description" content="注意:原文发表时间是14年,所以实现有可能与新版不一致.原文地址:https://www.elastic.co/cn/blog/found-elasticsearch-top-down">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2024-05-08T09:15:25.830Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[译]自上而下认识Elasticsearch">
-<meta name="twitter:description" content="注意:原文发表时间是14年,所以实现有可能与新版不一致. 原文地址:https://www.elastic.co/cn/blog/found-elasticsearch-top-down">
+<meta name="twitter:description" content="注意:原文发表时间是14年,所以实现有可能与新版不一致.原文地址:https://www.elastic.co/cn/blog/found-elasticsearch-top-down">
 
 <link rel="canonical" href="https://jiankunking.com/elasticsearch-from-the-top-down.html">
 
@@ -279,14 +279,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>8.3k</span>
+              <span>8k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>8 分钟</span>
+              <span>7 分钟</span>
             </span>
 
         </div>
@@ -299,32 +299,27 @@
 
       
         <blockquote>
-<p>注意:原文发表时间是14年,所以实现有可能与新版不一致.<br>
-原文地址:<a href="https://www.elastic.co/cn/blog/found-elasticsearch-top-down" target="_blank" rel="noopener">https://www.elastic.co/cn/blog/found-elasticsearch-top-down</a></p>
+<p>注意:原文发表时间是14年,所以实现有可能与新版不一致.<br>原文地址:<a href="https://www.elastic.co/cn/blog/found-elasticsearch-top-down" target="_blank" rel="noopener">https://www.elastic.co/cn/blog/found-elasticsearch-top-down</a></p>
 </blockquote>
 <a id="more"></a>
-<h1>Introduction</h1>
-<p>在上一篇文章&quot;自下而上认识Elasticsearch&quot;中,我们从相当底层的数据结构开始,然后提升到抽象层以将它们置于上下文中.然而,我们专注于单个分片内发生的事情.</p>
-<p>要查看所有这些如何在分布式环境中组合在一起,从另一端开始更容易:从用户的角度观察,从&quot;顶部&quot;开始.</p>
+
+<h1 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h1><p>在上一篇文章”自下而上认识Elasticsearch”中,我们从相当底层的数据结构开始,然后提升到抽象层以将它们置于上下文中.然而,我们专注于单个分片内发生的事情.</p>
+<p>要查看所有这些如何在分布式环境中组合在一起,从另一端开始更容易:从用户的角度观察,从”顶部”开始.</p>
 <p>我们将看看当用户向Elasticsearch发送索引和搜索请求时会发生什么,以及这些请求如何在网络中波动,直到我们到达前面介绍的较低级别的结构.首先,我们将查看接受请求的节点及其作为协调器的角色.我们将看看它如何将请求路由到分片的主索引请求,以及如何在副本之间平衡搜索请求的负载.</p>
-<p>在被路由到正确的分片之后,我们将看看在分片级别发生了什么——例如什么构成了&quot;成功&quot;的索引操作,以及将文档和搜索转换为它们的Lucene等价物所需的转换.对于搜索请求,我们还将查看分散/聚集过程,这可能发生在多轮中.</p>
-<h1>A Cluster of Nodes</h1>
-<p>为了描述Elasticsearch的工作原理,我们需要某种集群拓扑.图中的集群描述了我们假设的集群类型.我们有一个带有两个分片的Elasticsearch索引,为了可用性在两个不同&quot;区域&quot;的节点之间进行复制——只有主节点在三个区域中运行.此外,我们有两个客户端节点,我们将通过它们发送请求.<br>
-<img data-src="/images/elasticsearch-top-down/cluster-topology.svg" alt="Sample Cluster Topology"></p>
-<p>集群中的不同节点可以具有不同的角色(data and/or master – or none as a client)以及属性(例如区域/zone).我们有数据节点、主节点和客户端节点——在不同的区域,即具有不同的 node.zone 属性.本文中我们关注数据节点.</p>
-<h1>Request Coordinators</h1>
-<p>当您向Elasticsearch中的节点发送请求时,该节点将成为该请求的协调器.它将决定将请求路由到哪些节点和分片,如何合并不同节点的响应,以及决定请求何时&quot;完成&quot;.虽然Elasticsearch会为您透明地处理这个问题,但高级分区方案需要有关内部处理和路由的知识.上述给定集群,客户端节点将充当协调器.</p>
+<p>在被路由到正确的分片之后,我们将看看在分片级别发生了什么——例如什么构成了”成功”的索引操作,以及将文档和搜索转换为它们的Lucene等价物所需的转换.对于搜索请求,我们还将查看分散&#x2F;聚集过程,这可能发生在多轮中.</p>
+<h1 id="A-Cluster-of-Nodes"><a href="#A-Cluster-of-Nodes" class="headerlink" title="A Cluster of Nodes"></a>A Cluster of Nodes</h1><p>为了描述Elasticsearch的工作原理,我们需要某种集群拓扑.图中的集群描述了我们假设的集群类型.我们有一个带有两个分片的Elasticsearch索引,为了可用性在两个不同”区域”的节点之间进行复制——只有主节点在三个区域中运行.此外,我们有两个客户端节点,我们将通过它们发送请求.<br><img data-src="/images/elasticsearch-top-down/cluster-topology.svg" alt="Sample Cluster Topology"></p>
+<p>集群中的不同节点可以具有不同的角色(data and&#x2F;or master – or none as a client)以及属性(例如区域&#x2F;zone).我们有数据节点、主节点和客户端节点——在不同的区域,即具有不同的 node.zone 属性.本文中我们关注数据节点.</p>
+<h1 id="Request-Coordinators"><a href="#Request-Coordinators" class="headerlink" title="Request Coordinators"></a>Request Coordinators</h1><p>当您向Elasticsearch中的节点发送请求时,该节点将成为该请求的协调器.它将决定将请求路由到哪些节点和分片,如何合并不同节点的响应,以及决定请求何时”完成”.虽然Elasticsearch会为您透明地处理这个问题,但高级分区方案需要有关内部处理和路由的知识.上述给定集群,客户端节点将充当协调器.</p>
 <p><font color="DeepPink"><strong>为了能够充当协调器,节点需要知道集群的状态.集群状态被复制到集群中的每个节点.它具有分片路由表(哪些节点托管哪些索引和分片)、关于每个节点的元数据(例如它运行的位置和节点具有的属性)以及索引映射(其中可以包含重要的路由配置)和模板.集群状态被复制到所有节点是映射需要合理大小的一个重要原因.</strong></font></p>
 <p>对于搜索请求,协调意味着选择分片的副本、发送请求以进行进一步处理,可能需要多轮处理,我们稍后将对此进行更多研究.选择副本是随机完成的,或者受请求偏好的影响.</p>
 <p>索引请求(即创建、更新或删除文档的请求)略有不同.在这种情况下,请求必须路由到分片的主节点,以及一定数量的副本——取决于索引请求的write_consistency.写一致性可以是一个、quorum(默认是一个,除非你有≥2 个副本)或全部——即要求一个、大多数或每个副本都已确认.</p>
-<h1>Index a Document to an Index of … Indexes?</h1>
-<p>术语&quot;索引&quot;在很多上下文中使用,具有不同的含义.您将文档索引到Elasticsearch索引.<font color="DeepPink"><strong>Elasticsearch索引有分片,也就是 Lucene索引</strong></font>.那些有倒排索引.这可能会让人感到困惑.</p>
-<p><font color="DeepPink"><strong>一个重要的见解是,从概念上讲,具有两个分片的Elasticsearch索引与每个具有一个分片的两个Elasticsearch索引完全相同.最终,它们是两个Lucene索引.不同之处主要在于Elasticsearch通过其路由功能提供的便利性.仅使用单个分片索引就可以实现相同的&quot;手动&quot;.(不是你应该!)</strong></font></p>
+<h1 id="Index-a-Document-to-an-Index-of-…-Indexes"><a href="#Index-a-Document-to-an-Index-of-…-Indexes" class="headerlink" title="Index a Document to an Index of … Indexes?"></a>Index a Document to an Index of … Indexes?</h1><p>术语”索引”在很多上下文中使用,具有不同的含义.您将文档索引到Elasticsearch索引.<font color="DeepPink"><strong>Elasticsearch索引有分片,也就是 Lucene索引</strong></font>.那些有倒排索引.这可能会让人感到困惑.</p>
+<p><font color="DeepPink"><strong>一个重要的见解是,从概念上讲,具有两个分片的Elasticsearch索引与每个具有一个分片的两个Elasticsearch索引完全相同.最终,它们是两个Lucene索引.不同之处主要在于Elasticsearch通过其路由功能提供的便利性.仅使用单个分片索引就可以实现相同的”手动”.(不是你应该!)</strong></font></p>
 <p>重要的部分是通过分片的概念,认识到Elasticsearch索引是Lucene索引集合之上的抽象.当您需要考虑更高级的分区策略时,这会有所帮助.</p>
-<h1>Index Requests</h1>
-<p>索引请求是创建或更改索引中文档的请求.无论是新建文档、删除文档还是更新文档,都不是很重要,所以我们统称为&quot;索引请求&quot;.</p>
+<h1 id="Index-Requests"><a href="#Index-Requests" class="headerlink" title="Index Requests"></a>Index Requests</h1><p>索引请求是创建或更改索引中文档的请求.无论是新建文档、删除文档还是更新文档,都不是很重要,所以我们统称为”索引请求”.</p>
 <p>考虑以下批量请求:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	&quot;index&quot;: &#123;</span><br><span class="line">		&quot;_index&quot;: &quot;tweets&quot;,</span><br><span class="line">		&quot;_type&quot;: &quot;tweet&quot;,</span><br><span class="line">		&quot;_id&quot;: &quot;502878691740090369&quot;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#123;</span><br><span class="line">	&quot;user&quot;: &quot;mikepluta&quot;,</span><br><span class="line">	&quot;tweet&quot;: &quot;Moore&apos;s Law for #BigData: The amount of nonsense packed into the term \&quot;BigData\&quot; doubles approximately every two years&quot;</span><br><span class="line">&#125;</span><br><span class="line">&#123;</span><br><span class="line">	&quot;index&quot;: &#123;</span><br><span class="line">		&quot;_index&quot;: &quot;tweets&quot;,</span><br><span class="line">		&quot;_type&quot;: &quot;tweet&quot;,</span><br><span class="line">		&quot;_id&quot;: &quot;475944863175671808&quot;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#123;</span><br><span class="line">	&quot;user&quot;: &quot;viktorklang&quot;,</span><br><span class="line">	&quot;tweet&quot;: &quot;For resilient software, \&quot;What could possibly go wrong?\&quot; should be the famous first words; not last.&quot;</span><br><span class="line">&#125;</span><br><span class="line">&#123;</span><br><span class="line">	&quot;index&quot;: &#123;</span><br><span class="line">		&quot;_index&quot;: &quot;logs-2014-10-14&quot;,</span><br><span class="line">		&quot;_type&quot;: &quot;log&quot;,</span><br><span class="line">		&quot;_consistency&quot;: &quot;all&quot;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#123;</span><br><span class="line">	&quot;@timestamp&quot;: &quot;2014-10-14T12:34:56Z&quot;,</span><br><span class="line">	&quot;message&quot;: &quot;Suddenly the Dungeon collapses!! - You die...&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>处理这个请求的节点需要考虑几个问题:</p>
 <ul>
 <li>tweets和logs的路由配置是什么？这可以通过查看集群状态中的映射来确定.对于tweets,可能存在基于用户的路由,因此tweets的<font color="DeepPink"><strong>user</strong></font>属性应确定将文档路由到哪个分片.我们将在下一节中查看一些示例.</li>
@@ -333,26 +328,22 @@
 <li>logs操作指定了严格的<font color="DeepPink"><strong>_consistency</strong></font>设置,因此在每个副本都返回成功之前无法确认请求.</li>
 <li>什么时候可以整体完成批量请求？</li>
 </ul>
-<h1>Routing</h1>
-<p>路由指定哪些文档去哪里,因此是请求如何在Elasticsearch内部流动的重要部分,包括搜索和索引请求.它是设计适当的数据流和索引分区不可或缺的一部分.在这里,我们专注于机制,因为索引和分片设计是一个大话题.</p>
+<h1 id="Routing"><a href="#Routing" class="headerlink" title="Routing"></a>Routing</h1><p>路由指定哪些文档去哪里,因此是请求如何在Elasticsearch内部流动的重要部分,包括搜索和索引请求.它是设计适当的数据流和索引分区不可或缺的一部分.在这里,我们专注于机制,因为索引和分片设计是一个大话题.</p>
 <p><img data-src="/images/elasticsearch-top-down/routing.png" alt="routers"></p>
-<h1>Primary Concerns</h1>
-<p>当索引操作被路由时,它被转发到该分片的&quot;主&quot;.一个分片只有一个&quot;主&quot;,以及零个或多个副本.在这方面,primary可以被认为是分片的&quot;master&quot;,而replicas可以被认为是&quot;slaves&quot;.</p>
+<h1 id="Primary-Concerns"><a href="#Primary-Concerns" class="headerlink" title="Primary Concerns"></a>Primary Concerns</h1><p>当索引操作被路由时,它被转发到该分片的”主”.一个分片只有一个”主”,以及零个或多个副本.在这方面,primary可以被认为是分片的”master”,而replicas可以被认为是”slaves”.</p>
 <p>主节点将充当该特定分片的索引操作的协调器.它会将索引操作发送到相关的副本,并等待所需的数量在指示成功之前得到确认.</p>
 <p><img data-src="/images/elasticsearch-top-down/index-sequence.svg" alt="Sequence of an Index Operation"></p>
-<p>当足够数量的副本已确认时,主副本将成功报告回原始请求协调器,在我们的例子中是客户端节点.对于&quot;quorum&quot;默认的写一致性,三个操作中的两个就足够了,所以不需要等到第三个操作才传递成功.</p>
-<p>协调器/客户端节点并行地向分片的主节点发送操作.当所有操作都返回后,最终返回发起的批量请求.</p>
-<p>&quot;成功&quot;操作的定义值得研究.</p>
+<p>当足够数量的副本已确认时,主副本将成功报告回原始请求协调器,在我们的例子中是客户端节点.对于”quorum”默认的写一致性,三个操作中的两个就足够了,所以不需要等到第三个操作才传递成功.</p>
+<p>协调器&#x2F;客户端节点并行地向分片的主节点发送操作.当所有操作都返回后,最终返回发起的批量请求.</p>
+<p>“成功”操作的定义值得研究.</p>
 <p>在上一篇文章中,我们了解了索引是如何构建的,以及如何在搜索速度、索引紧凑度、索引速度和操作变得可见所需的时间之间进行权衡.涵盖了Lucene内部结构,如不可变段,我们强调批量构建这些并延迟昂贵的磁盘同步操作很重要.</p>
-<p>所有这一切似乎都与我们希望从索引操作中得到的东西背道而驰:安全耐用,但很快得到承认.为实现这一点,Elasticsearch有一个&quot;transaction log&quot;(文档中的&quot;translog&quot;)或&quot;write-ahead log&quot;,就像几乎每个数据库系统一样.写入仅追加的translog是分片成功的定义,而不是文档是否实际上是通过可搜索段的实时索引的一部分.</p>
-<p><font color="DeepPink"><strong>在正常操作期间,Elasticsearch不会复制已经构建的索引片段(即段),而是重新应用相同更改所需的操作.(另一方面,在恢复或分片迁移期间,段是被复制的.)因此,所有副本本质上都在以相同的CPU成本执行相同数量的工作.副本不能&quot;重用&quot;主副本已经完成的工作.这是添加副本会降低整体索引吞吐量的一个重要原因——您需要等待更多节点确认操作.此外,您不能期望拥有&quot;只写&quot;节点和&quot;只读&quot;节点.</strong></font></p>
-<h1>All in a Shard</h1>
-<p>虽然在分片的事务日志中放置一个操作是一个很好的开始,但最终操作的效果应该在索引结构中结束.在上一篇文章中,我们介绍了倒排索引的工作原理及其构建方式.我们没有谈及映射,而是着重于分片是Lucene索引这一事实.</p>
-<p><font color="DeepPink"><strong>Lucene没有映射(mapping)的概念,Lucene索引或文档也没有类型.在Lucene中,文档是无类型的并且具有任意数量的字段.这些字段具有特定类型(string/numeric)和属性(stored/indexed/…).映射是一个很好的抽象,用于表达如何将源文档转换为具有一堆字段的Lucene文档.映射具有类型、动态属性、多字段、脚本转换等概念.然而,Lucene对这些一无所知.只要Elasticsearch以Lucene期望的方式生成文档,Lucene就会很高兴.就Lucene而言,_all、_source 甚至 _type 等字段没有什么特别之处.</strong></font></p>
+<p>所有这一切似乎都与我们希望从索引操作中得到的东西背道而驰:安全耐用,但很快得到承认.为实现这一点,Elasticsearch有一个”transaction log”(文档中的”translog”)或”write-ahead log”,就像几乎每个数据库系统一样.写入仅追加的translog是分片成功的定义,而不是文档是否实际上是通过可搜索段的实时索引的一部分.</p>
+<p><font color="DeepPink"><strong>在正常操作期间,Elasticsearch不会复制已经构建的索引片段(即段),而是重新应用相同更改所需的操作.(另一方面,在恢复或分片迁移期间,段是被复制的.)因此,所有副本本质上都在以相同的CPU成本执行相同数量的工作.副本不能”重用”主副本已经完成的工作.这是添加副本会降低整体索引吞吐量的一个重要原因——您需要等待更多节点确认操作.此外,您不能期望拥有”只写”节点和”只读”节点.</strong></font></p>
+<h1 id="All-in-a-Shard"><a href="#All-in-a-Shard" class="headerlink" title="All in a Shard"></a>All in a Shard</h1><p>虽然在分片的事务日志中放置一个操作是一个很好的开始,但最终操作的效果应该在索引结构中结束.在上一篇文章中,我们介绍了倒排索引的工作原理及其构建方式.我们没有谈及映射,而是着重于分片是Lucene索引这一事实.</p>
+<p><font color="DeepPink"><strong>Lucene没有映射(mapping)的概念,Lucene索引或文档也没有类型.在Lucene中,文档是无类型的并且具有任意数量的字段.这些字段具有特定类型(string&#x2F;numeric)和属性(stored&#x2F;indexed&#x2F;…).映射是一个很好的抽象,用于表达如何将源文档转换为具有一堆字段的Lucene文档.映射具有类型、动态属性、多字段、脚本转换等概念.然而,Lucene对这些一无所知.只要Elasticsearch以Lucene期望的方式生成文档,Lucene就会很高兴.就Lucene而言,_all、_source 甚至 _type 等字段没有什么特别之处.</strong></font></p>
 <p><img data-src="/images/elasticsearch-top-down/mapping-transform.svg" alt="Elasticsearchtransforms a source document to aLucenedocument"></p>
 <p>许多人将Elasticsearch索引比作数据库,将类型比作表.就我个人而言,我认为这种比较会导致更多的混乱而不是清晰.对于两个不同的表,您可以合理地假设这些表在存储方式或存储位置方面没有任何共同之处.相反,您可以构建映射,使Elasticsearch生成名称相同但类型不同的字段.由于一切都是同一个倒排索引中的一堆术语,这可能会导致问题.如果您的过滤器对于某些文档是数字的,而对于其他文档是字符串的,您最终会得到错误或可能是意外的结果.对于具有相同类型(例如字符串)但具有不同分析器的字段也是如此.动态映射非常适合快速启动开发,但您可能不想完全依赖它.</p>
-<h1>Index Request Summary</h1>
-<p>总结索引请求的流程,会发生以下情况:</p>
+<h1 id="Index-Request-Summary"><a href="#Index-Request-Summary" class="headerlink" title="Index Request Summary"></a>Index Request Summary</h1><p>总结索引请求的流程,会发生以下情况:</p>
 <ol>
 <li>接受请求的节点将成为协调器.它查询映射以确定将请求发送到哪个分片.</li>
 <li>请求被发送到该分片的主节点.</li>
@@ -360,32 +351,30 @@
 <li>当足够数量的副本已确认时,主副本返回成功.</li>
 <li>当所有子操作(例如批量请求)都成功时,协调器返回成功.</li>
 </ol>
-<p>发生这种情况时,每个分片将持续处理其文档队列,将输入文档转换为Lucene文档.然后将它们添加到索引缓冲区,最终刷新到一个新段中,甚至稍后完全提交.何时发生取决于托管分片的节点.刷新在节点之间不同步,因此搜索者可以在刷新传播时短暂地看到单独的&quot;时间线&quot;.</p>
+<p>发生这种情况时,每个分片将持续处理其文档队列,将输入文档转换为Lucene文档.然后将它们添加到索引缓冲区,最终刷新到一个新段中,甚至稍后完全提交.何时发生取决于托管分片的节点.刷新在节点之间不同步,因此搜索者可以在刷新传播时短暂地看到单独的”时间线”.</p>
 <p><img data-src="/images/elasticsearch-top-down/index-buffer.svg" alt="Elasticsearchtransforms a source document to aLucenedocument"></p>
-<h1>Search Requests</h1>
-<p>我们已经看到将具有索引操作的请求转换为实际索引更改所需的来回次数.搜索请求的过程在某些方面相似,但在许多其他方面有所不同.</p>
+<h1 id="Search-Requests"><a href="#Search-Requests" class="headerlink" title="Search Requests"></a>Search Requests</h1><p>我们已经看到将具有索引操作的请求转换为实际索引更改所需的来回次数.搜索请求的过程在某些方面相似,但在许多其他方面有所不同.</p>
 <p><font color="DeepPink"><strong>与索引请求一样,必须路由搜索请求.如果没有指定路由,搜索将命中所有不同的分片——如果指定了路由,则搜索将命中特定的分片.</strong></font></p>
 <p>识别出相关分片后,协调器将在该分片的可用副本中进行选择,以尝试平衡负载.</p>
-<p>假设我们有以下搜索.我们对字段标题和描述进行了multi_match查询,搜索&quot;Holy Grail&quot;.我们想要排名前十的作者和排名前十的书,更喜欢标题匹配.</p>
+<p>假设我们有以下搜索.我们对字段标题和描述进行了multi_match查询,搜索”Holy Grail”.我们想要排名前十的作者和排名前十的书,更喜欢标题匹配.</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">POST /books/book/_search</span><br><span class="line">query:</span><br><span class="line">    filtered:</span><br><span class="line">        filter:</span><br><span class="line">            term:</span><br><span class="line">                tag: python</span><br><span class="line">        query:</span><br><span class="line">            multi_match:</span><br><span class="line">                query: Holy Grail</span><br><span class="line">                fields: [title^5, description]</span><br><span class="line">aggregations:</span><br><span class="line">   author_id:</span><br><span class="line">        terms:</span><br><span class="line">            field:author_id</span><br><span class="line">            size: 10</span><br><span class="line">            shard_size: 100</span><br><span class="line">size: 10</span><br></pre></td></tr></table></figure>
-<p>我们没有指定搜索的类型,所以将使用默认值——query_then_fetch.不要将这种&quot;搜索类型&quot;与上面讨论的类型混淆! 命名是困难的.</p>
-<p>本质上,&quot;先查询再获取&quot;意味着会有两轮查找.稍后我们会将此搜索类型与其他搜索类型进行比较.</p>
+
+<p>我们没有指定搜索的类型,所以将使用默认值——query_then_fetch.不要将这种”搜索类型”与上面讨论的类型混淆! 命名是困难的.</p>
+<p>本质上,”先查询再获取”意味着会有两轮查找.稍后我们会将此搜索类型与其他搜索类型进行比较.</p>
 <p>首先,每个分片都会找到前10个命中并发回它们的ID.这些ID然后将由协调员合并以找到真正的前10名,之后它将要求获胜者的实际文件.为了找到全球前10名的命中率,从每个分片中获取前10名就足够了.稍后我们将看到为什么这对于聚合是不同的.</p>
 <p>但首先,让我们仔细看看第一轮,看看在搜索的分片级别发生了什么.</p>
-<h1>Query Rewriting</h1>
-<p><font color="DeepPink"><strong>在分片上执行搜索请求之前,需要重写搜索并使其适应Lucene查询图.</strong></font>Elasticsearch经常因具有深度嵌套和冗长的搜索DSL而受到批评,这在某种程度上假定了Lucene熟悉度.就我个人而言,我发现搜索DSL很棒——出于完全相同的原因:</p>
+<h1 id="Query-Rewriting"><a href="#Query-Rewriting" class="headerlink" title="Query Rewriting"></a>Query Rewriting</h1><p><font color="DeepPink"><strong>在分片上执行搜索请求之前,需要重写搜索并使其适应Lucene查询图.</strong></font>Elasticsearch经常因具有深度嵌套和冗长的搜索DSL而受到批评,这在某种程度上假定了Lucene熟悉度.就我个人而言,我发现搜索DSL很棒——出于完全相同的原因:</p>
 <p>首先,嵌套的性质使得以编程方式使用更容易.对于简单的事情来说肯定是冗长的,但是具有高度自定义评分和匹配的真正搜索需求并不简单.</p>
 <p>其次,DSL中的查询和过滤器与Lucene中的查询和过滤器非常接近.这对于了解真正发生的事情很重要.</p>
 <p>但是,也有一些例外.如上所述,映射概念对于Lucene来说是陌生的.然而,一些查询利用映射.例如,查询的match系列没有Lucene对应项.他们将根据字段的映射处理查询文本,并组成一个Lucene查询.我们的示例将被重写为如下所示:</p>
 <blockquote>
 <p>For example, the match family of queries have no Lucene counterpart. They will process the query text according to the fields’ mappings, and compose a Lucene query.</p>
 </blockquote>
-<p><img data-src="/images/elasticsearch-top-down/lucene-search-tree.svg" alt></p>
-<p>请注意,根据为各个字段配置的分析器,查询文本&quot;Holy Grail&quot;已被标记化和小写.当没有得到你想要的结果时,一个常见的原因是索引和查询时间文本处理不兼容.例如,术语查询不会将Holy Grail 转换为holy, grail,因此不会匹配.</p>
-<h1>Searching a Shard</h1>
-<p>此时,我们已经准备好在每个分片上执行的Lucene查询运算符.我们处于搜索阶段的第一阶段——即&quot;查询&quot;,然后是&quot;获取&quot;——所以我们需要以下内容:</p>
+<p><img data-src="/images/elasticsearch-top-down/lucene-search-tree.svg"></p>
+<p>请注意,根据为各个字段配置的分析器,查询文本”Holy Grail”已被标记化和小写.当没有得到你想要的结果时,一个常见的原因是索引和查询时间文本处理不兼容.例如,术语查询不会将Holy Grail 转换为holy, grail,因此不会匹配.</p>
+<h1 id="Searching-a-Shard"><a href="#Searching-a-Shard" class="headerlink" title="Searching a Shard"></a>Searching a Shard</h1><p>此时,我们已经准备好在每个分片上执行的Lucene查询运算符.我们处于搜索阶段的第一阶段——即”查询”,然后是”获取”——所以我们需要以下内容:</p>
 <ul>
-<li>前十位文档ID的列表.(不是整个文档)这些将由协调器合并,协调器将执行第二个&quot;获取&quot;阶段以获取实际文档.</li>
+<li>前十位文档ID的列表.(不是整个文档)这些将由协调器合并,协调器将执行第二个”获取”阶段以获取实际文档.</li>
 <li>所有命中的迭代器(尽管我们不需要所有命中的分数),用于聚合目的.</li>
 <li>一种在给定文档ID的情况下快速查找书籍的<font color="DeepPink"><strong>author_id</strong></font>的方法:<a href="elastic.co/cn/blog/found-sizing-elasticsearch#field-data-and-document-values">a field cache or document values</a>.</li>
 <li>前100名作者.(注意<font color="DeepPink"><strong>shard_size</strong></font>为100)</li>
@@ -398,8 +387,7 @@
 <th>fielddata</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>创建时间</td>
 <td>index时创建</td>
 <td>使用时动态创建</td>
@@ -419,8 +407,7 @@
 <td>索引速度稍低</td>
 <td>文档很多时，动态创建开销比较大，而且占内存</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>自下而上文章中关于倒排索引和索引术语的部分描述了如何按段执行搜索,因此我们将在此跳过重复.然而,值得重复的是,搜索发生在多个独立的段上并合并——很像分片的工作方式.有几种缓存可以提高搜索性能,所有缓存都按段划分:</p>
 <ul>
 <li>如果tag:python过滤器被缓存,它可以立即被重用.</li>
@@ -428,22 +415,19 @@
 <li>如果author_id使用文档值，那么保存所需值的磁盘页面可能在页面缓存中。如果是这样，那就太好了！</li>
 </ul>
 <blockquote>
-<p>文档值:document values<br>
-字段缓存:field cache</p>
+<p>文档值:document values<br>字段缓存:field cache</p>
 </blockquote>
 <p>但是,不会缓存查询.因此,对于这些以及任何未缓存的过滤器和字段,我们将需要命中倒排索引.对于任何需要使用底层索引的东西,如果相关页面存在于操作系统的页面缓存中,那就太好了.(如果将所有内存分配给Elasticsearch进程,操作系统就没有任何内存了.)</p>
 <p>最终,使用过滤器和聚合,您实际上是在操作位图来汇总您已经缓存的值.这就是为什么Elasticsearch可以如此快得令人难以置信的原因.</p>
-<h1>… Then Fetch</h1>
-<p>在每个分片都对结果做出贡献后,协调器将合并它们.具体来说,有两件事需要弄清楚:</p>
+<h1 id="…-Then-Fetch"><a href="#…-Then-Fetch" class="headerlink" title="… Then Fetch"></a>… Then Fetch</h1><p>在每个分片都对结果做出贡献后,协调器将合并它们.具体来说,有两件事需要弄清楚:</p>
 <ul>
 <li>真正的前10名.分片将提供最多10个文档的ID及其分数.</li>
 <li>前10位作者的近似值.每个分片提供了最多100位作者的计数.如果我们不这样做,并且只请求每个分片的前10名,那么如果真正的前10名作者之一实际上是其中一个分片中的第11名,会发生什么？它不会作为候选人提交,并导致特定的外衣脱落.这仍然是可能的,如果真正的前10位作者之一实际上是其中一个分片的第101位,但这种可能性应该较小.为了获得完全的准确性,Elasticsearch需要为每个分片收集所有作者的计数.这样做的成本可能高得令人望而却步,因此在这种情况下,以速度换取准确性是很常见的.</li>
 </ul>
 <p>合并过程将确定真正的前10个匹配项,然后联系托管文档的分片并请求整个文档.这个额外的步骤是有用的?还是最终增加整体延迟的优化?取决于您的用例.如果您有大量分片和相当大的文档,那么分两轮进行可能是值得的.如果您的文档很小且分片很少,则可以考虑使用<font color="DeepPink"><strong>query_and_fetch</strong></font>搜索类型.一如既往,测试和验证.</p>
-<h1>Summary</h1>
-<p>本文的目标是从客户端发送的索引和搜索请求开始,并达到本系列第一部分中介绍的内容.我们已经在集群状态、映射和可能的自定义路由的帮助下研究了分片路由.通过分片路由,我们已经看到分片的主节点如何协调对其副本的更改,以及事务logs如何平衡持久性和及时响应.</p>
+<h1 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h1><p>本文的目标是从客户端发送的索引和搜索请求开始,并达到本系列第一部分中介绍的内容.我们已经在集群状态、映射和可能的自定义路由的帮助下研究了分片路由.通过分片路由,我们已经看到分片的主节点如何协调对其副本的更改,以及事务logs如何平衡持久性和及时响应.</p>
 <p>类似地,我们跟踪了搜索请求的流程——通过路由、平衡、分散、查询重写、响应收集、合并、后续获取等.</p>
-<p>此外,我们还研究了映射和类型,它们为何不存在于&quot;Lucene land&quot;中,以及需要什么样的重写.索引时和搜索时.</p>
+<p>此外,我们还研究了映射和类型,它们为何不存在于”Lucene land”中,以及需要什么样的重写.索引时和搜索时.</p>
 <p>希望您对Elasticsearch的分布式特性以及Elasticsearch和Lucene之间的界限有了更多的了解!</p>
 
     </div>
@@ -531,9 +515,9 @@
       <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/原创/" rel="tag"># 原创</a>
-              <a href="/tags/architecture/" rel="tag"># Architecture</a>
               <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/lucene/" rel="tag"># Lucene</a>
+              <a href="/tags/architecture/" rel="tag"># Architecture</a>
           </div>
 
         
@@ -608,7 +592,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">A Cluster of Nodes</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">Request Coordinators</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">Index a Document to an Index of … Indexes?</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">Index Requests</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">Routing</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">Primary Concerns</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">8.</span> <span class="nav-text">All in a Shard</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">9.</span> <span class="nav-text">Index Request Summary</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">10.</span> <span class="nav-text">Search Requests</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">11.</span> <span class="nav-text">Query Rewriting</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">12.</span> <span class="nav-text">Searching a Shard</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">13.</span> <span class="nav-text">… Then Fetch</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">14.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#A-Cluster-of-Nodes"><span class="nav-number">2.</span> <span class="nav-text">A Cluster of Nodes</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Request-Coordinators"><span class="nav-number">3.</span> <span class="nav-text">Request Coordinators</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Index-a-Document-to-an-Index-of-…-Indexes"><span class="nav-number">4.</span> <span class="nav-text">Index a Document to an Index of … Indexes?</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Index-Requests"><span class="nav-number">5.</span> <span class="nav-text">Index Requests</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Routing"><span class="nav-number">6.</span> <span class="nav-text">Routing</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Primary-Concerns"><span class="nav-number">7.</span> <span class="nav-text">Primary Concerns</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#All-in-a-Shard"><span class="nav-number">8.</span> <span class="nav-text">All in a Shard</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Index-Request-Summary"><span class="nav-number">9.</span> <span class="nav-text">Index Request Summary</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Search-Requests"><span class="nav-number">10.</span> <span class="nav-text">Search Requests</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Query-Rewriting"><span class="nav-number">11.</span> <span class="nav-text">Query Rewriting</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Searching-a-Shard"><span class="nav-number">12.</span> <span class="nav-text">Searching a Shard</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#…-Then-Fetch"><span class="nav-number">13.</span> <span class="nav-text">… Then Fetch</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Summary"><span class="nav-number">14.</span> <span class="nav-text">Summary</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

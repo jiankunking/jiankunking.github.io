@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="记录一下 一次Elasticsearch集群事故分析、排查、处理">
+  <meta name="description" content="记录一下一次Elasticsearch集群事故分析、排查、处理">
 <meta name="keywords" content="原创,ElasticSearch,Network,Disk">
 <meta property="og:type" content="article">
 <meta property="og:title" content="一次不接受Elasticsearch官方建议导致的事故">
 <meta property="og:url" content="https://jiankunking.com/an-accident-caused-by-not-accepting-the-official-advice-of-elasticsearch.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="记录一下 一次Elasticsearch集群事故分析、排查、处理">
+<meta property="og:description" content="记录一下一次Elasticsearch集群事故分析、排查、处理">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-11-01T03:22:15.123Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="一次不接受Elasticsearch官方建议导致的事故">
-<meta name="twitter:description" content="记录一下 一次Elasticsearch集群事故分析、排查、处理">
+<meta name="twitter:description" content="记录一下一次Elasticsearch集群事故分析、排查、处理">
 
 <link rel="canonical" href="https://jiankunking.com/an-accident-caused-by-not-accepting-the-official-advice-of-elasticsearch.html">
 
@@ -299,12 +299,11 @@
 
       
         <blockquote>
-<p>记录一下<br>
-一次Elasticsearch集群事故分析、排查、处理</p>
+<p>记录一下<br>一次Elasticsearch集群事故分析、排查、处理</p>
 </blockquote>
 <a id="more"></a>
-<h1>背景介绍</h1>
-<p>事故发生的ElasticSearch集群共有7台机器：</p>
+
+<h1 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h1><p>事故发生的ElasticSearch集群共有7台机器：</p>
 <ul>
 <li>127.0.204.193</li>
 <li>127.0.204.194</li>
@@ -333,14 +332,9 @@
 <p>系统盘单独挂载：50G</p>
 </blockquote>
 <blockquote>
-<p>以上7台机器用的都是阿里云的高效云盘，<a href="https://help.aliyun.com/zh/ecs/user-guide/disks-2" target="_blank" rel="noopener">https://help.aliyun.com/zh/ecs/user-guide/disks-2</a><br>
-也就是说最大吞吐量(读+写 上限)为140MB/s</p>
+<p>以上7台机器用的都是阿里云的高效云盘，<a href="https://help.aliyun.com/zh/ecs/user-guide/disks-2" target="_blank" rel="noopener">https://help.aliyun.com/zh/ecs/user-guide/disks-2</a><br>也就是说最大吞吐量(读+写 上限)为140MB&#x2F;s</p>
 </blockquote>
-<h1>问题</h1>
-<p>由于比较穷，所以集群的部署情况比较复杂，这7台机器上共有一个Kafka集群、一个ZooKeeper集群、两个ElasticSearch集群。<br>
-其中Kafka、ZooKeeper集群部署在193、194、195上；<br>
-两个ElasticSearch集群各有7个节点(也就是这个7台机器每个都有两个ElasticSearch集群的实例)；<br>
-193、194、195上的3块盘，Kafka、ZooKeeper、ElasticSearch(2个)集群都在用。</p>
+<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>由于比较穷，所以集群的部署情况比较复杂，这7台机器上共有一个Kafka集群、一个ZooKeeper集群、两个ElasticSearch集群。<br>其中Kafka、ZooKeeper集群部署在193、194、195上；<br>两个ElasticSearch集群各有7个节点(也就是这个7台机器每个都有两个ElasticSearch集群的实例)；<br>193、194、195上的3块盘，Kafka、ZooKeeper、ElasticSearch(2个)集群都在用。</p>
 <p>在这次事故之前发生过一次Kafka集群写入延迟，经分析是两个ElasticSearch集群与Kafka集群公用一块磁盘导致磁盘io满，造成Kafka集群集群延迟。</p>
 <p>所以将193、194、195上的3块盘的使用调整为：</p>
 <ul>
@@ -349,56 +343,62 @@
 </ul>
 <p>好了，前情回顾已经写完了，下面来说下这次出现的问题：</p>
 <ul>
-<li>23号下午5点，ElasticSearch集群挂了
-<ul>
+<li>23号下午5点，ElasticSearch集群挂了<ul>
 <li>集群没有master</li>
 </ul>
 </li>
 <li>25号上午9点，ElasticSearch集群又开始rebalance shards</li>
 </ul>
-<h1>分析</h1>
-<p>因为23号的问题很紧急，所以当时采取的方案就是重启整个集群，先恢复。</p>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><p>因为23号的问题很紧急，所以当时采取的方案就是重启整个集群，先恢复。</p>
 <p>193上当时没有master的异常日志</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-23T09:22:08,955Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.c.c.ClusterFormationFailureHelper&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-193&quot;, &quot;message&quot;: &quot;master not discovered or elected yet, an election requires at least 4 nodes with ids from [hYrrmhLHTx-QHoDmZ2wATg, jaNLhd1eT6SUYcLJkHpE1Q, 1VQFmt9jQ-6d7fCMjP-vnQ, uzGdH3VeRbOlcDIWeKdgIw, PhjlCea6TNKh4rdZPyPDkA, ZFQdNP4HSgCtPCnMfDdopw, 1WRaRyU-SuCPn8qbz3e4hg], have discovered [&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;k0x5Rog-S0CFhAmorJ3V0Q&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-221&#125;&#123;jaNLhd1eT6SUYcLJkHpE1Q&#125;&#123;XkD-b14XQzq1-o3EiDSuKA&#125;&#123;127.0.220.221&#125;&#123;127.0.220.221:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-194&#125;&#123;PhjlCea6TNKh4rdZPyPDkA&#125;&#123;6pQJDRevScad3hr_hJcnTg&#125;&#123;127.0.204.194&#125;&#123;127.0.204.194:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-220&#125;&#123;hYrrmhLHTx-QHoDmZ2wATg&#125;&#123;Qyz9MF2bRmKQq9uPWgTBuw&#125;&#123;127.0.220.220&#125;&#123;127.0.220.220:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-195&#125;&#123;1VQFmt9jQ-6d7fCMjP-vnQ&#125;&#123;e_P2NNXnTIWGzg7vE8EWkA&#125;&#123;127.0.204.195&#125;&#123;127.0.204.195:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-74&#125;&#123;uzGdH3VeRbOlcDIWeKdgIw&#125;&#123;fhNTddq7Syi7zPDVCejDWQ&#125;&#123;127.0.220.74&#125;&#123;127.0.220.74:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-73&#125;&#123;1WRaRyU-SuCPn8qbz3e4hg&#125;&#123;1iRrVMWcSNGGxsuQYxePSg&#125;&#123;127.0.220.73&#125;&#123;127.0.220.73:9301&#125;&#123;cdfhilmrstw&#125;] which is a quorum; discovery will continue using [127.0.204.194:9301, 127.0.204.195:9301] from hosts providers and [&#123;es-b-220&#125;&#123;hYrrmhLHTx-QHoDmZ2wATg&#125;&#123;Qyz9MF2bRmKQq9uPWgTBuw&#125;&#123;127.0.220.220&#125;&#123;127.0.220.220:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-73&#125;&#123;1WRaRyU-SuCPn8qbz3e4hg&#125;&#123;1iRrVMWcSNGGxsuQYxePSg&#125;&#123;127.0.220.73&#125;&#123;127.0.220.73:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;k0x5Rog-S0CFhAmorJ3V0Q&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-74&#125;&#123;uzGdH3VeRbOlcDIWeKdgIw&#125;&#123;fhNTddq7Syi7zPDVCejDWQ&#125;&#123;127.0.220.74&#125;&#123;127.0.220.74:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-194&#125;&#123;PhjlCea6TNKh4rdZPyPDkA&#125;&#123;6pQJDRevScad3hr_hJcnTg&#125;&#123;127.0.204.194&#125;&#123;127.0.204.194:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-221&#125;&#123;jaNLhd1eT6SUYcLJkHpE1Q&#125;&#123;XkD-b14XQzq1-o3EiDSuKA&#125;&#123;127.0.220.221&#125;&#123;127.0.220.221:9301&#125;&#123;cdfhilmrstw&#125;, &#123;es-b-195&#125;&#123;1VQFmt9jQ-6d7fCMjP-vnQ&#125;&#123;e_P2NNXnTIWGzg7vE8EWkA&#125;&#123;127.0.204.195&#125;&#123;127.0.204.195:9301&#125;&#123;cdfhilmrstw&#125;] from last-known cluster state; node term 43, last-accepted version 397615 in term 43&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;ZFQdNP4HSgCtPCnMfDdopw&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-23T09:22:11,119Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;r.suppressed&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-193&quot;, &quot;message&quot;: &quot;path: /_cat/nodes, params: &#123;h=ip,name,heap.percent,heap.current,heap.max,ram.percent,ram.current,ram.max,node.role,master,cpu,load_1m,load_5m,load_15m,disk.used_percent,disk.used,disk.total&#125;&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;ZFQdNP4HSgCtPCnMfDdopw&quot; ,</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">org.elasticsearch.cluster.block.ClusterBlockException: blocked by: [SERVICE_UNAVAILABLE/2/no master];\&quot;,\n&quot;,&quot;stream&quot;:&quot;stdout&quot;,&quot;time&quot;:&quot;2023-10-23T09:21:34.490903538Z&quot;&#125;</span><br><span class="line">&#123;&quot;log&quot;:&quot;\&quot;at org.elasticsearch.cluster.block.ClusterBlocks.globalBlockedException(ClusterBlocks.java:179</span><br></pre></td></tr></table></figure>
+
 <p>恢复后，排查日志，主要看到的现象就是193节点频繁的added、removed</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">added &#123;&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;k0x5Rog-S0CFhAmorJ3V0Q&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125;&#125;, term: 43, version: 397620, reason: ApplyCommitRequest&#123;term=43, version=397620, sourceNode=&#123;es-b-73&#125;&#123;1WRaRyU-SuCPn8qbz3e4hg&#125;&#123;1iRrVMWcSNGGxsuQYxePSg&#125;&#123;127.0.220.73&#125;&#123;127.0.220.73:9301&#125;&#123;cdfhilmrstw&#125;&#123;ml.machine_memory=133070966784, ml.max_open_jobs=512, xpack.installed=true, ml.max_jvm_size=33285996544, transform.node=true&#125;&#125;</span><br><span class="line"></span><br><span class="line">removed &#123;&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;k0x5Rog-S0CFhAmorJ3V0Q&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125;&#125;, term: 43, version: 397621, reason: ApplyCommitRequest&#123;term=43, version=397621, sourceNode=&#123;es-b-73&#125;&#123;1WRaRyU-SuCPn8qbz3e4hg&#125;&#123;1iRrVMWcSNGGxsuQYxePSg&#125;&#123;127.0.220.73&#125;&#123;127.0.220.73:9301&#125;&#123;cdfhilmrstw&#125;&#123;ml.machine_memory=133070966784, ml.max_open_jobs=512, xpack.installed=true, ml.max_jvm_size=33285996544, transform.node=true&#125;&#125;</span><br></pre></td></tr></table></figure>
+
 <p>导致193上的shard一直rebalance。但193上日志，不知道什么原因丢失了，能找到的最早的日志也是23号下午5点21分之后的日志了。经过日志排查问题到这里被卡主了。</p>
 <p>回看发生问题前的一段时间各个节点的监控，CPU、内存、磁盘、写入量等都没有异常的波动，唯一发现的一个异常：</p>
-<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E7%BA%BF%E7%A8%8B%E6%B1%A0.png" alt></p>
+<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E7%BA%BF%E7%A8%8B%E6%B1%A0.png"></p>
 <p>那么<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-threadpool.html" target="_blank" rel="noopener">generic thread pool</a>是做啥的呢？</p>
-<p>=&gt; 用于通用操作（例如，后台节点发现）它的线程池类型是动态缩放的</p>
+<p>&#x3D;&gt; 用于通用操作（例如，后台节点发现）它的线程池类型是动态缩放的</p>
 <p>到这里也只是能印证了，节点间相互发现有问题。那么到底什么原因造成的集群宕机呢？</p>
 <p>时间来到了今天上午也就是25号9点左右的时候，发现集群又开始rebalance shards，通过</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /_cat/shards?h=index,shard,prirep,state,unassigned.reason</span><br></pre></td></tr></table></figure>
+
 <p>可以看到shard重新迁移的原因是node-left,到master节点的机器看下日志：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">root@jiankunking-es-02:~# docker logs -f 1f741600dbcc |grep node-left</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-23T09:33:18,042Z&quot;, &quot;level&quot;: &quot;INFO&quot;, &quot;component&quot;: &quot;o.e.c.s.MasterService&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;node-left[&#123;es-b-221&#125;&#123;jaNLhd1eT6SUYcLJkHpE1Q&#125;&#123;XkD-b14XQzq1-o3EiDSuKA&#125;&#123;127.0.220.221&#125;&#123;127.0.220.221:9301&#125;&#123;cdfhilmrstw&#125; reason: disconnected], term: 52, version: 399161, delta: removed &#123;&#123;es-b-221&#125;&#123;jaNLhd1eT6SUYcLJkHpE1Q&#125;&#123;XkD-b14XQzq1-o3EiDSuKA&#125;&#123;127.0.220.221&#125;&#123;127.0.220.221:9301&#125;&#123;cdfhilmrstw&#125;&#125;&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:52:35,140Z&quot;, &quot;level&quot;: &quot;INFO&quot;, &quot;component&quot;: &quot;o.e.c.s.MasterService&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;node-left[&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;PPAowFAWQRiI9s5FoaDxWQ&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125; reason: followers check retry count exceeded], term: 52, version: 404805, delta: removed &#123;&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;PPAowFAWQRiI9s5FoaDxWQ&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125;&#125;&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:53:24,564Z&quot;, &quot;level&quot;: &quot;INFO&quot;, &quot;component&quot;: &quot;o.e.c.s.MasterService&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;node-left[&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;PPAowFAWQRiI9s5FoaDxWQ&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125; reason: disconnected], term: 52, version: 404807, delta: removed &#123;&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;PPAowFAWQRiI9s5FoaDxWQ&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125;&#125;&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:53:30,879Z&quot;, &quot;level&quot;: &quot;INFO&quot;, &quot;component&quot;: &quot;o.e.c.s.MasterService&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;node-left[&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;PPAowFAWQRiI9s5FoaDxWQ&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125; reason: disconnected], term: 52, version: 404810, delta: removed &#123;&#123;es-b-193&#125;&#123;ZFQdNP4HSgCtPCnMfDdopw&#125;&#123;PPAowFAWQRiI9s5FoaDxWQ&#125;&#123;127.0.204.193&#125;&#123;127.0.204.193:9301&#125;&#123;cdfhilmrstw&#125;&#125;&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br></pre></td></tr></table></figure>
+
 <p>按理说 193 194 195这些机器与另外4台机器相比，区别点在于挂了多块盘，那性能应该更好啊，为啥连不上的会是他们呢？</p>
 <p>又回看了下节点日志，发现节点间互连存在大量的超时</p>
 <p>master(194)节点日志：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:35:18,510Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s][r]&#125;&#123;70758574&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [21075] on [Netty4TcpChannel&#123;localAddress=/127.0.204.194:57580, remoteAddress=127.0.204.193/127.0.204.193:9301, profile=default&#125;] took [29403ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:35:18,510Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s]&#125;&#123;70758608&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [1992] on [Netty4TcpChannel&#123;localAddress=/127.0.204.194:57580, remoteAddress=127.0.204.193/127.0.204.193:9301, profile=default&#125;] took [29403ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:35:18,510Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s]&#125;&#123;70758614&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [5563] on [Netty4TcpChannel&#123;localAddress=/127.0.204.194:57580, remoteAddress=127.0.204.193/127.0.204.193:9301, profile=default&#125;] took [29403ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:35:18,510Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s][r]&#125;&#123;70758686&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [9103] on [Netty4TcpChannel&#123;localAddress=/127.0.204.194:57580, remoteAddress=127.0.204.193/127.0.204.193:9301, profile=default&#125;] took [28603ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:35:18,510Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-194&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s][r]&#125;&#123;70758737&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [12666] on [Netty4TcpChannel&#123;localAddress=/127.0.204.194:57580, remoteAddress=127.0.204.193/127.0.204.193:9301, profile=default&#125;] took [28603ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;PhjlCea6TNKh4rdZPyPDkA&quot;  &#125;</span><br></pre></td></tr></table></figure>
+
 <p>普通节点(193)</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:34:46,866Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-193&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s]&#125;&#123;73855747&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [3828] on [Netty4TcpChannel&#123;localAddress=/127.0..204.193:38616, remoteAddress=127.0.220.221/127.0.220.221:9301, profile=default&#125;] took [35027ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;ZFQdNP4HSgCtPCnMfDdopw&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:34:46,866Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-193&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s]&#125;&#123;73855763&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [14563] on [Netty4TcpChannel&#123;localAddress=/127.0.204.193:38616, remoteAddress=127.0.220.221/127.0.220.221:9301, profile=default&#125;] took [35027ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;ZFQdNP4HSgCtPCnMfDdopw&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:34:46,866Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-193&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s]&#125;&#123;73855795&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [12940] on [Netty4TcpChannel&#123;localAddress=/127.0.204.193:38616, remoteAddress=127.0.220.221/127.0.220.221:9301, profile=default&#125;] took [35027ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;ZFQdNP4HSgCtPCnMfDdopw&quot;  &#125;</span><br><span class="line">&#123;&quot;type&quot;: &quot;server&quot;, &quot;timestamp&quot;: &quot;2023-10-25T01:34:46,866Z&quot;, &quot;level&quot;: &quot;WARN&quot;, &quot;component&quot;: &quot;o.e.t.OutboundHandler&quot;, &quot;cluster.name&quot;: &quot;business-log&quot;, &quot;node.name&quot;: &quot;es-b-193&quot;, &quot;message&quot;: &quot;sending transport message [MessageSerializer&#123;Request&#123;indices:data/write/bulk[s][r]&#125;&#123;73855813&#125;&#123;false&#125;&#123;false&#125;&#123;false&#125;&#125;] of size [10721] on [Netty4TcpChannel&#123;localAddress=/127.0.204.193:38616, remoteAddress=127.0.220.221/127.0.220.221:9301, profile=default&#125;] took [35027ms] which is above the warn threshold of [5000ms]&quot;, &quot;cluster.uuid&quot;: &quot;ArYy-qmCTbCQTDUI8ogsBg&quot;, &quot;node.id&quot;: &quot;ZFQdNP4HSgCtPCnMfDdopw&quot;  &#125;</span><br></pre></td></tr></table></figure>
+
 <p>看到到这里难道是网络或者网卡打满了？</p>
 <p>看下<a href="https://jiankunking.com/linux-performance-optimization-practices.html">带宽Bandwidth</a>:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@jiankunking-es-02:~# ethtool eth0 | grep Speed</span><br><span class="line">        Speed: Unknown!</span><br><span class="line">root@jiankunking-es-02:~#</span><br></pre></td></tr></table></figure>
+
 <p>再看下网卡实时流量</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iftop -n</span><br></pre></td></tr></table></figure>
-<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E7%BD%91%E7%BB%9C%E6%B5%81%E9%87%8F.png" alt></p>
+
+<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E7%BD%91%E7%BB%9C%E6%B5%81%E9%87%8F.png"></p>
 <p>找负责机器的同事核对，得到以下信息</p>
 <ul>
-<li>瓶颈是按照网卡上限看，不看两个服务器之间链路 =&gt;也就是服务器间的网络带宽应该是远大于机器网卡的，所以服务器的网卡更容易成为瓶颈</li>
-<li>服务器网卡上限是:内网带宽(bit/s) 10.00Gpbs=&gt;也就是服务器网卡总流量的上限是 10/8 大约是1G的流量</li>
+<li>瓶颈是按照网卡上限看，不看两个服务器之间链路 &#x3D;&gt;也就是服务器间的网络带宽应该是远大于机器网卡的，所以服务器的网卡更容易成为瓶颈</li>
+<li>服务器网卡上限是:内网带宽(bit&#x2F;s) 10.00Gpbs&#x3D;&gt;也就是服务器网卡总流量的上限是 10&#x2F;8 大约是1G的流量</li>
 </ul>
 <p>同时要了下阿里云的监控图</p>
-<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E9%98%BF%E9%87%8C%E4%BA%9125%E5%8F%B7%E4%B8%8A%E5%8D%88%E7%9B%91%E6%8E%A7.jpg" alt></p>
+<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E9%98%BF%E9%87%8C%E4%BA%9125%E5%8F%B7%E4%B8%8A%E5%8D%88%E7%9B%91%E6%8E%A7.jpg"></p>
 <p>从阿里云的监控可以判断出这时候网卡并没有满的(进+出，也就能到阈值10%的样子),我们再看下23号傍晚的阿里云监控</p>
-<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E9%98%BF%E9%87%8C%E4%BA%9123%E5%8F%B7%E4%B8%8B%E5%8D%88%E7%9B%91%E6%8E%A7.jpg" alt></p>
+<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E9%98%BF%E9%87%8C%E4%BA%9123%E5%8F%B7%E4%B8%8B%E5%8D%88%E7%9B%91%E6%8E%A7.jpg"></p>
 <blockquote>
 <p>这里的要注意下，对于阿里云来说，比如网卡有阈值，但短时间阿里云是允许突破限制的(虽然这里并没有满)</p>
 </blockquote>
 <p>既然网络没有问题，那问题出在哪？</p>
 <p>算了，找一个节点频繁added remove的时间在master(193)上抓包一下</p>
-<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E6%8A%93%E5%8C%85.jpg" alt></p>
+<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E6%8A%93%E5%8C%85.jpg"></p>
 <p>从抓包中可以看出以下信息：</p>
 <ul>
 <li>网络连接正常，建立连接–发送数据–连接关闭</li>
@@ -407,10 +407,9 @@
 <p>但是master节点为什么断开的连接，就不清楚了。追查到这里，感觉问题应该不是在网络还是es自身哪里出了问题。</p>
 <p>继续一顿Google，找到了这么一个issue:<a href="https://github.com/elastic/elasticsearch/issues/67873" target="_blank" rel="noopener">https://github.com/elastic/elasticsearch/issues/67873</a></p>
 <p>虽然各种异常提示都不太一样，但现象是一样的</p>
-<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E7%8E%B0%E8%B1%A1.png" alt></p>
+<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E7%8E%B0%E8%B1%A1.png"></p>
 <p>在issue中发现shard数太多会对于集群造成一些不利的影响。</p>
-<p>我们回看了下集群shard监控<br>
-<img data-src="/images/an-accident-caused-by-not-accepting-official-advice/shard%E6%95%B0.jpg" alt></p>
+<p>我们回看了下集群shard监控<br><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/shard%E6%95%B0.jpg"></p>
 <p>发现shard数一直在增加，整个集群已经到达6w+。要不我们也删除部分历史索引试试？</p>
 <p>这时候74节点一直在added removed，我手动重启了74节点，并将尝试将7、8月份的索引删除，集群逐步恢复到70%+的时候，又有节点下线了；</p>
 <p>我们再次尝试删除9月份加10月份1号-6号的索引，这时候集群恢复成功了（这时候集群shard数已经从6w降到了4w）。</p>
@@ -418,30 +417,23 @@
 <blockquote>
 <p>如果大家有这方面的资料或者最佳实践，欢迎留言。</p>
 </blockquote>
-<h1>小结</h1>
-<p>经过这件事之后，我最大的一个感触就是官方的推荐值还是要参考一下：<br>
-<a href="https://jiankunking.com/how-many-shards-should-i-have-in-elasticsearch-cluster.html">Elasticsearch 集群内应该设置多少个分片(shard)？</a></p>
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>经过这件事之后，我最大的一个感触就是官方的推荐值还是要参考一下：<br><a href="https://jiankunking.com/how-many-shards-should-i-have-in-elasticsearch-cluster.html">Elasticsearch 集群内应该设置多少个分片(shard)？</a></p>
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/size-your-shards.html#:~:text=Aim%20for%2020%20shards%20or,keep%20your%20nodes%2C%20the%20better." target="_blank" rel="noopener">官网的建议(针对7.X)</a>：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Aim for 20 shards or fewer per GB of heap memory</span><br><span class="line"></span><br><span class="line">The number of shards a data node can hold is proportional to the node’s heap memory. </span><br><span class="line">For example, a node with 30GB of heap memory should have at most 600 shards. </span><br><span class="line">The further below this limit you can keep your nodes, the better. </span><br><span class="line">If you find your nodes exceeding more than 20 shards per GB, consider adding another node.</span><br></pre></td></tr></table></figure>
-<p>主要是因为要控制成本所以只要集群不出问题，官方的建议，我们一般是这么个态度：<br>
-<img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E4%BD%A0%E8%AF%B4%E7%9A%84%E5%BE%88%E5%AF%B9.png" alt></p>
+
+<p>主要是因为要控制成本所以只要集群不出问题，官方的建议，我们一般是这么个态度：<br><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E4%BD%A0%E8%AF%B4%E7%9A%84%E5%BE%88%E5%AF%B9.png"></p>
 <p>其实对于shard大小跟每个节点推荐的数据量一样，我们都没有接受他们的建议。比如这次排查为什么没有怀疑过30T数据量太多呢？因为之前都是40T+。</p>
-<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E6%88%91%E8%BF%98%E8%83%BD%E8%AF%B4%E4%BB%80%E4%B9%88.png" alt></p>
+<p><img data-src="/images/an-accident-caused-by-not-accepting-official-advice/%E6%88%91%E8%BF%98%E8%83%BD%E8%AF%B4%E4%BB%80%E4%B9%88.png"></p>
 <p>其实经过这件事，还有以下几个点想分享一下</p>
 <ul>
 <li>各种集群间应该资源隔离，也就是机器不要共用</li>
-<li>不要在各种边缘上运行
-<ul>
+<li>不要在各种边缘上运行<ul>
 <li>比如我们es的磁盘其实一直就是瓶颈，只要触发rebalance shards，磁盘io一定是满的，就会导致写入速率下降等各种问题</li>
 </ul>
 </li>
 <li>集群内各个相同功能的节点配置要一样，比如我们的es集群，磁盘大小不一样，当到达磁盘阈值的时候，集群负载就会不均衡</li>
 </ul>
-<h2 id="按照8-3-估算内存使用量">按照8.3+估算内存使用量</h2>
-<p>索引数：4300<br>
-分片数：6w<br>
-mapping字段总数：23w<br>
-60000*(230000/4300)*1kb=3209302 KB =3GB 堆空间</p>
+<h2 id="按照8-3-估算内存使用量"><a href="#按照8-3-估算内存使用量" class="headerlink" title="按照8.3+估算内存使用量"></a>按照8.3+估算内存使用量</h2><p>索引数：4300<br>分片数：6w<br>mapping字段总数：23w<br>60000*(230000&#x2F;4300)*1kb&#x3D;3209302 KB &#x3D;3GB 堆空间</p>
 
     </div>
 
@@ -605,7 +597,7 @@ mapping字段总数：23w<br>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">背景介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#按照8-3-估算内存使用量"><span class="nav-number">4.1.</span> <span class="nav-text">按照8.3+估算内存使用量</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景介绍"><span class="nav-number">1.</span> <span class="nav-text">背景介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#问题"><span class="nav-number">2.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析"><span class="nav-number">3.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#按照8-3-估算内存使用量"><span class="nav-number">4.1.</span> <span class="nav-text">按照8.3+估算内存使用量</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
