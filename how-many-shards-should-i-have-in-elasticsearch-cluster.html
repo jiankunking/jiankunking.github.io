@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址：https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
-<meta name="keywords" content="ElasticSearch,转载,Cluster,Shard">
+  <meta name="description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址： https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
+<meta name="keywords" content="转载,ElasticSearch,Cluster,Shard">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[转]Elasticsearch 集群内应该设置多少个分片(shard)？">
 <meta property="og:url" content="https://jiankunking.com/how-many-shards-should-i-have-in-elasticsearch-cluster.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址：https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
+<meta property="og:description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址： https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-10-30T10:44:56.678Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[转]Elasticsearch 集群内应该设置多少个分片(shard)？">
-<meta name="twitter:description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址：https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
+<meta name="twitter:description" content="我应该设置多少个分片？我应该设置多大的分片？  原文地址： https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster">
 
 <link rel="canonical" href="https://jiankunking.com/how-many-shards-should-i-have-in-elasticsearch-cluster.html">
 
@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">154</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">155</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -158,7 +158,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">216</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">219</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -300,32 +300,35 @@
       
         <p>我应该设置多少个分片？我应该设置多大的分片？</p>
 <blockquote>
-<p>原文地址：<br><a href="https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster" target="_blank" rel="noopener">https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster</a></p>
+<p>原文地址：<br>
+<a href="https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster" target="_blank" rel="noopener">https://www.elastic.co/blog/how-many-shards-should-i-have-in-my-elasticsearch-cluster</a></p>
 </blockquote>
 <a id="more"></a>
-
 <blockquote>
-<p>编者按:”以每 GB 堆内存配置 20 个或以下分片为目标”的经验法则在 8.3 版中已被弃用。这篇博文已更新，以反映<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/size-your-shards.html#field-count-recommendation" target="_blank" rel="noopener">最新建议</a>。</p>
+<p>编者按:&quot;以每 GB 堆内存配置 20 个或以下分片为目标”的经验法则在 8.3 版中已被弃用。这篇博文已更新，以反映<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/size-your-shards.html#field-count-recommendation" target="_blank" rel="noopener">最新建议</a>。</p>
 </blockquote>
 <p>Elasticsearch 是一个功能十分丰富的平台，支持各种用例，能够在数据整理和复制战略方面提供很大的灵活性。然而这一灵活性有时也会带来困扰，让您在前期难以确定如何最好地将数据整理为索引和分片，如果您刚上手使用 Elastic Stack，这一点可能更明显。如果未能做出最佳选择，尽管这在开始的时候可能不会造成问题，但随着数据量越来越大，便有可能会引发性能问题。集群中的数据越多，要纠正这一问题就越难，这是因为有时必须对大量数据进行重新索引。</p>
-<p>据我们了解，当用户遇到性能问题时，原因通常都可回溯至数据的索引方式以及集群中的分片数量。对于涉及多租户和&#x2F;或用到时序型索引的用例，这一点尤为突出。与用户讨论这一问题时，无论是在活动或聚会中面对面讨论，还是在论坛上讨论，<font color="DeepPink"><strong>我们遇到的一些最常见问题就是“我应该设置多少个分片？”以及“我应该设置多大的分片？”。</strong></font></p>
+<p>据我们了解，当用户遇到性能问题时，原因通常都可回溯至数据的索引方式以及集群中的分片数量。对于涉及多租户和/或用到时序型索引的用例，这一点尤为突出。与用户讨论这一问题时，无论是在活动或聚会中面对面讨论，还是在论坛上讨论，<font color="DeepPink"><strong>我们遇到的一些最常见问题就是“我应该设置多少个分片？”以及“我应该设置多大的分片？”。</strong></font></p>
 <p>这篇博文旨在帮您集中解答这些问题，并为涉及时序型索引（例如日志或安全分析）的用例提供实用指南。</p>
-<h1 id="什么是分片？"><a href="#什么是分片？" class="headerlink" title="什么是分片？"></a>什么是分片？</h1><p>开始之前，我们需要明确一下基本知识以及在后面部分会用到的术语。</p>
+<h1>什么是分片？</h1>
+<p>开始之前，我们需要明确一下基本知识以及在后面部分会用到的术语。</p>
 <p>Elasticsearch 中的数据会整理为<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/_add_an_index.html" target="_blank" rel="noopener">索引</a>。每个索引又由一个或多个分片组成。 每个分片都是一个 Lucene 索引实例，您可以将其视作一个独立的搜索引擎，它能够对 Elasticsearch 集群中的数据子集进行索引并处理相关查询。</p>
 <p>数据写到分片上之后，会定期发布到磁盘上不可更改的新 Lucene 段中，此时，数据便可用于查询了。这称为刷新。相关原理的详细介绍，请参见 <a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/inside-a-shard.html" target="_blank" rel="noopener">Elasticsearch：权威指南</a>。</p>
-<p>随着段数越来越多，这些段会定期合并为更大的段。这一过程称为<a href="https://www.elastic.co/guide/en/elasticsearch/reference/5.5/index-modules-merge.html" target="_blank" rel="noopener">合并</a>。由于所有段都是不可更改的，这意味着在索引期间所用磁盘空间通常会上下浮动，这是因为只有合并后的新段创建完毕之后，它们所替换的那些段才能删掉。合并是一项极其耗费资源的任务，尤其耗费磁盘 I&#x2F;O。</p>
+<p>随着段数越来越多，这些段会定期合并为更大的段。这一过程称为<a href="https://www.elastic.co/guide/en/elasticsearch/reference/5.5/index-modules-merge.html" target="_blank" rel="noopener">合并</a>。由于所有段都是不可更改的，这意味着在索引期间所用磁盘空间通常会上下浮动，这是因为只有合并后的新段创建完毕之后，它们所替换的那些段才能删掉。合并是一项极其耗费资源的任务，尤其耗费磁盘 I/O。</p>
 <p>分片是 Elasticsearch 在集群内分发数据的单位。Elasticsearch 在对数据进行再平衡（例如发生故障后）时移动分片的速度取决于分片的大小和数量，以及网络和磁盘性能。</p>
 <blockquote>
 <p>提示： <font color="DeepPink"><strong>避免分片过大，因为这样会对集群从故障中恢复造成不利影响。尽管并没有关于分片大小的固定限值，但是人们通常将 50GB 作为分片上限，而且这一限值在各种用例中都已得到验证。</strong></font></p>
 </blockquote>
-<h1 id="按照保留期限进行索引"><a href="#按照保留期限进行索引" class="headerlink" title="按照保留期限进行索引"></a>按照保留期限进行索引</h1><p>由于段是不可更改的，所以<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/update-doc.html" target="_blank" rel="noopener">更新文档</a>时必须要求 Elasticsearch 首先找到既有文档，然后将其标为已删除，并添加更新后版本。<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/delete-doc.html" target="_blank" rel="noopener">删除文档</a>时同样也要求先找到文档，再将其标为已删除。有鉴于此，<a href="https://www.elastic.co/cn/blog/lucenes-handling-of-deleted-documents" target="_blank" rel="noopener">已删除文档仍将继续占用磁盘空间和系统资源，直至将它们合并</a>，而合并过程也会消耗大量系统资源。</p>
+<h1>按照保留期限进行索引</h1>
+<p>由于段是不可更改的，所以<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/update-doc.html" target="_blank" rel="noopener">更新文档</a>时必须要求 Elasticsearch 首先找到既有文档，然后将其标为已删除，并添加更新后版本。<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/delete-doc.html" target="_blank" rel="noopener">删除文档</a>时同样也要求先找到文档，再将其标为已删除。有鉴于此，<a href="https://www.elastic.co/cn/blog/lucenes-handling-of-deleted-documents" target="_blank" rel="noopener">已删除文档仍将继续占用磁盘空间和系统资源，直至将它们合并</a>，而合并过程也会消耗大量系统资源。</p>
 <p>通过 Elasticsearch，用户可以十分高效地从文件系统中直接删除整个索引，而无需单独删除所有记录。这是迄今为止从 Elasticsearch 中删除数据的最高效方法。</p>
 <blockquote>
 <p>提示：但凡可能，尽量使用<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/time-based.html" target="_blank" rel="noopener">时序型索引</a>来管理具有数据保留期要求的数据。根据保留期限对数据分组，将它们存储到索引中。通过时序型索引，用户还能随着时间推移轻松调整主分片和副本分片的数量，这是因为用户可针对要生成的下个索引进行这方面的更改。这样便能简化对不断变化的数据量和数据要求的适应过程。</p>
 </blockquote>
-<h1 id="索引分片不是免费的吗？"><a href="#索引分片不是免费的吗？" class="headerlink" title="索引分片不是免费的吗？"></a>索引分片不是免费的吗？</h1><p>对于每个 Elasticsearch 索引，映射和状态的相关信息都存储在集群状态中。这些信息存储在内存中，以便快速访问。因此，如果集群中的索引和分片数量过多，这会导致集群状态过大，如果映射较大的话，尤为如此。这会导致更新变慢，因为所有更新都需要通过单线程完成，从而在将变更分发到整个集群之前确保一致性。</p>
+<h1>索引分片不是免费的吗？</h1>
+<p>对于每个 Elasticsearch 索引，映射和状态的相关信息都存储在集群状态中。这些信息存储在内存中，以便快速访问。因此，如果集群中的索引和分片数量过多，这会导致集群状态过大，如果映射较大的话，尤为如此。这会导致更新变慢，因为所有更新都需要通过单线程完成，从而在将变更分发到整个集群之前确保一致性。</p>
 <blockquote>
-<p>提示： 为了减少索引数量并避免造成过大且无序的映射，可以考虑在同一索引中存储类似结构的数据，而不要基于数据来源将数据分到不同的索引中。很重要的一点是在索引&#x2F;分片的数量和每个单独索引的映射大小之间实现良好平衡。由于<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/finite-scale.html#finite-scale" target="_blank" rel="noopener">集群状态</a>会加载到每个节点（包括主节点）上的堆内存中，而且堆内存大小与索引数量以及单个索引和分片中的字段数成正比关系，所以还需要同时监测主节点上的堆内存使用量并确保其大小适宜，这一点很重要。</p>
+<p>提示： 为了减少索引数量并避免造成过大且无序的映射，可以考虑在同一索引中存储类似结构的数据，而不要基于数据来源将数据分到不同的索引中。很重要的一点是在索引/分片的数量和每个单独索引的映射大小之间实现良好平衡。由于<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/finite-scale.html#finite-scale" target="_blank" rel="noopener">集群状态</a>会加载到每个节点（包括主节点）上的堆内存中，而且堆内存大小与索引数量以及单个索引和分片中的字段数成正比关系，所以还需要同时监测主节点上的堆内存使用量并确保其大小适宜，这一点很重要。</p>
 </blockquote>
 <p>每个分片都有一部分数据需要保存在内存中，这部分数据也会占用堆内存空间。这包括存储分片级别以及段级别信息的数据结构，因为只有这样才能确定数据在磁盘上的存储位置。这些数据结构的大小并不固定，不同用例之间会有很大的差别。</p>
 <p>段相关开销有一个重要特征，那就是其并不与段的大小呈严格正比关系。这意味着，与较小的段相比，对于较大的段而言，其单位数据量所需的开销要小一些。二者之间的差异可能会十分巨大。</p>
@@ -344,20 +347,22 @@
 <p>新提示：<font color="DeepPink"><strong>为数据节点上每个索引的每个字段留出 1kB 的堆空间，还要为开销留出额外的空间每个映射字段的具体资源使用情况取决于其类型，但经验法则是，每个数据节点持有的每个索引的每个映射字段允许大约 1kB 的堆开销。您还必须为 Elasticsearch 的基线使用以及工作负载（例如索引、搜索和聚合）留出足够的堆空间。额外留出 0.5GB 的堆足以满足许多合理的工作负载，如果您的工作负载非常轻，可能需要更少的空间，而工作负载繁重的话可能需要更多空间。</strong></font></p>
 </blockquote>
 <blockquote>
-<p><font color="DeepPink"><strong>例如，如果一个数据节点持有来自 1000 个索引的分片，每个索引包含 4000 个映射字段，那么您应该为字段留出大约 1000 × 4000 × 1kB &#x3D; 4GB 的堆空间，并为其分配另外 0.5GB 的堆空间用于工作负载和其他开销，因此该节点需要至少 4.5GB 的堆大小。</strong></font></p>
+<p><font color="DeepPink"><strong>例如，如果一个数据节点持有来自 1000 个索引的分片，每个索引包含 4000 个映射字段，那么您应该为字段留出大约 1000 × 4000 × 1kB = 4GB 的堆空间，并为其分配另外 0.5GB 的堆空间用于工作负载和其他开销，因此该节点需要至少 4.5GB 的堆大小。</strong></font></p>
 </blockquote>
-<h1 id="分片大小对性能有何影响？"><a href="#分片大小对性能有何影响？" class="headerlink" title="分片大小对性能有何影响？"></a>分片大小对性能有何影响？</h1><p>在 Elasticsearch 中，每个查询都是在单个分片上以单线程方式执行的。然而，可以同时对多个分片进行处理，正如可以针对同一分片进行多次查询和聚合一样。</p>
+<h1>分片大小对性能有何影响？</h1>
+<p>在 Elasticsearch 中，每个查询都是在单个分片上以单线程方式执行的。然而，可以同时对多个分片进行处理，正如可以针对同一分片进行多次查询和聚合一样。</p>
 <p>这意味着，最低查询延时（假设没有缓存）将取决于数据、查询类型，以及分片大小。尽管查询很多个小分片会加快单个分片的处理速度，但是由于有很多任务需要进入队列并按顺序加以处理，所以与查询较少的大分片相比，这种方法并不一定会加快查询速度。如果有多个并发查询，拥有很多小分片还会降低查询吞吐量。</p>
 <blockquote>
 <p>提示： 从查询性能的角度来看，确定最大分片大小的最佳方法是<a href="https://www.elastic.co/cn/elasticon/conf/2016/sf/quantitative-cluster-sizing" target="_blank" rel="noopener">使用具有实际意义的数据和查询进行基准测试</a>。进行基准测试时，务必确保所使用的查询和索引负载能够代表节点在生产环境中需要处理的内容，因为只针对单一查询进行优化可能会得出错误结果。</p>
 </blockquote>
-<h1 id="我应该如何管理分片大小呢？"><a href="#我应该如何管理分片大小呢？" class="headerlink" title="我应该如何管理分片大小呢？"></a>我应该如何管理分片大小呢？</h1><p>使用时序型索引时，按照传统方法，每个索引都关联至固定时间段。按天索引是一种十分常见的方法，通常用来存储保留期较短的数据或者用来存储较大的每日数据量。此类索引允许用户在很细的粒度层面管理保留期，也方便用户根据每天不断变化的数据量轻松进行调整。对于拥有较长保留期的数据，尤其如果每日数据量并不能保证用完每日索引，通常可按周索引或按月索引，以便提高分片大小。长期来看，这有助于减少存储在集群中的索引和分片数量。</p>
+<h1>我应该如何管理分片大小呢？</h1>
+<p>使用时序型索引时，按照传统方法，每个索引都关联至固定时间段。按天索引是一种十分常见的方法，通常用来存储保留期较短的数据或者用来存储较大的每日数据量。此类索引允许用户在很细的粒度层面管理保留期，也方便用户根据每天不断变化的数据量轻松进行调整。对于拥有较长保留期的数据，尤其如果每日数据量并不能保证用完每日索引，通常可按周索引或按月索引，以便提高分片大小。长期来看，这有助于减少存储在集群中的索引和分片数量。</p>
 <blockquote>
 <p>提示： 如果使用时序型索引来存储固定期限内的数据，用户应根据保留期和预计数据量对每个索引覆盖的期限进行调整，从而确保达到目标分片大小。</p>
 </blockquote>
 <p>如果能够很好地预估数据量并且数据量变化缓慢，则固定期限式时序型索引的效果很好。如果索引速度变化很快，则很难保持统一的目标分片大小。</p>
 <p>为了能够更好地应对此类情形，可以采用所推出的 <a href="https://www.elastic.co/cn/blog/managing-time-based-indices-efficiently" target="_blank" rel="noopener">Rollover（汇总）和 Shrink（压缩）API</a>。这些 API 能够让用户更加灵活地管理索引和分片，尤其是时序型索引。</p>
-<p>通过 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/5.5/indices-rollover-index.html" target="_blank" rel="noopener">rollover index API</a>（汇总索引 API），用户能够指定每个索引应该存储的文档数量，以及&#x2F;或者最长可在多长时间内向索引内写入文档。一旦超出这些条件，Elasticsearch 可触发新索引创建操作以继续写入数据，而不会造成中断。通过这种方法，每个索引不再覆盖特定的时间段，数据可在索引达到具体大小后转到新索引，这样用户可以更加轻松地确保所有索引都达到均等的分片大小。</p>
+<p>通过 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/5.5/indices-rollover-index.html" target="_blank" rel="noopener">rollover index API</a>（汇总索引 API），用户能够指定每个索引应该存储的文档数量，以及/或者最长可在多长时间内向索引内写入文档。一旦超出这些条件，Elasticsearch 可触发新索引创建操作以继续写入数据，而不会造成中断。通过这种方法，每个索引不再覆盖特定的时间段，数据可在索引达到具体大小后转到新索引，这样用户可以更加轻松地确保所有索引都达到均等的分片大小。</p>
 <p>由于使用此 API 时事件时间戳与事件所在的索引之间并无明显联系，所以如需更新数据，需要先搜索才能完成每次更新，而这会大大降低更新效率。</p>
 <blockquote>
 <p>提示： 如果您拥有不可更改的时序型数据，并且数据量在一段期间内会巨幅变化，可以考虑使用 rollover index API（汇总索引 API）通过动态调整每个索引所覆盖的时间段来实现最佳的目标分片大小。这为用户提供了很大的灵活性，并且在数据量难以预测时，还有助于避免分片过大或过小。</p>
@@ -366,7 +371,8 @@
 <blockquote>
 <p>提示： 如果您希望每个索引既要对应至特定时间段，同时还想将索引过程分散到大量节点上，可以考虑使用 Shrink（压缩）API 来在索引内再无数据写入时减少主分片数量。如果开始时配置了过多的分片，您也可以使用此 API 来减少分片数量。</p>
 </blockquote>
-<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><p>本篇博文针对在 Elasticsearch 中管理数据的最佳方法提供了一些建议和使用指南。如想深入了解，可以参阅“Elasticsearch：权威指南”中的<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/scale.html" target="_blank" rel="noopener">扩容设计</a>一节，尽管此部分内容已经发布一段时间了，但却仍然值得一读。</p>
+<h1>结论</h1>
+<p>本篇博文针对在 Elasticsearch 中管理数据的最佳方法提供了一些建议和使用指南。如想深入了解，可以参阅“Elasticsearch：权威指南”中的<a href="https://www.elastic.co/guide/en/elasticsearch/guide/2.x/scale.html" target="_blank" rel="noopener">扩容设计</a>一节，尽管此部分内容已经发布一段时间了，但却仍然值得一读。</p>
 <p>虽讲了这么多，关于如何最好地在索引和分片之间分配数据，很多决策仍取决于用例的具体情况，有时的确很难确定如何最好地应用现有建议。</p>
 
     </div>
@@ -378,19 +384,19 @@
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-shard-recovery-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 分片恢复分析</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-cluster-state.html" rel="bookmark">Elasticsearch 集群状态</a></div>
-    </li>
-    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption.html" rel="bookmark">[转]腾讯万亿级 Elasticsearch 内存效率提升解密</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\significantly-decrease-your-elasticsearch-heap-memory-usage.html" rel="bookmark">[转]7.7 版本中的新改进：显著降低 Elasticsearch 堆内存使用量</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-performance-tuning-practice-at-ebay.html" rel="bookmark">[译]eBay Elasticsearch性能调优实践</a></div>
+      <div class="popular-posts-title"><a href="\apache-lucene-scoring-introduction.html" rel="bookmark">Apache Lucene 评分简介</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\elasticsearch-query-secret.html" rel="bookmark">[转]ElasticSearch 查询的秘密</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\elasticsearch-shard-recovery-source-code-analysis.html" rel="bookmark">【Elasticsearch源码】 分片恢复分析</a></div>
     </li>
   </ul>
 
@@ -453,8 +459,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/转载/" rel="tag"># 转载</a>
+              <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/cluster/" rel="tag"># Cluster</a>
               <a href="/tags/shard/" rel="tag"># Shard</a>
           </div>
@@ -531,7 +537,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是分片？"><span class="nav-number">1.</span> <span class="nav-text">什么是分片？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#按照保留期限进行索引"><span class="nav-number">2.</span> <span class="nav-text">按照保留期限进行索引</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#索引分片不是免费的吗？"><span class="nav-number">3.</span> <span class="nav-text">索引分片不是免费的吗？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分片大小对性能有何影响？"><span class="nav-number">4.</span> <span class="nav-text">分片大小对性能有何影响？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#我应该如何管理分片大小呢？"><span class="nav-number">5.</span> <span class="nav-text">我应该如何管理分片大小呢？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结论"><span class="nav-number">6.</span> <span class="nav-text">结论</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">什么是分片？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">按照保留期限进行索引</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">索引分片不是免费的吗？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">分片大小对性能有何影响？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">我应该如何管理分片大小呢？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">结论</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -547,7 +553,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">154</span>
+          <span class="site-state-item-count">155</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -559,7 +565,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">216</span>
+        <span class="site-state-item-count">219</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
