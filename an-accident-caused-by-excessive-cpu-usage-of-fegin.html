@@ -25,14 +25,14 @@
   </script>
 
   <meta name="description" content="记录一下一次应用事故分析、排查、处理">
-<meta name="keywords" content="原创,Java,Fegin,CPU">
+<meta name="keywords" content="Java,Fegin,CPU,原创">
 <meta property="og:type" content="article">
 <meta property="og:title" content="一次Fegin CPU占用过高导致的事故">
 <meta property="og:url" content="https://jiankunking.com/an-accident-caused-by-excessive-cpu-usage-of-fegin.html">
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="记录一下一次应用事故分析、排查、处理">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2024-10-14T10:43:41.251Z">
+<meta property="og:updated_time" content="2024-10-17T07:42:15.362Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="一次Fegin CPU占用过高导致的事故">
 <meta name="twitter:description" content="记录一下一次应用事故分析、排查、处理">
@@ -254,7 +254,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-10-14 18:43:41" itemprop="dateModified" datetime="2024-10-14T18:43:41+08:00">2024-10-14</time>
+                <time title="修改时间：2024-10-17 15:42:15" itemprop="dateModified" datetime="2024-10-17T15:42:15+08:00">2024-10-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -360,6 +360,10 @@
 
 <h4 id="避免HttpMessageConverters重复初始化"><a href="#避免HttpMessageConverters重复初始化" class="headerlink" title="避免HttpMessageConverters重复初始化"></a>避免HttpMessageConverters重复初始化</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public Decoder feignDecoder() &#123;</span><br><span class="line">    HttpMessageConverter jacksonConverter = new MappingJackson2HttpMessageConverter(customObjectMapper());</span><br><span class="line">    ObjectFactory&lt;HttpMessageConverters&gt; objectFactory = () -&gt; new HttpMessageConverters(false, Collections.singletonList(jacksonConverter));</span><br><span class="line">    return new ResponseEntityDecoder(new RSpringDecoder(objectFactory));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public Encoder feignEncoder() &#123;</span><br><span class="line">    HttpMessageConverter jacksonConverter = new RMappingJackson2HttpMessageConverter(customObjectMapper());</span><br><span class="line">    ObjectFactory&lt;HttpMessageConverters&gt; objectFactory = () -&gt; new HttpMessageConverters(false, Collections.singletonList(jacksonConverter));</span><br><span class="line">    return new SpringEncoder(objectFactory);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<h4 id="优化后效果"><a href="#优化后效果" class="headerlink" title="优化后效果"></a>优化后效果</h4><blockquote>
+<p>优化后CPU占用降低一半 </p>
+</blockquote>
+<p><img data-src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E4%BC%98%E5%8C%96%E5%89%8D%E5%90%8E%E6%95%88%E6%9E%9C%E6%AF%94%E5%AF%B9.png"></p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>大家在自定义 Feign 的编解码器时，如果用到了 SpringEncoder &#x2F; SpringDecoder，应避免 HttpMessageConverters 的重复初始化。如果不需要使用那些默认的 HttpMessageConverter，可以在初始化 HttpMessageConverters 时将第一个入参设置为 false，从而不初始化那些默认的 HttpMessageConverter。</p>
 
     </div>
@@ -446,10 +450,10 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/java/" rel="tag"># Java</a>
               <a href="/tags/fegin/" rel="tag"># Fegin</a>
               <a href="/tags/cpu/" rel="tag"># CPU</a>
+              <a href="/tags/原创/" rel="tag"># 原创</a>
           </div>
 
         
@@ -521,7 +525,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景介绍"><span class="nav-number">1.</span> <span class="nav-text">背景介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#服务访问量"><span class="nav-number">1.1.</span> <span class="nav-text">服务访问量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#POD监控"><span class="nav-number">1.2.</span> <span class="nav-text">POD监控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Arms"><span class="nav-number">1.3.</span> <span class="nav-text">Arms</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#临时方案"><span class="nav-number">1.4.</span> <span class="nav-text">临时方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根因分析"><span class="nav-number">2.</span> <span class="nav-text">根因分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义Encoder、Decoder"><span class="nav-number">2.1.</span> <span class="nav-text">自定义Encoder、Decoder</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Encoder"><span class="nav-number">2.1.1.</span> <span class="nav-text">Encoder</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Decoder"><span class="nav-number">2.1.2.</span> <span class="nav-text">Decoder</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#源码分析"><span class="nav-number">2.2.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方案"><span class="nav-number">2.3.</span> <span class="nav-text">解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#避免ClassLoader反复加载"><span class="nav-number">2.3.1.</span> <span class="nav-text">避免ClassLoader反复加载</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#避免HttpMessageConverters重复初始化"><span class="nav-number">2.3.2.</span> <span class="nav-text">避免HttpMessageConverters重复初始化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景介绍"><span class="nav-number">1.</span> <span class="nav-text">背景介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#服务访问量"><span class="nav-number">1.1.</span> <span class="nav-text">服务访问量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#POD监控"><span class="nav-number">1.2.</span> <span class="nav-text">POD监控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Arms"><span class="nav-number">1.3.</span> <span class="nav-text">Arms</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#临时方案"><span class="nav-number">1.4.</span> <span class="nav-text">临时方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#根因分析"><span class="nav-number">2.</span> <span class="nav-text">根因分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义Encoder、Decoder"><span class="nav-number">2.1.</span> <span class="nav-text">自定义Encoder、Decoder</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Encoder"><span class="nav-number">2.1.1.</span> <span class="nav-text">Encoder</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Decoder"><span class="nav-number">2.1.2.</span> <span class="nav-text">Decoder</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#源码分析"><span class="nav-number">2.2.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方案"><span class="nav-number">2.3.</span> <span class="nav-text">解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#避免ClassLoader反复加载"><span class="nav-number">2.3.1.</span> <span class="nav-text">避免ClassLoader反复加载</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#避免HttpMessageConverters重复初始化"><span class="nav-number">2.3.2.</span> <span class="nav-text">避免HttpMessageConverters重复初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#优化后效果"><span class="nav-number">2.3.3.</span> <span class="nav-text">优化后效果</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
