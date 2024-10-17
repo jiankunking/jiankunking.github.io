@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="基于OpenJDK 12本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
-<meta name="keywords" content="Java,原创,JDK,Concurrent,Atomic,AtomicLong">
+  <meta name="description" content="基于OpenJDK 12 本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
+<meta name="keywords" content="原创,Java,JDK,Concurrent,Atomic,AtomicLong">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java JUC Atomic AtomicLong">
 <meta property="og:url" content="https://jiankunking.com/java-juc-atomic-atomiclong.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="基于OpenJDK 12本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
+<meta property="og:description" content="基于OpenJDK 12 本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-07-20T08:25:05.601Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java JUC Atomic AtomicLong">
-<meta name="twitter:description" content="基于OpenJDK 12本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
+<meta name="twitter:description" content="基于OpenJDK 12 本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。">
 
 <link rel="canonical" href="https://jiankunking.com/java-juc-atomic-atomiclong.html">
 
@@ -299,32 +299,34 @@
 
       
         <blockquote>
-<p>基于OpenJDK 12<br>本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。</p>
+<p>基于OpenJDK 12<br>
+本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。</p>
 </blockquote>
 <a id="more"></a>
-
 <p><a href="https://jiankunking.com/java-concurrent-atomic-package.html">Atomic Package解析参考（比如lazySet原理解析）</a></p>
 <p>AtomicLong的常用方法如下：</p>
 <ul>
-<li>long addAndGet(long delta)：以原子方式将输入的数值与实例中的值（AtomicLong里的<br>value）相加，并返回结果。</li>
-<li>compareAndSet(long expectedValue, long newValue)：如果输入的数值等于预期值，则以原子方<br>式将该值设置为输入的值。</li>
+<li>long addAndGet(long delta)：以原子方式将输入的数值与实例中的值（AtomicLong里的<br>
+value）相加，并返回结果。</li>
+<li>compareAndSet(long expectedValue, long newValue)：如果输入的数值等于预期值，则以原子方<br>
+式将该值设置为输入的值。</li>
 <li>long getAndIncrement()：以原子方式将当前值加1，注意，这里返回的是自增前的值。</li>
 <li>void lazySet(long newValue)：最终会设置成newValue，<font color="DeepPink"><strong>使用lazySet设置值后，可能导致其他线程在之后的一小段时间内还是可以读到旧的值</strong></font>。</li>
 <li>long getAndSet(long newValue)：以原子方式设置为newValue的值，并返回旧值。</li>
 </ul>
 <p>AtomicLong示例代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class AtomicLongTest &#123;</span><br><span class="line">    static AtomicLong ai = new AtomicLong(1);</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        System.out.println(ai.getAndIncrement());</span><br><span class="line">        System.out.println(ai.get());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>输出结果如下:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td></tr></table></figure>
-
 <p>那么getAndIncrement是如何实现原子操作的呢？让我们一起分析其实现原理，getAndIncrement的源码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public final long getAndIncrement() &#123;</span><br><span class="line">   return U.getAndAddLong(this, VALUE, 1L);</span><br><span class="line">&#125;</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final long getAndAddLong(Object o, long offset, long delta) &#123;</span><br><span class="line">    long v;</span><br><span class="line">    do &#123;</span><br><span class="line">        v = getLongVolatile(o, offset);</span><br><span class="line">    &#125; while (!weakCompareAndSetLong(o, offset, v, v + delta));</span><br><span class="line">    return v;</span><br><span class="line">&#125;</span><br><span class="line">/** Volatile version of &#123;@link #getLong(Object, long)&#125;  */</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public native long getLongVolatile(Object o, long offset);</span><br><span class="line"></span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final boolean weakCompareAndSetLong(Object o, long offset,</span><br><span class="line">                                           long expected,</span><br><span class="line">                                           ong x) &#123;</span><br><span class="line">    return compareAndSetLong(o, offset, expected, x);</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * Atomically updates Java variable to &#123;@code x&#125; if it is currently</span><br><span class="line"> * holding &#123;@code expected&#125;.</span><br><span class="line"> *</span><br><span class="line"> * &lt;p&gt;This operation has memory semantics of a &#123;@code volatile&#125; read</span><br><span class="line"> * and write.  Corresponds to C11 atomic_compare_exchange_strong.</span><br><span class="line"> *</span><br><span class="line"> * @return &#123;@code true&#125; if successful</span><br><span class="line"> */</span><br><span class="line">@HotSpotIntrinsicCandidate</span><br><span class="line">public final native boolean compareAndSetLong(Object o, long offset,</span><br><span class="line">                                              long expected,</span><br><span class="line">                                              long x);</span><br></pre></td></tr></table></figure>
-
 <blockquote>
 <p>@HotSpotIntrinsicCandidate JDK的源码中，被@HotSpotIntrinsicCandidate标注的方法，在HotSpot中都有一套高效的实现，该高效实现基于CPU指令，运行时，HotSpot维护的高效实现会替代JDK的源码实现，从而获得更高的效率。</p>
 </blockquote>
-<p>源码getAndAddLong(Object o, long offset, long delta)中do while循环体是实现的关键所在，其逻辑是：<br>第一步先取得AtomicLong里存储的数值，<br>第二步对AtomicLong的当前数值进行加1操作，<br>第三步调用weakCompareAndSetLong方法来进行原子更新操作，该方法先检查当前数值是否等于v，等于意味着AtomicLong的值没有被其他线程修改过，则将weakCompareAndSetLong的当前数值更新成v+delta的值，如果不等于v，weakCompareAndSetLong方法会返回false，<font color="DeepPink"><strong>程序会进入do while循环重新进行</strong></font>weakCompareAndSetLong操作。</p>
+<p>源码getAndAddLong(Object o, long offset, long delta)中do while循环体是实现的关键所在，其逻辑是：<br>
+第一步先取得AtomicLong里存储的数值，<br>
+第二步对AtomicLong的当前数值进行加1操作，<br>
+第三步调用weakCompareAndSetLong方法来进行原子更新操作，该方法先检查当前数值是否等于v，等于意味着AtomicLong的值没有被其他线程修改过，则将weakCompareAndSetLong的当前数值更新成v+delta的值，如果不等于v，weakCompareAndSetLong方法会返回false，<font color="DeepPink"><strong>程序会进入do while循环重新进行</strong></font>weakCompareAndSetLong操作。</p>
 <p><font color="DeepPink"><strong>这里隐含了一个问题，当对于共享变量（假设变量名字是a）的竞争非常激烈的时候，在当前线程读取a、改变a之间，a的值会被别的线程改变，从而导致当前线程一直重试（自旋），一直占用CPU。</strong></font></p>
 <p><font color="DeepPink"><strong>这就引出另一个问题，对于锁抢占很激烈的时候，串行是最好的解决办法。比如使用synchronized。</strong></font></p>
 <blockquote>
@@ -419,8 +421,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/java/" rel="tag"># Java</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
+              <a href="/tags/java/" rel="tag"># Java</a>
               <a href="/tags/jdk/" rel="tag"># JDK</a>
               <a href="/tags/concurrent/" rel="tag"># Concurrent</a>
               <a href="/tags/atomic/" rel="tag"># Atomic</a>
