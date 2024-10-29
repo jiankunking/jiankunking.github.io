@@ -25,7 +25,7 @@
   </script>
 
   <meta name="description" content="构建一个PaaS平台（原生Docker已逐步下线，目前主要使用Kubernetes）">
-<meta name="keywords" content="Architecture,原创,PaaS">
+<meta name="keywords" content="原创,Architecture,PaaS">
 <meta property="og:type" content="article">
 <meta property="og:title" content="原生Docker PaaS平台架构设计">
 <meta property="og:url" content="https://jiankunking.com/pass-platform-architecture-design.html">
@@ -302,13 +302,10 @@
 <p>构建一个PaaS平台（原生Docker已逐步下线，目前主要使用<a href="https://jiankunking.com/integrated-container-cloud.html">Kubernetes</a>）</p>
 </blockquote>
 <a id="more"></a>
-<h1>背景</h1>
-<p>目前在用的PaaS平台是之前购买的一个商业产品，但没有源码，运维期也早就结束了，所以在后期使用过程中会遇到一些各种各样的问题，对于使用、运维都造成一定的困扰。</p>
-<p>老PaaS的架构及基本功能如下：<br>
-<img data-src="/images/pass-platform-design/%E8%80%81PaaS%E6%9E%B6%E6%9E%84.png" alt></p>
-<h1>重构</h1>
-<p>为什么选择重构PaaS平台而不是全部迁移kubernates集群？<br>
-kubernates集群的确提供了很多优秀的特性，比如：RC、滚动更新或回滚、资源监控和日志记录、负载均衡等等。</p>
+
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>目前在用的PaaS平台是之前购买的一个商业产品，但没有源码，运维期也早就结束了，所以在后期使用过程中会遇到一些各种各样的问题，对于使用、运维都造成一定的困扰。</p>
+<p>老PaaS的架构及基本功能如下：<br><img data-src="/images/pass-platform-design/%E8%80%81PaaS%E6%9E%B6%E6%9E%84.png"></p>
+<h1 id="重构"><a href="#重构" class="headerlink" title="重构"></a>重构</h1><p>为什么选择重构PaaS平台而不是全部迁移kubernates集群？<br>kubernates集群的确提供了很多优秀的特性，比如：RC、滚动更新或回滚、资源监控和日志记录、负载均衡等等。</p>
 <p>但在目前我们这边的环境来看，迁移kubernates集群有如下几个问题：</p>
 <ul>
 <li>无法无感知迁移，即迁移到kubernates集群的过程中及迁移到kubernates集群后，不增加用户的使用、学习成本，但应用引入kubernates集群之后，很难保证这一点。因为我们这边的用户大多是我们公司的供应商，供应商其实不太关心，你平台所提供的各种新特性、功能，更不想因为这些新特性、功能增加他们的使用、学习成本。</li>
@@ -317,20 +314,13 @@ kubernates集群的确提供了很多优秀的特性，比如：RC、滚动更�
 <li>滚动更新或回滚，老PaaS平台木有，重构后新版中准备加入（二期）。</li>
 <li>RC类似功能，目前不打算支持。</li>
 </ul>
-<h2 id="架构及用到组件梳理">架构及用到组件梳理</h2>
-<p><img data-src="/images/pass-platform-design/%E6%96%B0PaaS%E6%9E%B6%E6%9E%84%E5%8F%8A%E7%BB%84%E4%BB%B6.png" alt></p>
-<h2 id="新PaaS功能点梳理">新PaaS功能点梳理</h2>
-<p><img data-src="/images/pass-platform-design/PaaS%E5%8A%9F%E8%83%BD%E7%82%B9.png" alt></p>
-<h1>迁移</h1>
-<p>通过无缝迁移，在用户无感知的情况下实现迁移。</p>
+<h2 id="架构及用到组件梳理"><a href="#架构及用到组件梳理" class="headerlink" title="架构及用到组件梳理"></a>架构及用到组件梳理</h2><p><img data-src="/images/pass-platform-design/%E6%96%B0PaaS%E6%9E%B6%E6%9E%84%E5%8F%8A%E7%BB%84%E4%BB%B6.png"></p>
+<h2 id="新PaaS功能点梳理"><a href="#新PaaS功能点梳理" class="headerlink" title="新PaaS功能点梳理"></a>新PaaS功能点梳理</h2><p><img data-src="/images/pass-platform-design/PaaS%E5%8A%9F%E8%83%BD%E7%82%B9.png"></p>
+<h1 id="迁移"><a href="#迁移" class="headerlink" title="迁移"></a>迁移</h1><p>通过无缝迁移，在用户无感知的情况下实现迁移。</p>
 <blockquote>
-<p>为什么要做到无感知迁移？<br>
-老PaaS中目前的项目数量是：193个，应用数量是：673个<br>
-总实例数：1485，其中生产环境的实例数：894<br>
-如果这些项目、应用，因为你的重构都需要改动的话，那么推广难度是很大的，所以需要尽量做到，对于用户来说无感知迁移。</p>
+<p>为什么要做到无感知迁移？<br>老PaaS中目前的项目数量是：193个，应用数量是：673个<br>总实例数：1485，其中生产环境的实例数：894<br>如果这些项目、应用，因为你的重构都需要改动的话，那么推广难度是很大的，所以需要尽量做到，对于用户来说无感知迁移。</p>
 </blockquote>
-<p>以下迁移部分，都需要在新PaaS上线前完成并在上线一段时间准实时同步过来。<br>
-<img data-src="/images/pass-platform-design/%E8%80%81PaaS%E8%BF%81%E7%A7%BB.png" alt></p>
+<p>以下迁移部分，都需要在新PaaS上线前完成并在上线一段时间准实时同步过来。<br><img data-src="/images/pass-platform-design/%E8%80%81PaaS%E8%BF%81%E7%A7%BB.png"></p>
 
     </div>
 
@@ -416,8 +406,8 @@ kubernates集群的确提供了很多优秀的特性，比如：RC、滚动更�
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/architecture/" rel="tag"># Architecture</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
+              <a href="/tags/architecture/" rel="tag"># Architecture</a>
               <a href="/tags/paas/" rel="tag"># PaaS</a>
           </div>
 
@@ -493,7 +483,7 @@ kubernates集群的确提供了很多优秀的特性，比如：RC、滚动更�
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">重构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#架构及用到组件梳理"><span class="nav-number">2.1.</span> <span class="nav-text">架构及用到组件梳理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新PaaS功能点梳理"><span class="nav-number">2.2.</span> <span class="nav-text">新PaaS功能点梳理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">迁移</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重构"><span class="nav-number">2.</span> <span class="nav-text">重构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#架构及用到组件梳理"><span class="nav-number">2.1.</span> <span class="nav-text">架构及用到组件梳理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新PaaS功能点梳理"><span class="nav-number">2.2.</span> <span class="nav-text">新PaaS功能点梳理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#迁移"><span class="nav-number">3.</span> <span class="nav-text">迁移</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
