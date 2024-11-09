@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文整理自：stackoverflow 地址： https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or">
-<meta name="keywords" content="原创,MySQL,UNION,OR">
+  <meta name="description" content="本文整理自：stackoverflow地址：https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or">
+<meta name="keywords" content="MySQL,原创,UNION,OR">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SQL UNION vs OR 性能">
 <meta property="og:url" content="https://jiankunking.com/sql-performance-union-vs-or.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="本文整理自：stackoverflow 地址： https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or">
+<meta property="og:description" content="本文整理自：stackoverflow地址：https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2024-04-18T07:10:52.071Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="SQL UNION vs OR 性能">
-<meta name="twitter:description" content="本文整理自：stackoverflow 地址： https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or">
+<meta name="twitter:description" content="本文整理自：stackoverflow地址：https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or">
 
 <link rel="canonical" href="https://jiankunking.com/sql-performance-union-vs-or.html">
 
@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">158</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">159</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -158,7 +158,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">223</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">224</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -298,26 +298,27 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>本文整理自：stackoverflow<br>
-地址：<br>
-<a href="https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or" target="_blank" rel="noopener">https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or</a></p>
+        <p>本文整理自：stackoverflow<br>地址：<br><a href="https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or" target="_blank" rel="noopener">https://stackoverflow.com/questions/13750475/sql-performance-union-vs-or</a></p>
 <a id="more"></a>
+
 <p>翻译自Bill Karwin回答：</p>
 <p>要么你读的那篇文章用了一个不好的例子，要么你误解了他们的观点。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select username from users where company = &apos;bbc&apos; or company = &apos;itv&apos;;</span><br></pre></td></tr></table></figure>
+
 <p>等价于：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select username from users where company IN (&apos;bbc&apos;, &apos;itv&apos;);</span><br></pre></td></tr></table></figure>
+
 <p>在这个查询中MySQL会使用company上的索引。不需要改成UNION。</p>
 <p>更棘手的情况是，OR条件涉及两个不同的列。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select username from users where company = &apos;bbc&apos; or city = &apos;London&apos;;</span><br></pre></td></tr></table></figure>
+
 <p>假设company列和city列都有一个独立的索引。MySQL通常在一个给定的查询中每个表只使用一个索引，那么应该使用哪个索引呢?如果它使用company上的索引，它仍然必须执行表扫描，以找到伦敦所在的行。如果它使用city上的索引，则必须对company为bbc的行进行表扫描。</p>
 <p>UNION 解决方案适用于这种情况。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">select username from users where company = &apos;bbc&apos; </span><br><span class="line">union</span><br><span class="line">select username from users where city = &apos;London&apos;;</span><br></pre></td></tr></table></figure>
+
 <p>这样的话每个子查询都可以使用索引进行搜索,然后再将子查询的结果合并在一起。</p>
 <blockquote>
-<p>union ? union all ? 取决于需求及where过滤后的数据量<br>
-对于索引列来最好使用union all，因复杂的查询【包含运算等】将使or、in放弃索引而全表扫描，除非你能确定or、in会使用索引。<br>
-对于只有非索引字段来说你就老老实实的用or或者in，因为 非索引字段本来要全表扫描而union all 只成倍增加表扫描的次数。</p>
+<p>union ? union all ? 取决于需求及where过滤后的数据量<br>对于索引列来最好使用union all，因复杂的查询【包含运算等】将使or、in放弃索引而全表扫描，除非你能确定or、in会使用索引。<br>对于只有非索引字段来说你就老老实实的用or或者in，因为 非索引字段本来要全表扫描而union all 只成倍增加表扫描的次数。</p>
 </blockquote>
 
     </div>
@@ -335,13 +336,13 @@
       <div class="popular-posts-title"><a href="\45-lectures-on-mysql-in-practice.html" rel="bookmark">MySQL实战45讲 笔记</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\a-problem-caused-by-a-thread-pool-usage-error.html" rel="bookmark">一次线程池使用错误导致的问题</a></div>
+      <div class="popular-posts-title"><a href="\mysql-must-know-and-must-know.html" rel="bookmark">MySQL 必知必会 笔记</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\an-accident-caused-by-excessive-cpu-usage-of-fegin.html" rel="bookmark">一次Fegin CPU占用过高导致的事故</a></div>
+      <div class="popular-posts-title"><a href="\mysql-isolation-level-repeatable-read-and-phantom-read.html" rel="bookmark">MySQL 可重复读隔离级别与幻读(能很大程度上避免幻读,但不能完全避免)</a></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-non-stop-cloud-solution.html" rel="bookmark">Elasticsearch不停机切换(上云)方案</a></div>
+      <div class="popular-posts-title"><a href="\order-of-execution-of-the-sql-query.html" rel="bookmark">MySQL 查询语句执行顺序</a></div>
     </li>
   </ul>
 
@@ -404,8 +405,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/mysql/" rel="tag"># MySQL</a>
+              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/union/" rel="tag"># UNION</a>
               <a href="/tags/or/" rel="tag"># OR</a>
           </div>
@@ -497,7 +498,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">158</span>
+          <span class="site-state-item-count">159</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -509,7 +510,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">223</span>
+        <span class="site-state-item-count">224</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
