@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">159</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">160</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -158,7 +158,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">224</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">228</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -302,66 +302,59 @@
 <p>原文地址:<a href="https://www.elastic.co/cn/blog/elasticsearch-docker-plugin-management" target="_blank" rel="noopener">https://www.elastic.co/cn/blog/elasticsearch-docker-plugin-management</a></p>
 </blockquote>
 <a id="more"></a>
-
 <p>如果你正在用容器来运行elasticsearch,那么有一些事项需要注意。在管理有状态服务和守护进程时尤其如此——当将数据持久化在临时容器之外变得很重要时。</p>
 <p>在容器中使用Elasticsearch插件就是一个例子，无论是以可重复、可跟踪的方式安装它们，还是管理插件配置和数据。</p>
 <p>在这篇文章中，我们将探讨一些在Docker和Elasticsearch中实现合理插件管理的选项。</p>
-<h1 id="Docker-持久性入门"><a href="#Docker-持久性入门" class="headerlink" title="Docker 持久性入门"></a>Docker 持久性入门</h1><p>与版本控制系统中更改文档一样，更改正在运行的容器中的文档系统会在正在运行的镜像中引入差异。如果数据和更改需要在临时容器的范围之外永久保留，则需要采取措施。</p>
+<h1>Docker 持久性入门</h1>
+<p>与版本控制系统中更改文档一样，更改正在运行的容器中的文档系统会在正在运行的镜像中引入差异。如果数据和更改需要在临时容器的范围之外永久保留，则需要采取措施。</p>
 <p>尽管可以利用一些更复杂的存储方案来实现容器持久化，但绑定挂载的基本Docker机制最能说明问题。例如，通过将<code>-v /data:/usr/share/elasticsearch/data</code>之类的选项传递给<code>docker run</code>命令，将 Elasticsearch 索引长期保存在<code>/data</code>中来实现的，该命令有效地将Elasticsearch数据存储在主机的（不是容器的）<code>/data</code> 目录。</p>
 <p><font color="red">如果更改是永久性的，也就是说，预计它们不会随着时间的推移而改变，那么将更改编入<code>Dockerfile</code>中可能更有意义。</font>这两种方法在不同情况下都有用。</p>
-<h1 id="管理基础插件"><a href="#管理基础插件" class="headerlink" title="管理基础插件"></a>管理基础插件</h1><p>在以下示例中，我将“基础”插件称为不需要许可证或任何其他特殊组件的插件。 像cloud-aws这样简单的插件只需要在系统上放置一些文件就可以工作。</p>
+<h1>管理基础插件</h1>
+<p>在以下示例中，我将“基础”插件称为不需要许可证或任何其他特殊组件的插件。 像cloud-aws这样简单的插件只需要在系统上放置一些文件就可以工作。</p>
 <p>在这种情况下，管理插件的存在最简单，只需使用Dockerfile扩展镜像即可。 例如：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM elasticsearch:2</span><br><span class="line"></span><br><span class="line">RUN /usr/share/elasticsearch/bin/plugin install --batch cloud-aws</span><br></pre></td></tr></table></figure>
-
 <p>这个<code>Dockerfile</code>从Docker Hub的维护者提供的Elasticsearch镜像开始，并运行一个简单的插件安装命令。然后可以通过标签构建和引用此镜像：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker build -t elasticsearch-aws .</span><br></pre></td></tr></table></figure>
-
 <!-- 当在与Dockerfile相同的目录中运行时，将构建名称为elasticsearch-aws的镜像，现在可以在未来的Docker命令中引用，当启动具有从原始容器继承的行为的新容器时。 -->
-
-<h1 id="更复杂的插件"><a href="#更复杂的插件" class="headerlink" title="更复杂的插件"></a>更复杂的插件</h1><p>某些插件可能需要额外的文件（例如使用Shield时的证书）才能实现某些功能。上述构建自定义镜像的技术可以处理这些插件的安装，但管理配置是用其它方法处理更好。这有助于保持镜像的通用性以供部署重用，并保持对密钥的控制更严格。</p>
+<h1>更复杂的插件</h1>
+<p>某些插件可能需要额外的文件（例如使用Shield时的证书）才能实现某些功能。上述构建自定义镜像的技术可以处理这些插件的安装，但管理配置是用其它方法处理更好。这有助于保持镜像的通用性以供部署重用，并保持对密钥的控制更严格。</p>
 <p>注意：一些商业插件需要license。在以下示例中，我们仅依赖默认存在的临时试用license。在生产环境中部署时，license是通过Elasticsearch REST API执行的，它将license信息存储在Elasticsearch的数据路径中。只要您的数据通过卷装载或其他方式适当地持久化，您的license信息就会保存在您的集群中。</p>
-<h2 id="Example-Shield"><a href="#Example-Shield" class="headerlink" title="Example: Shield"></a>Example: Shield</h2><p>正如<a href="https://www.elastic.co/guide/en/shield/current/installing-shield.html" target="_blank" rel="noopener">Shield安装文档</a>中所述，安装license和shield插件是先决条件，我们可以使用之前的构建派生镜像的策略来实现：</p>
+<h2 id="Example-Shield">Example: Shield</h2>
+<p>正如<a href="https://www.elastic.co/guide/en/shield/current/installing-shield.html" target="_blank" rel="noopener">Shield安装文档</a>中所述，安装license和shield插件是先决条件，我们可以使用之前的构建派生镜像的策略来实现：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">FROM elasticsearch:2</span><br><span class="line"></span><br><span class="line">RUN /usr/share/elasticsearch/bin/plugin install --batch license</span><br><span class="line">RUN /usr/share/elasticsearch/bin/plugin install --batch shield</span><br></pre></td></tr></table></figure>
-
 <p>构建镜像</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker build -t elasticsearch-shield .</span><br></pre></td></tr></table></figure>
-
 <p>此时，如果我们将配置目录卷挂载到容器中，Shield 将获取我们的设置。 作为示例配置，请考虑以下目录结构：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ tree config</span><br><span class="line">config</span><br><span class="line">├── elasticsearch.yml</span><br><span class="line">├── logging.yml</span><br><span class="line">├── scripts</span><br><span class="line">└── shield</span><br><span class="line">    ├── roles.yml</span><br><span class="line">    ├── users</span><br><span class="line">    └── users_roles</span><br><span class="line"></span><br><span class="line">2 directories, 4 files</span><br></pre></td></tr></table></figure>
-
 <p><code>logging.yml</code>包含默认日志记录配置。 在<code>elasticsearch.yml</code>中，绑定到通配符 0.0.0.0 确保我们可以访问到容器：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ cat elasticsearch.yml</span><br><span class="line">network.host: 0.0.0.0</span><br></pre></td></tr></table></figure>
-
 <p>对于 Shield 配置，我们定义了一个单独的角色admin，以及一个名为“example”且密码为“password”的用户，并将其添加到 admin 角色（您显然需要比这更安全的配置！） :</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ cat shield/roles.yml</span><br><span class="line">admin:</span><br><span class="line">  cluster: all</span><br><span class="line">  indices:</span><br><span class="line">    &apos;*&apos;:</span><br><span class="line">    privileges: all</span><br><span class="line">$ cat shield/users</span><br><span class="line">example:$2a$10$ppZqjFEXgVE3yT/yQPsp4etGMdF4.RFCS9OOGwZGAp0l3lPh4/ALC</span><br><span class="line">$ cat shield/users_roles</span><br><span class="line">admin:example</span><br></pre></td></tr></table></figure>
-
 <p>注意：在此示例中，我们使用的是使用<code>esusers</code> Shield实用程序生成的密码哈希。</p>
 <p>然后我们启动容器，为我们的配置指定挂载卷并公开REST端口：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker run -d -p 9200:9200 -v &quot;$PWD/config&quot;:/usr/share/elasticsearch/config elasticsearch-shield</span><br></pre></td></tr></table></figure>
-
 <p>Elasticsearch 应拒绝未经身份验证的请求：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ curl -I -XGET -k https://localhost:9200/_cluster/health</span><br><span class="line">HTTP/1.1 401 Unauthorized</span><br><span class="line">WWW-Authenticate: Basic realm=&quot;shield&quot;</span><br><span class="line">Content-Type: application/json; charset=UTF-8</span><br><span class="line">Content-Length: 389</span><br><span class="line">$ curl -I -XGET -k -u example:password https://localhost:9200/_cluster/health</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: application/json; charset=UTF-8</span><br><span class="line">Content-Length: 389</span><br></pre></td></tr></table></figure>
-
-<h2 id="Adding-SSL-TLS"><a href="#Adding-SSL-TLS" class="headerlink" title="Adding SSL&#x2F;TLS"></a>Adding SSL&#x2F;TLS</h2><p>与挂载Shield配置文件一样，可以类似地管理SSL和TLS证书。可以遵循<a href="https://www.elastic.co/guide/en/shield/current/ssl-tls.html" target="_blank" rel="noopener">Shield SSL&#x2F;TLS</a> 指南中概述的大部分步骤请记住<code>CONFIG_DIR</code>目录是我们将在运行时安装到容器中的路径。 CA和证书管理的全部内容不在本教程的讨论范围内，因此我们在此假设您使用的是正确配置的Javakeystore文件，此处称为 <code>node01.jks</code>。</p>
+<h2 id="Adding-SSL-TLS">Adding SSL/TLS</h2>
+<p>与挂载Shield配置文件一样，可以类似地管理SSL和TLS证书。可以遵循<a href="https://www.elastic.co/guide/en/shield/current/ssl-tls.html" target="_blank" rel="noopener">Shield SSL/TLS</a> 指南中概述的大部分步骤请记住<code>CONFIG_DIR</code>目录是我们将在运行时安装到容器中的路径。 CA和证书管理的全部内容不在本教程的讨论范围内，因此我们在此假设您使用的是正确配置的Javakeystore文件，此处称为 <code>node01.jks</code>。</p>
 <p>公开keystore文件只是将其包含在安装到容器中的配置目录中的问题。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ tree config</span><br><span class="line">config</span><br><span class="line">├── elasticsearch.yml</span><br><span class="line">├── logging.yml</span><br><span class="line">├── node01.jks</span><br><span class="line">├── scripts</span><br><span class="line">└── shield</span><br><span class="line">    ├── roles.yml</span><br><span class="line">    ├── users</span><br><span class="line">    └── users_roles</span><br><span class="line">$ file config/node01.jks</span><br><span class="line">config/node01.jks: Java KeyStore</span><br></pre></td></tr></table></figure>
-
 <p>按照Shield用户指南，我们启用传输加密：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ cat config/elasticsearch.yml</span><br><span class="line">network.host: 0.0.0.0</span><br><span class="line">shield.ssl.keystore.path: /usr/share/elasticsearch/config/node01.jks</span><br><span class="line">shield.ssl.keystore.password: password</span><br><span class="line">shield.transport.ssl: true</span><br><span class="line">shield.http.ssl: true</span><br></pre></td></tr></table></figure>
-
 <p>注意：在生产中，您可能希望更严格地控制您的keystore - 在本例中，我们只使用通用密码锁定keystore。</p>
 <p>有了keystore文件并启用了SSL，我们可以启动节点并通过HTTPS发出请求（在这种情况下，将 <code>-k</code> 传递给 curl 以绕过自签名证书）：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ docker run -d -p 9200:9200 -v &quot;$PWD/config&quot;:/usr/share/elasticsearch/config elasticsearch-shield</span><br><span class="line">87e51d000cc11d63fbedb8a61d58ab1723f4a598b13614272a3b9d7f36a7b223</span><br><span class="line">$ curl -I -XGET -k -u example:password https://localhost:9200/_cluster/health</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: text/plain; charset=UTF-8</span><br><span class="line">Content-Length: 0</span><br></pre></td></tr></table></figure>
-
 <p>当需要在集群中分发keystore文件时，它们可能会由<a href="https://forge.puppetlabs.com/puppetlabs/java_ks" target="_blank" rel="noopener">配置管理模块</a>或类似方法进行管理。</p>
 <p>注意：在生成将在Docker内运行的节点的证书时，请密切注意将适当的选项传递到<code>-ext</code>选项。DNS名称和IP地址应正确反映节点将用于相互通信的主机名或IP地址。</p>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>尽管我们在这篇博文中给出了几个具体示例，但每个部署都是不同的，您应该根据提高环境可靠性、可重复性和安全性的因素来定制您的设置。 一般来说，遵循这些准则应该有助于一个好的插件管理方案：</p>
+<h1>总结</h1>
+<p>尽管我们在这篇博文中给出了几个具体示例，但每个部署都是不同的，您应该根据提高环境可靠性、可重复性和安全性的因素来定制您的设置。 一般来说，遵循这些准则应该有助于一个好的插件管理方案：</p>
 <ul>
 <li>在Docker镜像中定义最通用的步骤。通过尽早管理插件然后从这些镜像运行容器，您可以避免一遍又一遍地重新运行相同的安装命令。</li>
 <li>在挂载卷中维护持久数据。将您的索引数据和插件配置与容器镜像分开存储可确保您的数据受到控制并且容器保持短暂。</li>
 <li>测试！在部署任何生产基础设施之前，确保Elasticsearch在Docker中的行为符合预期，尤其是在网络通信（包括单播和IP地址绑定行为）、JVM资源分配和插件功能方面。</li>
 </ul>
-<h1 id="新版本示例"><a href="#新版本示例" class="headerlink" title="新版本示例"></a>新版本示例</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FROM elasticsearch:7.13.4</span><br><span class="line"></span><br><span class="line"># RUN ./bin/elasticsearch-plugin install --batch https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.13.4/elasticsearch-analysis-ik-7.13.4.zip</span><br><span class="line">ADD elasticsearch-analysis-ik-7.13.4.zip /usr/share/elasticsearch</span><br><span class="line">RUN ./bin/elasticsearch-plugin install --batch file:///usr/share/elasticsearch/elasticsearch-analysis-ik-7.13.4.zip</span><br></pre></td></tr></table></figure>
+<h1>新版本示例</h1>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FROM elasticsearch:7.13.4</span><br><span class="line"></span><br><span class="line"># RUN ./bin/elasticsearch-plugin install --batch https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.13.4/elasticsearch-analysis-ik-7.13.4.zip</span><br><span class="line">ADD elasticsearch-analysis-ik-7.13.4.zip /usr/share/elasticsearch</span><br><span class="line">RUN ./bin/elasticsearch-plugin install --batch file:///usr/share/elasticsearch/elasticsearch-analysis-ik-7.13.4.zip</span><br></pre></td></tr></table></figure>
     </div>
 
     
@@ -370,6 +363,9 @@
       
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\elasticsearch-sequence-ids-6-0.html" rel="bookmark">[译]Elasticsearch Sequence ID实现思路及用途</a></div>
+    </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\elasticsearch-source-doc-values-and-store-performance.html" rel="bookmark">[译]Elasticsearch _source Doc_values And Store Performance</a></div>
     </li>
@@ -381,9 +377,6 @@
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\elasticsearch-cluster-sizing-and-performance-tuning.html" rel="bookmark">[译]Elasticsearch集群规模和性能调优</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-non-stop-cloud-solution.html" rel="bookmark">Elasticsearch不停机切换(上云)方案</a></div>
     </li>
   </ul>
 
@@ -524,7 +517,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Docker-持久性入门"><span class="nav-number">1.</span> <span class="nav-text">Docker 持久性入门</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#管理基础插件"><span class="nav-number">2.</span> <span class="nav-text">管理基础插件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#更复杂的插件"><span class="nav-number">3.</span> <span class="nav-text">更复杂的插件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Example-Shield"><span class="nav-number">3.1.</span> <span class="nav-text">Example: Shield</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Adding-SSL-TLS"><span class="nav-number">3.2.</span> <span class="nav-text">Adding SSL/TLS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#新版本示例"><span class="nav-number">5.</span> <span class="nav-text">新版本示例</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">Docker 持久性入门</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">管理基础插件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">更复杂的插件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Example-Shield"><span class="nav-number">3.1.</span> <span class="nav-text">Example: Shield</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Adding-SSL-TLS"><span class="nav-number">3.2.</span> <span class="nav-text">Adding SSL/TLS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">新版本示例</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -540,7 +533,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">159</span>
+          <span class="site-state-item-count">160</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -552,7 +545,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">224</span>
+        <span class="site-state-item-count">228</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
