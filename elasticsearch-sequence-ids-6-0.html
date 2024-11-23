@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="原文地址:https://www.elastic.co/blog/elasticsearch-sequence-ids-6-0">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2024-11-22T23:53:18.136Z">
+<meta property="og:updated_time" content="2024-11-23T00:00:29.268Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[译]Elasticsearch Sequence ID实现思路及用途">
 <meta name="twitter:description" content="原文地址:https://www.elastic.co/blog/elasticsearch-sequence-ids-6-0">
@@ -158,7 +158,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">228</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">227</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -248,7 +248,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2024-11-23 06:24:54 / 修改时间：07:53:18" itemprop="dateCreated datePublished" datetime="2024-11-23T06:24:54+08:00">2024-11-23</time>
+              <time title="创建时间：2024-11-23 06:24:54 / 修改时间：08:00:29" itemprop="dateCreated datePublished" datetime="2024-11-23T06:24:54+08:00">2024-11-23</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -300,7 +300,14 @@
 <p>“如果我们在Elasticsearch中对索引操作进行全面排序会怎样？我们可以建立什么？</p>
 </blockquote>
 <p>答案涵盖范围很广：</p>
-<p>*我们可以构建一种称为”<a href="https://github.com/elastic/elasticsearch/issues/1242" target="_blank" rel="noopener">变更API</a>“的功能，它可以接受操作ID，并为您提供自那时以来数据更改的列表。很棒！<br>*我们可以只查找发生变化的索引操作，从而<a href="https://github.com/elastic/elasticsearch/issues/20859#issuecomment-252962327" target="_blank" rel="noopener">建立增量reindex</a>！<br>*我们可以使用增量reindex功能，通过过滤&#x2F;连续reindex建立<a href="https://github.com/elastic/elasticsearch/issues/17997" target="_blank" rel="noopener">以实体为中心的索引</a>！<br>*我们可以建立不依赖于数据按时、按顺序和全局精确时间戳到达的数据<a href="https://discuss.elastic.co/t/re-index-aggregation-elasticsearch/75325" target="_blank" rel="noopener">滚动&#x2F;汇总索引</a>！<br>*我们可以建立类似<a href="https://en.wikipedia.org/wiki/Materialized_view" target="_blank" rel="noopener">物化视图</a>的东西，在新数据&#x2F;操作到达时进行更新！<br>*如果节点之间的操作因网络断开等原因而丢失，我们可以建立一种重放操作的方法，<a href="https://github.com/elastic/elasticsearch/pull/19355" target="_blank" rel="noopener">这将大大加快恢复速度</a>！<br>*我们可以建立一种在集群之间重放操作的方法！<a href="https://discuss.elastic.co/t/cross-data-center-replication/11670" target="_blank" rel="noopener">跨数据中心复制</a>！</p>
+<ul>
+<li>我们可以构建一种称为”<a href="https://github.com/elastic/elasticsearch/issues/1242" target="_blank" rel="noopener">变更API</a>“的功能，它可以接受操作ID，并为您提供自那时以来数据更改的列表。很棒！</li>
+<li>我们可以只查找发生变化的索引操作，从而<a href="https://github.com/elastic/elasticsearch/issues/20859#issuecomment-252962327" target="_blank" rel="noopener">建立增量reindex</a>！</li>
+<li>我们可以使用增量reindex功能，通过过滤&#x2F;连续reindex建立<a href="https://github.com/elastic/elasticsearch/issues/17997" target="_blank" rel="noopener">以实体为中心的索引</a>！</li>
+<li>我们可以建立不依赖于数据按时、按顺序和全局精确时间戳到达的数据<a href="https://discuss.elastic.co/t/re-index-aggregation-elasticsearch/75325" target="_blank" rel="noopener">滚动&#x2F;汇总索引</a>！</li>
+<li>我们可以建立类似<a href="https://en.wikipedia.org/wiki/Materialized_view" target="_blank" rel="noopener">物化视图</a>的东西，在新数据&#x2F;操作到达时进行更新！</li>
+<li>如果节点之间的操作因网络断开等原因而丢失，我们可以建立一种重放操作的方法，<a href="https://github.com/elastic/elasticsearch/pull/19355" target="_blank" rel="noopener">这将大大加快恢复速度</a>！<br>*我们可以建立一种在集群之间重放操作的方法！<a href="https://discuss.elastic.co/t/cross-data-center-replication/11670" target="_blank" rel="noopener">跨数据中心复制</a>！</li>
+</ul>
 <p>所有这些都需要打破一个小小的障碍：为索引操作添加序列号。很简单：我们只需要在主索引的每个操作中添加一个计数器！太简单了，我们看到社区成员和员工<a href="https://github.com/mikemccand/elasticsearch/commit/baf23885da83920e37bd87080bc2de5ef2d1a71e" target="_blank" rel="noopener">尝试</a>了好几次。但当我们<a href="https://github.com/elastic/elasticsearch/issues/10708" target="_blank" rel="noopener">层层剥开洋葱头时，我们发现它比最初看起来要复杂得多</a>。在我们开始讨论变更应用程序接口的实用性近6年后，我们仍然没有一个变更应用程序接口。原因何在？本博客的目的是分享幕后发生的事情，并就这个问题的答案提供一些见解。</p>
 <p>在过去两年中，我们几乎从头开始重写了复制逻辑。我们从已知的<a href="https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/" target="_blank" rel="noopener">学术算法</a>中汲取精华，同时确保我们仍能确保并行性，这正是Elasticsearch能够如此快速的原因：这是许多甚至所有传统共识算法都无法做到的。我们与分布式系统专家合作，为我们的<a href="https://github.com/elastic/elasticsearch-formal-models" target="_blank" rel="noopener">复制模型</a>建立了<a href="https://en.wikipedia.org/wiki/TLA%2B" target="_blank" rel="noopener">TLA+</a>规范。我们增加了大量<a href="https://github.com/elastic/elasticsearch/pull/17038" target="_blank" rel="noopener">测试</a>和<a href="https://github.com/elastic/elasticsearch/pull/18930" target="_blank" rel="noopener">测试基础设施</a>。</p>
 <p>这篇博客必然是技术性的，因为我们会深入探讨Elasticsearch如何进行复制的一些核心内容。不过，我们的目的是通过解释&#x2F;定义&#x2F;链接一些术语（即使您可能已经理解了这些术语），让更多读者能够理解这些术语。首先，让我们深入了解Elasticsearch所面临的一些挑战。</p>
@@ -521,7 +528,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">228</span>
+        <span class="site-state-item-count">227</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

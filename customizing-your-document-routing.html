@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="注意:原文发表时间是13年,所以实现有可能与新版不一致. 原文地址:https://www.elastic.co/cn/blog/customizing-your-document-routing">
+  <meta name="description" content="注意:原文发表时间是13年,所以实现有可能与新版不一致.原文地址:https://www.elastic.co/cn/blog/customizing-your-document-routing">
 <meta name="keywords" content="原创,ElasticSearch,Document,Routing">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[译]Elasticsearch自定义文档路由">
 <meta property="og:url" content="https://jiankunking.com/customizing-your-document-routing.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="注意:原文发表时间是13年,所以实现有可能与新版不一致. 原文地址:https://www.elastic.co/cn/blog/customizing-your-document-routing">
+<meta property="og:description" content="注意:原文发表时间是13年,所以实现有可能与新版不一致.原文地址:https://www.elastic.co/cn/blog/customizing-your-document-routing">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-08-24T00:53:45.693Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[译]Elasticsearch自定义文档路由">
-<meta name="twitter:description" content="注意:原文发表时间是13年,所以实现有可能与新版不一致. 原文地址:https://www.elastic.co/cn/blog/customizing-your-document-routing">
+<meta name="twitter:description" content="注意:原文发表时间是13年,所以实现有可能与新版不一致.原文地址:https://www.elastic.co/cn/blog/customizing-your-document-routing">
 
 <link rel="canonical" href="https://jiankunking.com/customizing-your-document-routing.html">
 
@@ -158,7 +158,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">228</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">227</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -279,7 +279,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3.5k</span>
+              <span>3.6k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -299,16 +299,14 @@
 
       
         <blockquote>
-<p>注意:原文发表时间是13年,所以实现有可能与新版不一致.<br>
-原文地址:<a href="https://www.elastic.co/cn/blog/customizing-your-document-routing" target="_blank" rel="noopener">https://www.elastic.co/cn/blog/customizing-your-document-routing</a></p>
+<p>注意:原文发表时间是13年,所以实现有可能与新版不一致.<br>原文地址:<a href="https://www.elastic.co/cn/blog/customizing-your-document-routing" target="_blank" rel="noopener">https://www.elastic.co/cn/blog/customizing-your-document-routing</a></p>
 </blockquote>
 <a id="more"></a>
-<h1>什么是路由</h1>
-<p>您的所有数据都存在于集群中某个位置的主分片中。您可能有五个分片或五百个，但任何特定的文档都只位于其中一个。<font color="DeepPink"><strong>路由是确定文档将保存到哪个分片中的过程。</strong></font></p>
+
+<h1 id="什么是路由"><a href="#什么是路由" class="headerlink" title="什么是路由"></a>什么是路由</h1><p>您的所有数据都存在于集群中某个位置的主分片中。您可能有五个分片或五百个，但任何特定的文档都只位于其中一个。<font color="DeepPink"><strong>路由是确定文档将保存到哪个分片中的过程。</strong></font></p>
 <p>因为Elasticsearch努力让90%的用户使用默认值，所以路由是自动处理的。对于大多数用户来说，文档存储在哪里并不重要。</p>
 <p><font color="DeepPink"><strong>默认的路由方案对文档的ID进行hash，并使用它来查找分片。这包括用户提供的ID和Elasticsearch随机生成的ID。默认路由使文档在整个分片集中均匀分布 - 不会出现文档集中倾斜到某个分片上形成热点。</strong></font></p>
-<h1>自定义路由试用的场景</h1>
-<p>随机路由在大多数情况下都运行良好，但在某些情况下，可以通过自定义路由带来更好的性能。想象一个包含 20 个分片的索引（过度分配以支持未来的增长）。</p>
+<h1 id="自定义路由试用的场景"><a href="#自定义路由试用的场景" class="headerlink" title="自定义路由试用的场景"></a>自定义路由试用的场景</h1><p>随机路由在大多数情况下都运行良好，但在某些情况下，可以通过自定义路由带来更好的性能。想象一个包含 20 个分片的索引（过度分配以支持未来的增长）。</p>
 <p>当在集群上执行搜索请求时会发生什么？</p>
 <ul>
 <li>搜索请求命中节点</li>
@@ -319,98 +317,89 @@
 <p>Elasticsearch 不知道在哪里查找您的文档。所有文档都随机分布在您的集群中……因此 Elasticsearch 别无选择，只能将请求广播到所有 20 个分片。这是不可忽略的开销，并且可能会影响性能。</p>
 <p>如果我们能够告诉 Elasticsearch 该文档位于哪个分片中，岂不是很好？ 然后您只需搜索一个分片即可找到您需要的文档。</p>
 <p>这正是自定义路由的作用。</p>
-<p>您不需要盲目地向所有分片广播，而是告诉 Elasticsearch“嘿！ 搜索这个分片上的数据！ 一切都在那里，我保证！” 例如，您可以根据文档的 user_id 路由文档。或者他们的邮政编码。或者您的应用程序中经常搜索/过滤的任何内容。</p>
+<p>您不需要盲目地向所有分片广播，而是告诉 Elasticsearch“嘿！ 搜索这个分片上的数据！ 一切都在那里，我保证！” 例如，您可以根据文档的 user_id 路由文档。或者他们的邮政编码。或者您的应用程序中经常搜索&#x2F;过滤的任何内容。</p>
 <p><font color="DeepPink"><strong>路由确保具有相同路由值的所有文档都将定位到同一个分片，从而无需广播搜索。</strong></font></p>
-<h1>自定义路由速度很快</h1>
-<p>自定义路由可确保仅查询一个分片。</p>
+<h1 id="自定义路由速度很快"><a href="#自定义路由速度很快" class="headerlink" title="自定义路由速度很快"></a>自定义路由速度很快</h1><p>自定义路由可确保仅查询一个分片。</p>
 <p>如果您的问题适合自定义路由，那么这有可能显着提高性能。</p>
 <p>无论索引中有 20 个还是 100 个分片，自定义路由都可以确保只查询保存数据的分片。</p>
-<h1>配置自定义路由</h1>
-<p>使用自定义路由时，每当索引、获取、删除或更新文档时提供路由值非常重要。</p>
+<h1 id="配置自定义路由"><a href="#配置自定义路由" class="headerlink" title="配置自定义路由"></a>配置自定义路由</h1><p>使用自定义路由时，每当索引、获取、删除或更新文档时提供路由值非常重要。</p>
 <p>忘记路由值可能会导致文档在多个分片上建立索引。作为保护措施，可以配置 _routing 字段来创建所有 CRUD 操作所需的自定义路由值：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">PUT my-index-000002</span><br><span class="line">&#123;</span><br><span class="line">  &quot;mappings&quot;: &#123;</span><br><span class="line">    &quot;_routing&quot;: &#123;</span><br><span class="line">      &quot;required&quot;: true //文章所有操作都需要指定路由</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PUT my-index-000002/_doc/1 </span><br><span class="line">&#123;</span><br><span class="line">  &quot;text&quot;: &quot;No routing value provided&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <blockquote>
-<p>原文已经过时了，所有没有翻译原文；<br>
-这里是翻译自官方文档：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html</a></p>
+<p>原文已经过时了，所有没有翻译原文；<br>这里是翻译自官方文档：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html</a></p>
 </blockquote>
-<h1>自定义路由搜索</h1>
-<p>自定义路由可以减少搜索的影响。不必将搜索请求发送到索引中的所有分片，而是将请求仅发送到与特定路由值（或多个值）匹配的分片：</p>
+<h1 id="自定义路由搜索"><a href="#自定义路由搜索" class="headerlink" title="自定义路由搜索"></a>自定义路由搜索</h1><p>自定义路由可以减少搜索的影响。不必将搜索请求发送到索引中的所有分片，而是将请求仅发送到与特定路由值（或多个值）匹配的分片：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">GET my-index-000001/_search?routing=user1,user2 </span><br><span class="line">&#123;</span><br><span class="line">  &quot;query&quot;: &#123;</span><br><span class="line">    &quot;match&quot;: &#123;</span><br><span class="line">      &quot;title&quot;: &quot;document&quot;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>此搜索请求将仅在与 user1 和 user2 路由值关联的分片上执行。</p>
 </blockquote>
-<h1>注意事项</h1>
-<p>在使用自定义路由时，您应该注意以下几个问题。</p>
-<h2 id="Parent-Child-Grandchild-schemes">Parent/Child/Grandchild schemes</h2>
-<p><font color="DeepPink"><strong>出于性能原因，父/子映射可确保所有子分片都路由到与父分片相同的分片。在内部，Elasticsearch 将子级的路由值设置为等于父级的 ID，确保每个人都位于同一个分片。</strong></font></p>
-<p>但是，如果您添加第三层（孙子），父/子映射就会失败。查看这些示例文档：</p>
+<h1 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h1><p>在使用自定义路由时，您应该注意以下几个问题。</p>
+<h2 id="Parent-Child-Grandchild-schemes"><a href="#Parent-Child-Grandchild-schemes" class="headerlink" title="Parent&#x2F;Child&#x2F;Grandchild schemes"></a>Parent&#x2F;Child&#x2F;Grandchild schemes</h2><p><font color="DeepPink"><strong>出于性能原因，父&#x2F;子映射可确保所有子分片都路由到与父分片相同的分片。在内部，Elasticsearch 将子级的路由值设置为等于父级的 ID，确保每个人都位于同一个分片。</strong></font></p>
+<p>但是，如果您添加第三层（孙子），父&#x2F;子映射就会失败。查看这些示例文档：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -XPUT localhost:9200/parentchild/product/Product001 -d &apos;&#123;...&#125;&apos;</span><br><span class="line">curl -XPUT localhost:9200/parentchild/vendors/VendorABC?parent=Product001 -d &apos;&#123;...&#125;&apos;</span><br><span class="line">curl -XPUT localhost:9200/parentchild/vendordetails/LocationXYZ?parent=VendorABC -d &apos;&#123;...&#125;&apos;</span><br></pre></td></tr></table></figure>
+
 <p>相当简单的嵌套关系。产品的子代被称为“供应商”，而这些产品则有自己的子代，称为“VendorDetails”。那么，为什么这不起作用呢？让我们看看派生的路由值：</p>
 <table>
 <thead>
 <tr>
-<th style="text-align:center">Doc ID</th>
-<th style="text-align:center">Parent</th>
-<th style="text-align:center">Routing Value</th>
+<th align="center">Doc ID</th>
+<th align="center">Parent</th>
+<th align="center">Routing Value</th>
 </tr>
 </thead>
-<tbody>
-<tr>
-<td style="text-align:center">Product001</td>
-<td style="text-align:center">-</td>
-<td style="text-align:center"><strong>Product001</strong></td>
+<tbody><tr>
+<td align="center">Product001</td>
+<td align="center">-</td>
+<td align="center"><strong>Product001</strong></td>
 </tr>
 <tr>
-<td style="text-align:center">VendorABC</td>
-<td style="text-align:center">Product001</td>
-<td style="text-align:center"><strong>Product001</strong></td>
+<td align="center">VendorABC</td>
+<td align="center">Product001</td>
+<td align="center"><strong>Product001</strong></td>
 </tr>
 <tr>
-<td style="text-align:center">LocationXYZ</td>
-<td style="text-align:center">VendorABC</td>
-<td style="text-align:center"><strong>VendorABC</strong></td>
+<td align="center">LocationXYZ</td>
+<td align="center">VendorABC</td>
+<td align="center"><strong>VendorABC</strong></td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>正如您所看到的，文档将自动使用其父级的ID进行路由。VendorABC使用Product001（到目前为止很好），但LocationXYZ使用VendorABC（坏）。这意味着数据没有被正确地并置。</p>
 <p>解决方案很简单：告诉孙子（以及任何后续的曾孙）它的路由值应该是祖父母的ID。在内部，Elasticsearch将优先选择路由参数而不是父参数：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -XPUT localhost:9200/parentchild/product/Product001 -d &apos;&#123;...&#125;&apos;</span><br><span class="line">curl -XPUT localhost:9200/parentchild/vendors/VendorABC?parent=Product001 -d &apos;&#123;...&#125;&apos;</span><br><span class="line">curl -XPUT localhost:9200/parentchild/vendordetails/LocationXYZ?parent=VendorABC&amp;routing=Product001 -d &apos;&#123;...&#125;&apos;</span><br></pre></td></tr></table></figure>
+
 <table>
 <thead>
 <tr>
-<th style="text-align:center">Doc ID</th>
-<th style="text-align:center">Parent</th>
-<th style="text-align:center">Routing Value</th>
+<th align="center">Doc ID</th>
+<th align="center">Parent</th>
+<th align="center">Routing Value</th>
 </tr>
 </thead>
-<tbody>
-<tr>
-<td style="text-align:center">Product001</td>
-<td style="text-align:center">-</td>
-<td style="text-align:center"><strong>Product001</strong></td>
+<tbody><tr>
+<td align="center">Product001</td>
+<td align="center">-</td>
+<td align="center"><strong>Product001</strong></td>
 </tr>
 <tr>
-<td style="text-align:center">VendorABC</td>
-<td style="text-align:center">Product001</td>
-<td style="text-align:center"><strong>Product001</strong></td>
+<td align="center">VendorABC</td>
+<td align="center">Product001</td>
+<td align="center"><strong>Product001</strong></td>
 </tr>
 <tr>
-<td style="text-align:center">LocationXYZ</td>
-<td style="text-align:center">VendorABC</td>
-<td style="text-align:center"><strong>Product001</strong></td>
+<td align="center">LocationXYZ</td>
+<td align="center">VendorABC</td>
+<td align="center"><strong>Product001</strong></td>
 </tr>
-</tbody>
-</table>
-<h2 id="热点">热点</h2>
-<p>当Elasticsearch管理路由时，它可以确保所有碎片的分布相当均匀。然而，一旦您开始实现自己的自定义方案，就完全有可能失去这种一致性。假设您正在按userID进行路由。你的大多数用户都很小，只有少量的文档……但偶尔你会遇到一个拥有数百万的怪物用户。</p>
+</tbody></table>
+<h2 id="热点"><a href="#热点" class="headerlink" title="热点"></a>热点</h2><p>当Elasticsearch管理路由时，它可以确保所有碎片的分布相当均匀。然而，一旦您开始实现自己的自定义方案，就完全有可能失去这种一致性。假设您正在按userID进行路由。你的大多数用户都很小，只有少量的文档……但偶尔你会遇到一个拥有数百万的怪物用户。</p>
 <p>自定义路由将确保MonsterUser的所有文档都指向一个shard，而不是在集群中均匀分布。这对性能有好处——搜索会很快执行。</p>
 <p>但是，如果MonsterUser2和MonsterUser3也被分配到同一个碎片，会发生什么？现在，在一个碎片上有三个大用户，而其余的碎片只加载了少量。</p>
 <p>情况不太好。这些类型的场景可以而且确实会发生。<font color="DeepPink"><strong>针对这些“数据热点”的最佳防御措施是手动识别大用户（或其他急需性能的用户），并将其拆分为自己的索引。然后，您可以设置一个别名，使分离对应用程序透明。</strong></font></p>
 <p>现在，您可以两全其美：自定义路由将大多数用户沙盒在一个碎片中，而大用户则被拆分为自己的索引和一组碎片。</p>
-<h2 id="You-can-check-out-any-time-you-like-but-you-can-never-leave">You can check-out any time you like, but you can never leave!</h2>
-<p>一旦在索引文档时指定了自定义路由，无论何时更新或删除文档，都必须继续指定。您已经从Elasticsearch获得了一些控制权，如果您决定在某个时候停止使用自定义路由，则没有简单的方法可以恢复此控制权。唯一的方法是重新建立数据索引（不指定自定义路由）。</p>
-<h1>结论</h1>
-<p>自定义路由是一个强大的功能，可以在特定情况下提高性能。虽然默认路由对大多数人来说已经足够了，但有时您只需要对文档的放置进行更多的控制。</p>
+<h2 id="You-can-check-out-any-time-you-like-but-you-can-never-leave"><a href="#You-can-check-out-any-time-you-like-but-you-can-never-leave" class="headerlink" title="You can check-out any time you like, but you can never leave!"></a>You can check-out any time you like, but you can never leave!</h2><p>一旦在索引文档时指定了自定义路由，无论何时更新或删除文档，都必须继续指定。您已经从Elasticsearch获得了一些控制权，如果您决定在某个时候停止使用自定义路由，则没有简单的方法可以恢复此控制权。唯一的方法是重新建立数据索引（不指定自定义路由）。</p>
+<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><p>自定义路由是一个强大的功能，可以在特定情况下提高性能。虽然默认路由对大多数人来说已经足够了，但有时您只需要对文档的放置进行更多的控制。</p>
 
     </div>
 
@@ -574,7 +563,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">什么是路由</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">自定义路由试用的场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">自定义路由速度很快</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">配置自定义路由</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">自定义路由搜索</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">注意事项</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Parent-Child-Grandchild-schemes"><span class="nav-number">6.1.</span> <span class="nav-text">Parent/Child/Grandchild schemes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#热点"><span class="nav-number">6.2.</span> <span class="nav-text">热点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#You-can-check-out-any-time-you-like-but-you-can-never-leave"><span class="nav-number">6.3.</span> <span class="nav-text">You can check-out any time you like, but you can never leave!</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">结论</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是路由"><span class="nav-number">1.</span> <span class="nav-text">什么是路由</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自定义路由试用的场景"><span class="nav-number">2.</span> <span class="nav-text">自定义路由试用的场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自定义路由速度很快"><span class="nav-number">3.</span> <span class="nav-text">自定义路由速度很快</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#配置自定义路由"><span class="nav-number">4.</span> <span class="nav-text">配置自定义路由</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自定义路由搜索"><span class="nav-number">5.</span> <span class="nav-text">自定义路由搜索</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#注意事项"><span class="nav-number">6.</span> <span class="nav-text">注意事项</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Parent-Child-Grandchild-schemes"><span class="nav-number">6.1.</span> <span class="nav-text">Parent/Child/Grandchild schemes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#热点"><span class="nav-number">6.2.</span> <span class="nav-text">热点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#You-can-check-out-any-time-you-like-but-you-can-never-leave"><span class="nav-number">6.3.</span> <span class="nav-text">You can check-out any time you like, but you can never leave!</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结论"><span class="nav-number">7.</span> <span class="nav-text">结论</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -602,7 +591,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">228</span>
+        <span class="site-state-item-count">227</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
