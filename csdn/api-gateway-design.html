@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">162</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">163</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">231</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">233</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -247,11 +247,10 @@
 <p>构建一个API网关</p>
 </blockquote>
 <a id="more"></a>
-<h1>定义</h1>
-<p>API Gateway一个比较广泛的定义如下：</p>
+
+<h1 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h1><p>API Gateway一个比较广泛的定义如下：</p>
 <blockquote>
-<p>API网关是一个服务器，是系统的唯一入口。从面向对象设计的角度看，它与外观模式类似。API网关封装了系统内部架构，为每个客户端提供一个定制的API。<br>
-API网关方式的核心要点是，所有的客户端和消费端都通过统一的网关接入微服务，在网关层处理所有的非业务功能。通常，网关也是提供REST/HTTP的访问API。服务端通过API-GW注册和管理服务。</p>
+<p>API网关是一个服务器，是系统的唯一入口。从面向对象设计的角度看，它与外观模式类似。API网关封装了系统内部架构，为每个客户端提供一个定制的API。<br>API网关方式的核心要点是，所有的客户端和消费端都通过统一的网关接入微服务，在网关层处理所有的非业务功能。通常，网关也是提供REST&#x2F;HTTP的访问API。服务端通过API-GW注册和管理服务。</p>
 </blockquote>
 <p>从定义中可以归纳出一下几个核心点：</p>
 <ol>
@@ -267,30 +266,24 @@ API网关方式的核心要点是，所有的客户端和消费端都通过统�
 <li>协议支持 （协议转换）</li>
 <li>…</li>
 </ol>
-<h1>思维导图</h1>
-<p><img data-src="/images/api-gateway-design/API-Gateway.png" alt></p>
+<h1 id="思维导图"><a href="#思维导图" class="headerlink" title="思维导图"></a>思维导图</h1><p><img data-src="/images/api-gateway-design/API-Gateway.png"></p>
 <p>介绍几个概念：</p>
 <ol>
-<li>
-<p>先说RC（Replication Controller）是什么？</p>
-<p>RC保证在同一时间能够运行指定数量的Pod副本，保证Pod总是可用。如果实际Pod数量比指定的多就结束掉多余的，如果实际数量比指定的少就启动缺少的。当Pod失败、被删除或被终结时RC会自动创建新的Pod来保证副本数量。所以即使只有一个Pod也应该使用RC来进行管理。</p>
+<li><p>先说RC（Replication Controller）是什么？</p>
+<p> RC保证在同一时间能够运行指定数量的Pod副本，保证Pod总是可用。如果实际Pod数量比指定的多就结束掉多余的，如果实际数量比指定的少就启动缺少的。当Pod失败、被删除或被终结时RC会自动创建新的Pod来保证副本数量。所以即使只有一个Pod也应该使用RC来进行管理。</p>
 </li>
-<li>
-<p>HPA<br>
-Horizontal Pod Autoscaling，简称HPA，是Kubernetes中实现POD水平自动伸缩的功能。</p>
-<p>HPA是kubernetes里面pod弹性伸缩的实现,它能根据设置的监控阀值进行pod的弹性扩缩容，目前默认HPA只能支持cpu和内存的阀值检测扩缩容，但也可以通过custom metric api 调用prometheus实现自定义metric 来更加灵活的监控指标实现弹性伸缩。</p>
+<li><p>HPA<br> Horizontal Pod Autoscaling，简称HPA，是Kubernetes中实现POD水平自动伸缩的功能。</p>
+<p> HPA是kubernetes里面pod弹性伸缩的实现,它能根据设置的监控阀值进行pod的弹性扩缩容，目前默认HPA只能支持cpu和内存的阀值检测扩缩容，但也可以通过custom metric api 调用prometheus实现自定义metric 来更加灵活的监控指标实现弹性伸缩。</p>
 </li>
 </ol>
-<h1>取舍</h1>
-<p>取舍也就是如何构建适合自己的API Gateway？</p>
+<h1 id="取舍"><a href="#取舍" class="headerlink" title="取舍"></a>取舍</h1><p>取舍也就是如何构建适合自己的API Gateway？</p>
 <p>其实，这个问题也可以拓展为如何开发适应自己业务的某系统，个人感觉应该从以下几点考虑：</p>
 <ul>
 <li>自己的业务系统需要什么样的功能？</li>
 <li>业界中该类系统都是如何实现的？</li>
 <li>自己的基础设施情况（主要是PaaS及中间件）如何？</li>
 </ul>
-<p>综合1、2考虑，在满足业务需求的前提下，往远了考虑，往简单了实现（既满足目前的功能，又方便以后拓展）。<br>
-回到API Gateway这个话题，那就需要考虑一下，自己的业务系统是否需要以上列出的所有功能点？如果不是或者目前不是，那我应该先实现哪一部分？</p>
+<p>综合1、2考虑，在满足业务需求的前提下，往远了考虑，往简单了实现（既满足目前的功能，又方便以后拓展）。<br>回到API Gateway这个话题，那就需要考虑一下，自己的业务系统是否需要以上列出的所有功能点？如果不是或者目前不是，那我应该先实现哪一部分？</p>
 <p>其中，作为一个Gateway，以下几点应该是基础功能：</p>
 <ul>
 <li>服务调用的统一入口</li>
@@ -299,15 +292,12 @@ Horizontal Pod Autoscaling，简称HPA，是Kubernetes中实现POD水平自动�
 <li>监控（请求延迟、异常数、审计日志、访问日志）</li>
 <li>高可用</li>
 </ul>
-<p>剩下的功能实现就要看业务需要及时间了。<br>
-如果系统本身的访问量不大，那么限流、熔断是否就可以先不实现？</p>
-<h2 id="为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？">为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？</h2>
-<p>比如基础设施中已提供Kubernetes集群服务，那么毫无疑问的高可用方案，应该选择RC方案。如果没有Kubernetes集群服务，那么高可用就需要考虑别的方案了。</p>
+<p>剩下的功能实现就要看业务需要及时间了。<br>如果系统本身的访问量不大，那么限流、熔断是否就可以先不实现？</p>
+<h2 id="为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？"><a href="#为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？" class="headerlink" title="为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？"></a>为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？</h2><p>比如基础设施中已提供Kubernetes集群服务，那么毫无疑问的高可用方案，应该选择RC方案。如果没有Kubernetes集群服务，那么高可用就需要考虑别的方案了。</p>
 <blockquote>
 <p>可以发现其实手撕一个api网关，也不是多么难的事情，其中很多点，底层包都已经提供了支持，只是需要支持的功能比较多。</p>
 </blockquote>
-<h1>反思</h1>
-<p>对于手撕一个网关有可能最大的好处就是对于请求转发、协议适配有了更深入的了解。</p>
+<h1 id="反思"><a href="#反思" class="headerlink" title="反思"></a>反思</h1><p>对于手撕一个网关有可能最大的好处就是对于请求转发、协议适配有了更深入的了解。</p>
 <p>推荐一个http协议相关比较好的网站：<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP" target="_blank" rel="noopener">https://developer.mozilla.org/en-US/docs/Web/HTTP</a></p>
 
       </div>
@@ -371,7 +361,7 @@ Horizontal Pod Autoscaling，简称HPA，是Kubernetes中实现POD水平自动�
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">思维导图</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">取舍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？"><span class="nav-number">3.1.</span> <span class="nav-text">为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">反思</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#定义"><span class="nav-number">1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#思维导图"><span class="nav-number">2.</span> <span class="nav-text">思维导图</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#取舍"><span class="nav-number">3.</span> <span class="nav-text">取舍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？"><span class="nav-number">3.1.</span> <span class="nav-text">为什么需要关注自己的基础设施情况（主要是PaaS及中间件）？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#反思"><span class="nav-number">4.</span> <span class="nav-text">反思</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -387,7 +377,7 @@ Horizontal Pod Autoscaling，简称HPA，是Kubernetes中实现POD水平自动�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">162</span>
+          <span class="site-state-item-count">163</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -399,7 +389,7 @@ Horizontal Pod Autoscaling，简称HPA，是Kubernetes中实现POD水平自动�
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">231</span>
+        <span class="site-state-item-count">233</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
