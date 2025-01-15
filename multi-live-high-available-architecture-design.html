@@ -158,7 +158,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">233</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">234</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -302,31 +302,36 @@
 <p>如何构建应用的异地多活？</p>
 </blockquote>
 <a id="more"></a>
-
-<h1 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h1><p>随着业务的快速发展，对于很多公司来说，构建于单地域的技术体系架构，会面临诸如下面的多种问题：基础设施的有限性限制了业务的可扩展性；机房、城市级别的故障灾害，影响服务的可持续性。</p>
-<p>为解决遇到的这些问题，公司可以选择构建异地多活架构，在同城&#x2F;异地构建多个单元(业务中心)。各个业务单元可以分布在不同的地域，从而有效解决了单地域部署带来的基础设施的扩展限制、服务可持续性。</p>
+<h1>概要</h1>
+<p>随着业务的快速发展，对于很多公司来说，构建于单地域的技术体系架构，会面临诸如下面的多种问题：基础设施的有限性限制了业务的可扩展性；机房、城市级别的故障灾害，影响服务的可持续性。</p>
+<p>为解决遇到的这些问题，公司可以选择构建异地多活架构，在同城/异地构建多个单元(业务中心)。各个业务单元可以分布在不同的地域，从而有效解决了单地域部署带来的基础设施的扩展限制、服务可持续性。</p>
 <p>异地多活是近几年比较热门的一个话题，那么在实际业务中什么时候需要去做这件事？如何去做？做的时候需要考虑什么？</p>
-<h2 id="何时去做？"><a href="#何时去做？" class="headerlink" title="何时去做？"></a>何时去做？</h2><p>个人感觉取决于以下几个方面：</p>
+<h2 id="何时去做？">何时去做？</h2>
+<p>个人感觉取决于以下几个方面：</p>
 <ul>
 <li>业务发展</li>
 <li>基础设施状况</li>
 <li>技术积淀</li>
 </ul>
-<h2 id="如何做？"><a href="#如何做？" class="headerlink" title="如何做？"></a>如何做？</h2><p>目前在网上搜索到的异地多活方案来看，基本都是阿里、饿了么、京东、微博这些互联网大厂的实践，这些大厂的方案有一个共同点就是：大量的自研组件，来做相关的数据同步，业务切分等等，那么，对于很多传统企业或者相对小一些的企业，应该如何来做这件事？</p>
+<h2 id="如何做？">如何做？</h2>
+<p>目前在网上搜索到的异地多活方案来看，基本都是阿里、饿了么、京东、微博这些互联网大厂的实践，这些大厂的方案有一个共同点就是：大量的自研组件，来做相关的数据同步，业务切分等等，那么，对于很多传统企业或者相对小一些的企业，应该如何来做这件事？</p>
 <ul>
 <li>根据业务特性借助合适的公有云服务</li>
 </ul>
-<h2 id="做的时候，需要注意什么？"><a href="#做的时候，需要注意什么？" class="headerlink" title="做的时候，需要注意什么？"></a>做的时候，需要注意什么？</h2><ul>
+<h2 id="做的时候，需要注意什么？">做的时候，需要注意什么？</h2>
+<ul>
 <li>真正需要做异地多活的业务有哪些？</li>
 <li>基础设施如何？</li>
 <li>对于不可用时间的容忍程度是多少？</li>
 </ul>
-<h1 id="业务背景"><a href="#业务背景" class="headerlink" title="业务背景"></a>业务背景</h1><ul>
+<h1>业务背景</h1>
+<ul>
 <li>在所有的系统中用户中心都是核心业务，因为它是进入其它很多业务前提。</li>
 <li>我们这边IDC不是很稳定，之前发生过几次机房大规模故障，比如机房网络挂了，整个机房对外不可用了。</li>
 </ul>
 <p>以上两点是我们这次要做用户中心异地容灾的出发点，以便在面对机房级别故障时，保证服务可用性。</p>
-<h1 id="业务梳理"><a href="#业务梳理" class="headerlink" title="业务梳理"></a>业务梳理</h1><p>用户中心从整体来看，对外主要提供：注册、登陆、查询用户信息等服务。这些服务又有以下几个特点：</p>
+<h1>业务梳理</h1>
+<p>用户中心从整体来看，对外主要提供：注册、登陆、查询用户信息等服务。这些服务又有以下几个特点：</p>
 <ul>
 <li>登陆的优先级最高</li>
 <li>事务性要求低</li>
@@ -337,17 +342,24 @@
 <li>Redis：Authorization Code、短信验证码、账号锁定、access token等的存储</li>
 <li>Zookeeper：Dubbo依赖</li>
 </ul>
-<h1 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h1><p>用户中心是通过外包的形式进行开发的，目前已上线并交付给另一个外包商运维，所以在考虑容灾一期方案的时候，需要考虑尽量不动代码。</p>
-<h2 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h2><h3 id="一期目标"><a href="#一期目标" class="headerlink" title="一期目标"></a>一期目标</h3><p>当北京机房出现故障的时候，可以一定时间内把流量切到青岛机房这边，保证用户中心核心服务的基本可用。</p>
-<h3 id="二期目标"><a href="#二期目标" class="headerlink" title="二期目标"></a>二期目标</h3><p>用户中心通过异地多活，实现高可用（需要集团智能DNS支持）。</p>
-<h2 id="架构设计"><a href="#架构设计" class="headerlink" title="架构设计"></a>架构设计</h2><h3 id="一期架构"><a href="#一期架构" class="headerlink" title="一期架构"></a>一期架构</h3><p>当北京机房发生故障的时候，可以把流量快速切换到青岛这边，以保障用户中心核心服务可用。</p>
+<h1>方案</h1>
+<p>用户中心是通过外包的形式进行开发的，目前已上线并交付给另一个外包商运维，所以在考虑容灾一期方案的时候，需要考虑尽量不动代码。</p>
+<h2 id="目标">目标</h2>
+<h3 id="一期目标">一期目标</h3>
+<p>当北京机房出现故障的时候，可以一定时间内把流量切到青岛机房这边，保证用户中心核心服务的基本可用。</p>
+<h3 id="二期目标">二期目标</h3>
+<p>用户中心通过异地多活，实现高可用（需要集团智能DNS支持）。</p>
+<h2 id="架构设计">架构设计</h2>
+<h3 id="一期架构">一期架构</h3>
+<p>当北京机房发生故障的时候，可以把流量快速切换到青岛这边，以保障用户中心核心服务可用。</p>
 <p>具体方案如下：</p>
 <ul>
 <li>通过otter近实时的将北京机房核心业务数据同步到青岛机房。</li>
 <li>青岛机房部署Redis、ZooKeeper等中间件。</li>
 <li>青岛机房部署用户中心的核心应用（实例正常部署、运行，只是平时不会有访问）。</li>
 </ul>
-<p>具体架构如下：<br><img data-src="/images/multi-live-high-available-architecture-design/%E4%B8%80%E6%9C%9F%E6%9E%B6%E6%9E%84.png"></p>
+<p>具体架构如下：<br>
+<img data-src="/images/multi-live-high-available-architecture-design/%E4%B8%80%E6%9C%9F%E6%9E%B6%E6%9E%84.png" alt></p>
 <p>可以达到的效果：</p>
 <ul>
 <li>当北京机房出现故障的时候，可以在一定时间内把流量切到青岛机房这边，保证用户中心核心服务的基本可用，但此时已登录用户需要重新登录。</li>
@@ -358,16 +370,19 @@
 <li>北京机房非故障期间，青岛机房的机器，仅做数据库同步，存在一定的资源浪费。</li>
 <li>当北京机房出现故障，流量切换到青岛机房后，只能保证登陆这一核心服务的可用。对于注册等需要修改数据库的服务，均不支持，如果在此期间访问这类服务，会发生异常。</li>
 </ul>
-<h3 id="二期架构"><a href="#二期架构" class="headerlink" title="二期架构"></a>二期架构</h3><p>二期的目的就是修正一期架构的缺点，通过异地多活，实现高可用。</p>
+<h3 id="二期架构">二期架构</h3>
+<p>二期的目的就是修正一期架构的缺点，通过异地多活，实现高可用。</p>
 <p>二期青岛机房会替换为阿里云机房。</p>
 <p>具体方案如下：</p>
 <ul>
 <li>通过阿里云DTS服务实现两地机房数据库同步，保证北京、阿里云数据的近实时一致性。</li>
 <li>北京、阿里云两地机房均提供在线服务，提高资源利用率。</li>
 <li>梳理服务优先级，修改应用代码，支持服务降级。</li>
-<li>当某个机房（阿里云或者北京）出现故障的时候，通过DNS服务把流量切换到另一个机房。<ul>
+<li>当某个机房（阿里云或者北京）出现故障的时候，通过DNS服务把流量切换到另一个机房。
+<ul>
 <li>如果两地部署的时候，没有冗余一定硬件资源，则需要实施服务降级。</li>
-<li>目前集团DNS解析，无法提供自动检测服务是否可用的功能，也就无法自动进行切换。<ul>
+<li>目前集团DNS解析，无法提供自动检测服务是否可用的功能，也就无法自动进行切换。
+<ul>
 <li>服务可用性，可以通过我们这边的多点拨测进行监控，当多点拨测不可用的时候，发送告警通知给相关人员，以便人工介入。</li>
 <li>多点拨测告警，应该会提供两类：1、某个拨测点不通的时候 2、所有拨测点均不可用的时候。</li>
 </ul>
@@ -376,39 +391,62 @@
 </ul>
 </li>
 </ul>
-<p>具体架构如下：<br><img data-src="/images/multi-live-high-available-architecture-design/%E4%BA%8C%E6%9C%9F%E6%9E%B6%E6%9E%84%E6%99%BA%E8%83%BDDNS.png"></p>
+<p>具体架构如下：<br>
+<img data-src="/images/multi-live-high-available-architecture-design/%E4%BA%8C%E6%9C%9F%E6%9E%B6%E6%9E%84%E6%99%BA%E8%83%BDDNS.png" alt></p>
 <p>可以达到的效果：</p>
 <ul>
-<li><p>如果集团DNS可以提供，类似阿里云云解析的网站监控功能并能灵活设置TTL时间，这时当北京机房或者阿里云机房出现故障后，就可以在很短的时间（部分服务最大异常时间）内自动进行流量切换。</p>
+<li>如果集团DNS可以提供，类似阿里云云解析的网站监控功能并能灵活设置TTL时间，这时当北京机房或者阿里云机房出现故障后，就可以在很短的时间（部分服务最大异常时间）内自动进行流量切换。</li>
+</ul>
 <blockquote>
 <p>此处只是以阿里云云解析示例，只要能提供类似的服务均可。</p>
 </blockquote>
-</li>
-<li><p>如果集团DNS无法提供类似阿里云云解析的网站监控及灵活设置TTL时间的功能，则部分服务最大异常时间还是取决于DNS修改ip时间+DNS TTL时间。</p>
-</li>
+<ul>
+<li>如果集团DNS无法提供类似阿里云云解析的网站监控及灵活设置TTL时间的功能，则部分服务最大异常时间还是取决于DNS修改ip时间+DNS TTL时间。</li>
 </ul>
-<h4 id="名词解释"><a href="#名词解释" class="headerlink" title="名词解释"></a>名词解释</h4><h5 id="什么是网站监控？"><a href="#什么是网站监控？" class="headerlink" title="什么是网站监控？"></a>什么是网站监控？</h5><p>HTTP&#x2F;HTTPS实时探测域名解析记录，支持自定义端口，实时发现宕机立即告警；<br>全网分布式监控，在中国各个地区模拟用户端真实请求，监控结果真实可靠；<br>支持宕机暂停、容灾切换，最大限度的解决服务中断对您的业务带来的损失；<br>容灾切换支持A记录、CNAME域名，满足各种场景的容灾切换需求；</p>
-<h5 id="什么情况会被网站监控判断为宕机并发送告警通知？"><a href="#什么情况会被网站监控判断为宕机并发送告警通知？" class="headerlink" title="什么情况会被网站监控判断为宕机并发送告警通知？"></a>什么情况会被网站监控判断为宕机并发送告警通知？</h5><p>监控结果中，HTTP&#x2F;HTTPS的返回码大于500的服务器错误情况，才会报警通知。<br>举例说明：如果设置了四个探测点 北京联通、深圳阿里巴巴、上海电信、重庆联通。<br>场景一：四个探测点中50%的监控点无法收到您服务器的响应，或50%的监控点收到返回码大于等于500时，才会判断您的网站为宕机情况。<br>场景二：四个探测点中有50%以上的探测点探测您的网站返回码是小于500的情况，则不会判断您的网站为宕机。</p>
-<h5 id="云解析DNS“流量管理”"><a href="#云解析DNS“流量管理”" class="headerlink" title="云解析DNS“流量管理”"></a>云解析DNS“流量管理”</h5><p>云解析“流量管理”可以在您设置的每条解析线路下，根据权重比例轮询返回解析结果。当线路下的IP宕机时可以通过监控自动发现，并将宕机IP从当前线路下摘除，直到监控IP正常时会恢复解析。同时，当一条解析线路下的所有IP都宕机时，可以切换至其他正常线路。最大程度保证您的网站服务高可用，减小损失。</p>
-<h5 id="部分服务最大异常时间"><a href="#部分服务最大异常时间" class="headerlink" title="部分服务最大异常时间"></a>部分服务最大异常时间</h5><p>比如北京机房出现异常，这时转发到阿里云机房的流量是可以正常访问，只有转发到北京机房的流量是异常的。</p>
+<h4 id="名词解释">名词解释</h4>
+<h5 id="什么是网站监控？">什么是网站监控？</h5>
+<p>HTTP/HTTPS实时探测域名解析记录，支持自定义端口，实时发现宕机立即告警；<br>
+全网分布式监控，在中国各个地区模拟用户端真实请求，监控结果真实可靠；<br>
+支持宕机暂停、容灾切换，最大限度的解决服务中断对您的业务带来的损失；<br>
+容灾切换支持A记录、CNAME域名，满足各种场景的容灾切换需求；</p>
+<h5 id="什么情况会被网站监控判断为宕机并发送告警通知？">什么情况会被网站监控判断为宕机并发送告警通知？</h5>
+<p>监控结果中，HTTP/HTTPS的返回码大于500的服务器错误情况，才会报警通知。<br>
+举例说明：如果设置了四个探测点 北京联通、深圳阿里巴巴、上海电信、重庆联通。<br>
+场景一：四个探测点中50%的监控点无法收到您服务器的响应，或50%的监控点收到返回码大于等于500时，才会判断您的网站为宕机情况。<br>
+场景二：四个探测点中有50%以上的探测点探测您的网站返回码是小于500的情况，则不会判断您的网站为宕机。</p>
+<h5 id="云解析DNS“流量管理”">云解析DNS“流量管理”</h5>
+<p>云解析“流量管理”可以在您设置的每条解析线路下，根据权重比例轮询返回解析结果。当线路下的IP宕机时可以通过监控自动发现，并将宕机IP从当前线路下摘除，直到监控IP正常时会恢复解析。同时，当一条解析线路下的所有IP都宕机时，可以切换至其他正常线路。最大程度保证您的网站服务高可用，减小损失。</p>
+<h5 id="部分服务最大异常时间">部分服务最大异常时间</h5>
+<p>比如北京机房出现异常，这时转发到阿里云机房的流量是可以正常访问，只有转发到北京机房的流量是异常的。</p>
 <p>这时如果使用网站监控或者类似服务，进行监控，并设置拨测间隔为1分钟，TTL生效时间为1秒，那么最多有60+1秒部分服务异常时间，之后DNS会自动把北京机房的ip自动踢掉，流量全部切到阿里云。</p>
-<h2 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h2><ol>
-<li><p>一期、二期方案的实现均强依赖于集团的DNS服务</p>
+<h2 id="补充">补充</h2>
+<ol>
+<li>
+<p>一期、二期方案的实现均强依赖于集团的DNS服务</p>
 </li>
-<li><p>用户中心通过ip暴露的服务，一但出现机房级别的故障，一期、二期方案均无法保证该部分服务可用。</p>
+<li>
+<p>用户中心通过ip暴露的服务，一但出现机房级别的故障，一期、二期方案均无法保证该部分服务可用。</p>
 </li>
-<li><p>其实除了DNS这种方案，还有一种方案就是用类似F5这种设备，作跨机房负载，但必须是gslb，而且两端必须是相同的设备。</p>
+<li>
+<p>其实除了DNS这种方案，还有一种方案就是用类似F5这种设备，作跨机房负载，但必须是gslb，而且两端必须是相同的设备。</p>
 </li>
 </ol>
-<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>对于，非一线互联网大厂的公司而言，是实现异地容灾的时候，借助公有云是很有必要的，比如：</p>
+<h1>小结</h1>
+<p>对于，非一线互联网大厂的公司而言，是实现异地容灾的时候，借助公有云是很有必要的，比如：</p>
 <ul>
-<li><p>数据跨机房同步，可以使用阿里云的DTS(Data Transmission Service) 服务，目前DTS支持关系型数据库、NoSQL、大数据(OLAP)等数据源间的数据传输。 它是一种集数据迁移、数据订阅及数据实时同步于一体的数据传输服务。<br><img data-src="/images/multi-live-high-available-architecture-design/%E9%98%BF%E9%87%8C%E4%BA%91DTS%E6%9C%8D%E5%8A%A1.jpg"></p>
+<li>
+<p>数据跨机房同步，可以使用阿里云的DTS(Data Transmission Service) 服务，目前DTS支持关系型数据库、NoSQL、大数据(OLAP)等数据源间的数据传输。 它是一种集数据迁移、数据订阅及数据实时同步于一体的数据传输服务。<br>
+<img data-src="/images/multi-live-high-available-architecture-design/%E9%98%BF%E9%87%8C%E4%BA%91DTS%E6%9C%8D%E5%8A%A1.jpg" alt></p>
 </li>
-<li><p>跨机房分布式数据库，可以使用OceanBase。金融环境下通常对数据可靠性有更高的要求，OceanBase每一次事务提交，对应日志总是会在多个数据中心实时同步，并持久化。即使是数据中心级别的灾难发生，总是可以在其他的数据中心恢复每一笔已经完成的交易，实现了真正金融级别的可靠性要求。</p>
+<li>
+<p>跨机房分布式数据库，可以使用OceanBase。金融环境下通常对数据可靠性有更高的要求，OceanBase每一次事务提交，对应日志总是会在多个数据中心实时同步，并持久化。即使是数据中心级别的灾难发生，总是可以在其他的数据中心恢复每一笔已经完成的交易，实现了真正金融级别的可靠性要求。</p>
 </li>
-<li><p>异地多活由于各个公司的业务、基础设施及要解决的问题皆不尽相同，所以选择适合自己的就好。</p>
+<li>
+<p>异地多活由于各个公司的业务、基础设施及要解决的问题皆不尽相同，所以选择适合自己的就好。</p>
 </li>
-<li><p>或者直接使用云数据库RDS MySQL 版<br><img data-src="/images/multi-live-high-available-architecture-design/%E4%BA%91%E6%95%B0%E6%8D%AE%E5%BA%93MySQL%E7%89%88.png"></p>
+<li>
+<p>或者直接使用云数据库RDS MySQL 版<br>
+<img data-src="/images/multi-live-high-available-architecture-design/%E4%BA%91%E6%95%B0%E6%8D%AE%E5%BA%93MySQL%E7%89%88.png" alt></p>
 </li>
 </ul>
 
@@ -574,7 +612,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概要"><span class="nav-number">1.</span> <span class="nav-text">概要</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#何时去做？"><span class="nav-number">1.1.</span> <span class="nav-text">何时去做？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何做？"><span class="nav-number">1.2.</span> <span class="nav-text">如何做？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#做的时候，需要注意什么？"><span class="nav-number">1.3.</span> <span class="nav-text">做的时候，需要注意什么？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#业务背景"><span class="nav-number">2.</span> <span class="nav-text">业务背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#业务梳理"><span class="nav-number">3.</span> <span class="nav-text">业务梳理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#方案"><span class="nav-number">4.</span> <span class="nav-text">方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#目标"><span class="nav-number">4.1.</span> <span class="nav-text">目标</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一期目标"><span class="nav-number">4.1.1.</span> <span class="nav-text">一期目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二期目标"><span class="nav-number">4.1.2.</span> <span class="nav-text">二期目标</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#架构设计"><span class="nav-number">4.2.</span> <span class="nav-text">架构设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一期架构"><span class="nav-number">4.2.1.</span> <span class="nav-text">一期架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二期架构"><span class="nav-number">4.2.2.</span> <span class="nav-text">二期架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#名词解释"><span class="nav-number">4.2.2.1.</span> <span class="nav-text">名词解释</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#什么是网站监控？"><span class="nav-number">4.2.2.1.1.</span> <span class="nav-text">什么是网站监控？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#什么情况会被网站监控判断为宕机并发送告警通知？"><span class="nav-number">4.2.2.1.2.</span> <span class="nav-text">什么情况会被网站监控判断为宕机并发送告警通知？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#云解析DNS“流量管理”"><span class="nav-number">4.2.2.1.3.</span> <span class="nav-text">云解析DNS“流量管理”</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#部分服务最大异常时间"><span class="nav-number">4.2.2.1.4.</span> <span class="nav-text">部分服务最大异常时间</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#补充"><span class="nav-number">4.3.</span> <span class="nav-text">补充</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">概要</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#何时去做？"><span class="nav-number">1.1.</span> <span class="nav-text">何时去做？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何做？"><span class="nav-number">1.2.</span> <span class="nav-text">如何做？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#做的时候，需要注意什么？"><span class="nav-number">1.3.</span> <span class="nav-text">做的时候，需要注意什么？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">业务背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">业务梳理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#目标"><span class="nav-number">4.1.</span> <span class="nav-text">目标</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一期目标"><span class="nav-number">4.1.1.</span> <span class="nav-text">一期目标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二期目标"><span class="nav-number">4.1.2.</span> <span class="nav-text">二期目标</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#架构设计"><span class="nav-number">4.2.</span> <span class="nav-text">架构设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一期架构"><span class="nav-number">4.2.1.</span> <span class="nav-text">一期架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二期架构"><span class="nav-number">4.2.2.</span> <span class="nav-text">二期架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#名词解释"><span class="nav-number">4.2.2.1.</span> <span class="nav-text">名词解释</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#什么是网站监控？"><span class="nav-number">4.2.2.1.1.</span> <span class="nav-text">什么是网站监控？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#什么情况会被网站监控判断为宕机并发送告警通知？"><span class="nav-number">4.2.2.1.2.</span> <span class="nav-text">什么情况会被网站监控判断为宕机并发送告警通知？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#云解析DNS“流量管理”"><span class="nav-number">4.2.2.1.3.</span> <span class="nav-text">云解析DNS“流量管理”</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#部分服务最大异常时间"><span class="nav-number">4.2.2.1.4.</span> <span class="nav-text">部分服务最大异常时间</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#补充"><span class="nav-number">4.3.</span> <span class="nav-text">补充</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -602,7 +640,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">233</span>
+        <span class="site-state-item-count">234</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

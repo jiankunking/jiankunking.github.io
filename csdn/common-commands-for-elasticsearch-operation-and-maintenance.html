@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">233</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">234</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -247,233 +247,195 @@
 <p>Elasticsearch 常用命令</p>
 </blockquote>
 <a id="more"></a>
-
 <ul>
 <li>_reindex</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request POST &apos;http://10.138.25.214:9200/_reindex&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">  &quot;source&quot;: &#123;</span><br><span class="line">    &quot;index&quot;: &quot;deploy-log&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;dest&quot;: &#123;</span><br><span class="line">    &quot;index&quot;: &quot;deploy-log-2018.12.24&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>创建index</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.138.25.214:9200/deploy-log&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>创建mapping</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request POST &apos;http://10.138.25.214:9200/deploy-log/deploy_log&apos; \</span><br><span class="line">--header &apos;Content-Type: application/javascript&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;settings&quot;:&#123;</span><br><span class="line">        &quot;number_of_shards&quot;:5,</span><br><span class="line">        &quot;number_of_replicas&quot;:1</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;mappings&quot;:&#123;</span><br><span class="line">        &quot;deploy_log&quot;:&#123;</span><br><span class="line">            &quot;properties&quot;:&#123;</span><br><span class="line">                &quot;project&quot;:&#123;</span><br><span class="line">                    &quot;type&quot;:&quot;keyword&quot;,</span><br><span class="line">                    &quot;index&quot;:&quot;not_analyzed&quot;</span><br><span class="line">                &#125;,</span><br><span class="line">                &quot;app&quot;:&#123;</span><br><span class="line">                    &quot;type&quot;:&quot;string&quot;,</span><br><span class="line">                    &quot;index&quot;:&quot;not_analyzed&quot;</span><br><span class="line">                &#125;,</span><br><span class="line">                &quot;endpoint&quot;:&#123;</span><br><span class="line">                    &quot;type&quot;:&quot;ip&quot;</span><br><span class="line">                &#125;,</span><br><span class="line">                &quot;containerName&quot;:&#123;</span><br><span class="line">                    &quot;type&quot;:&quot;string&quot;,</span><br><span class="line">                    &quot;index&quot;:&quot;not_analyzed&quot;</span><br><span class="line">                &#125;,</span><br><span class="line">                &quot;timestamp&quot;:&#123;</span><br><span class="line">                    &quot;type&quot;:&quot;long&quot;</span><br><span class="line">                &#125;,</span><br><span class="line">                &quot;message&quot;:&#123;</span><br><span class="line">                    &quot;type&quot;:&quot;text&quot;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>删除index</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request DELETE &apos;http://10.133.0.87:9200/.kibana_1&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>_termvectors</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.138.25.214:9200/deploy-log/deploy_log/AWfK6rkZ_ashmo4ko1yd/_termvectors?fields=containerName&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>index插入内容</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request POST &apos;http://10.163.204.193:9200/logstash-2020.10.27/deploy_log&apos; \</span><br><span class="line">--header &apos;Content-Type: application/javascript&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;project&quot;:&quot;monitor&quot;,</span><br><span class="line">    &quot;app&quot;:&quot;elasticsearch1111&quot;,</span><br><span class="line">    &quot;env&quot;:&quot;dev&quot;,</span><br><span class="line">    &quot;containerName&quot;:&quot;monitor1545302038695&quot;,</span><br><span class="line">    &quot;endpoint&quot;:&quot;10.138.40.223&quot;,</span><br><span class="line">    &quot;timestamp&quot;:1545302038,</span><br><span class="line">    &quot;message&quot;:&quot;image: hub.docker.terminus.io:5000/es-ext:log-search_1811301023_PRO_180410&quot;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>mapping删除</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request DELETE &apos;http://10.138.25.214:9200/deploy-log/deploy_log/_mapping&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>_template删除</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request DELETE &apos;http://10.138.25.214:9200/_template/d*&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>查询_template</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.138.25.214:9201/_template?pretty&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>indices</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.138.16.190:9200/_cat/indices?v&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>allocate_replica(reroute)</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request POST &apos;http://10.163.204.80:9200/_cluster/reroute?retry_failed=true&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;commands&quot;:[</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;allocate_replica&quot;:&#123;</span><br><span class="line">                &quot;index&quot;:&quot;.kibana_1&quot;,</span><br><span class="line">                &quot;shard&quot;:0,</span><br><span class="line">                &quot;node&quot;:&quot;10.163.204.80&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>cluster.routing.allocation.enable</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.138.16.188:9200/_cluster/settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;transient&quot;:&#123;</span><br><span class="line">        &quot;cluster.routing.allocation.enable&quot;:&quot;all&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>template更新(新增)</li>
 </ul>
 <p>6.x</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.193:9200/_template/k8s-log-template2222&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">	&quot;order&quot;: 0,</span><br><span class="line">	&quot;index_patterns&quot;: [</span><br><span class="line">		&quot;logstash-*&quot;</span><br><span class="line">	],</span><br><span class="line">	&quot;settings&quot;: &#123;</span><br><span class="line">		&quot;index&quot;: &#123;</span><br><span class="line">			&quot;number_of_shards&quot;: &quot;12&quot;,</span><br><span class="line">			&quot;number_of_replicas&quot;: &quot;1&quot;,</span><br><span class="line">			&quot;translog.durability&quot;: &quot;async&quot;,</span><br><span class="line">			&quot;translog.flush_threshold_size&quot;: &quot;1024mb&quot;,</span><br><span class="line">			&quot;translog.sync_interval&quot;: &quot;120s&quot;,</span><br><span class="line">			&quot;refresh_interval&quot;: &quot;120s&quot;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;mappings&quot;: &#123;</span><br><span class="line">		&quot;_default_&quot;: &#123;</span><br><span class="line">			&quot;_all&quot;: &#123;</span><br><span class="line">				&quot;enabled&quot;: false</span><br><span class="line">			&#125;,</span><br><span class="line">			&quot;dynamic_templates&quot;: [</span><br><span class="line">				&#123;</span><br><span class="line">					&quot;strings_as_keywords&quot;: &#123;</span><br><span class="line">						&quot;mapping&quot;: &#123;</span><br><span class="line">							&quot;type&quot;: &quot;keyword&quot;</span><br><span class="line">						&#125;,</span><br><span class="line">						&quot;match_mapping_type&quot;: &quot;string&quot;,</span><br><span class="line">						&quot;unmatch&quot;: &quot;log&quot;</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;,</span><br><span class="line">				&#123;</span><br><span class="line">					&quot;log&quot;: &#123;</span><br><span class="line">						&quot;match&quot;: &quot;log&quot;,</span><br><span class="line">						&quot;match_mapping_type&quot;: &quot;string&quot;,</span><br><span class="line">						&quot;mapping&quot;: &#123;</span><br><span class="line">							&quot;type&quot;: &quot;text&quot;,</span><br><span class="line">							&quot;analyzer&quot;: &quot;standard&quot;,</span><br><span class="line">							&quot;norms&quot;: false</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">			]</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;aliases&quot;: &#123;&#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <p>7.x</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.193:9200/_template/k8s-log-template2222&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">	&quot;order&quot;: 0,</span><br><span class="line">	&quot;index_patterns&quot;: [</span><br><span class="line">		&quot;logstash-*&quot;</span><br><span class="line">	],</span><br><span class="line">	&quot;settings&quot;: &#123;</span><br><span class="line">		&quot;index&quot;: &#123;</span><br><span class="line">			&quot;number_of_shards&quot;: &quot;12&quot;,</span><br><span class="line">			&quot;number_of_replicas&quot;: &quot;1&quot;,</span><br><span class="line">			&quot;refresh_interval&quot;: &quot;30s&quot;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;mappings&quot;: &#123;</span><br><span class="line">		&quot;dynamic_templates&quot;: [</span><br><span class="line">			&#123;</span><br><span class="line">				&quot;strings_as_keywords&quot;: &#123;</span><br><span class="line">					&quot;unmatch&quot;: &quot;log&quot;,</span><br><span class="line">					&quot;mapping&quot;: &#123;</span><br><span class="line">						&quot;type&quot;: &quot;keyword&quot;</span><br><span class="line">					&#125;,</span><br><span class="line">					&quot;match_mapping_type&quot;: &quot;string&quot;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;,</span><br><span class="line">			&#123;</span><br><span class="line">				&quot;log&quot;: &#123;</span><br><span class="line">					&quot;mapping&quot;: &#123;</span><br><span class="line">						&quot;norms&quot;: false,</span><br><span class="line">						&quot;analyzer&quot;: &quot;standard&quot;,</span><br><span class="line">						&quot;type&quot;: &quot;text&quot;</span><br><span class="line">					&#125;,</span><br><span class="line">					&quot;match_mapping_type&quot;: &quot;string&quot;,</span><br><span class="line">					&quot;match&quot;: &quot;log&quot;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;,</span><br><span class="line">			&#123;</span><br><span class="line">				&quot;@timestamp&quot;: &#123;</span><br><span class="line">					&quot;mapping&quot;: &#123;</span><br><span class="line">						&quot;type&quot;: &quot;date&quot;</span><br><span class="line">					&#125;,</span><br><span class="line">					&quot;match_mapping_type&quot;: &quot;date&quot;,</span><br><span class="line">					&quot;match&quot;: &quot;@timestamp&quot;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		]</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;aliases&quot;: &#123;&#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>查询_mapping</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.133.0.87:9200/logstash-2019.12.04/_mapping&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>修改indices.breaker.fielddata.limit</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.133.0.89:9200/_cluster/settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;persistent&quot;:&#123;</span><br><span class="line">        &quot;indices.breaker.fielddata.limit&quot;:&quot;75%&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>清理cache</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request POST &apos;http://10.133.0.89:9200/logstash-*/_cache/clear?fields=*&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
-<li>查询_cluster&#x2F;settings</li>
+<li>查询_cluster/settings</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.133.0.89:9200/_cluster/settings&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>修改indices.breaker.total.limit</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.133.0.89:9200/_cluster/settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;transient&quot;:&#123;</span><br><span class="line">        &quot;indices.breaker.total.limit&quot;:&quot;80%&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>修改max_shards_per_node</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.80:9200/_cluster/settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">  &quot;persistent&quot;: &#123;</span><br><span class="line">    &quot;cluster&quot;: &#123;</span><br><span class="line">      &quot;max_shards_per_node&quot;:10000</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>remote cluster info</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.133.0.86:9201/_remote/info&apos; \</span><br><span class="line">--header &apos;Authorization: Basic ZWxhc3RpYzplbGFzdGlj&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>修改索引number_of_replicas</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.80:9200/security-tracelogdev-20200223/_settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;index&quot; : &#123;</span><br><span class="line">        &quot;number_of_replicas&quot; : 0</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>allocation.exclude._ip节点下线</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.80:9200/_cluster/settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">  &quot;transient&quot; : &#123;</span><br><span class="line">    &quot;cluster.routing.allocation.exclude._ip&quot; : &quot;10.163.204.81,10.163.204.82&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>shard移动到某个节点(reroute)</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request POST &apos;http://10.163.204.80:9200/_cluster/reroute?retry_failed=true&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">	&quot;commands&quot;: [</span><br><span class="line">		&#123;</span><br><span class="line">			&quot;move&quot;: &#123;</span><br><span class="line">				&quot;index&quot;: &quot;security-tracelogdev-20200223&quot;,</span><br><span class="line">				&quot;shard&quot;: 2,</span><br><span class="line">				&quot;from_node&quot;: &quot;10.163.204.81&quot;,</span><br><span class="line">				&quot;to_node&quot;: &quot;10.163.204.80&quot;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	]</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>调整refresh_interval</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.193:9200/logstash-2020.09.24/_settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">	&quot;refresh_interval&quot;: &quot;10s&quot;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>修改disk.watermark.high</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.193:9200/_cluster/settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;persistent&quot; : &#123;</span><br><span class="line">        &quot;cluster.routing.allocation.disk.watermark.low&quot;:&quot;90%&quot;,</span><br><span class="line">        &quot;cluster.routing.allocation.disk.watermark.high&quot; : &quot;95%&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>修改recovery相关配置</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.193:9201/_cluster/settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">	&quot;persistent&quot;: &#123;</span><br><span class="line">		&quot;indices.recovery.max_bytes_per_sec&quot;: &quot;40mb&quot;,</span><br><span class="line">		&quot;cluster.routing.allocation.node_concurrent_recoveries&quot;: &quot;2&quot;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>查看某个节点的thread_pool状态</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/_nodes/10.163.204.193-node1/stats/thread_pool?human&amp;pretty&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>es集群thread_pool write状态</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/_cat/thread_pool/write?v&amp;h=node_name,ip,name,type,active,size,queue,queue_size,largest,rejected,completed&amp;pretty&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>查看集群indices缓存信息</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.162.166.136:9201/_cluster/settings?include_defaults&amp;flat_settings&amp;local&amp;filter_path=defaults.indices*&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>索引关闭</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request POST &apos;http://10.162.166.45:9201/hmcenter-*/_close&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>索引打开</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request POST &apos;http://10.162.166.45:9201/console*/_open&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>es写入速度调优</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.193:9200/logstash-2021.01.11/_settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">  &quot;index&quot; : &#123;</span><br><span class="line">    &quot;translog.durability&quot; : &quot;async&quot;,</span><br><span class="line">    &quot;translog.flush_threshold_size&quot; : &quot;1024mb&quot;,</span><br><span class="line">    &quot;translog.sync_interval&quot; : &quot;120s&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
-<li>查询_ingest&#x2F;pipeline</li>
+<li>查询_ingest/pipeline</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/_ingest/pipeline&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>集群read_only_allow_delete</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.133.0.84:9200/_settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;index&quot;: &#123;</span><br><span class="line">        &quot;blocks&quot;: &#123;</span><br><span class="line">            &quot;read_only_allow_delete&quot;: &quot;false&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>查看索引_settings</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/.monitoring-es-6-2021.01.27/_settings?pretty&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>索引read_only_allow_delete</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://10.163.204.193:9200/.monitoring-es-6-2021.01.28/_settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data-raw &apos;&#123;</span><br><span class="line">    &quot;index&quot;: &#123;</span><br><span class="line">        &quot;blocks&quot;: &#123;</span><br><span class="line">            &quot;read_only_allow_delete&quot;: &quot;false&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
-<li>查询_cluster&#x2F;stats</li>
+<li>查询_cluster/stats</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/_cluster/stats&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
-<li>查看集群_nodes&#x2F;hot_threads</li>
+<li>查看集群_nodes/hot_threads</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/_nodes/hot_threads&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>查询某个节点的hot_threads</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/_nodes/10.163.204.193/hot_threads&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
-<li>某个节点的stats&#x2F;thread_pool</li>
+<li>某个节点的stats/thread_pool</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/_nodes/10.163.204.193/stats/thread_pool?human&amp;pretty&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>查看某个模板</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request GET &apos;http://10.163.204.193:9200/_template/.monitoring-es?pretty&apos;</span><br></pre></td></tr></table></figure>
-
 <ul>
-<li><p>索引备份<br><a href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html</a></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">curl -XPOST &apos;localhost:9200/_reindex?pretty&apos; -H &apos;Content-Type: application/json&apos; -d&apos;</span><br><span class="line">&#123;</span><br><span class="line">  &quot;source&quot;: &#123;</span><br><span class="line">    &quot;index&quot;: &quot;twitter&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;dest&quot;: &#123;</span><br><span class="line">    &quot;index&quot;: &quot;new_twitter&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">&apos;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>es重启<br>先kill 杀死es</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sh bin/elasticsearch -d</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>elasticsearch 查看集群所有设置（包含默认的）</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.138.1.1:9200/_cluster/settings?include_defaults=true</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>elasticsearch设置密码</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/elasticsearch-setup-passwords interactive</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>查看es集群恢复情况</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.138.1.1:9200/_cluster/allocation/explain?pretty</span><br></pre></td></tr></table></figure></li>
+<li>索引备份<br>
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/5.4/docs-reindex.html</a></li>
 </ul>
-
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">curl -XPOST &apos;localhost:9200/_reindex?pretty&apos; -H &apos;Content-Type: application/json&apos; -d&apos;</span><br><span class="line">&#123;</span><br><span class="line">  &quot;source&quot;: &#123;</span><br><span class="line">    &quot;index&quot;: &quot;twitter&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;dest&quot;: &#123;</span><br><span class="line">    &quot;index&quot;: &quot;new_twitter&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">&apos;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>es重启<br>
+先kill 杀死es</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sh bin/elasticsearch -d</span><br></pre></td></tr></table></figure>
+<ul>
+<li>elasticsearch 查看集群所有设置（包含默认的）</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.138.1.1:9200/_cluster/settings?include_defaults=true</span><br></pre></td></tr></table></figure>
+<ul>
+<li>elasticsearch设置密码</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/elasticsearch-setup-passwords interactive</span><br></pre></td></tr></table></figure>
+<ul>
+<li>查看es集群恢复情况</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://10.138.1.1:9200/_cluster/allocation/explain?pretty</span><br></pre></td></tr></table></figure>
       </div>
       
       
@@ -562,7 +524,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">233</span>
+        <span class="site-state-item-count">234</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
