@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="记录一次Go HTTP Client TIME_WAIT的优化">
+<meta name="keywords" content="Network,TCP,Client,Go,IP,HTTP,Settings,TIME_WAIT">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tuning the Go HTTP Client Settings">
+<meta property="og:url" content="https://jiankunking.com/tuning-the-go-http-client-library.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="记录一次Go HTTP Client TIME_WAIT的优化">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2025-01-17T06:56:15.593Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tuning the Go HTTP Client Settings">
+<meta name="twitter:description" content="记录一次Go HTTP Client TIME_WAIT的优化">
+
+<link rel="canonical" href="https://jiankunking.com/tuning-the-go-http-client-library.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Tuning the Go HTTP Client Settings | 衣舞晨风</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121070942-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">衣舞晨风</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">164</span></a>
+
+  </li>
+        <li class="menu-item menu-item-书籍">
+
+    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>书籍</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">236</span></a>
+
+  </li>
+        <li class="menu-item menu-item-友链">
+
+    <a href="/links/" rel="section"><i class="fa fa-external-link-alt fa-fw"></i>友链</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/tuning-the-go-http-client-library.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Tuning the Go HTTP Client Settings
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-18 09:57:05" itemprop="dateCreated datePublished" datetime="2025-01-18T09:57:05+08:00">2025-01-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-01-17 14:56:15" itemprop="dateModified" datetime="2025-01-17T14:56:15+08:00">2025-01-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">Go</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>记录一次Go HTTP Client TIME_WAIT的优化</p>
+</blockquote>
+<a id="more"></a>
+<h2 id="业务流程">业务流程</h2>
+<p><img data-src="/images/tuning-the-go-http-client-library/%E4%B8%9A%E5%8A%A1%E6%B5%81%E7%A8%8B.png" alt></p>
+<h2 id="分析">分析</h2>
+<p>通过容器监控发现服务到事件总线的负载均衡之间有大量的短链接，回看一下代码</p>
+<p>发送请求的代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">func SendToKEvent(ev *KEvent) error &#123;</span><br><span class="line">	data, err := json.Marshal(ev.Data)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	log.Println(string(data))</span><br><span class="line">	if !sendEvent &#123;</span><br><span class="line">		log.Println(&quot;------ SEND_EVENT IS DISABLED ------&quot;)</span><br><span class="line">		return nil</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	defer util.TimeCost(&quot;SendToKEvent&quot;)()</span><br><span class="line"></span><br><span class="line">	body := bytes.NewReader(data)</span><br><span class="line">	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)</span><br><span class="line">	defer cancel()</span><br><span class="line">	req, err := http.NewRequest(http.MethodPost, ev.Url, body)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	req.WithContext(ctx)</span><br><span class="line">	req.Header.Set(&quot;Content-Type&quot;, &quot;application/json; charset=utf-8&quot;)</span><br><span class="line">	req.Header.Set(&quot;......&quot;, &quot;......&quot;)</span><br><span class="line"></span><br><span class="line">	for k, v := range ev.ExtMap &#123;</span><br><span class="line">		req.Header.Set(k, v)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	resp, err := httpc.HttpClient.Do(req)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	defer resp.Body.Close()</span><br><span class="line"></span><br><span class="line">	// 事件总线 2xx 均为正常</span><br><span class="line">	if resp.StatusCode &gt;= 300 || resp.StatusCode &lt; 200 &#123;</span><br><span class="line">		return fmt.Errorf(&quot;req failed, resp=%v&quot;, resp)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>http client的代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">var (</span><br><span class="line">	HttpClient = &amp;http.Client&#123;</span><br><span class="line">		Transport: &amp;http.Transport&#123;</span><br><span class="line">			Proxy: http.ProxyFromEnvironment,</span><br><span class="line">			DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) &#123;</span><br><span class="line">				return (&amp;net.Dialer&#123;</span><br><span class="line">					Timeout:   10 * time.Second,</span><br><span class="line">					KeepAlive: 90 * time.Second,</span><br><span class="line">				&#125;).DialContext(ctx, network, addr)</span><br><span class="line">			&#125;,</span><br><span class="line">			ForceAttemptHTTP2:     true,</span><br><span class="line">			TLSHandshakeTimeout:   5 * time.Second,</span><br><span class="line">			ResponseHeaderTimeout: 30 * time.Second,</span><br><span class="line">			MaxIdleConnsPerHost:   10,</span><br><span class="line">			IdleConnTimeout:       90 * time.Second,</span><br><span class="line">			ExpectContinueTimeout: 1 * time.Second,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>代码看起来没啥问题,但想到了之前处理过Golang ES client的一个问题</p>
+<p><a href="https://jiankunking.com/tcp-state-diagram.html">https://jiankunking.com/tcp-state-diagram.html</a></p>
+<p>看下上文中<code>TIME_WAIT</code>部分，发现还真是<br>
+<a href="https://pkg.go.dev/net/http#Response" target="_blank" rel="noopener">https://pkg.go.dev/net/http#Response</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// The http Client and Transport guarantee that Body is always</span><br><span class="line">// non-nil, even on responses without a body or responses with</span><br><span class="line">// a zero-length body. It is the caller&apos;s responsibility to</span><br><span class="line">// close Body. The default HTTP client&apos;s Transport may not</span><br><span class="line">// reuse HTTP/1.x &quot;keep-alive&quot; TCP connections if the Body is</span><br><span class="line">// not read to completion and closed.</span><br></pre></td></tr></table></figure>
+<p>调整代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">func SendToKEvent(ev *KEvent) error &#123;</span><br><span class="line">	......</span><br><span class="line">	resp, err := httpc.HttpClient.Do(req)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	defer resp.Body.Close()</span><br><span class="line">	io.Copy(ioutil.Discard, resp.Body)  // &lt;-- 添加这一行</span><br><span class="line">	......</span><br><span class="line">	return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重新部署后,发现<code>TIME_WAIT</code>的链接少了很多，但还是有10几个</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">bash-5.0# netstat -anp |grep TIME</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:10964 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:45738 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:21178 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:37354 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:10966 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:37352 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:61524 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:61526 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:21180 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:33256 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:45736 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:33254 TIME_WAIT   -</span><br><span class="line">bash-5.0#</span><br></pre></td></tr></table></figure>
+<p>这里需要注意一下</p>
+<ul>
+<li>172.16.3.247是服务POD的ip</li>
+<li>10.200.76.64是POD所在宿主机的ip</li>
+</ul>
+<p>也就是说POD跟宿主机之间有短链接,那这几个短链接是在做啥呢？</p>
+<p>抓包看下<br>
+<img data-src="/images/tuning-the-go-http-client-library/%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5%E5%88%86%E6%9E%90.png" alt></p>
+<p>着重看一下No 502这一行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Frame 502: 177 bytes on wire (1416 bits), 177 bytes captured (1416 bits)</span><br><span class="line">Ethernet II, Src: ee:ee:ee:ee:ee:ee (ee:ee:ee:ee:ee:ee), Dst: b6:cd:6a:f8:69:5e (b6:cd:6a:f8:69:5e)</span><br><span class="line">Internet Protocol Version 4, Src: 10.200.76.64, Dst: 172.16.3.247</span><br><span class="line">Transmission Control Protocol, Src Port: 29978, Dst Port: 8080, Seq: 1, Ack: 1, Len: 111</span><br><span class="line">Hypertext Transfer Protocol</span><br><span class="line">    GET /healthz HTTP/1.1\r\n &lt;-- 注意这一行,这个接口是服务配置的存活检查接口</span><br><span class="line">    Host: 172.16.3.247:8080\r\n</span><br><span class="line">    User-Agent: kube-probe/1.21\r\n</span><br><span class="line">    Accept: */*\r\n</span><br><span class="line">    Connection: close\r\n &lt;-- 注意这一行</span><br><span class="line">    \r\n</span><br><span class="line">    [Response in frame: 506]</span><br><span class="line">    [Full request URI: http://172.16.3.247:8080/healthz]</span><br></pre></td></tr></table></figure>
+<p>Connection</p>
+<ul>
+<li><code>Connection: keep-alive</code> 当一个网页打开完成后，客户端和服务器之间用于传输HTTP数据的TCP连接不会关闭，如果客户端再次访问这个服务器上的网页，会继续使用这一条已经建立的连接</li>
+<li><code>Connection: close</code> 代表一个Request完成后，客户端和服务器之间用于传输HTTP数据的TCP连接会关闭， 当客户端再次发送Request，需要重新建立TCP连接。</li>
+</ul>
+<p>从<code>Connection</code>的注释可以看出当请求header中带有<code>Connection: keep-alive</code>表明该请求是会是一个短链接。</p>
+<p>看下服务的Deployment的配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">livenessProbe:</span><br><span class="line">  failureThreshold: 3</span><br><span class="line">  httpGet:</span><br><span class="line">    path: /healthz</span><br><span class="line">    port: 8080</span><br><span class="line">    scheme: HTTP</span><br><span class="line">  periodSeconds: 10</span><br><span class="line">  successThreshold: 1</span><br><span class="line">  timeoutSeconds: 1</span><br></pre></td></tr></table></figure>
+<p>到这里问题都可以解释的通了,Kubernetes会每10秒请求一次服务的存活检查的接口,每一次都是短链接,而<code>TIME_WAIT</code>的默认值是120s。</p>
+<p>那服务<code>TIME_WAIT</code>的链接应该会一直保持在11-13个左右。</p>
+<p>到这里所有的问题都就可以解释了。</p>
+<h2 id="结论">结论</h2>
+<ul>
+<li>Go HTTP Client请求完了,即使业务不关注响应的Body,还是要在代码中read一下body。</li>
+<li>只要服务配置了存活检查就会有短链接，短链接的数据取决于检查间隔时间的配置。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">相关文章</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\the-work-strategy-of-couriers-tcp-window.html" rel="bookmark">[转]快递员的工作策略——TCP窗口</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\tcp-state-diagram.html" rel="bookmark">TCP 状态图</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\tcp-ip-illustrated-volume-1-the-protocols.html" rel="bookmark">TCP/IP详解 卷1：协议 笔记</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\high-performance-browser-networking.html" rel="bookmark">Web性能权威指南 笔记</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\bytes-in-transit-of-tcp.html" rel="bookmark">[转]TCP之在途字节数</a></div>
+    </li>
+  </ul>
+
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>jiankunking
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://jiankunking.com/tuning-the-go-http-client-library.html" title="Tuning the Go HTTP Client Settings">https://jiankunking.com/tuning-the-go-http-client-library.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/images/wechat/wechat.jpg">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/network/" rel="tag"># Network</a>
+              <a href="/tags/tcp/" rel="tag"># TCP</a>
+              <a href="/tags/client/" rel="tag"># Client</a>
+              <a href="/tags/go/" rel="tag"># Go</a>
+              <a href="/tags/ip/" rel="tag"># IP</a>
+              <a href="/tags/http/" rel="tag"># HTTP</a>
+              <a href="/tags/settings/" rel="tag"># Settings</a>
+              <a href="/tags/time-wait/" rel="tag"># TIME_WAIT</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/how-to-optimize-elasticsearch-large-document-query.html" rel="prev" title="如何优化Elasticsearch大文档查询？">
+      <i class="fa fa-chevron-left"></i> 如何优化Elasticsearch大文档查询？
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#业务流程"><span class="nav-number">1.</span> <span class="nav-text">业务流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">3.</span> <span class="nav-text">结论</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jiankunking"
+      src="/images/avatar/avatar.png">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">236</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https://blog.csdn.net/jiankunking" rel="noopener" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">1.3m</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/muse.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
+  </script>
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5e2e6dc5bd7af549261d',
+      clientSecret: 'f37069692932676f0ad9fbfecb5164aee191fe23',
+      repo        : 'blog-comments',
+      owner       : 'jiankunking',
+      admin       : ['jiankunking'],
+      id          : '875c0eb7a7820bb56934cc149de12391',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
