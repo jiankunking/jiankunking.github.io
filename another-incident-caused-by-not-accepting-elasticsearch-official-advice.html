@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="记录一下 一次Elasticsearch集群事故分析、排查、处理">
+  <meta name="description" content="记录一下一次Elasticsearch集群事故分析、排查、处理">
 <meta name="keywords" content="原创,ElasticSearch,Shard,mmap,Native memory allocation">
 <meta property="og:type" content="article">
 <meta property="og:title" content="又一次不接受Elasticsearch官方建议导致的事故">
 <meta property="og:url" content="https://jiankunking.com/another-incident-caused-by-not-accepting-elasticsearch-official-advice.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="记录一下 一次Elasticsearch集群事故分析、排查、处理">
+<meta property="og:description" content="记录一下一次Elasticsearch集群事故分析、排查、处理">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2025-01-08T08:02:00.822Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="又一次不接受Elasticsearch官方建议导致的事故">
-<meta name="twitter:description" content="记录一下 一次Elasticsearch集群事故分析、排查、处理">
+<meta name="twitter:description" content="记录一下一次Elasticsearch集群事故分析、排查、处理">
 
 <link rel="canonical" href="https://jiankunking.com/another-incident-caused-by-not-accepting-elasticsearch-official-advice.html">
 
@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">164</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">163</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -293,62 +293,66 @@
 
       
         <blockquote>
-<p>记录一下<br>
-一次Elasticsearch集群事故分析、排查、处理</p>
+<p>记录一下<br>一次Elasticsearch集群事故分析、排查、处理</p>
 </blockquote>
 <a id="more"></a>
-<h2 id="背景">背景</h2>
-<p>上午同事拉群反馈他们在用的一个ES集群出现写入超时的情况，查看ES集群状态发现已经是RED了</p>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>上午同事拉群反馈他们在用的一个ES集群出现写入超时的情况，查看ES集群状态发现已经是RED了</p>
 <ul>
 <li>这是一个3 * 8核32G(jvm堆配置了16G)的集群</li>
-<li>出问题的时候，集群内有5000个索引，每个索引shard数是6，副本数是1，也就是一个索引是12个shard
-<ul>
+<li>出问题的时候，集群内有5000个索引，每个索引shard数是6，副本数是1，也就是一个索引是12个shard<ul>
 <li>shard数已经达到了<code>6w</code>个，这不包含ES自带的系统索引。</li>
 </ul>
 </li>
 <li>集群的实例重启过</li>
 <li>数据量大约480G</li>
 </ul>
-<p>看到这里是不是有一种似曾相识的感觉?<br>
-=&gt; <a href="https://jiankunking.com/an-accident-caused-by-not-accepting-the-official-advice-of-elasticsearch.html">一次不接受Elasticsearch官方建议导致的事故</a></p>
+<p>看到这里是不是有一种似曾相识的感觉?<br>&#x3D;&gt; <a href="https://jiankunking.com/an-accident-caused-by-not-accepting-the-official-advice-of-elasticsearch.html">一次不接受Elasticsearch官方建议导致的事故</a></p>
 <p>立马联系业务删除历史数据，业务这边明确可以删除22年、23年的历史数据。</p>
-<h2 id="处理">处理</h2>
-<h3 id="调速">调速</h3>
-<p>在业务执行批量删除后，我这边先调大了集群恢复相关的参数</p>
+<h2 id="处理"><a href="#处理" class="headerlink" title="处理"></a>处理</h2><h3 id="调速"><a href="#调速" class="headerlink" title="调速"></a>调速</h3><p>在业务执行批量删除后，我这边先调大了集群恢复相关的参数</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">PUT /_cluster/settings</span><br><span class="line">&#123;</span><br><span class="line">  &quot;persistent&quot;: &#123;</span><br><span class="line">    &quot;cluster.routing.allocation.node_concurrent_recoveries&quot;: 200,</span><br><span class="line">    &quot;indices.recovery.max_bytes_per_sec&quot;: &quot;80mb&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>关于恢复速度相关参数解释:<a href="https://elastic.ac.cn/guide/en/elasticsearch/reference/8.17/recovery.html" target="_blank" rel="noopener">https://elastic.ac.cn/guide/en/elasticsearch/reference/8.17/recovery.html</a></p>
 </blockquote>
 <p>在集群恢复的期间，ES实例一直在输出WARN日志</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Unable to acquire permit to use snapshot files during recovery, </span><br><span class="line">this recovery will recover index files from the source node. </span><br><span class="line">Ensure snapshot files can be used during recovery by setting </span><br><span class="line">[indices.recovery.max_concurrent_snapshot_file_downloads] to be no greater than [25]</span><br></pre></td></tr></table></figure>
+
 <p>看了下集群设置</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">GET /_cluster/settings?include_defaults=true</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">	&quot;recovery&quot;: &#123;</span><br><span class="line">		&quot;recovery_activity_timeout&quot;: &quot;1800000ms&quot;,</span><br><span class="line">		&quot;retry_delay_network&quot;: &quot;5s&quot;,</span><br><span class="line">		&quot;internal_action_timeout&quot;: &quot;15m&quot;,</span><br><span class="line">		&quot;max_concurrent_snapshot_file_downloads_per_node&quot;: &quot;25&quot;,</span><br><span class="line">		&quot;retry_delay_state_sync&quot;: &quot;500ms&quot;,</span><br><span class="line">		&quot;max_concurrent_snapshot_file_downloads&quot;: &quot;5&quot;,// 这里并没有比25大</span><br><span class="line">		&quot;internal_action_long_timeout&quot;: &quot;1800000ms&quot;,</span><br><span class="line">		&quot;max_concurrent_operations&quot;: &quot;1&quot;,</span><br><span class="line">		&quot;use_snapshots&quot;: &quot;true&quot;,</span><br><span class="line">		&quot;max_concurrent_file_chunks&quot;: &quot;2&quot;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>所以先忽略，恢复后，该日志就不再输出了。</p>
-<h3 id="排查">排查</h3>
-<p>找了一个ES节点下载最近几天的日志，排查实例退出的原因</p>
+<h3 id="排查"><a href="#排查" class="headerlink" title="排查"></a>排查</h3><p>找了一个ES节点下载最近几天的日志，排查实例退出的原因</p>
 <p>实例退出前有大量如下异常输出</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">this may be caused by lack of enough unfragmented virtual address space </span><br><span class="line">or too restrictive virtual memory limits enforced by the operating system, </span><br><span class="line">preventing us to map a chunk of 414627 bytes. Please review &apos;ulimit -v&apos;, &apos;ulimit -m&apos; (both should return &apos;unlimited&apos;), </span><br><span class="line">and &apos;sysctl vm.max_map_count&apos;. More information: </span><br><span class="line">http://blog.thetaphi.de/2012/07/use-lucenes-mmapdirectory-on-64bit.html</span><br></pre></td></tr></table></figure>
+
 <p>这里看了一下max_map_count没有问题</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[root@prd-jiankunking-notify-es-3: /app/es/data/nodes/0]# ulimit -m</span><br><span class="line">unlimited</span><br><span class="line">[root@prd-jiankunking-notify-es-3: /app/es/data/nodes/0]# ulimit -v</span><br><span class="line">unlimited</span><br><span class="line">[root@prd-jiankunking-notify-es-3: /app/es/data/nodes/0]# </span><br><span class="line">[root@prd-jiankunking-notify-es-3: /app/es/data/nodes/0]# sysctl vm.max_map_count</span><br><span class="line">vm.max_map_count = 262144</span><br><span class="line">[root@prd-jiankunking-notify-es-3: /app/es/data/nodes/0]# docker exec -it 21871c061981 /bin/bash</span><br><span class="line">root@prd-jiankunking-notify-es-3:/usr/share/elasticsearch# ulimit -m</span><br><span class="line">unlimited</span><br><span class="line">root@prd-jiankunking-notify-es-3:/usr/share/elasticsearch# ulimit -v</span><br><span class="line">unlimited</span><br><span class="line">root@prd-jiankunking-notify-es-3:/usr/share/elasticsearch# sysctl vm.max_map_count</span><br><span class="line">vm.max_map_count = 262144</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>262144是elasticsearch 7.16.2启动的时候提示的最小值</p>
 </blockquote>
 <!-- <font color=DeepPink> **这里反应出来一个问题就是部署ES的机器vm.max_map_count值最好就是配置为unlimited**</font> -->
+
 <p>找到实例退出时间点的日志</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">OpenJDK 64-Bit Server VM warning: INFO: os::commit_memory(0x00007fe4d805c000, 65536, 1) failed; error=&apos;Not enough space&apos; (errno=12)</span><br><span class="line"></span><br><span class="line"># There is insufficient memory for the Java Runtime Environment to continue.</span><br><span class="line"># Native memory allocation (mmap) failed to map 65536 bytes for committing reserved memory.</span><br><span class="line">[thread 330 also had an error][thread 232 also had an error]</span><br><span class="line"># An error report file with more information is saved as</span><br><span class="line"># logs/hs_err_pid7.log</span><br></pre></td></tr></table></figure>
-<p>再看下logs/hs_err_pid7.log的日志内容</p>
+
+<p>再看下logs&#x2F;hs_err_pid7.log的日志内容</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line"># There is insufficient memory for the Java Runtime Environment to continue.</span><br><span class="line"># Native memory allocation (mmap) failed to map 65536 bytes for committing reserved memory.</span><br><span class="line"># Possible reasons:</span><br><span class="line">#   The system is out of physical RAM or swap space</span><br><span class="line">#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap</span><br><span class="line"># Possible solutions:</span><br><span class="line">#   Reduce memory load on the system</span><br><span class="line">#   Increase physical memory or swap space</span><br><span class="line">#   Check if swap backing store is full</span><br><span class="line">#   Decrease Java heap size (-Xmx/-Xms)</span><br><span class="line">#   Decrease number of Java threads</span><br><span class="line">#   Decrease Java thread stack sizes (-Xss)</span><br><span class="line">#   Set larger code cache with -XX:ReservedCodeCacheSize=</span><br><span class="line">#   JVM is running with Zero Based Compressed Oops mode in which the Java heap is</span><br><span class="line">#     placed in the first 32GB address space. The Java Heap base address is the</span><br><span class="line">#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress</span><br><span class="line">#     to set the Java Heap base and to place the Java Heap above 32GB virtual address.</span><br><span class="line"># This output file may be truncated or incomplete.</span><br><span class="line">#</span><br><span class="line">#  Out of Memory Error (os_linux.cpp:2728), pid=7, tid=213</span><br><span class="line">#</span><br><span class="line"># JRE version: OpenJDK Runtime Environment Temurin-17.0.1+12 (17.0.1+12) (build 17.0.1+12)</span><br><span class="line"># Java VM: OpenJDK 64-Bit Server VM Temurin-17.0.1+12 (17.0.1+12, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, linux-amd64)</span><br><span class="line"># Core dump will be written. Default location: /usr/share/elasticsearch/core.7</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">---------------  S U M M A R Y ------------</span><br><span class="line"></span><br><span class="line">Command Line: -Xshare:auto -Des.networkaddress.cache.ttl=60 -Des.networkaddress.cache.negative.ttl=10 -XX:+AlwaysPreTouch -Xss1m -Djava.awt.headless=true -Dfile.encoding=UTF-8 -Djna.nosys=true -XX:-OmitStackTraceInFastThrow -XX:+ShowCodeDetailsInExceptionMessages -Dio.netty.noUnsafe=true -Dio.netty.noKeySetOptimization=true -Dio.netty.recycler.maxCapacityPerThread=0 -Dio.netty.allocator.numDirectArenas=0 -Dlog4j.shutdownHookEnabled=false -Dlog4j2.disable.jmx=true -Dlog4j2.formatMsgNoLookups=true -Djava.locale.providers=SPI,COMPAT --add-opens=java.base/java.io=ALL-UNNAMED -Xms16g -Xmx16g -XX:+UseG1GC -Djava.io.tmpdir=/tmp/elasticsearch-18266345477890424435 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=data -XX:ErrorFile=logs/hs_err_pid%p.log -Xlog:gc*,gc+age=trace,safepoint:file=logs/gc.log:utctime,pid,tags:filecount=32,filesize=64m -Des.cgroups.hierarchy.override=/ -XX:MaxDirectMemorySize=8589934592 -XX:InitiatingHeapOccupancyPercent=30 -XX:G1ReservePercent=25 -Des.path.home=/usr/share/elasticsearch -Des.path.conf=/usr/share/elasticsearch/config -Des.distribution.flavor=default -Des.distribution.type=docker -Des.bundled_jdk=true org.elasticsearch.bootstrap.Elasticsearch -Ebootstrap.memory_lock=true</span><br><span class="line"></span><br><span class="line">Host: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz, 8 cores, 31G, Ubuntu 20.04.3 LTS</span><br><span class="line">Time: Wed Jan  8 00:44:25 2025 UTC elapsed time: 28895.244676 seconds (0d 8h 1m 35s)</span><br></pre></td></tr></table></figure>
-<h2 id="结论">结论</h2>
-<p>到这里可以看出是ES在申请Native memory allocation (mmap) 的时候内存不足,进程退出了。</p>
+
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>到这里可以看出是ES在申请Native memory allocation (mmap) 的时候内存不足,进程退出了。</p>
 <p>数据删除后，通过</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /_cat/health?v</span><br></pre></td></tr></table></figure>
+
 <p>看到active_shards_percent恢复进度到100%后，但还有19个shard unassign</p>
 <p>看下具体没有分配的原因</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /_cluster/allocation/explain</span><br></pre></td></tr></table></figure>
+
 <p>返回内容如下</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;reason&quot; : &quot;ALLOCATION_FAILED&quot;,</span><br><span class="line">    &quot;at&quot; : &quot;2025-01-07T16:28:22.026Z&quot;,</span><br><span class="line">    &quot;failed_allocation_attempts&quot; : 5,</span><br><span class="line">    &quot;details&quot; : &quot;&quot;&quot;failed shard on node [IYowNoBkTzq_WPjXgb_10Q]: </span><br><span class="line">    failed recovery, failure RecoveryFailedException[[notification-jiankunking-2025.01][3]: </span><br><span class="line">    Recovery failed on &#123;es-notify-203&#125;&#123;IYowNoBkTzq_WPjXgb_10Q&#125;</span><br><span class="line">    &#123;nzTGfgdBQvykqKacU_cyzA&#125;&#123;127.0.0.203&#125;&#123;127.0.0.203:9301&#125;&#123;cdfhilmrstw&#125;&#123;ml.machine_memory=33568223232, xpack.installed=true, </span><br><span class="line">    transform.node=true, ml.max_open_jobs=512, ml.max_jvm_size=17179869184&#125;]; </span><br><span class="line">    nested: IndexShardRecoveryException[failed to recover from gateway]; nested:</span><br><span class="line">     EngineCreationFailureException[failed to open reader on writer]; nested: </span><br><span class="line">     IOException[Map failed: MMapIndexInput(path=&quot;/usr/share/elasticsearch/data/nodes/0/indices/n5E4PEFpTKKDgGdNmEqSPQ/3/index/_j50_Lucene80_0.dvd&quot;) </span><br><span class="line">     [this may be caused by lack of enough unfragmented virtual address space or too restrictive virtual memory limits enforced by the operating system, </span><br><span class="line">     preventing us to map a chunk of 4321640 bytes. Please review &apos;ulimit -v&apos;, &apos;ulimit -m&apos; (both should return &apos;unlimited&apos;), </span><br><span class="line">     and &apos;sysctl vm.max_map_count&apos;. More information: </span><br><span class="line">     http://blog.thetaphi.de/2012/07/use-lucenes-mmapdirectory-on-64bit.html]]; &quot;&quot;&quot;,</span><br><span class="line">    &quot;last_allocation_status&quot; : &quot;no&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>手动重新分配下</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">POST /_cluster/reroute?retry_failed=true</span><br></pre></td></tr></table></figure>
+
 <p>集群状态red-&gt;yellow-&gt;green</p>
 <p>业务清理历史数据后，集群</p>
 <ul>
@@ -535,7 +539,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-count">163</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="在阅读本文前，强烈建议阅读： Java JDK 动态代理（AOP）使用及实现原理分析">
+  <meta name="description" content="在阅读本文前，强烈建议阅读：Java JDK 动态代理（AOP）使用及实现原理分析">
 <meta name="keywords" content="原创,JDK,Spring,AOP">
 <meta property="og:type" content="article">
 <meta property="og:title" content="关于Spring AOP与IOC的个人思考">
 <meta property="og:url" content="https://jiankunking.com/spring-aop-ioc-think.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="在阅读本文前，强烈建议阅读： Java JDK 动态代理（AOP）使用及实现原理分析">
+<meta property="og:description" content="在阅读本文前，强烈建议阅读：Java JDK 动态代理（AOP）使用及实现原理分析">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-07-20T08:25:05.584Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="关于Spring AOP与IOC的个人思考">
-<meta name="twitter:description" content="在阅读本文前，强烈建议阅读： Java JDK 动态代理（AOP）使用及实现原理分析">
+<meta name="twitter:description" content="在阅读本文前，强烈建议阅读：Java JDK 动态代理（AOP）使用及实现原理分析">
 
 <link rel="canonical" href="https://jiankunking.com/spring-aop-ioc-think.html">
 
@@ -148,7 +148,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">164</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">163</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -298,40 +298,34 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>在阅读本文前，强烈建议阅读：<br>
-<a href="http://jiankunking.com/java-jdk-aop.html">Java JDK 动态代理（AOP）使用及实现原理分析</a></p>
+        <p>在阅读本文前，强烈建议阅读：<br><a href="http://jiankunking.com/java-jdk-aop.html">Java JDK 动态代理（AOP）使用及实现原理分析</a></p>
 <a id="more"></a>
-<p>AOP是Spring提供的关键特性之一。AOP即面向切面编程，是OOP编程的有效补充。使用AOP技术，可以将一些系统性相关的编程工作，独立提取出来，独立实现，然后通过切面切入进系统。从而避免了在业务逻辑的代码中混入很多的系统相关的逻辑——比如权限管理，事物管理，日志记录等等。这些系统性的编程工作都可以独立编码实现，然后通过AOP技术切入进系统即可。从而达到了将不同的关注点分离出来的效果。<br>
-<img data-src="/images/spring-jdk-aop-think/AOP%E7%A4%BA%E6%84%8F.png" alt><br>
-本文深入剖析Spring的AOP的原理。</p>
-<h1>一、AOP 的实现原理</h1>
-<p>AOP分为静态AOP和动态AOP。</p>
+
+<p>AOP是Spring提供的关键特性之一。AOP即面向切面编程，是OOP编程的有效补充。使用AOP技术，可以将一些系统性相关的编程工作，独立提取出来，独立实现，然后通过切面切入进系统。从而避免了在业务逻辑的代码中混入很多的系统相关的逻辑——比如权限管理，事物管理，日志记录等等。这些系统性的编程工作都可以独立编码实现，然后通过AOP技术切入进系统即可。从而达到了将不同的关注点分离出来的效果。<br><img data-src="/images/spring-jdk-aop-think/AOP%E7%A4%BA%E6%84%8F.png"><br>本文深入剖析Spring的AOP的原理。</p>
+<h1 id="一、AOP-的实现原理"><a href="#一、AOP-的实现原理" class="headerlink" title="一、AOP 的实现原理"></a>一、AOP 的实现原理</h1><p>AOP分为静态AOP和动态AOP。</p>
 <p>静态AOP是指AspectJ实现的AOP，他是将切面代码直接编译到Java类文件中。</p>
 <p>动态AOP是指将切面代码进行动态织入实现的AOP。</p>
 <p>Spring的AOP为动态AOP，实现的技术为：JDK提供的动态代理技术 和 CGLIB(动态字节码增强技术)。尽管实现技术不一样，但都是基于代理模式，都是生成一个代理对象。</p>
-<h2 id="1、JDK动态代理">1、JDK动态代理</h2>
-<p>JDK部分解析参考：<br>
-<a href="https://jiankunking.com/java-jdk-aop.html">Java JDK 动态代理（AOP）使用及实现原理分析</a></p>
-<h2 id="2、CGLIB（code-generate-libary）">2、CGLIB（code generate libary）</h2>
-<p>字节码生成技术实现AOP，其实就是继承被代理对象，然后Override需要被代理的方法，在覆盖该方法时，自然是可以插入我们自己的代码的。</p>
+<h2 id="1、JDK动态代理"><a href="#1、JDK动态代理" class="headerlink" title="1、JDK动态代理"></a>1、JDK动态代理</h2><p>JDK部分解析参考：<br><a href="https://jiankunking.com/java-jdk-aop.html">Java JDK 动态代理（AOP）使用及实现原理分析</a></p>
+<h2 id="2、CGLIB（code-generate-libary）"><a href="#2、CGLIB（code-generate-libary）" class="headerlink" title="2、CGLIB（code generate libary）"></a>2、CGLIB（code generate libary）</h2><p>字节码生成技术实现AOP，其实就是继承被代理对象，然后Override需要被代理的方法，在覆盖该方法时，自然是可以插入我们自己的代码的。</p>
 <p><font color="DeepPink"><strong>因为需要Override被代理对象的方法，所以自然CGLIB技术实现AOP时，就必须要求需要被代理的方法不能是final方法，因为final方法不能被子类覆盖。</strong></font></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">package net.aazj.aop;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import net.sf.cglib.proxy.Enhancer;</span><br><span class="line">import net.sf.cglib.proxy.MethodInterceptor;</span><br><span class="line">import net.sf.cglib.proxy.MethodProxy;</span><br><span class="line"></span><br><span class="line">public class CGProxy implements MethodInterceptor&#123;</span><br><span class="line">    private Object target;    // 被代理对象</span><br><span class="line">    public CGProxy(Object target)&#123;</span><br><span class="line">        this.target = target;</span><br><span class="line">    &#125;</span><br><span class="line">    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable &#123;</span><br><span class="line">        System.out.println(&quot;do sth before....&quot;);</span><br><span class="line">        Object result = proxy.invokeSuper(obj, args);</span><br><span class="line">        System.out.println(&quot;do sth after....&quot;);</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line">    public Object getProxyObject() &#123;</span><br><span class="line">        Enhancer enhancer = new Enhancer();</span><br><span class="line">        // 设置父类</span><br><span class="line">        enhancer.setSuperclass(this.target.getClass());    </span><br><span class="line">        // 设置回调</span><br><span class="line">        enhancer.setCallback(this);    // 在调用父类方法时，回调 this.intercept()</span><br><span class="line">        // 创建代理对象</span><br><span class="line">        return enhancer.create();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>测试：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">public interface UserService &#123;</span><br><span class="line">    public void addUser(User user);</span><br><span class="line">    public User getUser(int id);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class UserServiceImpl implements UserService &#123;</span><br><span class="line">    public void addUser(User user) &#123;</span><br><span class="line">        System.out.println(&quot;add user into database.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    public User getUser(int id) &#123;</span><br><span class="line">        User user = new User();</span><br><span class="line">        user.setId(id);</span><br><span class="line">        System.out.println(&quot;getUser from database.&quot;);</span><br><span class="line">        return user;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class CGProxyTest &#123;</span><br><span class="line">    public static void main(String[] args)&#123;</span><br><span class="line">         // 被代理的对象</span><br><span class="line">        Object proxyedObject = new UserServiceImpl();   </span><br><span class="line">        CGProxy cgProxy = new CGProxy(proxyedObject);</span><br><span class="line">        UserService proxyObject = (UserService) cgProxy.getProxyObject();</span><br><span class="line">        proxyObject.getUser(1);</span><br><span class="line">        proxyObject.addUser(new User());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>输出结果：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">do sth before....</span><br><span class="line">getUser from database.</span><br><span class="line">do sth after....</span><br><span class="line">do sth before....</span><br><span class="line">add user into database.</span><br><span class="line">do sth after....</span><br></pre></td></tr></table></figure>
-<p>它的原理是：生成一个父类<br>
-enhancer.setSuperclass(this.target.getClass())<br>
-的子类enhancer.create(),然后对父类的方法进行拦截enhancer.setCallback(this).</p>
-<h1>二、思考</h1>
-<p>从以上两种代理方式可以看出，<font color="DeepPink"><strong>实现AOP的关键是：动态代理，即将需要用的接口、类再包装一层，通过动态修改字节码文件实现各种拦截与通知。</strong></font></p>
+
+<p>它的原理是：生成一个父类<br>enhancer.setSuperclass(this.target.getClass())<br>的子类enhancer.create(),然后对父类的方法进行拦截enhancer.setCallback(this). </p>
+<h1 id="二、思考"><a href="#二、思考" class="headerlink" title="二、思考"></a>二、思考</h1><p>从以上两种代理方式可以看出，<font color="DeepPink"><strong>实现AOP的关键是：动态代理，即将需要用的接口、类再包装一层，通过动态修改字节码文件实现各种拦截与通知。</strong></font></p>
 <p><font color="DeepPink"><strong>注意，两者(JDK动态代理、CGLIB)都需要：要代理真实对象的实例。</strong></font></p>
-<p>比如：在Spring MVC的Controller层一般@Autowired是Service接口，但带有@Service标识的却是实现Service接口的实体类，这样对于JDK动态代理来说已经足以生成代理类了(其实，不过是cglib还是jdk的动态代理，你直接@Autowired Service接口实现类，也是可以注入成功的，但不如注入Service接口灵活)，大家在跟踪代码的时候可以看一下Spring注入的bean真正的类型，你就可以发现它是代理生成的实例。</p>
-<p>比如这种：</p>
-<p><img data-src="/images/spring-jdk-aop-think/%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86%E5%AF%B9%E8%B1%A1%E7%B1%BB%E5%9E%8B.png" alt></p>
+<p>比如：在Spring MVC的Controller层一般@Autowired是Service接口，但带有@Service标识的却是实现Service接口的实体类，这样对于JDK动态代理来说已经足以生成代理类了(其实，不过是cglib还是jdk的动态代理，你直接@Autowired Service接口实现类，也是可以注入成功的，但不如注入Service接口灵活)，大家在跟踪代码的时候可以看一下Spring注入的bean真正的类型，你就可以发现它是代理生成的实例。 </p>
+<p>比如这种： </p>
+<p><img data-src="/images/spring-jdk-aop-think/%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86%E5%AF%B9%E8%B1%A1%E7%B1%BB%E5%9E%8B.png"></p>
 <p>带有注解标识的接口或者在Spring.XML中配置的bean会在Spring初始化的时候，被Spring通过反射加载实例化到Spring容器中。</p>
 <blockquote>
-<p>做过Client/Server架构开发的朋友应该知道，在Application运行过程中一般都会有一个应用上下文Context，一般将一些系统信息放在里面，比如一些登录信息、WCF连接实例等。这些信息在系统的任何地方都可以取到（其实就是一些顶级变量集合，生命周期最长的一些家伙）。</p>
+<p>做过Client&#x2F;Server架构开发的朋友应该知道，在Application运行过程中一般都会有一个应用上下文Context，一般将一些系统信息放在里面，比如一些登录信息、WCF连接实例等。这些信息在系统的任何地方都可以取到（其实就是一些顶级变量集合，生命周期最长的一些家伙）。</p>
 </blockquote>
 <blockquote>
 <p>换个角度想一下，如果我们在Application初始化的时候，用反射（获取要代理对象的实例）和动态代理获取有注解标识或者在xml中配置bean的实例，并放到应用上下文Context中，在需要的地方都能取到，这不就是一个简单版的Spring 容器吗？</p>
@@ -499,7 +493,7 @@ enhancer.setSuperclass(this.target.getClass())<br>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">一、AOP 的实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、JDK动态代理"><span class="nav-number">1.1.</span> <span class="nav-text">1、JDK动态代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、CGLIB（code-generate-libary）"><span class="nav-number">1.2.</span> <span class="nav-text">2、CGLIB（code generate libary）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">二、思考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、AOP-的实现原理"><span class="nav-number">1.</span> <span class="nav-text">一、AOP 的实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、JDK动态代理"><span class="nav-number">1.1.</span> <span class="nav-text">1、JDK动态代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、CGLIB（code-generate-libary）"><span class="nav-number">1.2.</span> <span class="nav-text">2、CGLIB（code generate libary）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、思考"><span class="nav-number">2.</span> <span class="nav-text">二、思考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -515,7 +509,7 @@ enhancer.setSuperclass(this.target.getClass())<br>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-count">163</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
