@@ -25,7 +25,7 @@
   </script>
 
   <meta name="description" content="记录一次业务复杂场景下DSL优化的过程">
-<meta name="keywords" content="Performance,原创,ElasticSearch,Document,Size,Query,Large">
+<meta name="keywords" content="原创,Performance,ElasticSearch,Document,Size,Query,Large">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何优化Elasticsearch大文档查询？">
 <meta property="og:url" content="https://jiankunking.com/how-to-optimize-elasticsearch-large-document-query.html">
@@ -302,19 +302,19 @@
 <p>记录一次业务复杂场景下DSL优化的过程</p>
 </blockquote>
 <a id="more"></a>
-<h2 id="背景">背景</h2>
-<p>B端商城业务有一个场景就是客户可见的产品列表是需要N多闸口及各种其它逻辑组合过滤的，各种闸口数据及产品数据都是存储在ES的(有的是独立索引，有的是作为产品属性存储在产品文档上)。</p>
+
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>B端商城业务有一个场景就是客户可见的产品列表是需要N多闸口及各种其它逻辑组合过滤的，各种闸口数据及产品数据都是存储在ES的(有的是独立索引，有的是作为产品属性存储在产品文档上)。</p>
 <p>在实际使用的过程中，发现接口的毛刺比较严重，而这部分毛刺请求的耗时基本都是花费在从ES中查询产品索引的时候。</p>
 <p>开启了一下ES慢DSL的日志</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">PUT /jiankunking_product_prod/_settings</span><br><span class="line">&#123;</span><br><span class="line">  &quot;index.search.slowlog.threshold.query.warn&quot;: &quot;10s&quot;,</span><br><span class="line">  &quot;index.search.slowlog.threshold.query.info&quot;: &quot;5s&quot;,</span><br><span class="line">  &quot;index.search.slowlog.threshold.fetch.warn&quot;: &quot;2s&quot;,</span><br><span class="line">  &quot;index.indexing.slowlog.source&quot;: true</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>经过分析慢DSL日志发现耗时长的部分都是在fetch阶段。</p>
 <p>这里有个地方需要注意</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@jiankunking-search-01: /data/es/logs]# ls -lrth |grep -v .gz</span><br><span class="line">total 2.2G</span><br><span class="line">-rw-r--r-- 1 es es    0 Sep 30  2019 jiankunking_audit.json</span><br><span class="line">-rw-r--r-- 1 es es    0 Sep 30  2019 jiankunking_index_indexing_slowlog.log</span><br><span class="line">-rw-r--r-- 1 es es    0 Sep 30  2019 jiankunking_index_indexing_slowlog.json</span><br><span class="line">-rw-r--r-- 1 es es  53M Dec 31  2023 jiankunking_deprecation.log</span><br><span class="line">-rw-r--r-- 1 es es 108M Dec 31  2023 jiankunking_deprecation.json</span><br><span class="line">-rw-r--r-- 1 es es  55K Jul 30 10:43 jiankunking_server.json</span><br><span class="line">-rw-r--r-- 1 es es  52K Jul 30 10:43 jiankunking.log</span><br><span class="line">-rw-r--r-- 1 es es  63M Jul 30 11:32 jiankunking_index_search_slowlog.log //这里是完整的DSL</span><br><span class="line">-rw-r--r-- 1 es es 8.9M Jul 30 11:32 jiankunking_index_search_slowlog.json //这里的DSL会被截断</span><br></pre></td></tr></table></figure>
-<h2 id="分析">分析</h2>
-<p>已知问题点</p>
+
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>已知问题点</p>
 <ul>
-<li>产品文档身上有4个属性会很大
-<ul>
+<li>产品文档身上有4个属性会很大<ul>
 <li>属性A(nested属性):可以到几万个</li>
 <li>属性B(nested属性):可以到几百个</li>
 <li>属性C(string数组):可以到几万个</li>
@@ -324,14 +324,12 @@
 <li><a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/_fetch_phase.html" target="_blank" rel="noopener">ES fetch阶段慢，其实就是从相关分片请求文档内容慢(这时候id其实已经知道了)</a></li>
 </ul>
 <p>大体就是下图这么个流程</p>
-<p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/query_fetch.png" alt></p>
+<p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/query_fetch.png"></p>
 <p>下面简化一下请求的DSL，看下移除所有复杂的查询逻辑后，直接按照_id来terms查询效果如何？</p>
-<h3 id="DSL">DSL</h3>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">GET /jiankunking_product_prod/_search</span><br><span class="line">&#123;</span><br><span class="line">	&quot;size&quot;: 10000,</span><br><span class="line">	&quot;_source&quot;: &#123;</span><br><span class="line">		&quot;includes&quot;: [</span><br><span class="line">			&quot;code&quot;,</span><br><span class="line">			&quot;group&quot;,</span><br><span class="line">			&quot;groupBrand&quot;</span><br><span class="line">		],</span><br><span class="line">		&quot;excludes&quot;: []</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;query&quot;: &#123;</span><br><span class="line">		&quot;terms&quot;: &#123;</span><br><span class="line">			&quot;_id&quot;: [</span><br><span class="line">				&quot;具体文档_id&quot;</span><br><span class="line">			]</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="不同文档大小查询时延">不同文档大小查询时延</h3>
-<blockquote>
-<p>当前分析的DSL原本命中的文档数就是8306<br>
-下表中的文档数是直接在terms中查询的id数</p>
+<h3 id="DSL"><a href="#DSL" class="headerlink" title="DSL"></a>DSL</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">GET /jiankunking_product_prod/_search</span><br><span class="line">&#123;</span><br><span class="line">	&quot;size&quot;: 10000,</span><br><span class="line">	&quot;_source&quot;: &#123;</span><br><span class="line">		&quot;includes&quot;: [</span><br><span class="line">			&quot;code&quot;,</span><br><span class="line">			&quot;group&quot;,</span><br><span class="line">			&quot;groupBrand&quot;</span><br><span class="line">		],</span><br><span class="line">		&quot;excludes&quot;: []</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;query&quot;: &#123;</span><br><span class="line">		&quot;terms&quot;: &#123;</span><br><span class="line">			&quot;_id&quot;: [</span><br><span class="line">				&quot;具体文档_id&quot;</span><br><span class="line">			]</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="不同文档大小查询时延"><a href="#不同文档大小查询时延" class="headerlink" title="不同文档大小查询时延"></a>不同文档大小查询时延</h3><blockquote>
+<p>当前分析的DSL原本命中的文档数就是8306<br>下表中的文档数是直接在terms中查询的id数</p>
 </blockquote>
 <table>
 <thead>
@@ -343,11 +341,10 @@
 <th>备注</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>8306</td>
-<td>&lt;=6,766,797</td>
-<td>&lt;=6,608</td>
+<td>&lt;&#x3D;6,766,797</td>
+<td>&lt;&#x3D;6,608</td>
 <td>5908</td>
 <td></td>
 </tr>
@@ -387,11 +384,11 @@
 <td>剔除大的(注意这里，当文档大小比较小的时候，4000+的文档查询其实是比较快的)</td>
 </tr>
 <tr>
-<td>----</td>
-<td>----</td>
-<td>----</td>
-<td>----</td>
-<td>----</td>
+<td>—-</td>
+<td>—-</td>
+<td>—-</td>
+<td>—-</td>
+<td>—-</td>
 </tr>
 <tr>
 <td>4070</td>
@@ -449,16 +446,11 @@
 <td>1244</td>
 <td>剔除小的</td>
 </tr>
-</tbody>
-</table>
-<h4 id="从大文档开始删除">从大文档开始删除</h4>
-<p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/%E4%BB%8E%E5%A4%A7%E6%96%87%E6%A1%A3%E5%BC%80%E5%A7%8B%E5%88%A0%E9%99%A4.png" alt></p>
-<h4 id="从小文档开始删除">从小文档开始删除</h4>
-<p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/%E4%BB%8E%E5%B0%8F%E6%96%87%E6%A1%A3%E5%BC%80%E5%A7%8B%E5%88%A0%E9%99%A4.png" alt></p>
-<h3 id="分析-v2">分析</h3>
-<ul>
-<li>文档数与文档大小查询分析
-<ul>
+</tbody></table>
+<h4 id="从大文档开始删除"><a href="#从大文档开始删除" class="headerlink" title="从大文档开始删除"></a>从大文档开始删除</h4><p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/%E4%BB%8E%E5%A4%A7%E6%96%87%E6%A1%A3%E5%BC%80%E5%A7%8B%E5%88%A0%E9%99%A4.png"></p>
+<h4 id="从小文档开始删除"><a href="#从小文档开始删除" class="headerlink" title="从小文档开始删除"></a>从小文档开始删除</h4><p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/%E4%BB%8E%E5%B0%8F%E6%96%87%E6%A1%A3%E5%BC%80%E5%A7%8B%E5%88%A0%E9%99%A4.png"></p>
+<h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><ul>
+<li>文档数与文档大小查询分析<ul>
 <li>剔除大文档之后，查询数据效率提升明显</li>
 <li>剔除小文档之后，查询数据效率提升缓慢</li>
 </ul>
@@ -466,46 +458,39 @@
 </ul>
 <p>到这里我们可以发现当文档size比较小的时候几千个文档的查询RT是很短的，但当随着请求命中的大文档越来越多，RT极速增加。</p>
 <p>回看下我们的产品索引数据，可以发现大字段其实都是用来过滤的，并不是返回给页面需要的；那我们是不是可以：将索引拆分为两个或者ES只用来作为二级索引返回ids,然后去MySQL中查询具体的产品信息？</p>
-<p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/query_architecture.png" alt></p>
+<p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/query_architecture.png"></p>
 <p>那我们将慢DSL中中查询的字段修改为只返回_id</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">POST /jiankunking_product_prod/_search</span><br><span class="line">&#123;</span><br><span class="line">	&quot;size&quot;: 10000,</span><br><span class="line">	&quot;_source&quot;: false,</span><br><span class="line">	&quot;query&quot;: &#123;</span><br><span class="line">		&quot;terms&quot;: &#123;</span><br><span class="line">			&quot;_id&quot;: [&quot;&quot;],</span><br><span class="line">			&quot;boost&quot;: 1</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>这时候查询耗时只需要<code>203ms</code>,这种情况下还能不能再优化了呢？答案是可以的</p>
 <blockquote>
 <p>索引中文档_id就是产品的code</p>
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">POST /jiankunking_product_prod/_search</span><br><span class="line">&#123;</span><br><span class="line">	&quot;size&quot;: 10000,</span><br><span class="line">	&quot;_source&quot;: false,</span><br><span class="line">	&quot;stored_fields&quot;: &quot;_none_&quot;,</span><br><span class="line">	&quot;docvalue_fields&quot;: [</span><br><span class="line">		&quot;code&quot;</span><br><span class="line">	],</span><br><span class="line">	&quot;query&quot;: &#123;</span><br><span class="line">		&quot;terms&quot;: &#123;</span><br><span class="line">			&quot;code&quot;: [</span><br><span class="line">				&quot;&quot;</span><br><span class="line">			],</span><br><span class="line">			&quot;boost&quot;: 1</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>这时候查询只需要<code>76ms</code>。</p>
-<h2 id="结论">结论</h2>
-<p>到这里这次优化基本结束了，最终的方案就是</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>到这里这次优化基本结束了，最终的方案就是</p>
 <ul>
 <li>通过从jiankunking_product_prod索引中通过<code>列存</code>获取ids</li>
 <li>到MySQL或者新的产品主数据索引中查询具体的产品数据</li>
 </ul>
-<h2 id="思考">思考</h2>
-<h3 id="为啥不直接从jiankunking-product-prod索引中通过列存获取前端需要的数据呢？">为啥不直接从jiankunking_product_prod索引中通过列存获取前端需要的数据呢？</h3>
-<p>因为真实业务场景中需要返回的产品属性虽然每个不大，但总数有20多个，列存在返回字段数多且命中文档大小都不大的场景下，相比原逻辑直接从_source中取会略有下降。</p>
+<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><h3 id="为啥不直接从jiankunking-product-prod索引中通过列存获取前端需要的数据呢？"><a href="#为啥不直接从jiankunking-product-prod索引中通过列存获取前端需要的数据呢？" class="headerlink" title="为啥不直接从jiankunking_product_prod索引中通过列存获取前端需要的数据呢？"></a>为啥不直接从jiankunking_product_prod索引中通过列存获取前端需要的数据呢？</h3><p>因为真实业务场景中需要返回的产品属性虽然每个不大，但总数有20多个，列存在返回字段数多且命中文档大小都不大的场景下，相比原逻辑直接从_source中取会略有下降。</p>
 <p>更多原理性解释，可以看下这里:<a href="https://jiankunking.com/elasticsearch-source-doc-values-and-store-performance.html">https://jiankunking.com/elasticsearch-source-doc-values-and-store-performance.html</a></p>
-<h3 id="ES适合的场景都有哪些？">ES适合的场景都有哪些？</h3>
-<p>目前我这边遇到的场景主要有：</p>
+<h3 id="ES适合的场景都有哪些？"><a href="#ES适合的场景都有哪些？" class="headerlink" title="ES适合的场景都有哪些？"></a>ES适合的场景都有哪些？</h3><p>目前我这边遇到的场景主要有：</p>
 <ul>
-<li>检索加速
-<ul>
-<li>数据查询的主存储
-<ul>
+<li>检索加速<ul>
+<li>数据查询的主存储<ul>
 <li>当文档大小不是太大的时候，索引检索完直接返回需要的数据</li>
 </ul>
 </li>
-<li>二级索引
-<ul>
+<li>二级索引<ul>
 <li>针对的就是本文这种场景</li>
 </ul>
 </li>
 </ul>
 </li>
-<li>日志
-<ul>
-<li>应用/容器日志
-<ul>
+<li>日志<ul>
+<li>应用&#x2F;容器日志<ul>
 <li>这里追求的更多是高吞吐的写入</li>
 </ul>
 </li>
@@ -513,16 +498,14 @@
 </ul>
 </li>
 </ul>
-<h3 id="具体索引中数据大小是什么情况呢？">具体索引中数据大小是什么情况呢？</h3>
-<table>
+<h3 id="具体索引中数据大小是什么情况呢？"><a href="#具体索引中数据大小是什么情况呢？" class="headerlink" title="具体索引中数据大小是什么情况呢？"></a>具体索引中数据大小是什么情况呢？</h3><table>
 <thead>
 <tr>
 <th>分位数</th>
 <th>大小 (KB)</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>0.05</td>
 <td>1.16</td>
 </tr>
@@ -602,11 +585,9 @@
 <td>0.99</td>
 <td>989.75</td>
 </tr>
-</tbody>
-</table>
-<p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/doc_percent_size.png" alt></p>
-<h2 id="拓展阅读">拓展阅读</h2>
-<ul>
+</tbody></table>
+<p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/doc_percent_size.png"></p>
+<h2 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h2><ul>
 <li><a href="https://jiankunking.com/elasticsearch-source-doc-values-and-store-performance.html">https://jiankunking.com/elasticsearch-source-doc-values-and-store-performance.html</a></li>
 <li><a href="https://jiankunking.com/elasticsearch-scroll-and-search-after.html">https://jiankunking.com/elasticsearch-scroll-and-search-after.html</a></li>
 <li><a href="https://luis-sena.medium.com/stop-using-the-id-field-in-elasticsearch-6fb650d1fbae" target="_blank" rel="noopener">https://luis-sena.medium.com/stop-using-the-id-field-in-elasticsearch-6fb650d1fbae</a></li>
@@ -627,13 +608,13 @@
       <div class="popular-posts-title"><a href="\elasticsearch-cluster-sizing-and-performance-tuning.html" rel="bookmark">[译]Elasticsearch集群规模和性能调优</a></div>
     </li>
     <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\customizing-your-document-routing.html" rel="bookmark">[译]Elasticsearch自定义文档路由</a></div>
+    </li>
+    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\why-does-elasticsearch-have-poor-update-performance.html" rel="bookmark">【Elasticsearch源码】 更新性能分析</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\elasticsearch-performance-tuning-practice-at-ebay.html" rel="bookmark">[译]eBay Elasticsearch性能调优实践</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\customizing-your-document-routing.html" rel="bookmark">[译]Elasticsearch自定义文档路由</a></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\elasticsearch-scroll-and-search-after.html" rel="bookmark">Elasticsearch From/Size vs Scroll vs Search After</a></div>
@@ -699,8 +680,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/performance/" rel="tag"># Performance</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
+              <a href="/tags/performance/" rel="tag"># Performance</a>
               <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/document/" rel="tag"># Document</a>
               <a href="/tags/size/" rel="tag"># Size</a>
@@ -780,7 +761,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DSL"><span class="nav-number">2.1.</span> <span class="nav-text">DSL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#不同文档大小查询时延"><span class="nav-number">2.2.</span> <span class="nav-text">不同文档大小查询时延</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#从大文档开始删除"><span class="nav-number">2.2.1.</span> <span class="nav-text">从大文档开始删除</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#从小文档开始删除"><span class="nav-number">2.2.2.</span> <span class="nav-text">从小文档开始删除</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析-v2"><span class="nav-number">2.3.</span> <span class="nav-text">分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">3.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#思考"><span class="nav-number">4.</span> <span class="nav-text">思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为啥不直接从jiankunking-product-prod索引中通过列存获取前端需要的数据呢？"><span class="nav-number">4.1.</span> <span class="nav-text">为啥不直接从jiankunking_product_prod索引中通过列存获取前端需要的数据呢？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ES适合的场景都有哪些？"><span class="nav-number">4.2.</span> <span class="nav-text">ES适合的场景都有哪些？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#具体索引中数据大小是什么情况呢？"><span class="nav-number">4.3.</span> <span class="nav-text">具体索引中数据大小是什么情况呢？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拓展阅读"><span class="nav-number">5.</span> <span class="nav-text">拓展阅读</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DSL"><span class="nav-number">2.1.</span> <span class="nav-text">DSL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#不同文档大小查询时延"><span class="nav-number">2.2.</span> <span class="nav-text">不同文档大小查询时延</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#从大文档开始删除"><span class="nav-number">2.2.1.</span> <span class="nav-text">从大文档开始删除</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#从小文档开始删除"><span class="nav-number">2.2.2.</span> <span class="nav-text">从小文档开始删除</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析-1"><span class="nav-number">2.3.</span> <span class="nav-text">分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">3.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#思考"><span class="nav-number">4.</span> <span class="nav-text">思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为啥不直接从jiankunking-product-prod索引中通过列存获取前端需要的数据呢？"><span class="nav-number">4.1.</span> <span class="nav-text">为啥不直接从jiankunking_product_prod索引中通过列存获取前端需要的数据呢？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ES适合的场景都有哪些？"><span class="nav-number">4.2.</span> <span class="nav-text">ES适合的场景都有哪些？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#具体索引中数据大小是什么情况呢？"><span class="nav-number">4.3.</span> <span class="nav-text">具体索引中数据大小是什么情况呢？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拓展阅读"><span class="nav-number">5.</span> <span class="nav-text">拓展阅读</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
