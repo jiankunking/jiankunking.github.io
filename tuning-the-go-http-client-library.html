@@ -25,7 +25,7 @@
   </script>
 
   <meta name="description" content="记录一次Go HTTP Client TIME_WAIT的优化">
-<meta name="keywords" content="Network,TCP,Client,Go,IP,HTTP,Settings,TIME_WAIT">
+<meta name="keywords" content="Network,TCP,Go,Client,IP,HTTP,Settings,TIME_WAIT">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Tuning the Go HTTP Client Settings">
 <meta property="og:url" content="https://jiankunking.com/tuning-the-go-http-client-library.html">
@@ -296,36 +296,33 @@
 <p>记录一次Go HTTP Client TIME_WAIT的优化</p>
 </blockquote>
 <a id="more"></a>
-
-<h2 id="业务流程"><a href="#业务流程" class="headerlink" title="业务流程"></a>业务流程</h2><p><img data-src="/images/tuning-the-go-http-client-library/%E4%B8%9A%E5%8A%A1%E6%B5%81%E7%A8%8B.png"></p>
-<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>通过容器监控发现服务到事件总线的负载均衡之间有大量的短链接，回看一下代码</p>
+<h2 id="业务流程">业务流程</h2>
+<p><img data-src="/images/tuning-the-go-http-client-library/%E4%B8%9A%E5%8A%A1%E6%B5%81%E7%A8%8B.png" alt></p>
+<h2 id="分析">分析</h2>
+<p>通过容器监控发现服务到事件总线的负载均衡之间有大量的短链接，回看一下代码</p>
 <p>发送请求的代码</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">func SendToKEvent(ev *KEvent) error &#123;</span><br><span class="line">	data, err := json.Marshal(ev.Data)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	log.Println(string(data))</span><br><span class="line">	if !sendEvent &#123;</span><br><span class="line">		log.Println(&quot;------ SEND_EVENT IS DISABLED ------&quot;)</span><br><span class="line">		return nil</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	defer util.TimeCost(&quot;SendToKEvent&quot;)()</span><br><span class="line"></span><br><span class="line">	body := bytes.NewReader(data)</span><br><span class="line">	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)</span><br><span class="line">	defer cancel()</span><br><span class="line">	req, err := http.NewRequest(http.MethodPost, ev.Url, body)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	req.WithContext(ctx)</span><br><span class="line">	req.Header.Set(&quot;Content-Type&quot;, &quot;application/json; charset=utf-8&quot;)</span><br><span class="line">	req.Header.Set(&quot;......&quot;, &quot;......&quot;)</span><br><span class="line"></span><br><span class="line">	for k, v := range ev.ExtMap &#123;</span><br><span class="line">		req.Header.Set(k, v)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	resp, err := httpc.HttpClient.Do(req)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	defer resp.Body.Close()</span><br><span class="line"></span><br><span class="line">	// 事件总线 2xx 均为正常</span><br><span class="line">	if resp.StatusCode &gt;= 300 || resp.StatusCode &lt; 200 &#123;</span><br><span class="line">		return fmt.Errorf(&quot;req failed, resp=%v&quot;, resp)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>http client的代码</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">var (</span><br><span class="line">	HttpClient = &amp;http.Client&#123;</span><br><span class="line">		Transport: &amp;http.Transport&#123;</span><br><span class="line">			Proxy: http.ProxyFromEnvironment,</span><br><span class="line">			DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) &#123;</span><br><span class="line">				return (&amp;net.Dialer&#123;</span><br><span class="line">					Timeout:   10 * time.Second,</span><br><span class="line">					KeepAlive: 90 * time.Second,</span><br><span class="line">				&#125;).DialContext(ctx, network, addr)</span><br><span class="line">			&#125;,</span><br><span class="line">			ForceAttemptHTTP2:     true,</span><br><span class="line">			TLSHandshakeTimeout:   5 * time.Second,</span><br><span class="line">			ResponseHeaderTimeout: 30 * time.Second,</span><br><span class="line">			MaxIdleConnsPerHost:   10,</span><br><span class="line">			IdleConnTimeout:       90 * time.Second,</span><br><span class="line">			ExpectContinueTimeout: 1 * time.Second,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
 <p>代码看起来没啥问题,但想到了之前处理过Golang ES client的一个问题</p>
 <p><a href="https://jiankunking.com/tcp-state-diagram.html">https://jiankunking.com/tcp-state-diagram.html</a></p>
-<p>看下上文中<code>TIME_WAIT</code>部分，发现还真是<br><a href="https://pkg.go.dev/net/http#Response" target="_blank" rel="noopener">https://pkg.go.dev/net/http#Response</a></p>
+<p>看下上文中<code>TIME_WAIT</code>部分，发现还真是<br>
+<a href="https://pkg.go.dev/net/http#Response" target="_blank" rel="noopener">https://pkg.go.dev/net/http#Response</a></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// The http Client and Transport guarantee that Body is always</span><br><span class="line">// non-nil, even on responses without a body or responses with</span><br><span class="line">// a zero-length body. It is the caller&apos;s responsibility to</span><br><span class="line">// close Body. The default HTTP client&apos;s Transport may not</span><br><span class="line">// reuse HTTP/1.x &quot;keep-alive&quot; TCP connections if the Body is</span><br><span class="line">// not read to completion and closed.</span><br></pre></td></tr></table></figure>
-
 <p>调整代码</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">func SendToKEvent(ev *KEvent) error &#123;</span><br><span class="line">	......</span><br><span class="line">	resp, err := httpc.HttpClient.Do(req)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return err</span><br><span class="line">	&#125;</span><br><span class="line">	defer resp.Body.Close()</span><br><span class="line">	io.Copy(ioutil.Discard, resp.Body)  // &lt;-- 添加这一行</span><br><span class="line">	......</span><br><span class="line">	return nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>重新部署后,发现<code>TIME_WAIT</code>的链接少了很多，但还是有10几个</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">bash-5.0# netstat -anp |grep TIME</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:10964 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:45738 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:21178 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:37354 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:10966 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:37352 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:61524 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:61526 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:21180 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:33256 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:45736 TIME_WAIT   -</span><br><span class="line">tcp        0      0 ::ffff:172.16.3.247:8080 ::ffff:10.200.76.64:33254 TIME_WAIT   -</span><br><span class="line">bash-5.0#</span><br></pre></td></tr></table></figure>
-
 <p>这里需要注意一下</p>
 <ul>
 <li>172.16.3.247是服务POD的ip</li>
 <li>10.200.76.64是POD所在宿主机的ip</li>
 </ul>
 <p>也就是说POD跟宿主机之间有短链接,那这几个短链接是在做啥呢？</p>
-<p>抓包看下<br><img data-src="/images/tuning-the-go-http-client-library/%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5%E5%88%86%E6%9E%90.png"></p>
+<p>抓包看下<br>
+<img data-src="/images/tuning-the-go-http-client-library/%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5%E5%88%86%E6%9E%90.png" alt></p>
 <p>着重看一下No 502这一行</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Frame 502: 177 bytes on wire (1416 bits), 177 bytes captured (1416 bits)</span><br><span class="line">Ethernet II, Src: ee:ee:ee:ee:ee:ee (ee:ee:ee:ee:ee:ee), Dst: b6:cd:6a:f8:69:5e (b6:cd:6a:f8:69:5e)</span><br><span class="line">Internet Protocol Version 4, Src: 10.200.76.64, Dst: 172.16.3.247</span><br><span class="line">Transmission Control Protocol, Src Port: 29978, Dst Port: 8080, Seq: 1, Ack: 1, Len: 111</span><br><span class="line">Hypertext Transfer Protocol</span><br><span class="line">    GET /healthz HTTP/1.1\r\n &lt;-- 注意这一行,这个接口是服务配置的存活检查接口</span><br><span class="line">    Host: 172.16.3.247:8080\r\n</span><br><span class="line">    User-Agent: kube-probe/1.21\r\n</span><br><span class="line">    Accept: */*\r\n</span><br><span class="line">    Connection: close\r\n &lt;-- 注意这一行</span><br><span class="line">    \r\n</span><br><span class="line">    [Response in frame: 506]</span><br><span class="line">    [Full request URI: http://172.16.3.247:8080/healthz]</span><br></pre></td></tr></table></figure>
-
 <p>Connection</p>
 <ul>
 <li><code>Connection: keep-alive</code> 当一个网页打开完成后，客户端和服务器之间用于传输HTTP数据的TCP连接不会关闭，如果客户端再次访问这个服务器上的网页，会继续使用这一条已经建立的连接</li>
@@ -334,15 +331,16 @@
 <p>从<code>Connection</code>的注释可以看出当请求header中带有<code>Connection: keep-alive</code>表明该请求是会是一个短链接。</p>
 <p>看下服务的Deployment的配置</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">livenessProbe:</span><br><span class="line">  failureThreshold: 3</span><br><span class="line">  httpGet:</span><br><span class="line">    path: /healthz</span><br><span class="line">    port: 8080</span><br><span class="line">    scheme: HTTP</span><br><span class="line">  periodSeconds: 10</span><br><span class="line">  successThreshold: 1</span><br><span class="line">  timeoutSeconds: 1</span><br></pre></td></tr></table></figure>
-
 <p>到这里问题都可以解释的通了,Kubernetes会每10秒请求一次服务的存活检查的接口,每一次都是短链接,而<code>TIME_WAIT</code>的默认值是120s。</p>
 <p>那服务<code>TIME_WAIT</code>的链接应该会一直保持在11-13个左右。</p>
 <p>到这里所有的问题都就可以解释了。</p>
-<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><ul>
+<h2 id="结论">结论</h2>
+<ul>
 <li>Go HTTP Client请求完了,即使业务不关注响应的Body,还是要在代码中read一下body。</li>
 <li>只要服务配置了存活检查就会有短链接，短链接的数据取决于检查间隔时间的配置。</li>
 </ul>
-<h2 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h2><ul>
+<h2 id="拓展阅读">拓展阅读</h2>
+<ul>
 <li><a href="https://jiankunking.com/tcp-state-diagram.html">TCP 状态图</a></li>
 </ul>
 
@@ -432,8 +430,8 @@
           <div class="post-tags">
               <a href="/tags/network/" rel="tag"># Network</a>
               <a href="/tags/tcp/" rel="tag"># TCP</a>
-              <a href="/tags/client/" rel="tag"># Client</a>
               <a href="/tags/go/" rel="tag"># Go</a>
+              <a href="/tags/client/" rel="tag"># Client</a>
               <a href="/tags/ip/" rel="tag"># IP</a>
               <a href="/tags/http/" rel="tag"># HTTP</a>
               <a href="/tags/settings/" rel="tag"># Settings</a>

@@ -25,7 +25,7 @@
   </script>
 
   <meta name="description" content="Java JDK 11 ReentrantReadWriteLock 原理分析">
-<meta name="keywords" content="JDK,Java,原创,JUC,AQS,ReentrantReadWriteLock">
+<meta name="keywords" content="原创,Java,JDK,JUC,AQS,ReentrantReadWriteLock">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ReentrantReadWriteLock原理解析">
 <meta property="og:url" content="https://jiankunking.com/java-reentrantreadwritelock.html">
@@ -302,92 +302,93 @@
 <p>Java JDK 11 ReentrantReadWriteLock 原理分析</p>
 </blockquote>
 <a id="more"></a>
-
-<h1 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h1><p>希望在阅读本文之前，建议先看一下以下三篇文章：</p>
-<p>1、<a href="https://jiankunking.com/java-aqs.html">面试必备：Java AQS 实现原理（图文）分析</a> </p>
-<p>2、<a href="https://jiankunking.com/java-aqs-condition.html">面试必备：Java AQS Condition的实现分析</a> </p>
-<p>3、<a href="https://jiankunking.com/java-volatile-aqs.html">面试必备：Java Volatile的内存语义与AQS锁内存可见性</a> </p>
+<h1>1、前言</h1>
+<p>希望在阅读本文之前，建议先看一下以下三篇文章：</p>
+<p>1、<a href="https://jiankunking.com/java-aqs.html">面试必备：Java AQS 实现原理（图文）分析</a></p>
+<p>2、<a href="https://jiankunking.com/java-aqs-condition.html">面试必备：Java AQS Condition的实现分析</a></p>
+<p>3、<a href="https://jiankunking.com/java-volatile-aqs.html">面试必备：Java Volatile的内存语义与AQS锁内存可见性</a></p>
 <p>读完了以上三篇文章，先看一下ReentrantReadWriteLock的代码路径：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">package java.util.concurrent.locks;</span><br></pre></td></tr></table></figure>
-
 <p>来先猜一下ReentrantReadWriteLock会如何实现？</p>
 <p>都在java.util.concurrent包下，那么可以明确一点，那就是关于锁的实现，应该用的就是AQS，那么，读锁、写锁会不会对应的就是AQS中的共享模式与独占模式？</p>
-<h1 id="2、读写锁使用场景"><a href="#2、读写锁使用场景" class="headerlink" title="2、读写锁使用场景"></a>2、读写锁使用场景</h1><p>读是多于写（比如cache）</p>
+<h1>2、读写锁使用场景</h1>
+<p>读是多于写（比如cache）</p>
 <blockquote>
 <p>一般情况下，读写锁的性能都会比排它锁好，因为大多数场景读是多于写的。在读多于写的情况下，读写锁能够提供比排它锁更好的并发性和吞吐量。</p>
 </blockquote>
-<h1 id="3、读写锁接口：ReadWriteLock"><a href="#3、读写锁接口：ReadWriteLock" class="headerlink" title="3、读写锁接口：ReadWriteLock"></a>3、读写锁接口：ReadWriteLock</h1><p>代码地址：<a href="https://github.com/jiankunking/openjdk11/blob/master/src/java.base/share/classes/java/util/concurrent/locks/ReadWriteLock.java" target="_blank" rel="noopener">ReadWriteLock</a></p>
+<h1>3、读写锁接口：ReadWriteLock</h1>
+<p>代码地址：<a href="https://github.com/jiankunking/openjdk11/blob/master/src/java.base/share/classes/java/util/concurrent/locks/ReadWriteLock.java" target="_blank" rel="noopener">ReadWriteLock</a></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public interface ReadWriteLock &#123;</span><br><span class="line">    /**</span><br><span class="line">     * Returns the lock used for reading.</span><br><span class="line">     *</span><br><span class="line">     * @return the lock used for reading</span><br><span class="line">     */</span><br><span class="line">    Lock readLock();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Returns the lock used for writing.</span><br><span class="line">     *</span><br><span class="line">     * @return the lock used for writing</span><br><span class="line">     */</span><br><span class="line">    Lock writeLock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>4、读写锁的接口与示例</p>
 <p>ReadWriteLock仅定义了获取读锁和写锁的两个方法，即readLock()方法和writeLock()方法，而其实现：ReentrantReadWriteLock，除了接口方法之外，还提供了一些便于外界监控其内部工作状态的方法，这些方法以及描述如表所示：</p>
-<p><img data-src="/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png"><br>接下来，通过一个缓存示例说明读写锁的使用方式，示例代码如下：</p>
+<p><img data-src="/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png" alt><br>
+接下来，通过一个缓存示例说明读写锁的使用方式，示例代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public class Cache &#123;</span><br><span class="line">    static Map&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();</span><br><span class="line">    static ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();</span><br><span class="line">    static Lock r = rwl.readLock();</span><br><span class="line">    static Lock w = rwl.writeLock();</span><br><span class="line"></span><br><span class="line">    // 获取一个key对应的value</span><br><span class="line">    public static final Object get(String key) &#123;</span><br><span class="line">        r.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            return map.get(key);</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            r.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // 设置key对应的value，并返回旧的value</span><br><span class="line">    public static final Object put(String key, Object value) &#123;</span><br><span class="line">        w.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            return map.put(key, value);</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            w.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // 清空所有的内容</span><br><span class="line">    public static final void clear() &#123;</span><br><span class="line">        w.lock();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            map.clear();</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            w.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>上述示例中，Cache组合一个非线程安全的HashMap作为缓存的实现，同时使用读写锁的读锁和写锁来保证Cache是线程安全的。在读操作get(String key)方法中，需要获取读锁，这使得并发访问该方法时不会被阻塞。写操作put(String key,Object value)方法和clear()方法，在更新HashMap时必须提前获取写锁，当获取写锁后，其他线程对于读锁和写锁的获取均被阻塞，而只有写锁被释放之后，其他读写操作才能继续。Cache使用读写锁提升读操作的并发性，也保证每次写操作对所有的读写操作的可见性，同时简化了编程方式。</p>
-<h1 id="5、ReentrantReadWriteLock脉络梳理"><a href="#5、ReentrantReadWriteLock脉络梳理" class="headerlink" title="5、ReentrantReadWriteLock脉络梳理"></a>5、ReentrantReadWriteLock脉络梳理</h1><p>代码地址：<a href="https://github.com/jiankunking/openjdk11/blob/master/src/java.base/share/classes/java/util/concurrent/locks/ReentrantReadWriteLock.java" target="_blank" rel="noopener">ReentrantReadWriteLock</a></p>
+<h1>5、ReentrantReadWriteLock脉络梳理</h1>
+<p>代码地址：<a href="https://github.com/jiankunking/openjdk11/blob/master/src/java.base/share/classes/java/util/concurrent/locks/ReentrantReadWriteLock.java" target="_blank" rel="noopener">ReentrantReadWriteLock</a></p>
 <p>先看一下继承结构：</p>
-<p><img data-src="/images/java-reentrantreadwritelock/%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png"><br>再看一下代码结构：</p>
-<p><img data-src="/images/java-reentrantreadwritelock/%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84.png"><br>图中可以看出ReentrantReadWriteLock的实现还是比较复杂的，所以接下来主要分析ReentrantReadWriteLock实现关键点，包括：</p>
+<p><img data-src="/images/java-reentrantreadwritelock/%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png" alt><br>
+再看一下代码结构：</p>
+<p><img data-src="/images/java-reentrantreadwritelock/%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84.png" alt><br>
+图中可以看出ReentrantReadWriteLock的实现还是比较复杂的，所以接下来主要分析ReentrantReadWriteLock实现关键点，包括：</p>
 <ul>
 <li>读写状态的设计</li>
 <li>写锁的获取与释放</li>
 <li>读锁的获取与释放</li>
 <li>锁降级</li>
 </ul>
-<h2 id="5-1-读写状态的设计"><a href="#5-1-读写状态的设计" class="headerlink" title="5.1 读写状态的设计"></a>5.1 读写状态的设计</h2><p>读写锁同样依赖自定义同步器来实现同步功能，而读写状态就是其同步器的同步状态。回想ReentrantLock中自定义同步器的实现，同步状态表示锁被一个线程重复获取的次数，而读写锁的自定义同步器需要在同步状态（一个整型变量）上维护多个读线程和一个写线程的状态，使得该状态的设计成为读写锁实现的关键。</p>
+<h2 id="5-1-读写状态的设计">5.1 读写状态的设计</h2>
+<p>读写锁同样依赖自定义同步器来实现同步功能，而读写状态就是其同步器的同步状态。回想ReentrantLock中自定义同步器的实现，同步状态表示锁被一个线程重复获取的次数，而读写锁的自定义同步器需要在同步状态（一个整型变量）上维护多个读线程和一个写线程的状态，使得该状态的设计成为读写锁实现的关键。</p>
 <p>如果在一个整型变量上维护多种状态，就一定需要“按位切割使用”这个变量，读写锁将变量切分成了两个部分，高16位表示读，低16位表示写，划分方式如下图所示:</p>
-<p><img data-src="/images/java-reentrantreadwritelock/32%E4%BD%8D%E8%AF%BB%E5%86%99%E6%A0%87%E8%AF%86.png"></p>
+<p><img data-src="/images/java-reentrantreadwritelock/32%E4%BD%8D%E8%AF%BB%E5%86%99%E6%A0%87%E8%AF%86.png" alt></p>
 <p>当前同步状态表示一个线程已经获取了写锁，且重进入了两次，同时也连续获取了两次读锁。读写锁是如何迅速确定读和写各自的状态呢？</p>
 <p>答案是通过位运算。假设当前同步状态值为S，写状态等于S&amp;0x0000FFFF（将高16位全部抹去），读状态等于S&gt;&gt;&gt;16（无符号补0右移16位）。当写状态增加1时，等于S+1，当读状态增加1时，等于S+(1&lt;&lt;16)，也就是S+0x00010000。</p>
 <blockquote>
-<p>1、0x0000FFFF&#x3D;00000000000000001111111111111111（16个0 16个1）</p>
+<p>1、0x0000FFFF=00000000000000001111111111111111（16个0 16个1）</p>
 </blockquote>
 <blockquote>
 <p>2、&gt;&gt;&gt;： 无符号右移，忽略符号位，空位都以0补齐</p>
 </blockquote>
 <blockquote>
-<p>3、0x00010000&#x3D;10000000000000000（1个1 16个0）</p>
+<p>3、0x00010000=10000000000000000（1个1 16个0）</p>
 </blockquote>
 <p>根据状态的划分能得出一个推论：S不等于0时，当写状态（S&amp;0x0000FFFF）等于0时，则读状态（S&gt;&gt;&gt;16）大于0，即读锁已被获取。</p>
-<h2 id="5-2-写锁的获取与释放"><a href="#5-2-写锁的获取与释放" class="headerlink" title="5.2 写锁的获取与释放"></a>5.2 写锁的获取与释放</h2><p>写锁是一个支持重进入的排它锁。如果当前线程已经获取了写锁，则增加写状态。如果当前线程在获取写锁时，读锁已经被获取（读状态不为0）或者该线程不是已经获取写锁的线程，则当前线程进入等待状态，获取写锁的代码如代码如下：</p>
+<h2 id="5-2-写锁的获取与释放">5.2 写锁的获取与释放</h2>
+<p>写锁是一个支持重进入的排它锁。如果当前线程已经获取了写锁，则增加写状态。如果当前线程在获取写锁时，读锁已经被获取（读状态不为0）或者该线程不是已经获取写锁的线程，则当前线程进入等待状态，获取写锁的代码如代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">protected final boolean tryAcquire(int acquires) &#123;</span><br><span class="line">            /*</span><br><span class="line">             * Walkthrough:</span><br><span class="line">             * 1. If read count nonzero or write count nonzero</span><br><span class="line">             *    and owner is a different thread, fail.</span><br><span class="line">             * 2. If count would saturate, fail. (This can only</span><br><span class="line">             *    happen if count is already nonzero.)</span><br><span class="line">             * 3. Otherwise, this thread is eligible for lock if</span><br><span class="line">             *    it is either a reentrant acquire or</span><br><span class="line">             *    queue policy allows it. If so, update state</span><br><span class="line">             *    and set owner.</span><br><span class="line">             */</span><br><span class="line">            Thread current = Thread.currentThread();</span><br><span class="line">            int c = getState();</span><br><span class="line">            int w = exclusiveCount(c);</span><br><span class="line">            if (c != 0) &#123;</span><br><span class="line">               // 存在读锁或者当前获取线程不是已经获取写锁的线程</span><br><span class="line">                if (w == 0 || current != getExclusiveOwnerThread())</span><br><span class="line">                    return false;</span><br><span class="line">                if (w + exclusiveCount(acquires) &gt; MAX_COUNT)</span><br><span class="line">                    throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">                // Reentrant acquire</span><br><span class="line">                setState(c + acquires);</span><br><span class="line">                return true;</span><br><span class="line">            &#125;</span><br><span class="line">            if (writerShouldBlock() ||</span><br><span class="line">                !compareAndSetState(c, c + acquires))</span><br><span class="line">                return false;</span><br><span class="line">            setExclusiveOwnerThread(current);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
-
 <p>该方法除了重入条件（当前线程为获取了写锁的线程）之外，增加了一个读锁是否存在的判断。<font color="DeepPink"><strong>如果存在读锁，则写锁不能被获取，原因在于：读写锁要确保写锁的操作对读锁可见，如果允许读锁在已被获取的情况下对写锁的获取，那么正在运行的其他读线程就无法感知到当前写线程的操作。因此，只有等待其他读线程都释放了读锁，写锁才能被当前线程获取，而写锁一旦被获取，则其他读写线程的后续访问均被阻塞。</strong></font></p>
 <p><font color="DeepPink"><strong>写锁的释放与ReentrantLock的释放过程基本类似，每次释放均减少写状态，当写状态为0时表示写锁已被释放，从而等待的读写线程能够继续访问读写锁，同时前次写线程的修改对后续读写线程可见。</strong></font></p>
-<h2 id="5-3-读锁的获取与释放"><a href="#5-3-读锁的获取与释放" class="headerlink" title="5.3 读锁的获取与释放"></a>5.3 读锁的获取与释放</h2><p>读锁是一个支持重进入的共享锁，它能够被多个线程同时获取，在没有其他写线程访问（或者写状态为0）时，读锁总会被成功地获取，而所做的也只是（线程安全的）增加读状态。如果当前线程已经获取了读锁，则增加读状态。如果当前线程在获取读锁时，写锁已被其他线程获取，则进入等待状态。获取读锁的实现从Java 5到Java 6变得复杂许多，主要原因是新增了一些功能，例如getReadHoldCount()方法，作用是返回当前线程获取读锁的次数。读状态是所有线程获取读锁次数的总和，而每个线程各自获取读锁的次数只能选择保存在ThreadLocal中，由线程自身维护，这使获取读锁的实现变得复杂。因此，这里将获取读锁的代码做了删减，保留必要的部分，如代码如下：</p>
+<h2 id="5-3-读锁的获取与释放">5.3 读锁的获取与释放</h2>
+<p>读锁是一个支持重进入的共享锁，它能够被多个线程同时获取，在没有其他写线程访问（或者写状态为0）时，读锁总会被成功地获取，而所做的也只是（线程安全的）增加读状态。如果当前线程已经获取了读锁，则增加读状态。如果当前线程在获取读锁时，写锁已被其他线程获取，则进入等待状态。获取读锁的实现从Java 5到Java 6变得复杂许多，主要原因是新增了一些功能，例如getReadHoldCount()方法，作用是返回当前线程获取读锁的次数。读状态是所有线程获取读锁次数的总和，而每个线程各自获取读锁的次数只能选择保存在ThreadLocal中，由线程自身维护，这使获取读锁的实现变得复杂。因此，这里将获取读锁的代码做了删减，保留必要的部分，如代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">protected final int tryAcquireShared(int unused) &#123;</span><br><span class="line">          for (;;) &#123;</span><br><span class="line">                  int c = getState();</span><br><span class="line">                  int nextc = c + (1 &lt;&lt; 16);</span><br><span class="line">                  if (nextc &lt; c)</span><br><span class="line">                    throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">                  if (exclusiveCount(c) != 0 &amp;&amp; owner != Thread.currentThread())</span><br><span class="line">                    return -1;</span><br><span class="line">                  if (compareAndSetState(c, nextc))</span><br><span class="line">                    return 1;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>在tryAcquireShared(int unused)方法中，如果其他线程已经获取了写锁，则当前线程获取读锁失败，进入等待状态。<font color="DeepPink"><strong>如果当前线程获取了写锁或者写锁未被获取，则当前线程（线程安全，依靠CAS保证）增加读状态，成功获取读锁。</strong></font></p>
 <p>读锁的每次释放（线程安全的，可能有多个读线程同时释放读锁）均减少读状态，减少的值是（1&lt;&lt;16）。</p>
-<h2 id="5-4-锁降级"><a href="#5-4-锁降级" class="headerlink" title="5.4 锁降级"></a>5.4 锁降级</h2><p>锁降级指的是写锁降级成为读锁。如果当前线程拥有写锁，然后将其释放，最后再获取读锁，这种分段完成的过程不能称之为锁降级。锁降级是指把持住（当前拥有的）写锁，再获取到读锁，随后释放（先前拥有的）写锁的过程。</p>
+<h2 id="5-4-锁降级">5.4 锁降级</h2>
+<p>锁降级指的是写锁降级成为读锁。如果当前线程拥有写锁，然后将其释放，最后再获取读锁，这种分段完成的过程不能称之为锁降级。锁降级是指把持住（当前拥有的）写锁，再获取到读锁，随后释放（先前拥有的）写锁的过程。</p>
 <p>接下来看一个锁降级的示例。因为数据不常变化，所以多个线程可以并发地进行数据处理，当数据变更后，如果当前线程感知到数据变化，则进行数据的准备工作，同时其他处理线程被阻塞，直到当前线程完成数据的准备工作，如代码如下所示：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public void processData() &#123;</span><br><span class="line">        readLock.lock();</span><br><span class="line">        if (!update) &#123;</span><br><span class="line">            // 必须先释放读锁</span><br><span class="line">            readLock.unlock();</span><br><span class="line">            // 锁降级从写锁获取到开始</span><br><span class="line">            writeLock.lock();</span><br><span class="line">            try &#123;</span><br><span class="line">                if (!update) &#123;</span><br><span class="line">                    // 准备数据的流程（略）</span><br><span class="line">                    update = true;</span><br><span class="line">                &#125;</span><br><span class="line">                readLock.lock();</span><br><span class="line">            &#125; finally &#123;</span><br><span class="line">                writeLock.unlock();</span><br><span class="line">            &#125;</span><br><span class="line">            // 锁降级完成，写锁降级为读锁</span><br><span class="line">        &#125;</span><br><span class="line">        try &#123;</span><br><span class="line">            // 使用数据的流程（略）</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            readLock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
 <p>上述示例中，当数据发生变更后，update变量（布尔类型且volatile修饰）被设置为false，此时所有访问processData()方法的线程都能够感知到变化，但只有一个线程能够获取到写锁，其他线程会被阻塞在读锁和写锁的lock()方法上。当前线程获取写锁完成数据准备之后，再获取读锁，随后释放写锁，完成锁降级。</p>
 <p><font color="DeepPink"><strong>锁降级中读锁的获取是否必要呢？答案是必要的。主要是为了保证数据的可见性，如果当前线程不获取读锁而是直接释放写锁，假设此刻另一个线程（记作线程T）获取了写锁并修改了数据，那么当前线程无法感知线程T的数据更新。如果当前线程获取读锁，即遵循锁降级的步骤，则线程T将会被阻塞，直到当前线程使用数据并释放读锁之后，线程T才能获取写锁进行数据更新。</strong></font></p>
 <p><font color="DeepPink"><strong>RentrantReadWriteLock不支持锁升级（把持读锁、获取写锁，最后释放读锁的过程）。目的也是保证数据可见性，如果读锁已被多个线程获取，其中任意线程成功获取了写锁并更新了数据，则其更新对其他获取到读锁的线程是不可见的。</strong></font></p>
-<h1 id="6、小结"><a href="#6、小结" class="headerlink" title="6、小结"></a>6、小结</h1><p>RentrantReadWriteLock的具体流程梳理完了，回过头来想一下前言的问题，好像并没有得到答案，那么来到ReentrantReadWriteLock代码中，此处主要看一下读锁的获取、释放是否对应AQS中的共享模式。</p>
-<h2 id="6-1-读锁的获取、释放"><a href="#6-1-读锁的获取、释放" class="headerlink" title="6.1 读锁的获取、释放"></a>6.1 读锁的获取、释放</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public void lock() &#123;</span><br><span class="line">         //看到这里是不是就明白了，我们的猜想是正确的</span><br><span class="line">         sync.acquireShared(1);</span><br><span class="line">     &#125;</span><br><span class="line">    public void unlock() &#123;</span><br><span class="line">         //看到这里是不是就明白了，我们的猜想是正确的</span><br><span class="line">         sync.releaseShared(1);</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
-
+<h1>6、小结</h1>
+<p>RentrantReadWriteLock的具体流程梳理完了，回过头来想一下前言的问题，好像并没有得到答案，那么来到ReentrantReadWriteLock代码中，此处主要看一下读锁的获取、释放是否对应AQS中的共享模式。</p>
+<h2 id="6-1-读锁的获取、释放">6.1 读锁的获取、释放</h2>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public void lock() &#123;</span><br><span class="line">         //看到这里是不是就明白了，我们的猜想是正确的</span><br><span class="line">         sync.acquireShared(1);</span><br><span class="line">     &#125;</span><br><span class="line">    public void unlock() &#123;</span><br><span class="line">         //看到这里是不是就明白了，我们的猜想是正确的</span><br><span class="line">         sync.releaseShared(1);</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
 <p>先来看一下ReadLock的具体实现，在ReentrantReadWriteLock初始化的时候，会在构造函数中初始化ReadLock、WriteLock，具体代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public ReentrantReadWriteLock() &#123;</span><br><span class="line">       this(false);</span><br><span class="line">   &#125;</span><br><span class="line">   public ReentrantReadWriteLock(boolean fair) &#123;</span><br><span class="line">       sync = fair ? new FairSync() : new NonfairSync();</span><br><span class="line">       readerLock = new ReadLock(this);</span><br><span class="line">       writerLock = new WriteLock(this);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
-
 <p>从ReentrantReadWriteLock构造函数的代码中，可以看到ReadLock初始化的参数是ReentrantReadWriteLock，那么ReadLock需要ReentrantReadWriteLock来做什么呢？</p>
 <p>来看一下ReadLock：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">private final Sync sync;</span><br><span class="line">    protected ReadLock(ReentrantReadWriteLock lock) &#123;</span><br><span class="line">        sync = lock.sync;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
 <p>从ReadLock的构造函数中，可以看出，ReadLock需要获取到Sync，那么Sync是谁，又是用来做什么的？</p>
 <blockquote>
 <p>其实，如果看过JUC下面代码的话，看到Sync，就明白它应该就是AQS的实现类，通过它来实现相关锁的操作。</p>
 </blockquote>
 <p>来看一下代码验证一下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">     * Synchronization implementation for ReentrantReadWriteLock.</span><br><span class="line">     * Subclassed into fair and nonfair versions.</span><br><span class="line">     */</span><br><span class="line">    abstract static class Sync extends AbstractQueuedSynchronizer &#123;</span><br><span class="line">    //具体代码略</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
 <p>看到这里可以大体得出这么一个结果：ReadLock获取锁的时候，是通过ReentrantReadWriteLock 内部Sync类来获取的共享锁，也就是读锁的获取是对应AQS中的共享模式。</p>
 <p>点进 sync.acquireShared(1)方法，可以看到是调用Sync的父类AQS中方法：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public final void acquireShared(int arg) &#123;</span><br><span class="line">        if (tryAcquireShared(arg) &lt; 0)</span><br><span class="line">            doAcquireShared(arg);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
 <p>看到这里，也就明白为啥AQS子类需要重写：</p>
 <ul>
 <li>tryAcquire</li>
@@ -396,7 +397,8 @@
 <li>isHeldExclusively</li>
 </ul>
 <p>等方法了。</p>
-<h1 id="7、参考资料"><a href="#7、参考资料" class="headerlink" title="7、参考资料"></a>7、参考资料</h1><p>本文第4、5小节整理自：《Java并发编程的艺术》</p>
+<h1>7、参考资料</h1>
+<p>本文第4、5小节整理自：《Java并发编程的艺术》</p>
 
     </div>
 
@@ -482,9 +484,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/jdk/" rel="tag"># JDK</a>
-              <a href="/tags/java/" rel="tag"># Java</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
+              <a href="/tags/java/" rel="tag"># Java</a>
+              <a href="/tags/jdk/" rel="tag"># JDK</a>
               <a href="/tags/juc/" rel="tag"># JUC</a>
               <a href="/tags/aqs/" rel="tag"># AQS</a>
               <a href="/tags/reentrantreadwritelock/" rel="tag"># ReentrantReadWriteLock</a>
@@ -562,7 +564,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1、前言"><span class="nav-number">1.</span> <span class="nav-text">1、前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2、读写锁使用场景"><span class="nav-number">2.</span> <span class="nav-text">2、读写锁使用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3、读写锁接口：ReadWriteLock"><span class="nav-number">3.</span> <span class="nav-text">3、读写锁接口：ReadWriteLock</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5、ReentrantReadWriteLock脉络梳理"><span class="nav-number">4.</span> <span class="nav-text">5、ReentrantReadWriteLock脉络梳理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-读写状态的设计"><span class="nav-number">4.1.</span> <span class="nav-text">5.1 读写状态的设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-写锁的获取与释放"><span class="nav-number">4.2.</span> <span class="nav-text">5.2 写锁的获取与释放</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-读锁的获取与释放"><span class="nav-number">4.3.</span> <span class="nav-text">5.3 读锁的获取与释放</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-锁降级"><span class="nav-number">4.4.</span> <span class="nav-text">5.4 锁降级</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6、小结"><span class="nav-number">5.</span> <span class="nav-text">6、小结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-读锁的获取、释放"><span class="nav-number">5.1.</span> <span class="nav-text">6.1 读锁的获取、释放</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7、参考资料"><span class="nav-number">6.</span> <span class="nav-text">7、参考资料</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">1、前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">2、读写锁使用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">3、读写锁接口：ReadWriteLock</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">5、ReentrantReadWriteLock脉络梳理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-读写状态的设计"><span class="nav-number">4.1.</span> <span class="nav-text">5.1 读写状态的设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-写锁的获取与释放"><span class="nav-number">4.2.</span> <span class="nav-text">5.2 写锁的获取与释放</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-读锁的获取与释放"><span class="nav-number">4.3.</span> <span class="nav-text">5.3 读锁的获取与释放</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-锁降级"><span class="nav-number">4.4.</span> <span class="nav-text">5.4 锁降级</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">6、小结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-读锁的获取、释放"><span class="nav-number">5.1.</span> <span class="nav-text">6.1 读锁的获取、释放</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">7、参考资料</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
