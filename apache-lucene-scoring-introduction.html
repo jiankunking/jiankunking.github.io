@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="我也是不很懂，算是给自己扫盲吧。&amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602;">
+  <meta name="description" content="我也是不很懂，算是给自己扫盲吧。 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂">
 <meta name="keywords" content="转载,ElasticSearch,Lucene,Score">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Apache Lucene 评分简介">
 <meta property="og:url" content="https://jiankunking.com/apache-lucene-scoring-introduction.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="我也是不很懂，算是给自己扫盲吧。&amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602;">
+<meta property="og:description" content="我也是不很懂，算是给自己扫盲吧。 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2020-11-20T09:22:10.530Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Apache Lucene 评分简介">
-<meta name="twitter:description" content="我也是不很懂，算是给自己扫盲吧。&amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602; &amp;#x1F602;">
+<meta name="twitter:description" content="我也是不很懂，算是给自己扫盲吧。 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂">
 
 <link rel="canonical" href="https://jiankunking.com/apache-lucene-scoring-introduction.html">
 
@@ -279,7 +279,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.1k</span>
+              <span>1.9k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -298,14 +298,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>我也是不很懂，算是给自己扫盲吧。<br>&#x1F602; &#x1F602; &#x1F602; &#x1F602; &#x1F602; &#x1F602; &#x1F602; &#x1F602; &#x1F602; &#x1F602; &#x1F602; &#x1F602;</p>
+        <p>我也是不很懂，算是给自己扫盲吧。<br>
+😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂</p>
 <a id="more"></a>
-
-<p>当谈到查询及其相关性，我们不能忽略得分以及它从哪里来。但得分是什么？得分是描述文档与查询相关度的一个参数。本节将讨论Apache Lucene的默认评分机制：TF&#x2F;IDF算法，看看它如何影响返回的文档。</p>
+<p>当谈到查询及其相关性，我们不能忽略得分以及它从哪里来。但得分是什么？得分是描述文档与查询相关度的一个参数。本节将讨论Apache Lucene的默认评分机制：TF/IDF算法，看看它如何影响返回的文档。</p>
 <blockquote>
-<p>TF&#x2F;IDF算法不是Elasticsearch公开的唯一可用的算法。</p>
+<p>TF/IDF算法不是Elasticsearch公开的唯一可用的算法。</p>
 </blockquote>
-<h1 id="当文档被匹配时"><a href="#当文档被匹配时" class="headerlink" title="当文档被匹配时"></a>当文档被匹配时</h1><p>Lucene返回文档时，意味着文档与我们发送的查询匹配，并且对该文档已给出一个分数。得分越高，从搜索引擎的角度来看文档越相关。然而，两个不同的查询将对同一文档计算出不同的分数。正因为如此，在查询之间比较分数通常没什么意义。我们回到评分这个话题。计算文档的评分属性时，考虑以下因素:</p>
+<h1>当文档被匹配时</h1>
+<p>Lucene返回文档时，意味着文档与我们发送的查询匹配，并且对该文档已给出一个分数。得分越高，从搜索引擎的角度来看文档越相关。然而，两个不同的查询将对同一文档计算出不同的分数。正因为如此，在查询之间比较分数通常没什么意义。我们回到评分这个话题。计算文档的评分属性时，考虑以下因素:</p>
 <ul>
 <li>文档加权：对文档建立索引时，对文档的加权值。</li>
 <li>字段加权：查询和索引时，对字段的加权值。</li>
@@ -315,10 +316,13 @@
 <li>词频：基于词条的因子，描述给定词条在文档中出现的次数，词频越高，文档的得分越高。</li>
 <li>查询规范：基于查询的规范化因子，由每个查询词条比重的平方之和计算而成。查询规范用于查询之间的得分比较，但这并不一定很容易，有时甚至做不到。</li>
 </ul>
-<h1 id="默认评分公式"><a href="#默认评分公式" class="headerlink" title="默认评分公式"></a>默认评分公式</h1><p>TF&#x2F;IDF算法的实用计算公式如下：<br><img data-src="/images/apache-lucene-scoring-introduction/td-idf-score.png"></p>
+<h1>默认评分公式</h1>
+<p>TF/IDF算法的实用计算公式如下：<br>
+<img data-src="/images/apache-lucene-scoring-introduction/td-idf-score.png" alt></p>
 <p>为了调整查询相关性，你不需要记住这个等式的细节，但至少要知道它是如何工作的。我们可以看到，文档的评分因子是查询q和文档d的一个函数。还有两个不直接依赖于查询词条的因子，coord和queryNorm。公式中这两个元素跟查询中的每个词计算而得的总和相乘。另一方面，该总和由给定词的词频、逆文档频率、词条加权和规范相乘而来，其中的规范就是我们前面讨论过的长度规范。</p>
 <blockquote>
-<p>注意前面的公式是实用性的，你可以在Lucene Javadocs中查看更多概念公式的信息，网址是：<br><a href="http://lucene.apache.org/core/4_7_0/core/org/apache/lucene/search/similarities/TFIDFSimilarity.html" target="_blank" rel="noopener">http://lucene.apache.org/core/4_7_0&#x2F;core&#x2F;org&#x2F;apache&#x2F;lucene&#x2F;search&#x2F;similarities&#x2F;TFIDFSimilarity.html</a></p>
+<p>注意前面的公式是实用性的，你可以在Lucene Javadocs中查看更多概念公式的信息，网址是：<br>
+<a href="http://lucene.apache.org/core/4_7_0/core/org/apache/lucene/search/similarities/TFIDFSimilarity.html" target="_blank" rel="noopener">http://lucene.apache.org/core/4_7_0/core/org/apache/lucene/search/similarities/TFIDFSimilarity.html</a></p>
 </blockquote>
 <p>上述规则的好处是，你不需要记住全部内容。应该知道的是影响文档评分的因素。下面是一些派生自上述等式的规则：</p>
 <ul>
@@ -327,15 +331,19 @@
 <li>字段的加权越高，文档的得分越高；</li>
 <li>我们可以看到，文档匹配的查询词条数目越高、字段越少（意味着索引的词条越少），Lucene给文档的分数越高。同时，罕见词条比常见词条更受评分的青睐。</li>
 </ul>
-<h1 id="相关性的意义"><a href="#相关性的意义" class="headerlink" title="相关性的意义"></a>相关性的意义</h1><p>在大多数情况下，我们希望得到最匹配的文档，但最相关的不一定是最匹配的。一些用例定义了非常严格的规则，规定了某些文档应该在结果列表中排位靠前。例如，文档除了被TF&#x2F;IDF相似度模型完美匹配外，有客户付钱让他们的文档出现在结果中更靠前的位置。基于客户计划，我们想给这样的文档更大的重要性，把付费最高的用户的文档放到搜索结果的最顶部。当然，这就不属于TF&#x2F;IDF相关性了。</p>
+<h1>相关性的意义</h1>
+<p>在大多数情况下，我们希望得到最匹配的文档，但最相关的不一定是最匹配的。一些用例定义了非常严格的规则，规定了某些文档应该在结果列表中排位靠前。例如，文档除了被TF/IDF相似度模型完美匹配外，有客户付钱让他们的文档出现在结果中更靠前的位置。基于客户计划，我们想给这样的文档更大的重要性，把付费最高的用户的文档放到搜索结果的最顶部。当然，这就不属于TF/IDF相关性了。</p>
 <p>在进行搜索相关性方面的工作时，你应该永远记住，这不是一次性的过程。随着时间的推移，你的数据将改变，查询也需要相应调整。在大多数情况下，优化查询相关性是持续性的工作，要根据业务规则、需求以及用户行为方式等调整。有一点非常重要：记住这不是设置之后就可以抛诸脑后的一次性过程。</p>
-<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><p>从Elasticsearch 5之后, 缺省的打分机制改成了Okapi BM25, 它也是基于TF&#x2F;IDF进化来的。</p>
-<h2 id="TF-IDF与BM25的相同点"><a href="#TF-IDF与BM25的相同点" class="headerlink" title="TF&#x2F;IDF与BM25的相同点"></a>TF&#x2F;IDF与BM25的相同点</h2><p>TF&#x2F;IDF和BM25同样使用<code>逆向文档频率</code>来区分普通词（不重要）和非普通词（重要），同样认为：</p>
+<h1>补充</h1>
+<p>从Elasticsearch 5之后, 缺省的打分机制改成了Okapi BM25, 它也是基于TF/IDF进化来的。</p>
+<h2 id="TF-IDF与BM25的相同点">TF/IDF与BM25的相同点</h2>
+<p>TF/IDF和BM25同样使用<code>逆向文档频率</code>来区分普通词（不重要）和非普通词（重要），同样认为：</p>
 <ul>
 <li><font color="DeepPink"><strong>文档里的某个词出现次数越频繁，文档与这个词就越相关，得分越高。</strong></font></li>
 <li><font color="DeepPink"><strong>某个词在集合所有文档里出现的频率是多少？频次越高，权重越低，得分越低。某个词在集合中所有文档中越罕见，得分越高。</strong></font></li>
 </ul>
-<h2 id="TF-IDF与BM25的不同点"><a href="#TF-IDF与BM25的不同点" class="headerlink" title="TF&#x2F;IDF与BM25的不同点"></a>TF&#x2F;IDF与BM25的不同点</h2><p>BM25在传统TF&#x2F;IDF的基础上增加了几个可调节的参数，使得它在应用上更佳灵活和强大，具有较高的实用性。</p>
+<h2 id="TF-IDF与BM25的不同点">TF/IDF与BM25的不同点</h2>
+<p>BM25在传统TF/IDF的基础上增加了几个可调节的参数，使得它在应用上更佳灵活和强大，具有较高的实用性。</p>
 <ul>
 <li>传统的TF值理论上是可以无限大的。而BM25与之不同，它在TF计算方法中增加了一个常量k，用来限制TF值的增长极限。</li>
 <li>BM25还引入了平均文档长度的概念，单个文档长度对相关性的影响力与它和平均长度的比值有关系。</li>
@@ -506,7 +514,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#当文档被匹配时"><span class="nav-number">1.</span> <span class="nav-text">当文档被匹配时</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#默认评分公式"><span class="nav-number">2.</span> <span class="nav-text">默认评分公式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#相关性的意义"><span class="nav-number">3.</span> <span class="nav-text">相关性的意义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#补充"><span class="nav-number">4.</span> <span class="nav-text">补充</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TF-IDF与BM25的相同点"><span class="nav-number">4.1.</span> <span class="nav-text">TF/IDF与BM25的相同点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TF-IDF与BM25的不同点"><span class="nav-number">4.2.</span> <span class="nav-text">TF/IDF与BM25的不同点</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">当文档被匹配时</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">默认评分公式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">相关性的意义</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">补充</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TF-IDF与BM25的相同点"><span class="nav-number">4.1.</span> <span class="nav-text">TF/IDF与BM25的相同点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TF-IDF与BM25的不同点"><span class="nav-number">4.2.</span> <span class="nav-text">TF/IDF与BM25的不同点</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
