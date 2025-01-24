@@ -32,7 +32,7 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="记录一次业务复杂场景下DSL优化的过程">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2025-01-22T10:29:49.340Z">
+<meta property="og:updated_time" content="2025-01-24T09:05:02.907Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="如何优化Elasticsearch大文档查询？">
 <meta name="twitter:description" content="记录一次业务复杂场景下DSL优化的过程">
@@ -255,7 +255,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-01-22 18:29:49" itemprop="dateModified" datetime="2025-01-22T18:29:49+08:00">2025-01-22</time>
+                <time title="修改时间：2025-01-24 17:05:02" itemprop="dateModified" datetime="2025-01-24T17:05:02+08:00">2025-01-24</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -647,6 +647,7 @@
 </tr>
 </tbody></table>
 <p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/doc_percent_size.png"></p>
+<h2 id="来自官方的点赞"><a href="#来自官方的点赞" class="headerlink" title="来自官方的点赞"></a>来自官方的点赞</h2><p><img data-src="/images/how-to-optimize-elasticsearch-large-document-query/%E6%9D%A5%E8%87%AA%E5%AE%98%E6%96%B9%E7%9A%84%E7%82%B9%E8%B5%9E.png"></p>
 <h2 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h2><ul>
 <li><a href="https://jiankunking.com/elasticsearch-source-doc-values-and-store-performance.html">https://jiankunking.com/elasticsearch-source-doc-values-and-store-performance.html</a></li>
 <li><a href="https://jiankunking.com/elasticsearch-scroll-and-search-after.html">https://jiankunking.com/elasticsearch-scroll-and-search-after.html</a></li>
@@ -831,7 +832,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DSL"><span class="nav-number">2.1.</span> <span class="nav-text">DSL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#不同文档大小查询时延"><span class="nav-number">2.2.</span> <span class="nav-text">不同文档大小查询时延</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#从大文档开始删除"><span class="nav-number">2.2.1.</span> <span class="nav-text">从大文档开始删除</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#从小文档开始删除"><span class="nav-number">2.2.2.</span> <span class="nav-text">从小文档开始删除</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析-1"><span class="nav-number">2.3.</span> <span class="nav-text">分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">3.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#思考"><span class="nav-number">4.</span> <span class="nav-text">思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为啥不直接从jiankunking-product-prod索引中通过列存获取前端需要的数据呢？"><span class="nav-number">4.1.</span> <span class="nav-text">为啥不直接从jiankunking_product_prod索引中通过列存获取前端需要的数据呢？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ES适合的场景都有哪些？"><span class="nav-number">4.2.</span> <span class="nav-text">ES适合的场景都有哪些？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#具体索引中数据大小是什么情况呢？"><span class="nav-number">4.3.</span> <span class="nav-text">具体索引中数据大小是什么情况呢？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拓展阅读"><span class="nav-number">5.</span> <span class="nav-text">拓展阅读</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-number">2.</span> <span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DSL"><span class="nav-number">2.1.</span> <span class="nav-text">DSL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#不同文档大小查询时延"><span class="nav-number">2.2.</span> <span class="nav-text">不同文档大小查询时延</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#从大文档开始删除"><span class="nav-number">2.2.1.</span> <span class="nav-text">从大文档开始删除</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#从小文档开始删除"><span class="nav-number">2.2.2.</span> <span class="nav-text">从小文档开始删除</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析-1"><span class="nav-number">2.3.</span> <span class="nav-text">分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">3.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#思考"><span class="nav-number">4.</span> <span class="nav-text">思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为啥不直接从jiankunking-product-prod索引中通过列存获取前端需要的数据呢？"><span class="nav-number">4.1.</span> <span class="nav-text">为啥不直接从jiankunking_product_prod索引中通过列存获取前端需要的数据呢？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ES适合的场景都有哪些？"><span class="nav-number">4.2.</span> <span class="nav-text">ES适合的场景都有哪些？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#具体索引中数据大小是什么情况呢？"><span class="nav-number">4.3.</span> <span class="nav-text">具体索引中数据大小是什么情况呢？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#来自官方的点赞"><span class="nav-number">5.</span> <span class="nav-text">来自官方的点赞</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拓展阅读"><span class="nav-number">6.</span> <span class="nav-text">拓展阅读</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
