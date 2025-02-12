@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="OAuth 2作者： 王新栋">
+  <meta name="description" content="OAuth 2 作者： 王新栋">
 <meta name="keywords" content="OAuth,PKCE">
 <meta property="og:type" content="article">
 <meta property="og:title" content="OAuth 2 PKCE">
 <meta property="og:url" content="https://jiankunking.com/oauth-2-pkce.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="OAuth 2作者： 王新栋">
+<meta property="og:description" content="OAuth 2 作者： 王新栋">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2024-06-15T00:32:26.251Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="OAuth 2 PKCE">
-<meta name="twitter:description" content="OAuth 2作者： 王新栋">
+<meta name="twitter:description" content="OAuth 2 作者： 王新栋">
 
 <link rel="canonical" href="https://jiankunking.com/oauth-2-pkce.html">
 
@@ -284,31 +284,28 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>OAuth 2<br>作者： 王新栋</p>
+        <p>OAuth 2<br>
+作者： 王新栋</p>
 <a id="more"></a>
-
 <p>PKCE 协议，全称是 Proof Key for Code Exchange by OAuth Public Clients。</p>
 <p>下面看一下PKCE 协议的交互流程</p>
 <blockquote>
 <p>注意，为了突出第三方软件使用 PKCE 协议时与授权服务之间的通信过程，省略了受保护资源服务和资源拥有者的角色：</p>
 </blockquote>
-<p><img data-src="/images/oauth-2-pkce/%E4%BD%BF%E7%94%A8PKCE%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%B5%81%E7%A8%8B%E5%9B%BE.png"></p>
-<p>首先，App 自己要生成一个随机的、长度在 43~128 字符之间的、参数为 <strong>code_verifier</strong> 的字符串验证码；接着，我们再利用这个 <strong>code_verifier，来生成一个被称为”挑战码”的参数code_challenge</strong>。</p>
+<p><img data-src="/images/oauth-2-pkce/%E4%BD%BF%E7%94%A8PKCE%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%B5%81%E7%A8%8B%E5%9B%BE.png" alt></p>
+<p>首先，App 自己要生成一个随机的、长度在 43~128 字符之间的、参数为 <strong>code_verifier</strong> 的字符串验证码；接着，我们再利用这个 <strong>code_verifier，来生成一个被称为&quot;挑战码&quot;的参数code_challenge</strong>。</p>
 <p>那怎么生成这个 <code>code_challenge</code> 的值呢？OAuth 2.0 规范里面给出了两种方法，就是看<code>code_challenge_method</code> 这个参数的值：</p>
 <ul>
 <li>一种 <code>code_challenge_method=plain</code>，此时 <code>code_verifier</code> 的值就是 <code>code_challenge</code>的值；</li>
 <li>另外一种 <code>code_challenge_method=S256</code>，就是将 <code>code_verifier</code> 值进行 ASCII 编码之后再进行哈希，然后再将哈希之后的值进行 BASE64-URL 编码，如下代码所示:</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))</span><br></pre></td></tr></table></figure>
-
 <p>那么如何使用呢？</p>
 <p>在<strong>第一步获取授权码 <code>code</code> 的时候，我们使用 <code>code_challenge</code></strong> 参数。需要注意的是，我们要同时将 <code>code_challenge_method</code> 参数也传过去，目的是让授权服务知道生成<code>code_challenge</code> 值的方法是 <code>plain</code> 还是 <code>S256</code>。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">https://authorization-server.com/auth?</span><br><span class="line">response_type=code&amp;</span><br><span class="line">app_id=APP_ID&amp;</span><br><span class="line">redirect_uri=REDIRECT_URI&amp;</span><br><span class="line">code_challenge=CODE_CHALLENGE&amp;</span><br><span class="line">code_challenge_method=S256</span><br></pre></td></tr></table></figure>
-
 <p>在<strong>第二步获取访问令牌的时候，我们使用 <code>code_verifier</code> 参数</strong>，授权服务此时会将<code>code_verifier</code> 的值进行一次运算。那怎么运算呢？就是上面<code>code_challenge_method=S256</code> 的这种方式。</p>
 <p>没错，第一步请求授权码的时候，已经告诉授权服务生成 <code>code_challenge</code> 的方法了。所以，在第二步的过程中，授权服务将运算的值跟第一步接收到的值做比较，如果相同就颁发访问令牌。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">POST https://api.authorization-server.com/token?</span><br><span class="line">grant_type=authorization_code&amp;</span><br><span class="line">code=AUTH_CODE_HERE&amp;</span><br><span class="line">redirect_uri=REDIRECT_URI&amp;</span><br><span class="line">app_id=APP_ID&amp;</span><br><span class="line">code_verifier=CODE_VERIFIER</span><br></pre></td></tr></table></figure>
-
 <p>现在，你就知道了我们是如何使用 <code>code_verifier</code> 和 <code>code_challenge</code> 这两个参数的了吧。</p>
 <p>总结一下就是，换取授权码 <code>code</code> 的时候，我们使用 <code>code_challenge</code> 参数值；换取访问令牌的时候，我们使用 <code>code_verifier</code> 参数值。</p>
 <blockquote>
