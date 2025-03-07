@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">163</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">164</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">236</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">242</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -303,33 +303,22 @@
 <p>Golang Context</p>
 </blockquote>
 <a id="more"></a>
-<h1>视频信息</h1>
-<p>How to correctly use package context<br>
-by Jack Lindamood<br>
-at Golang UK Conf. 2017</p>
-<p>视频：<a href="https://www.youtube.com/watch?v=-_B5uQ4UGi0" target="_blank" rel="noopener">https://www.youtube.com/watch?v=-_B5uQ4UGi0</a><br>
-博文：<a href="https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39" target="_blank" rel="noopener">https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39</a></p>
-<h1>为什么需要 Context</h1>
-<ul>
+
+<h1 id="视频信息"><a href="#视频信息" class="headerlink" title="视频信息"></a>视频信息</h1><p>How to correctly use package context<br>by Jack Lindamood<br>at Golang UK Conf. 2017</p>
+<p>视频：<a href="https://www.youtube.com/watch?v=-_B5uQ4UGi0" target="_blank" rel="noopener">https://www.youtube.com/watch?v=-_B5uQ4UGi0</a><br>博文：<a href="https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39" target="_blank" rel="noopener">https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39</a></p>
+<h1 id="为什么需要-Context"><a href="#为什么需要-Context" class="headerlink" title="为什么需要 Context"></a>为什么需要 Context</h1><ul>
 <li>每一个<font color="DeepPink"><strong>长请求</strong></font>都应该有个<font color="DeepPink"><strong>超时限制</strong></font></li>
-<li>需要在调用中传递这个超时
-<ul>
+<li>需要在调用中传递这个超时<ul>
 <li>比如开始处理请求的时候我们说是 3 秒钟超时</li>
 <li>那么在函数调用中间，这个超时还剩多少时间了？</li>
 <li>需要在什么地方存储这个信息，这样请求处理中间可以停止</li>
 </ul>
 </li>
 </ul>
-<p>如果进一步考虑。<br>
-<img data-src="/images/how-to-correctly-use-package-context/rpc-fails-1.svg" alt><br>
-如上图这样的 RPC 调用，开始调用 RPC 1 后，里面分别调用了 RPC 2, RPC 3, RPC 4，等所有 RPC 用成功后，返回结果。</p>
-<p>这是正常的方式，但是如果 RPC 2 调用失败了会发生什么？<br>
-<img data-src="/images/how-to-correctly-use-package-context/rpc-fails-2.svg" alt></p>
+<p>如果进一步考虑。<br><img data-src="/images/how-to-correctly-use-package-context/rpc-fails-1.svg"><br>如上图这样的 RPC 调用，开始调用 RPC 1 后，里面分别调用了 RPC 2, RPC 3, RPC 4，等所有 RPC 用成功后，返回结果。</p>
+<p>这是正常的方式，但是如果 RPC 2 调用失败了会发生什么？<br><img data-src="/images/how-to-correctly-use-package-context/rpc-fails-2.svg"></p>
 <p>RPC 2 失败后，如果没有 Context 的存在，那么我们可能依旧会等所有的 RPC 执行完毕，但是由于 RPC 2 败了，所以其实其它的 RPC 结果意义不大了，我们依旧需要给用户返回错误。因此我们白白的浪费了 10ms，完全没必要去等待其它 RPC 执行完毕。</p>
-<p>那如果我们在 RPC 2 失败后，就直接给用户返回失败呢？<br>
-<img data-src="/images/how-to-correctly-use-package-context/rpc-fails-3.svg" alt><br>
-用户是在 30ms 的位置收到了错误消息，可是 RPC 3 和 RPC 4 依然在没意义的运行，还在浪费计算和IO资源。<br>
-<img data-src="/images/how-to-correctly-use-package-context/rpc-fails-4.svg" alt></p>
+<p>那如果我们在 RPC 2 失败后，就直接给用户返回失败呢？<br><img data-src="/images/how-to-correctly-use-package-context/rpc-fails-3.svg"><br>用户是在 30ms 的位置收到了错误消息，可是 RPC 3 和 RPC 4 依然在没意义的运行，还在浪费计算和IO资源。<br><img data-src="/images/how-to-correctly-use-package-context/rpc-fails-4.svg"></p>
 <p>所以理想状态应该是如上图，当 RPC 2 出错后，除了返回用户错误信息外，我们也应该有某种方式可以通知 RPC 3 和 RPC 4，让他们也停止运行，不再浪费资源。</p>
 <p>所以解决方案就是：</p>
 <ul>
@@ -339,77 +328,59 @@ at Golang UK Conf. 2017</p>
 </ul>
 <p>那干脆让我们把变量也扔那吧。😈</p>
 <ul>
-<li>在 Go 中没有线程/go routine 变量
-<ul>
+<li>在 Go 中没有线程&#x2F;go routine 变量<ul>
 <li>其实挺合理的，因为这样就会让 goroutine 互相产生依赖</li>
 </ul>
 </li>
 <li><font color="DeepPink"><strong>非常容易被滥用</strong></font></li>
 </ul>
-<h1>Context 实现细节</h1>
-<p>context.Context：</p>
+<h1 id="Context-实现细节"><a href="#Context-实现细节" class="headerlink" title="Context 实现细节"></a>Context 实现细节</h1><p>context.Context：</p>
 <ul>
 <li>是不可变的(immutable)树节点</li>
 <li>Cancel 一个节点，会连带 Cancel 其所有子节点 （<font color="DeepPink"><strong>从上到下</strong></font>）</li>
 <li>Context values 是一个节点</li>
 <li>Value 查找是回溯树的方式 （<font color="DeepPink"><strong>从下到上</strong></font>）</li>
 </ul>
-<h2 id="示例-Context-链">示例 Context 链</h2>
-<p>完整代码：<a href="https://play.golang.org/p/ddpofBV1QS" target="_blank" rel="noopener">https://play.golang.org/p/ddpofBV1QS</a></p>
+<h2 id="示例-Context-链"><a href="#示例-Context-链" class="headerlink" title="示例 Context 链"></a>示例 Context 链</h2><p>完整代码：<a href="https://play.golang.org/p/ddpofBV1QS" target="_blank" rel="noopener">https://play.golang.org/p/ddpofBV1QS</a></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line">func tree() &#123;</span><br><span class="line">  ctx1 := context.Background()</span><br><span class="line">  ctx2, _ := context.WithCancel(ctx1)</span><br><span class="line">  ctx3, _ := context.WithTimeout(ctx2, time.Second * 5)</span><br><span class="line">  ctx4, _ := context.WithTimeout(ctx3, time.Second * 3)</span><br><span class="line">  ctx5, _ := context.WithTimeout(ctx3, time.Second * 6)</span><br><span class="line">  ctx6 := context.WithValue(ctx5, &quot;userID&quot;, 12)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>如果这样构成的 Context 链，其形如下图：<br>
-<img data-src="/images/how-to-correctly-use-package-context/context-chain-1.svg" alt><br>
-那么当 3 秒超时到了时候：<br>
-<img data-src="/images/how-to-correctly-use-package-context/context-chain-2.svg" alt><br>
-可以看到 ctx4 超时退出了。</p>
-<p>当 5秒钟 超时到达时：<br>
-<img data-src="/images/how-to-correctly-use-package-context/context-chain-3.svg" alt><br>
-可以看到，不仅仅 ctx3 退出了，其所有子节点，比如 ctx5 和 ctx6 也都退出了。</p>
-<h2 id="context-Context-API">context.Context API</h2>
-<p>基本上是两类操作：</p>
+
+<p>如果这样构成的 Context 链，其形如下图：<br><img data-src="/images/how-to-correctly-use-package-context/context-chain-1.svg"><br>那么当 3 秒超时到了时候：<br><img data-src="/images/how-to-correctly-use-package-context/context-chain-2.svg"><br>可以看到 ctx4 超时退出了。</p>
+<p>当 5秒钟 超时到达时：<br><img data-src="/images/how-to-correctly-use-package-context/context-chain-3.svg"><br>可以看到，不仅仅 ctx3 退出了，其所有子节点，比如 ctx5 和 ctx6 也都退出了。</p>
+<h2 id="context-Context-API"><a href="#context-Context-API" class="headerlink" title="context.Context API"></a>context.Context API</h2><p>基本上是两类操作：</p>
 <ul>
 <li>3个函数用于<font color="DeepPink"><strong>限定什么时候你的子节点退出</strong></font>；</li>
-<li>1个函数用于<font color="DeepPink"><strong>设置请求范畴的变量</strong></font></li>
+<li>1个函数用于<font color="DeepPink"><strong>设置请求范畴的变量</strong></font><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">type Context interface &#123;</span><br><span class="line">  //  啥时候退出</span><br><span class="line">  Deadline() (deadline time.Time, ok bool)</span><br><span class="line">  Done() &lt;-chan struct&#123;&#125;</span><br><span class="line">  Err() error</span><br><span class="line">  //  设置变量</span><br><span class="line">  Value(key interface&#123;&#125;) interface&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">type Context interface &#123;</span><br><span class="line">  //  啥时候退出</span><br><span class="line">  Deadline() (deadline time.Time, ok bool)</span><br><span class="line">  Done() &lt;-chan struct&#123;&#125;</span><br><span class="line">  Err() error</span><br><span class="line">  //  设置变量</span><br><span class="line">  Value(key interface&#123;&#125;) interface&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="什么时候应该使用-Context？">什么时候应该使用 Context？</h2>
-<ul>
+<h2 id="什么时候应该使用-Context？"><a href="#什么时候应该使用-Context？" class="headerlink" title="什么时候应该使用 Context？"></a>什么时候应该使用 Context？</h2><ul>
 <li>每一个 RPC 调用都应该有<font color="DeepPink"><strong>超时退出</strong></font>的能力，这是比较合理的 API 设计</li>
 <li><font color="DeepPink"><strong>不仅仅</strong></font> 是超时，你还需要有能力去结束那些不再需要操作的行为</li>
 <li>context.Context 是 Go 标准的解决方案</li>
 <li>任何函数可能被阻塞，或者需要很长时间来完成的，都应该有个 context.Context</li>
 </ul>
-<h2 id="如何创建-Context？">如何创建 Context？</h2>
-<ul>
-<li>在 RPC 开始的时候，使用 context.Background()
-<ul>
+<h2 id="如何创建-Context？"><a href="#如何创建-Context？" class="headerlink" title="如何创建 Context？"></a>如何创建 Context？</h2><ul>
+<li>在 RPC 开始的时候，使用 context.Background()<ul>
 <li>有些人把在 main() 里记录一个 context.Background()，然后把这个放到服务器的某个变量里，然后请求来了后从这个变量里继承 context。这么做是<font color="DeepPink"><strong>不对的</strong></font>。直接每个请求，源自自己的 context.Background() 即可。</li>
 </ul>
 </li>
 <li>如果你没有 context，却需要调用一个 context 的函数的话，用 context.TODO()</li>
 <li>如果某步操作需要自己的超时设置的话，给它一个独立的 sub-context（如前面的例子）</li>
 </ul>
-<h2 id="如何集成到-API-里？">如何集成到 API 里？</h2>
-<ul>
-<li>如果有 Context，<font color="DeepPink"><strong>将其作为第一个变量</strong></font>。
-<ul>
+<h2 id="如何集成到-API-里？"><a href="#如何集成到-API-里？" class="headerlink" title="如何集成到 API 里？"></a>如何集成到 API 里？</h2><ul>
+<li>如果有 Context，<font color="DeepPink"><strong>将其作为第一个变量</strong></font>。<ul>
 <li>如 func (d* Dialer) DialContext(ctx context.Context, network, address string) (Conn, error)</li>
 <li>有些人把 context 放到中间的某个变量里去，这很不合习惯，不要那么做，放到第一个去。</li>
 </ul>
 </li>
-<li>将其作为<font color="DeepPink"><strong>可选的</strong></font>方式，用 request 结构体方式。
-<ul>
+<li>将其作为<font color="DeepPink"><strong>可选的</strong></font>方式，用 request 结构体方式。<ul>
 <li>如：func (r *Request) WithContext(ctx context.Context) *Request</li>
 </ul>
 </li>
 <li>Context 的变量名请用 ctx（不要起一些诡异的名字😓）</li>
 </ul>
-<h2 id="Context-放哪？">Context 放哪？</h2>
-<ul>
+<h2 id="Context-放哪？"><a href="#Context-放哪？" class="headerlink" title="Context 放哪？"></a>Context 放哪？</h2><ul>
 <li>把 Context 想象为一条河流流过你的程序（另一个意思就是说不要喝河里的水……🙊）</li>
 <li>理想情况下，Context 存在于调用栈（Call Stack） 中</li>
-<li>不要把 Context 存储到一个 struct 里
-<ul>
+<li>不要把 Context 存储到一个 struct 里<ul>
 <li>除非你使用的是像 http.Request 中的 request 结构体的方式</li>
 </ul>
 </li>
@@ -417,96 +388,88 @@ at Golang UK Conf. 2017</p>
 <li>当 RPC 请求处理结束后，应该去掉对 Context 变量的引用（Unreference）</li>
 <li>Request 结束，Context 就应该结束。（这俩是一对儿，不求同年同月同日生，但求同年同月同日死……💕）</li>
 </ul>
-<h2 id="Context-包的注意事项">Context 包的注意事项</h2>
-<ul>
-<li>要养成关闭 Context 的习惯
+<h2 id="Context-包的注意事项"><a href="#Context-包的注意事项" class="headerlink" title="Context 包的注意事项"></a>Context 包的注意事项</h2><ul>
+<li><p>要养成关闭 Context 的习惯</p>
 <ul>
 <li><font color="DeepPink"><strong>特别是</strong></font> 超时的 Contexts</li>
 </ul>
 </li>
-<li>如果一个 context 被 GC 而不是 cancel 了，那一般是你做错了</li>
-</ul>
+<li><p>如果一个 context 被 GC 而不是 cancel 了，那一般是你做错了</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ctx, cancel := context.WithTimeout(parentCtx, time.Second * 2)</span><br><span class="line">defer cancel()</span><br></pre></td></tr></table></figure>
-<ul>
-<li>使用 Timeout 会导致内部使用 time.AfterFunc，从而会导致 context 在计时器到时之前都不会被垃圾回收。</li>
-<li>在建立之后，立即 defer cancel() 是一个好习惯。</li>
+</li>
+<li><p>使用 Timeout 会导致内部使用 time.AfterFunc，从而会导致 context 在计时器到时之前都不会被垃圾回收。</p>
+</li>
+<li><p>在建立之后，立即 defer cancel() 是一个好习惯。</p>
+</li>
 </ul>
-<h2 id="终止请求-Request-Cancellation">终止请求 (Request Cancellation)</h2>
-<p>当你不再关心接下来获取的结果的时候，有可能会 Cancel 一个 Context？</p>
-<p>以 <a href="http://golang.org/x/sync/errgroup" target="_blank" rel="noopener">golang.org/x/sync/errgroup</a> 为例，errgroup 使用 Context 来提供 RPC 的终止行为。</p>
+<h2 id="终止请求-Request-Cancellation"><a href="#终止请求-Request-Cancellation" class="headerlink" title="终止请求 (Request Cancellation)"></a>终止请求 (Request Cancellation)</h2><p>当你不再关心接下来获取的结果的时候，有可能会 Cancel 一个 Context？</p>
+<p>以 golang.org&#x2F;x&#x2F;sync&#x2F;errgroup 为例，errgroup 使用 Context 来提供 RPC 的终止行为。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">type Group struct &#123;</span><br><span class="line">	cancel  func()</span><br><span class="line">	wg      sync.WaitGroup</span><br><span class="line">	errOnce sync.Once</span><br><span class="line">	err     error</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>创建一个 group 和 context：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">func WithContext(ctx context.Context) (*Group, context.Context) &#123;</span><br><span class="line">  ctx, cancel := context.WithCancel(ctx)</span><br><span class="line">  return &amp;Group&#123;cancel: cancel&#125;, ctx</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>这样就返回了一个可以被提前 cancel 的 group。</p>
 <p>而调用的时候，并不是直接调用 go func()，而是调用 Go()，将函数作为参数传进去，用高阶函数的形式来调用，其内部才是 go func() 开启 goroutine。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">func (g *Group) Go(f func() error) &#123;</span><br><span class="line">  g.wg.Add(1)</span><br><span class="line">  go func() &#123;</span><br><span class="line">    defer g.wg.Done()</span><br><span class="line">    if err := f(); err != nil &#123;</span><br><span class="line">      g.errOnce.Do(func() &#123;</span><br><span class="line">        g.err = err</span><br><span class="line">        if g.cancel != nil &#123;</span><br><span class="line">          g.cancel()</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>当给入函数 f 返回错误，则使用 sync.Once 来 cancel context，而错误被保存于 g.err 之中，在随后的 Wait() 函数中返回。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">func (g *Group) Wait() error &#123;</span><br><span class="line">  g.wg.Wait()</span><br><span class="line">  if g.cancel != nil &#123;</span><br><span class="line">    g.cancel()</span><br><span class="line">  &#125;</span><br><span class="line">  return g.err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>注意：这里在 Wait() 结束后，调用了一次 cancel()。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line">func DoTwoRequestsAtOnce(ctx context.Context) error &#123;</span><br><span class="line">  eg, egCtx := errgroup.WithContext(ctx)</span><br><span class="line">  var resp1, resp2 *http.Response</span><br><span class="line">  f := func(loc string, respIn **http.Response) func() error &#123;</span><br><span class="line">    return func() error &#123;</span><br><span class="line">      reqCtx, cancel := context.WithTimeout(egCtx, time.Second)</span><br><span class="line">      defer cancel()</span><br><span class="line">      req, _ := http.NewRequest(&quot;GET&quot;, loc, nil)</span><br><span class="line">      var err error</span><br><span class="line">      *respIn, err = http.DefaultClient.Do(req.WithContext(reqCtx))</span><br><span class="line">      if err == nil &amp;&amp; (*respIn).StatusCode &gt;= 500 &#123;</span><br><span class="line">        return errors.New(&quot;unexpected!&quot;)</span><br><span class="line">      &#125;</span><br><span class="line">      return err</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  eg.Go(f(&quot;http://localhost:8080/fast_request&quot;, &amp;resp1))</span><br><span class="line">  eg.Go(f(&quot;http://localhost:8080/slow_request&quot;, &amp;resp2))</span><br><span class="line">  return eg.Wait()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>在这个例子中，同时发起了两个 RPC 调用，当任何一个调用超时或者出错后，会终止另一个 RPC 调用。这里就是利用前面讲到的 errgroup 来实现的，应对有很多并非请求，并需要集中处理超时、出错终止其它并发任务的时候，这个 pattern 使用起来很方便。</p>
-<h2 id="Context-Value-Request-范畴的值">Context.Value - Request 范畴的值</h2>
-<h3 id="context-Value-API-的万金油（duct-tape">context.Value API 的万金油（duct tape)</h3>
-<p>胶带（duct tape) 几乎可以修任何东西，从破箱子，到人的伤口，到汽车引擎，甚至到NASA登月任务中的阿波罗13号飞船（Yeah! True Story)。所以在西方文化里，胶带是个“万能”的东西。在中文里，恐怕万金油是更合适的对应词汇，从头疼、脑热，感冒发烧，到跌打损伤几乎无所不治。</p>
+<h2 id="Context-Value-Request-范畴的值"><a href="#Context-Value-Request-范畴的值" class="headerlink" title="Context.Value - Request 范畴的值"></a>Context.Value - Request 范畴的值</h2><h3 id="context-Value-API-的万金油（duct-tape"><a href="#context-Value-API-的万金油（duct-tape" class="headerlink" title="context.Value API 的万金油（duct tape)"></a>context.Value API 的万金油（duct tape)</h3><p>胶带（duct tape) 几乎可以修任何东西，从破箱子，到人的伤口，到汽车引擎，甚至到NASA登月任务中的阿波罗13号飞船（Yeah! True Story)。所以在西方文化里，胶带是个“万能”的东西。在中文里，恐怕万金油是更合适的对应词汇，从头疼、脑热，感冒发烧，到跌打损伤几乎无所不治。</p>
 <p>当然，<font color="DeepPink"><strong>治标不治本</strong></font>，这点东西方文化中的潜台词都是一样的。这里提及的 context.Value 对于 API 而言，就是这类性质的东西，啥都可以干，但是治标不治本。</p>
 <ul>
-<li>value 节点是 Context 链中的一个节点</li>
+<li>value 节点是 Context 链中的一个节点<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package context</span><br><span class="line">type valueCtx struct &#123;</span><br><span class="line">  Context</span><br><span class="line">  key, val interface&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">func WithValue(parent Context, key, val interface&#123;&#125;) Context &#123;</span><br><span class="line">  //  ...</span><br><span class="line">  return &amp;valueCtx&#123;parent, key, val&#125;</span><br><span class="line">&#125;</span><br><span class="line">func (c *valueCtx) Value(key interface&#123;&#125;) interface&#123;&#125; &#123;</span><br><span class="line">  if c.key == key &#123;</span><br><span class="line">    return c.val</span><br><span class="line">  &#125;</span><br><span class="line">  return c.Context.Value(key)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package context</span><br><span class="line">type valueCtx struct &#123;</span><br><span class="line">  Context</span><br><span class="line">  key, val interface&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">func WithValue(parent Context, key, val interface&#123;&#125;) Context &#123;</span><br><span class="line">  //  ...</span><br><span class="line">  return &amp;valueCtx&#123;parent, key, val&#125;</span><br><span class="line">&#125;</span><br><span class="line">func (c *valueCtx) Value(key interface&#123;&#125;) interface&#123;&#125; &#123;</span><br><span class="line">  if c.key == key &#123;</span><br><span class="line">    return c.val</span><br><span class="line">  &#125;</span><br><span class="line">  return c.Context.Value(key)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>可以看到，WithValue() 实际上就是在 Context 树形结构中，增加一个节点罢了。</p>
 <p>Context 是 immutable 的。</p>
-<h3 id="约束-key-的空间">约束 key 的空间</h3>
-<p>为了防止树形结构中出现重复的键，建议约束键的空间。比如使用私有类型，然后用 GetXxx() 和 WithXxxx() 来操作私有实体。</p>
+<h3 id="约束-key-的空间"><a href="#约束-key-的空间" class="headerlink" title="约束 key 的空间"></a>约束 key 的空间</h3><p>为了防止树形结构中出现重复的键，建议约束键的空间。比如使用私有类型，然后用 GetXxx() 和 WithXxxx() 来操作私有实体。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">type privateCtxType string</span><br><span class="line">var (</span><br><span class="line">  reqID = privateCtxType(&quot;req-id&quot;)</span><br><span class="line">)</span><br><span class="line">func GetRequestID(ctx context.Context) (int, bool) &#123;</span><br><span class="line">  id, exists := ctx.Value(reqID).(int)</span><br><span class="line">  return id, exists</span><br><span class="line">&#125;</span><br><span class="line">func WithRequestID(ctx context.Context, reqid int) context.Context &#123;</span><br><span class="line">  return context.WithValue(ctx, reqID, reqid)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>这里使用 WithXxx 而不是 SetXxx 也是因为 Context 实际上是 immutable 的，所以不是修改 Context 里某个值，而是产生新的 Context <font color="DeepPink"><strong>带某个值</strong></font>。</p>
-<h3 id="Context-Value-是-immutable-的">Context.Value 是 immutable 的</h3>
-<p>再多次的强调 Context.Value 是 <font color="DeepPink"><strong>immutable</strong></font> 的也不过分。</p>
+<h3 id="Context-Value-是-immutable-的"><a href="#Context-Value-是-immutable-的" class="headerlink" title="Context.Value 是 immutable 的"></a>Context.Value 是 immutable 的</h3><p>再多次的强调 Context.Value 是 <font color="DeepPink"><strong>immutable</strong></font> 的也不过分。</p>
 <ul>
 <li>context.Context 从设计上就是按照 immutable （不可变的）模式设计的</li>
 <li>同样，Context.Value 也是 immutable 的</li>
-<li>不要试图在 Context.Value 里存某个可变更的值，然后改变，期望别的 Context 可以看到这个改变
-<ul>
+<li>不要试图在 Context.Value 里存某个可变更的值，然后改变，期望别的 Context 可以看到这个改变<ul>
 <li>更别指望着在 Context.Value 里存可变的值，最后多个 goroutine 并发访问没竞争冒险啥的，因为自始至终，就是按照不可变来设计的</li>
 <li>比如设置了超时，就别以为可以改变这个设置的超时值</li>
 </ul>
 </li>
 <li>在使用 Context.Value 的时候，一定要记住这一点</li>
 </ul>
-<h3 id="应该把什么放到-Context-Value-里？">应该把什么放到 Context.Value 里？</h3>
-<ul>
-<li>应该保存 Request 范畴的值
-<ul>
+<h3 id="应该把什么放到-Context-Value-里？"><a href="#应该把什么放到-Context-Value-里？" class="headerlink" title="应该把什么放到 Context.Value 里？"></a>应该把什么放到 Context.Value 里？</h3><ul>
+<li>应该保存 Request 范畴的值<ul>
 <li>任何关于 Context 自身的都是 Request 范畴的（这俩同生共死）</li>
 <li>从 Request 数据衍生出来，并且随着 Request 的结束而终结</li>
 </ul>
 </li>
 </ul>
-<h3 id="什么东西不属于-Request-范畴？">什么东西不属于 Request 范畴？</h3>
-<ul>
-<li>在 Request 以外建立的，并且不随着 Request 改变而变化
-<ul>
+<h3 id="什么东西不属于-Request-范畴？"><a href="#什么东西不属于-Request-范畴？" class="headerlink" title="什么东西不属于 Request 范畴？"></a>什么东西不属于 Request 范畴？</h3><ul>
+<li>在 Request 以外建立的，并且不随着 Request 改变而变化<ul>
 <li>比如你 func main() 里建立的东西显然不属于 Request 范畴</li>
 </ul>
 </li>
-<li>数据库连接
-<ul>
+<li>数据库连接<ul>
 <li>如果 User ID 在连接里呢？(稍后会提及)</li>
 </ul>
 </li>
-<li>全局 logger
-<ul>
+<li>全局 logger<ul>
 <li>如果 logger 里需要有 User ID 呢？（稍后会提及）</li>
 </ul>
 </li>
 </ul>
-<h3 id="那么用-Context-Value-有什么问题？">那么用 Context.Value 有什么问题？</h3>
-<ul>
+<h3 id="那么用-Context-Value-有什么问题？"><a href="#那么用-Context-Value-有什么问题？" class="headerlink" title="那么用 Context.Value 有什么问题？"></a>那么用 Context.Value 有什么问题？</h3><ul>
 <li>不幸的是，好像所有东西都是由请求衍生出来的</li>
-<li>那么我们为什么还需要函数参数？然后干脆只来一个 Context 就完了？</li>
+<li>那么我们为什么还需要函数参数？然后干脆只来一个 Context 就完了？<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">func Add(ctx context.Context) int &#123;</span><br><span class="line">  return ctx.Value(&quot;first&quot;).(int) + ctx.Value(&quot;second&quot;).(int)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">func Add(ctx context.Context) int &#123;</span><br><span class="line">  return ctx.Value(&quot;first&quot;).(int) + ctx.Value(&quot;second&quot;).(int)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>曾经看到过一个 API，就是这种形式：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">func IsAdminUser(ctx context.Context) bool &#123;</span><br><span class="line">  userID := GetUser(ctx)</span><br><span class="line">  return authSingleton.IsAdmin(userID)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>这里API实现内部从 context 中取得 UserID，然后再进行权限判断。但是从函数签名看，则完全无法理解这个函数具体需要什么、以及做什么。</p>
 <blockquote>
 <p>代码要以可读性为优先设计考虑。</p>
@@ -514,6 +477,7 @@ at Golang UK Conf. 2017</p>
 <p>别人拿到一个代码，一般不是掉进函数实现细节里去一行行的读代码，而是会先浏览一下函数接口。所以清晰的函数接口设计，会更加利于别人（<font color="DeepPink"><strong>或者是几个月后的你自己</strong></font>）理解这段代码。</p>
 <p>一个良好的 API 设计，应该从函数签名就清晰的理解函数的逻辑。如果我们将上面的接口改为：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func IsAdminUser(ctx context.Context, userID string, authenticator auth.Service) bool</span><br></pre></td></tr></table></figure>
+
 <p>我们从这个函数签名就可以清楚的知道：</p>
 <ul>
 <li>这个函数很可能可以提前被 cancel</li>
@@ -523,21 +487,17 @@ at Golang UK Conf. 2017</p>
 <li>userID 是传入值，因此我们可以修改它，不用担心影响别的东西</li>
 </ul>
 <p>所有这些信息，都是从函数签名得到的，而无需打开函数实现一行行去看。</p>
-<h3 id="那什么可以放到-Context-Value-里去？">那什么可以放到 Context.Value 里去？</h3>
-<p>现在知道 Context.Value 会让接口定义更加模糊，似乎不应该使用。那么又回到了原来的问题，到底什么可以放到 Context.Value 里去？换个角度去想，什么不是衍生于 Request？</p>
+<h3 id="那什么可以放到-Context-Value-里去？"><a href="#那什么可以放到-Context-Value-里去？" class="headerlink" title="那什么可以放到 Context.Value 里去？"></a>那什么可以放到 Context.Value 里去？</h3><p>现在知道 Context.Value 会让接口定义更加模糊，似乎不应该使用。那么又回到了原来的问题，到底什么可以放到 Context.Value 里去？换个角度去想，什么不是衍生于 Request？</p>
 <ul>
 <li>Context.Value 应该是告知性质的东西，而不是控制性质的东西</li>
 <li>应该永远都不需要写进文档作为必须存在的输入数据</li>
 <li>如果你发现你的函数在某些 Context.Value 下无法正确工作，那就说明这个 Context.Value 里的信息不应该放在里面，而应该放在接口上。因为已经让接口太模糊了。</li>
 </ul>
-<h4 id="什么东西不是控制性质的东西？">什么东西不是控制性质的东西？</h4>
-<ul>
-<li>Request ID
-<ul>
+<h4 id="什么东西不是控制性质的东西？"><a href="#什么东西不是控制性质的东西？" class="headerlink" title="什么东西不是控制性质的东西？"></a>什么东西不是控制性质的东西？</h4><ul>
+<li>Request ID<ul>
 <li>只是给每个 RPC 调用一个 ID，而没有实际意义</li>
-<li>这就是个数字/字符串，反正你也不会用其作为逻辑判断</li>
-<li>一般也就是日志的时候需要记录一下
-<ul>
+<li>这就是个数字&#x2F;字符串，反正你也不会用其作为逻辑判断</li>
+<li>一般也就是日志的时候需要记录一下<ul>
 <li>而 logger 本身不是 Request 范畴，所以 logger 不应该在 Context 里</li>
 <li>非 Request 范畴的 logger 应该只是利用 Context 信息来修饰日志</li>
 </ul>
@@ -547,49 +507,38 @@ at Golang UK Conf. 2017</p>
 <li>User ID （如果仅仅是作为日志用）</li>
 <li>Incoming Request ID</li>
 </ul>
-<h4 id="什么显然是控制性质的东西？">什么显然是控制性质的东西？</h4>
-<ul>
-<li>数据库连接
-<ul>
+<h4 id="什么显然是控制性质的东西？"><a href="#什么显然是控制性质的东西？" class="headerlink" title="什么显然是控制性质的东西？"></a>什么显然是控制性质的东西？</h4><ul>
+<li>数据库连接<ul>
 <li>显然会非常严重的影响逻辑</li>
 <li>因此这应该在函数参数里，明确表示出来</li>
 </ul>
 </li>
-<li>认证服务(Authentication)
-<ul>
+<li>认证服务(Authentication)<ul>
 <li>显然不同的认证服务导致的逻辑不同</li>
 <li>也应该放到函数参数里，明确表示出来</li>
 </ul>
 </li>
 </ul>
-<h3 id="例子">例子</h3>
-<h4 id="调试性质的-Context-Value-net-http-httptrace">调试性质的 Context.Value - net/http/httptrace</h4>
-<p><a href="https://medium.com/@cep21/go-1-7-httptrace-and-context-debug-patterns-608ae887224a" target="_blank" rel="noopener">https://medium.com/@cep21/go-1-7-httptrace-and-context-debug-patterns-608ae887224a</a></p>
+<h3 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h3><h4 id="调试性质的-Context-Value-net-http-httptrace"><a href="#调试性质的-Context-Value-net-http-httptrace" class="headerlink" title="调试性质的 Context.Value - net&#x2F;http&#x2F;httptrace"></a>调试性质的 Context.Value - net&#x2F;http&#x2F;httptrace</h4><p><a href="https://medium.com/@cep21/go-1-7-httptrace-and-context-debug-patterns-608ae887224a" target="_blank" rel="noopener">https://medium.com/@cep21/go-1-7-httptrace-and-context-debug-patterns-608ae887224a</a></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line">func trace(req *http.Request, c *http.Client) &#123;</span><br><span class="line">  trace := &amp;httptrace.ClientTrace&#123;</span><br><span class="line">    GotConn: func(connInfo httptrace.GotConnInfo) &#123;</span><br><span class="line">      fmt.Println(&quot;Got Conn&quot;)</span><br><span class="line">    &#125;,</span><br><span class="line">    ConnectStart: func(network, addr string) &#123;</span><br><span class="line">      fmt.Println(&quot;Dial Start&quot;)</span><br><span class="line">    &#125;,</span><br><span class="line">    ConnectDone: func(network, addr string, err error) &#123;</span><br><span class="line">      fmt.Println(&quot;Dial done&quot;)</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;</span><br><span class="line">  req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))</span><br><span class="line">  c.Do(req)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="net-http-是怎么使用-httptrace-的？">net/http 是怎么使用 httptrace 的？</h4>
-<ul>
+
+<h4 id="net-http-是怎么使用-httptrace-的？"><a href="#net-http-是怎么使用-httptrace-的？" class="headerlink" title="net&#x2F;http 是怎么使用 httptrace 的？"></a>net&#x2F;http 是怎么使用 httptrace 的？</h4><ul>
 <li>如果有 trace 存在的话，就执行 trace 回调函数</li>
-<li>这只是告知性质，而不是控制性质
-<ul>
+<li>这只是告知性质，而不是控制性质<ul>
 <li>http 不会因为存在 trace 与否就有不同的执行逻辑</li>
 <li>这里只是告知 API 的用户，帮助用户记录日志或者调试</li>
-<li>因此这里的 trace 是存在于 Context 里的</li>
+<li>因此这里的 trace 是存在于 Context 里的<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">package http</span><br><span class="line">func (req *Request) write(w io.Writer, usingProxy bool, extraHeaders Header, waitForContinue func() bool) (err error) &#123;</span><br><span class="line">  //  ...</span><br><span class="line">  trace := httptrace.ContextClientTrace(req.Context())</span><br><span class="line">  //  ...</span><br><span class="line">  if trace != nil &amp;&amp; trace.WroteHeaders != nil &#123;</span><br><span class="line">    trace.WroteHeaders()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
 </ul>
 </li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">package http</span><br><span class="line">func (req *Request) write(w io.Writer, usingProxy bool, extraHeaders Header, waitForContinue func() bool) (err error) &#123;</span><br><span class="line">  //  ...</span><br><span class="line">  trace := httptrace.ContextClientTrace(req.Context())</span><br><span class="line">  //  ...</span><br><span class="line">  if trace != nil &amp;&amp; trace.WroteHeaders != nil &#123;</span><br><span class="line">    trace.WroteHeaders()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="回避依赖注入-github-com-golang-oauth2">回避依赖注入 - <a href="http://github.com/golang/oauth2" target="_blank" rel="noopener">github.com/golang/oauth2</a></h4>
-<ul>
+<h4 id="回避依赖注入-github-com-golang-oauth2"><a href="#回避依赖注入-github-com-golang-oauth2" class="headerlink" title="回避依赖注入 - github.com&#x2F;golang&#x2F;oauth2"></a>回避依赖注入 - github.com&#x2F;golang&#x2F;oauth2</h4><ul>
 <li>这里比较诡异，使用 ctx.Value 来定位依赖</li>
-<li><font color="DeepPink"><strong>不推荐这样做</strong></font>
-<ul>
-<li>这里这样做基本上只是为了满足测试需求</li>
+<li><font color="DeepPink"><strong>不推荐这样做</strong></font><ul>
+<li>这里这样做基本上只是为了满足测试需求<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line">import &quot;github.com/golang/oauth2&quot;</span><br><span class="line">func oauth() &#123;</span><br><span class="line">  c := &amp;http.Client&#123;Transport: &amp;mockTransport&#123;&#125;&#125;</span><br><span class="line">  ctx := context.WithValue(context.Background(), oauth2.HTTPClient, c)</span><br><span class="line">  conf := &amp;oauth2.Config&#123; /* ... */ &#125;</span><br><span class="line">  conf.Exchange(ctx, &quot;code&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
 </ul>
 </li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line">import &quot;github.com/golang/oauth2&quot;</span><br><span class="line">func oauth() &#123;</span><br><span class="line">  c := &amp;http.Client&#123;Transport: &amp;mockTransport&#123;&#125;&#125;</span><br><span class="line">  ctx := context.WithValue(context.Background(), oauth2.HTTPClient, c)</span><br><span class="line">  conf := &amp;oauth2.Config&#123; /* ... */ &#125;</span><br><span class="line">  conf.Exchange(ctx, &quot;code&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="人们滥用-Context-Value-的原因">人们滥用 Context.Value 的原因</h3>
-<ul>
+<h3 id="人们滥用-Context-Value-的原因"><a href="#人们滥用-Context-Value-的原因" class="headerlink" title="人们滥用 Context.Value 的原因"></a>人们滥用 Context.Value 的原因</h3><ul>
 <li>中间件的抽象</li>
 <li>很深的函数调用栈</li>
 <li>混乱的设计</li>
@@ -597,15 +546,13 @@ at Golang UK Conf. 2017</p>
 <blockquote>
 <p>context.Value 并没有让你的 API 更简洁，那是假象，相反，它让你的 API 定义更加模糊。</p>
 </blockquote>
-<h2 id="总结-Context-Value">总结 Context.Value</h2>
-<ul>
+<h2 id="总结-Context-Value"><a href="#总结-Context-Value" class="headerlink" title="总结 Context.Value"></a>总结 Context.Value</h2><ul>
 <li>对于调试非常方便</li>
 <li>将必须的信息放入 Context.Value 中，会让接口定义更加不透明</li>
 <li>如果可以尽量明确定义在接口</li>
 <li>尽量不要用 Context.Value</li>
 </ul>
-<h1>总结 Context</h1>
-<ul>
+<h1 id="总结-Context"><a href="#总结-Context" class="headerlink" title="总结 Context"></a>总结 Context</h1><ul>
 <li>所有的长的、阻塞的操作都需要 Context</li>
 <li>errgroup 是构架于 Context 之上很好的抽象</li>
 <li>当 Request 的结束的时候，Cancel Context</li>
@@ -614,11 +561,8 @@ at Golang UK Conf. 2017</p>
 <li>Context 以及 Context.Value 应该是不可变的（immutable），并且应该是线程安全</li>
 <li>Context 应该随 Request 消亡而消亡</li>
 </ul>
-<h1>Q&amp;A</h1>
-<h2 id="数据库的访问也用-Context-么？">数据库的访问也用 Context 么？</h2>
-<p>之前说过长时间、可阻塞的操作都用 Context，数据库操作也是如此。不过对于超时 Cancel 操作来说，一般不会对写操作进行 cancel；但是对于读操作，一般会有 Cancel 操作。</p>
-<h1>原文</h1>
-<p><a href="https://blog.lab99.org/post/golang-2017-10-27-video-how-to-correctly-use-package-context.html" target="_blank" rel="noopener">https://blog.lab99.org/post/golang-2017-10-27-video-how-to-correctly-use-package-context.html</a></p>
+<h1 id="Q-A"><a href="#Q-A" class="headerlink" title="Q&amp;A"></a>Q&amp;A</h1><h2 id="数据库的访问也用-Context-么？"><a href="#数据库的访问也用-Context-么？" class="headerlink" title="数据库的访问也用 Context 么？"></a>数据库的访问也用 Context 么？</h2><p>之前说过长时间、可阻塞的操作都用 Context，数据库操作也是如此。不过对于超时 Cancel 操作来说，一般不会对写操作进行 cancel；但是对于读操作，一般会有 Cancel 操作。</p>
+<h1 id="原文"><a href="#原文" class="headerlink" title="原文"></a>原文</h1><p><a href="https://blog.lab99.org/post/golang-2017-10-27-video-how-to-correctly-use-package-context.html" target="_blank" rel="noopener">https://blog.lab99.org/post/golang-2017-10-27-video-how-to-correctly-use-package-context.html</a></p>
 
     </div>
 
@@ -791,7 +735,7 @@ at Golang UK Conf. 2017</p>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">为什么需要 Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">Context 实现细节</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#示例-Context-链"><span class="nav-number">3.1.</span> <span class="nav-text">示例 Context 链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#context-Context-API"><span class="nav-number">3.2.</span> <span class="nav-text">context.Context API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么时候应该使用-Context？"><span class="nav-number">3.3.</span> <span class="nav-text">什么时候应该使用 Context？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何创建-Context？"><span class="nav-number">3.4.</span> <span class="nav-text">如何创建 Context？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何集成到-API-里？"><span class="nav-number">3.5.</span> <span class="nav-text">如何集成到 API 里？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-放哪？"><span class="nav-number">3.6.</span> <span class="nav-text">Context 放哪？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-包的注意事项"><span class="nav-number">3.7.</span> <span class="nav-text">Context 包的注意事项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#终止请求-Request-Cancellation"><span class="nav-number">3.8.</span> <span class="nav-text">终止请求 (Request Cancellation)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-Value-Request-范畴的值"><span class="nav-number">3.9.</span> <span class="nav-text">Context.Value - Request 范畴的值</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#context-Value-API-的万金油（duct-tape"><span class="nav-number">3.9.1.</span> <span class="nav-text">context.Value API 的万金油（duct tape)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#约束-key-的空间"><span class="nav-number">3.9.2.</span> <span class="nav-text">约束 key 的空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Context-Value-是-immutable-的"><span class="nav-number">3.9.3.</span> <span class="nav-text">Context.Value 是 immutable 的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应该把什么放到-Context-Value-里？"><span class="nav-number">3.9.4.</span> <span class="nav-text">应该把什么放到 Context.Value 里？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#什么东西不属于-Request-范畴？"><span class="nav-number">3.9.5.</span> <span class="nav-text">什么东西不属于 Request 范畴？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那么用-Context-Value-有什么问题？"><span class="nav-number">3.9.6.</span> <span class="nav-text">那么用 Context.Value 有什么问题？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那什么可以放到-Context-Value-里去？"><span class="nav-number">3.9.7.</span> <span class="nav-text">那什么可以放到 Context.Value 里去？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#什么东西不是控制性质的东西？"><span class="nav-number">3.9.7.1.</span> <span class="nav-text">什么东西不是控制性质的东西？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#什么显然是控制性质的东西？"><span class="nav-number">3.9.7.2.</span> <span class="nav-text">什么显然是控制性质的东西？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#例子"><span class="nav-number">3.9.8.</span> <span class="nav-text">例子</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#调试性质的-Context-Value-net-http-httptrace"><span class="nav-number">3.9.8.1.</span> <span class="nav-text">调试性质的 Context.Value - net/http/httptrace</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#net-http-是怎么使用-httptrace-的？"><span class="nav-number">3.9.8.2.</span> <span class="nav-text">net/http 是怎么使用 httptrace 的？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#回避依赖注入-github-com-golang-oauth2"><span class="nav-number">3.9.8.3.</span> <span class="nav-text">回避依赖注入 - github.com/golang/oauth2</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#人们滥用-Context-Value-的原因"><span class="nav-number">3.9.9.</span> <span class="nav-text">人们滥用 Context.Value 的原因</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结-Context-Value"><span class="nav-number">3.10.</span> <span class="nav-text">总结 Context.Value</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">总结 Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">Q&amp;A</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库的访问也用-Context-么？"><span class="nav-number">5.1.</span> <span class="nav-text">数据库的访问也用 Context 么？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">原文</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#视频信息"><span class="nav-number">1.</span> <span class="nav-text">视频信息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么需要-Context"><span class="nav-number">2.</span> <span class="nav-text">为什么需要 Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Context-实现细节"><span class="nav-number">3.</span> <span class="nav-text">Context 实现细节</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#示例-Context-链"><span class="nav-number">3.1.</span> <span class="nav-text">示例 Context 链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#context-Context-API"><span class="nav-number">3.2.</span> <span class="nav-text">context.Context API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么时候应该使用-Context？"><span class="nav-number">3.3.</span> <span class="nav-text">什么时候应该使用 Context？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何创建-Context？"><span class="nav-number">3.4.</span> <span class="nav-text">如何创建 Context？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何集成到-API-里？"><span class="nav-number">3.5.</span> <span class="nav-text">如何集成到 API 里？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-放哪？"><span class="nav-number">3.6.</span> <span class="nav-text">Context 放哪？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-包的注意事项"><span class="nav-number">3.7.</span> <span class="nav-text">Context 包的注意事项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#终止请求-Request-Cancellation"><span class="nav-number">3.8.</span> <span class="nav-text">终止请求 (Request Cancellation)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context-Value-Request-范畴的值"><span class="nav-number">3.9.</span> <span class="nav-text">Context.Value - Request 范畴的值</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#context-Value-API-的万金油（duct-tape"><span class="nav-number">3.9.1.</span> <span class="nav-text">context.Value API 的万金油（duct tape)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#约束-key-的空间"><span class="nav-number">3.9.2.</span> <span class="nav-text">约束 key 的空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Context-Value-是-immutable-的"><span class="nav-number">3.9.3.</span> <span class="nav-text">Context.Value 是 immutable 的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应该把什么放到-Context-Value-里？"><span class="nav-number">3.9.4.</span> <span class="nav-text">应该把什么放到 Context.Value 里？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#什么东西不属于-Request-范畴？"><span class="nav-number">3.9.5.</span> <span class="nav-text">什么东西不属于 Request 范畴？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那么用-Context-Value-有什么问题？"><span class="nav-number">3.9.6.</span> <span class="nav-text">那么用 Context.Value 有什么问题？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那什么可以放到-Context-Value-里去？"><span class="nav-number">3.9.7.</span> <span class="nav-text">那什么可以放到 Context.Value 里去？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#什么东西不是控制性质的东西？"><span class="nav-number">3.9.7.1.</span> <span class="nav-text">什么东西不是控制性质的东西？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#什么显然是控制性质的东西？"><span class="nav-number">3.9.7.2.</span> <span class="nav-text">什么显然是控制性质的东西？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#例子"><span class="nav-number">3.9.8.</span> <span class="nav-text">例子</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#调试性质的-Context-Value-net-http-httptrace"><span class="nav-number">3.9.8.1.</span> <span class="nav-text">调试性质的 Context.Value - net/http/httptrace</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#net-http-是怎么使用-httptrace-的？"><span class="nav-number">3.9.8.2.</span> <span class="nav-text">net/http 是怎么使用 httptrace 的？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#回避依赖注入-github-com-golang-oauth2"><span class="nav-number">3.9.8.3.</span> <span class="nav-text">回避依赖注入 - github.com/golang/oauth2</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#人们滥用-Context-Value-的原因"><span class="nav-number">3.9.9.</span> <span class="nav-text">人们滥用 Context.Value 的原因</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结-Context-Value"><span class="nav-number">3.10.</span> <span class="nav-text">总结 Context.Value</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结-Context"><span class="nav-number">4.</span> <span class="nav-text">总结 Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Q-A"><span class="nav-number">5.</span> <span class="nav-text">Q&amp;A</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库的访问也用-Context-么？"><span class="nav-number">5.1.</span> <span class="nav-text">数据库的访问也用 Context 么？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原文"><span class="nav-number">6.</span> <span class="nav-text">原文</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -807,7 +751,7 @@ at Golang UK Conf. 2017</p>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">163</span>
+          <span class="site-state-item-count">164</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -819,7 +763,7 @@ at Golang UK Conf. 2017</p>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">236</span>
+        <span class="site-state-item-count">242</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="南北向网关的选型之旅">
+<meta name="keywords" content="Kubernetes,Gateway,Api,Istio,Envoy,Route,Priority">
+<meta property="og:type" content="article">
+<meta property="og:title" content="南北入口网关选型">
+<meta property="og:url" content="https://jiankunking.com/south-north-entry-gateway-selection.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="南北向网关的选型之旅">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2025-03-07T01:01:00.026Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="南北入口网关选型">
+<meta name="twitter:description" content="南北向网关的选型之旅">
+
+<link rel="canonical" href="https://jiankunking.com/south-north-entry-gateway-selection.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>南北入口网关选型 | 衣舞晨风</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-121070942-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">衣舞晨风</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">164</span></a>
+
+  </li>
+        <li class="menu-item menu-item-书籍">
+
+    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>书籍</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">242</span></a>
+
+  </li>
+        <li class="menu-item menu-item-友链">
+
+    <a href="/links/" rel="section"><i class="fa fa-external-link-alt fa-fw"></i>友链</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/south-north-entry-gateway-selection.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          南北入口网关选型
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-03-08 06:32:47" itemprop="dateCreated datePublished" datetime="2025-03-08T06:32:47+08:00">2025-03-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-03-07 09:01:00" itemprop="dateModified" datetime="2025-03-07T09:01:00+08:00">2025-03-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>南北向网关的选型之旅</p>
+</blockquote>
+<a id="more"></a>
+
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>我们这边的容器云是国内外混合云，这里的混合云是指</p>
+<ul>
+<li><p>从提供者来分包含：</p>
+<ul>
+<li>阿里云</li>
+<li>华为云</li>
+<li>AWS</li>
+<li>Oracle</li>
+<li>自建</li>
+</ul>
+</li>
+<li><p>从地域来分包含：</p>
+<ul>
+<li>国内</li>
+<li>海外<ul>
+<li>法兰克福</li>
+<li>俄罗斯</li>
+<li>新加坡</li>
+<li>……</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>所以我们希望网关方案能够</p>
+<ul>
+<li>涵盖住所有集群、所有地域</li>
+<li>最好是能直接用云产品</li>
+<li>对接各个集群的方案是统一的</li>
+<li>能够涵盖<ul>
+<li>Ingress Nginx的能力</li>
+<li>业务开发对于网关的日常需求</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>我们一期的目标是先弄南北向网关，二期看情况再弄服务网格(东西向)<br>所以本方案主要侧重在南北向网关的选择，但如果后期要弄服务网格也要能支持</p>
+</blockquote>
+<p>基于上面的背景，业界可以选择的方案，大概有这些：</p>
+<ul>
+<li><a href="https://istio.io/latest/docs/reference/config/networking/gateway/" target="_blank" rel="noopener">Istio Gateway</a></li>
+<li><a href="https://help.aliyun.com/zh/asm/product-overview/what-is-asm" target="_blank" rel="noopener">阿里云ASM</a></li>
+<li><a href="https://support.huaweicloud.com/asm/index.html" target="_blank" rel="noopener">华为云ASM</a></li>
+<li><a href="https://gateway-api.sigs.k8s.io/" target="_blank" rel="noopener">Kubernetes Gateway API</a></li>
+</ul>
+<p>先捋一下业务网关的基础能力</p>
+<ul>
+<li>HTTP 路由</li>
+<li>HTTP 流量拆分<br>  ◦ Canary traffic rollout<br>  ◦ Blue-green traffic rollout<br>  ◦ ……</li>
+<li>Timeout</li>
+<li>Rewrite</li>
+<li>Redirect</li>
+<li>Header Modify</li>
+<li>Request Mirror</li>
+<li>WebSocket</li>
+<li>Retry</li>
+<li>Cors</li>
+<li>Rate Limits</li>
+<li>Circuit Breaking</li>
+</ul>
+<p>上面的这些能力也涵盖住了Ingress Nginx的能力。</p>
+<blockquote>
+<p>对于网关部分，大家有可能会想到为啥调研阿里云的MSE？<br>主要是MSE只能部署在阿里云的ACK中，对于非阿里云ACK及自建集群没法纳管。</p>
+</blockquote>
+<p>下面开始逐一分析以上网关的优劣</p>
+<h1 id="网关优劣势分析"><a href="#网关优劣势分析" class="headerlink" title="网关优劣势分析"></a>网关优劣势分析</h1><h2 id="华为云ASM"><a href="#华为云ASM" class="headerlink" title="华为云ASM"></a>华为云ASM</h2><blockquote>
+<p>基于Istio Gateway实现,能支持服务网格但实现方式Sidecar模式。</p>
+</blockquote>
+<h3 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h3><ul>
+<li>ASM 完全兼容istio CRD</li>
+</ul>
+<h3 id="劣势"><a href="#劣势" class="headerlink" title="劣势"></a>劣势</h3><ul>
+<li>ASM基础版本(支持单集群、支持<strong>最大实例数是200</strong>、<font color="DeepPink"><strong>不保证SLA</strong></font>)</li>
+<li>UCS 服务网格商用受限(现在还没有人用过)<ul>
+<li>注1：<code>ASM企业版已经下线了</code></li>
+</ul>
+</li>
+<li>不支持纳管别的云或者自建集群</li>
+<li>同样存在路由优先级问题</li>
+</ul>
+<h2 id="阿里云ASM"><a href="#阿里云ASM" class="headerlink" title="阿里云ASM"></a>阿里云ASM</h2><blockquote>
+<p>基于Istio Gateway实现,能支持服务网格，支持：Sidecar、Ambient两种模式，不过现阶段生产不推荐Ambient模式。</p>
+</blockquote>
+<h3 id="优势-1"><a href="#优势-1" class="headerlink" title="优势"></a>优势</h3><ul>
+<li>能提供SLA保证</li>
+<li>不需要自己运维相关组件</li>
+<li>支持纳管别的云及自建集群</li>
+<li>针对业务集群阿里云对应地域没有regin及海外网络差的情况，有针对性方案:<a href="https://help.aliyun.com/zh/asm/user-guide/reduce-push-latency-using-asm-remote-control-plane" target="_blank" rel="noopener">ASM远程控制面</a></li>
+<li><a href="https://help.aliyun.com/zh/asm/user-guide/overview-of-asm-gateways?spm=a2c4g.11186623.help-menu-147365.d_2_5_0.681c5bcdGTAA8B&scm=20140722.H_473114._.OR_help-T_cn~zh-V_1" target="_blank" rel="noopener">功能特性全</a></li>
+<li>同一控制面支持纳管多个kubernetes集群<br>*这里需要注意:这些集群都是类似镜像集群,集群内的ASM部署的CRD及下发的路由啥的都是一毛一样的,所以这个功能也没啥用</li>
+</ul>
+<h3 id="劣势-1"><a href="#劣势-1" class="headerlink" title="劣势"></a>劣势</h3><ul>
+<li>因为是直接基于Istio Gateway的，所以路由的顺序有问题<ul>
+<li><a href="https://istio.io/latest/zh/docs/concepts/traffic-management/" target="_blank" rel="noopener">同一个虚拟服务内部，按照声明顺序来匹配，匹配到一个满足的就停止了</a></li>
+<li><a href="https://istio.io/latest/zh/docs/ops/best-practices/traffic-management/#multiple-virtual-services-and-destination-rules-for-the-same-host" target="_blank" rel="noopener">同一个域名，不同虚拟服务之间，顺序是不确定的</a></li>
+</ul>
+</li>
+<li>目前支持Kubernetes Gateway API v1.1.0，不支持<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/19?closed=1" target="_blank" rel="noopener">v1.2.0</a>的相关特性<ul>
+<li>标准<ul>
+<li>HTTPRoute 超时</li>
+<li>后端协议支持WebSocket 和 HTTP&#x2F;2</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="Istio-Gateway-Kubernetes-Gateway-API"><a href="#Istio-Gateway-Kubernetes-Gateway-API" class="headerlink" title="Istio Gateway &#x2F; Kubernetes Gateway API"></a>Istio Gateway &#x2F; Kubernetes Gateway API</h2><p>对于Istio Gateway这里分为两种方案：</p>
+<ul>
+<li>对接标准，也就是Kubernetes Gateway API<ul>
+<li><strong>标准化</strong>：Kubernetes Gateway API旨在成为一种标准，用于描述在Kubernetes集群中如何暴露服务。这意味着它不仅仅限于与某个特定的服务网格或入口控制器（如Istio）一起使用。通过采用Gateway API，您可以<strong>更容易地切换不同的实现或服务提供商，而无需重写您的配置</strong>。</li>
+<li><strong>概念一致性</strong>：跟大家之前使用的MSE、APISIX保持一致</li>
+<li><strong>更好的集成能力</strong>：由于Gateway API是Kubernetes原生的API，因此它能够更好地与其他Kubernetes原生工具和系统集成</li>
+<li><a href="https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1.HTTPRouteRule" target="_blank" rel="noopener"><strong>支持路由优先级</strong></a></li>
+</ul>
+</li>
+<li>直接对接Istio Gateway<ul>
+<li>现阶段Istio Gateway的能力比Kubernetes Gateway API涵盖的范围更广，比如：<a href="https://istio.io/latest/zh/docs/tasks/traffic-management/circuit-breaking/" target="_blank" rel="noopener">熔断</a>、<a href="https://istio.io/latest/zh/docs/tasks/policy-enforcement/rate-limit/" target="_blank" rel="noopener">限流</a></li>
+<li>但会引入Istio Gateway虚拟服务(VirtualService)、目标规则(DestinationRule)等概念，增加用户的学习成本</li>
+<li>路由顺序不确定</li>
+</ul>
+</li>
+</ul>
+<p>到这里可以看出来只看<code>路由优先级</code>这么一个点就过滤掉了云ASM及直接对接Istio Gateway。</p>
+<p>但还有几个点需要注意：</p>
+<ul>
+<li>Kubernetes Gateway API目前不支持熔断、限流</li>
+<li>对于跨域，也需要等到<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21" target="_blank" rel="noopener">Milestone v1.3.0</a> （当前版本v1.2.1，下一个版本应该就是v1.3.0,但具体发布时间不确定）</li>
+</ul>
+<h3 id="Service-Mesh"><a href="#Service-Mesh" class="headerlink" title="Service Mesh"></a><a href="https://gateway-api.kubernetes.ac.cn/implementations/#service-mesh-implementation-status" target="_blank" rel="noopener">Service Mesh</a></h3><p>从官网上看，Istio对于Kubernetes Gateway API服务网格的支持也已经GA。</p>
+<h3 id="Kubernetes-Gateway-API路由优先级"><a href="#Kubernetes-Gateway-API路由优先级" class="headerlink" title="Kubernetes Gateway API路由优先级"></a>Kubernetes Gateway API路由优先级</h3><p>从HTTPRoutes生成的代理或负载均衡器路由配置必须根据以下标准优先匹配，并在出现平局时继续比较。在适用路由上指定的所有规则中，优先级应给予具有以下条件的匹配：</p>
+<ul>
+<li>“精确”路径匹配。</li>
+<li>具有最多字符的“前缀”路径匹配。</li>
+<li>方法匹配。</li>
+<li>最大数量的头部匹配。</li>
+<li>最大数量的查询参数匹配。</li>
+</ul>
+<p>注：正则表达式路径匹配的优先级是具体实现相关的。</p>
+<p>如果在多个路由之间仍然存在平局，匹配优先级必须按照以下标准依次确定，并在出现平局时继续比较：</p>
+<ul>
+<li>基于创建时间戳的最早的路由。</li>
+<li>按“{命名空间}&#x2F;{名称}”字母顺序排列的第一个路由。</li>
+</ul>
+<p>如果在HTTPRoute内仍然存在平局，则应将匹配优先级授予符合上述条件的第一个匹配规则（按列表顺序）。</p>
+<p>如果未成功附加与请求匹配的规则到请求来源的父级，则必须返回HTTP 404状态码。</p>
+<blockquote>
+<p>原文地址：<br><a href="https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule" target="_blank" rel="noopener">https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule</a></p>
+</blockquote>
+<p>从文档注释的位置可以判断同一个HTTPRouteRule内的多个HTTPRouteMatch应该是会满足以上规则的，那么多个HTTPRouteRule之间呢？</p>
+<p>下面逐一验证下以上两种情况：</p>
+<h4 id="验证结果"><a href="#验证结果" class="headerlink" title="验证结果"></a>验证结果</h4><p><img data-src="/images/south-north-entry-gateway-selection/%E8%B7%AF%E7%94%B1%E4%BC%98%E5%85%88%E7%BA%A7%E9%AA%8C%E8%AF%81.png"></p>
+<p>针对常用的</p>
+<ul>
+<li>多个前缀匹配之间的优先级</li>
+<li>前缀匹配与精确匹配的优先级<br>进行验证，通过验证结果可以看出istio路由是遵循了Kubernetes Gateway API规范的。</li>
+</ul>
+<h1 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h1><p>从文中所列举的几种方案来看，目前最可行的方案就是</p>
+<ul>
+<li>自己部署Istio Gateway，然后直接对接Kubernetes Gateway API的CRD。<ul>
+<li>这个真实要用起来也要等<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21" target="_blank" rel="noopener">Milestone v1.3.0</a> 发布及istio支持之后</li>
+</ul>
+</li>
+<li>或者等阿里云ASM支持<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21" target="_blank" rel="noopener">Milestone v1.3.0</a>之后</li>
+</ul>
+<h1 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h1><h2 id="云ASM支持Kubernetes版本的范围及云ASM-Istio版本"><a href="#云ASM支持Kubernetes版本的范围及云ASM-Istio版本" class="headerlink" title="云ASM支持Kubernetes版本的范围及云ASM Istio版本"></a>云ASM支持Kubernetes版本的范围及云ASM Istio版本</h2><ul>
+<li><a href="https://help.aliyun.com/zh/asm/product-overview/support-for-istio-versions?spm=5176.13895322.console-base_help.dexternal.6dac5fcfo2sie4" target="_blank" rel="noopener">阿里云</a></li>
+<li><a href="https://support.huaweicloud.com/usermanual-asm/asm_01_0020.html" target="_blank" rel="noopener">华为云</a></li>
+</ul>
+<h2 id="Sidecar-vs-Ambient"><a href="#Sidecar-vs-Ambient" class="headerlink" title="Sidecar vs Ambient"></a>Sidecar vs Ambient</h2><p><a href="https://istio.io/latest/zh/docs/overview/dataplane-modes/#choosing-between-sidecar-and-ambient" target="_blank" rel="noopener">https://istio.io/latest/zh/docs/overview/dataplane-modes/#choosing-between-sidecar-and-ambient</a></p>
+<h2 id="Istio-与-Kubernetes-Gateway-API"><a href="#Istio-与-Kubernetes-Gateway-API" class="headerlink" title="Istio 与 Kubernetes Gateway API"></a>Istio 与 Kubernetes Gateway API</h2><p><a href="https://istio.io/latest/zh/docs/ops/configuration/traffic-management/network-topologies/" target="_blank" rel="noopener">Istio 支持 Kubernetes Gateway API， 并计划将其作为未来流量管理的默认 API。</a></p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">相关文章</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\kubernetes-copies-files-from-one-pod-to-another.html" rel="bookmark">Kubernetes集群中Pod间文件拷贝</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\integrated-container-cloud.html" rel="bookmark">集成容器云</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\how-to-do-java-jvm-heap-dump-in-kubernetes.html" rel="bookmark">Kubernetes中Java应用Heap Dump</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\kubernetes-client-go-how-to-make-a-web-terminal.html" rel="bookmark">一个Kubernetes Web终端连接工具</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\kubernetes-authoritative-guide.html" rel="bookmark">Kubernetes权威指南：从Docker到Kubernetes实践全接触 笔记</a></div>
+    </li>
+  </ul>
+
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>jiankunking
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://jiankunking.com/south-north-entry-gateway-selection.html" title="南北入口网关选型">https://jiankunking.com/south-north-entry-gateway-selection.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+        </div>
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/images/wechat/wechat.jpg">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/kubernetes/" rel="tag"># Kubernetes</a>
+              <a href="/tags/gateway/" rel="tag"># Gateway</a>
+              <a href="/tags/api/" rel="tag"># Api</a>
+              <a href="/tags/istio/" rel="tag"># Istio</a>
+              <a href="/tags/envoy/" rel="tag"># Envoy</a>
+              <a href="/tags/route/" rel="tag"># Route</a>
+              <a href="/tags/priority/" rel="tag"># Priority</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/tuning-the-go-http-client-library.html" rel="prev" title="Tuning the Go HTTP Client Settings">
+      <i class="fa fa-chevron-left"></i> Tuning the Go HTTP Client Settings
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#网关优劣势分析"><span class="nav-number">2.</span> <span class="nav-text">网关优劣势分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#华为云ASM"><span class="nav-number">2.1.</span> <span class="nav-text">华为云ASM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#优势"><span class="nav-number">2.1.1.</span> <span class="nav-text">优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#劣势"><span class="nav-number">2.1.2.</span> <span class="nav-text">劣势</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#阿里云ASM"><span class="nav-number">2.2.</span> <span class="nav-text">阿里云ASM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#优势-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#劣势-1"><span class="nav-number">2.2.2.</span> <span class="nav-text">劣势</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Istio-Gateway-Kubernetes-Gateway-API"><span class="nav-number">2.3.</span> <span class="nav-text">Istio Gateway / Kubernetes Gateway API</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Service-Mesh"><span class="nav-number">2.3.1.</span> <span class="nav-text">Service Mesh</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Kubernetes-Gateway-API路由优先级"><span class="nav-number">2.3.2.</span> <span class="nav-text">Kubernetes Gateway API路由优先级</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#验证结果"><span class="nav-number">2.3.2.1.</span> <span class="nav-text">验证结果</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结果"><span class="nav-number">3.</span> <span class="nav-text">结果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">4.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#云ASM支持Kubernetes版本的范围及云ASM-Istio版本"><span class="nav-number">4.1.</span> <span class="nav-text">云ASM支持Kubernetes版本的范围及云ASM Istio版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sidecar-vs-Ambient"><span class="nav-number">4.2.</span> <span class="nav-text">Sidecar vs Ambient</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Istio-与-Kubernetes-Gateway-API"><span class="nav-number">4.3.</span> <span class="nav-text">Istio 与 Kubernetes Gateway API</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jiankunking"
+      src="/images/avatar/avatar.png">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">242</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https://github.com/jiankunking" rel="noopener" target="_blank">GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://blog.csdn.net/jiankunking" title="https://blog.csdn.net/jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">1.3m</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/muse.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
+  </script>
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5e2e6dc5bd7af549261d',
+      clientSecret: 'f37069692932676f0ad9fbfecb5164aee191fe23',
+      repo        : 'blog-comments',
+      owner       : 'jiankunking',
+      admin       : ['jiankunking'],
+      id          : 'b455dbae1c99c38fc4dcc764a40e2890',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

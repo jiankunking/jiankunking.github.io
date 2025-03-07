@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">163</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">164</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">236</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">242</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -297,17 +297,19 @@
 <p>Java JDK 12 ReentrantLock</p>
 </blockquote>
 <a id="more"></a>
-<p>今天突然想起了个问题：<br>
-1、ReentrantLock在获取锁的时候，会不会自旋？如果自旋的话，会自旋多少次？<br>
-2、ReentrantLock可重入次数会有上限控制吗？</p>
+
+<p>今天突然想起了个问题：<br>1、ReentrantLock在获取锁的时候，会不会自旋？如果自旋的话，会自旋多少次？<br>2、ReentrantLock可重入次数会有上限控制吗？</p>
 <p>1、看一下ReentrantLock中锁的实现：</p>
 <p>非公平锁：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"> /**</span><br><span class="line"> * Performs non-fair tryLock.  tryAcquire is implemented in</span><br><span class="line"> * subclasses, but both need nonfair try for trylock method.</span><br><span class="line"> */</span><br><span class="line">@ReservedStackAccess</span><br><span class="line">final boolean nonfairTryAcquire(int acquires) &#123;</span><br><span class="line">    final Thread current = Thread.currentThread();</span><br><span class="line">    int c = getState();</span><br><span class="line">    if (c == 0) &#123;</span><br><span class="line">        if (compareAndSetState(0, acquires)) &#123;</span><br><span class="line">            setExclusiveOwnerThread(current);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    else if (current == getExclusiveOwnerThread()) &#123;</span><br><span class="line">        int nextc = c + acquires;</span><br><span class="line">        if (nextc &lt; 0) // overflow</span><br><span class="line">            throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">        setState(nextc);</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>公平锁：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">     /**</span><br><span class="line">     * Fair version of tryAcquire.  Don&apos;t grant access unless</span><br><span class="line">     * recursive call or no waiters or is first.</span><br><span class="line">     */</span><br><span class="line">    @ReservedStackAccess</span><br><span class="line">    protected final boolean tryAcquire(int acquires) &#123;</span><br><span class="line">        final Thread current = Thread.currentThread();</span><br><span class="line">        int c = getState();</span><br><span class="line">        if (c == 0) &#123;</span><br><span class="line">            if (!hasQueuedPredecessors() &amp;&amp;</span><br><span class="line">                compareAndSetState(0, acquires)) &#123;</span><br><span class="line">                setExclusiveOwnerThread(current);</span><br><span class="line">                return true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        else if (current == getExclusiveOwnerThread()) &#123;</span><br><span class="line">            int nextc = c + acquires;</span><br><span class="line">            if (nextc &lt; 0)</span><br><span class="line">                throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">            setState(nextc);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>从代码中可以看到不管是公平锁还是非公平锁再获取不到锁的时候，都没有自旋。区别在于非公平锁在获取锁的时候，会先获取一下锁，而公平锁会先判断队列中有没有。</p>
 <p>同时在代码中也没有看到获取不到锁就入队，难道会在外面自旋重试？看下AbstractQueuedSynchronizer中代码：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"> /**</span><br><span class="line"> * Acquires in exclusive mode, ignoring interrupts.  Implemented</span><br><span class="line"> * by invoking at least once &#123;@link #tryAcquire&#125;,</span><br><span class="line"> * returning on success.  Otherwise the thread is queued, possibly</span><br><span class="line"> * repeatedly blocking and unblocking, invoking &#123;@link</span><br><span class="line"> * #tryAcquire&#125; until success.  This method can be used</span><br><span class="line"> * to implement method &#123;@link Lock#lock&#125;.</span><br><span class="line"> *</span><br><span class="line"> * @param arg the acquire argument.  This value is conveyed to</span><br><span class="line"> *        &#123;@link #tryAcquire&#125; but is otherwise uninterpreted and</span><br><span class="line"> *        can represent anything you like.</span><br><span class="line"> */</span><br><span class="line">public final void acquire(int arg) &#123;</span><br><span class="line">    if (!tryAcquire(arg) &amp;&amp;</span><br><span class="line">        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))</span><br><span class="line">        selfInterrupt();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>从这里可以看到获取不到锁，就直接入队了。</p>
 <p>2、因为AQS中的state使用int类型存储，最大到2^31-1。</p>
 
@@ -500,7 +502,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">163</span>
+          <span class="site-state-item-count">164</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -512,7 +514,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">236</span>
+        <span class="site-state-item-count">242</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
