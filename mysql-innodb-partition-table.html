@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+  <meta name="description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta name="keywords" content="读书笔记,MySQL,InnoDB">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL InnoDB存储引擎：分区表">
 <meta property="og:url" content="https://jiankunking.com/mysql-innodb-partition-table.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+<meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2024-04-18T07:10:54.892Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL InnoDB存储引擎：分区表">
-<meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+<meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 
 <link rel="canonical" href="https://jiankunking.com/mysql-innodb-partition-table.html">
 
@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">164</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">165</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">242</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">244</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -299,45 +299,55 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 </p>
+        <p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版</p>
 <p>作者：姜承尧</p>
 <p>出版时间：2013-05</p>
 <a id="more"></a>
-
-<h1 id="MySQL分区表介绍"><a href="#MySQL分区表介绍" class="headerlink" title="MySQL分区表介绍"></a>MySQL分区表介绍</h1><p>分区是一种表的设计模式，正确的分区可以极大地提升数据库的查询效率，完成更高质量的SQL编程。但是如果错误地使用分区，那么分区可能带来毁灭性的的结果。</p>
+<h1>MySQL分区表介绍</h1>
+<p>分区是一种表的设计模式，正确的分区可以极大地提升数据库的查询效率，完成更高质量的SQL编程。但是如果错误地使用分区，那么分区可能带来毁灭性的的结果。</p>
 <p><font color="DeepPink"><strong>分区功能并不是在存储引擎层完成的，因此不只有InnoDB存储引擎支持分区，常见的存储引擎MyISAM、NDB等都支持分区。</strong></font> 但是并不是所有的存储引擎都支持，如CSV、FEDORATED、MERGE等就不支持分区。在使用此分区功能前，应该对选择的存储引擎对分区的支持有所了解。</p>
 <p>MySQL数据库在5.1版本时添加了对分区的支持，<font color="DeepPink"><strong>分区的过程是将一个表或索引分解为多个更小、更可管理的部分。就访问数据库的应用而言，从逻辑上讲，只有一个表或一个索引，但是在物理上这个表或索引可能由数十个物理分区组成。每个分区都是独立的对象，可以独自处理，也可以作为一个更大对象的一部分进行处理。</strong></font></p>
 <p>MySQL数据库支持的分区类型为<font color="DeepPink"><strong>水平分区</strong></font>（指将同一个表中不同行的记录分配到不同的物理文件中），并不支持垂直分区（指将同一表中不同列的记录分配到不同的物理文件中）。此外，<font color="DeepPink"><strong>MySQL数据库的分区是局部分区索引，一个分区中既存放了数据又存放了索引。</strong></font>而全局分区是指，数据存放在各个分区中，但是所有数据的索引放在一个对象中。目前，MySQL数据库还不支持全局分区。</p>
 <p>可以通过以下命令来查看当前数据库是否启用了分区功能：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; show global variables like &apos;%partition%&apos;;</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| Variable_name     | Value |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| have_partitioning | YES   |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">1 row in set (0.04 sec)</span><br><span class="line"> </span><br><span class="line">MySQL&gt; show plugins</span><br><span class="line">*************************** 43. row ***************************</span><br><span class="line">   Name: partition</span><br><span class="line"> Status: ACTIVE</span><br><span class="line">   Type: STORAGE ENGINE</span><br><span class="line">Library: NULL</span><br><span class="line">License: GPL</span><br></pre></td></tr></table></figure>
-
 <p>有时候可能会有这么一种误区，只要启用了分区，数据库就会运行的更快。这个结论结论是存在很多问题的，就经验来看，分区可能会给某些SQL语句性能带来提高，但是分区主要用于数据库高可用性的管理。在OLTP应用中，对于分区的使用应该非常小心，总之，如果只是一味地使用分区，而不理解分区是如何工作的，也不清楚你的应用如何使用分区，那么分区极有可能会对性能产生负面的影响。</p>
-<h1 id="MySQL分区类型"><a href="#MySQL分区类型" class="headerlink" title="MySQL分区类型"></a>MySQL分区类型</h1><h2 id="RANGE分区"><a href="#RANGE分区" class="headerlink" title="RANGE分区"></a>RANGE分区</h2><p>RANGE分区，是最常用的一种分区类型，基于属于一个给定连续区间的列值，把多行分配给分区。这些区间要连续且不能相互重叠，使用VALUES LESS THAN操作符来进行定义。</p>
-<h2 id="LIST分区"><a href="#LIST分区" class="headerlink" title="LIST分区"></a>LIST分区</h2><p>LIST分区和RANGE分区类似，区别在于LIST分区是基于列值匹配一个离散值集合中的某个值来进行选择，而非连续的。</p>
+<h1>MySQL分区类型</h1>
+<h2 id="RANGE分区">RANGE分区</h2>
+<p>RANGE分区，是最常用的一种分区类型，基于属于一个给定连续区间的列值，把多行分配给分区。这些区间要连续且不能相互重叠，使用VALUES LESS THAN操作符来进行定义。</p>
+<h2 id="LIST分区">LIST分区</h2>
+<p>LIST分区和RANGE分区类似，区别在于LIST分区是基于列值匹配一个离散值集合中的某个值来进行选择，而非连续的。</p>
 <p>LIST分区通过使用“PARTITION BY LIST(expr)”来实现，其中“expr” 是某列值或一个基于某个列值、并返回一个整数值的表达式，然后通过“VALUES IN (value_list)”的方式来定义每个分区，其中“value_list”是一个通过逗号分隔的整数列表。</p>
-<h2 id="HASH分区"><a href="#HASH分区" class="headerlink" title="HASH分区"></a>HASH分区</h2><p>HASH分区的目的是将数据均匀地分布到预先定义的各个分区中，保证各分区的数据量大致都是一样的。在RANGE和LIST分区中，必须明确指定一个给定的列值或列值集合应该保存在哪个分区中；而在HASH分区中，MySQL自动完成这些工作，用户所要做的只是基于将要进行哈希分区的列值指定一个列值或表达式，以及指定被分区的表将要被分隔成的分区数量。</p>
+<h2 id="HASH分区">HASH分区</h2>
+<p>HASH分区的目的是将数据均匀地分布到预先定义的各个分区中，保证各分区的数据量大致都是一样的。在RANGE和LIST分区中，必须明确指定一个给定的列值或列值集合应该保存在哪个分区中；而在HASH分区中，MySQL自动完成这些工作，用户所要做的只是基于将要进行哈希分区的列值指定一个列值或表达式，以及指定被分区的表将要被分隔成的分区数量。</p>
 <p>要使用HASH分区来分割一个表，要在CREATE TABLE 语句上添加一个“PARTITION BY HASH (expr)”子句，其中“expr”是一个返回一个整数的表达式。它可以仅仅是字段类型为MySQL 整型的一列的名字。此外，你很可能需要在后面再添加一个“PARTITIONS num”子句，其中num是一个非负的整数，它表示表将要被分割成分区的数量，如果没有包括一个PARTITIONS子句，那么分区的数量将默认为1。</p>
-<h2 id="LINER-HASH"><a href="#LINER-HASH" class="headerlink" title="LINER HASH"></a>LINER HASH</h2><p>MySQL还支持线性哈希功能，它与常规哈希的区别在于，线性哈希功能使用的一个线性的2的幂（powers-of-two）运算法则，而常规哈希使用的是求哈希函数值的模数。<br>线性哈希分区和常规哈希分区在语法上的唯一区别在于，在“PARTITION BY” 子句中添加“LINEAR”关键字。</p>
-<h2 id="KEY分区"><a href="#KEY分区" class="headerlink" title="KEY分区"></a>KEY分区</h2><p>KEY分区和HASH分区相似，不同之处在于HASH分区使用用户定义的函数进行分区，支持字符串HASH分区，KEY分区使用MySQL数据库提供的函数进行分区，这些函数基于与PASSWORD()一样的运算法则。</p>
-<h2 id="COLUMNS"><a href="#COLUMNS" class="headerlink" title="COLUMNS"></a>COLUMNS</h2><p>在前面说了RANGE、LIST、HASH和KEY这四种分区中，分区的条件是：数据必须为整形（interger），如果不是整形，那应该需要通过函数将其转化为整形，如YEAR()，TO_DAYS()，MONTH()等函数。MySQL5.5版本开始支持COLUMNS分区，可视为RANGE分区和LIST分区的一种进化。COLUMNS分区可以直接使用非整形的数据进行分区，分区根据类型直接比较而得，不需要转化为整形。此外，RANGE COLUMNS分区可以对多个列的值进行分区。</p>
+<h2 id="LINER-HASH">LINER HASH</h2>
+<p>MySQL还支持线性哈希功能，它与常规哈希的区别在于，线性哈希功能使用的一个线性的2的幂（powers-of-two）运算法则，而常规哈希使用的是求哈希函数值的模数。<br>
+线性哈希分区和常规哈希分区在语法上的唯一区别在于，在“PARTITION BY” 子句中添加“LINEAR”关键字。</p>
+<h2 id="KEY分区">KEY分区</h2>
+<p>KEY分区和HASH分区相似，不同之处在于HASH分区使用用户定义的函数进行分区，支持字符串HASH分区，KEY分区使用MySQL数据库提供的函数进行分区，这些函数基于与PASSWORD()一样的运算法则。</p>
+<h2 id="COLUMNS">COLUMNS</h2>
+<p>在前面说了RANGE、LIST、HASH和KEY这四种分区中，分区的条件是：数据必须为整形（interger），如果不是整形，那应该需要通过函数将其转化为整形，如YEAR()，TO_DAYS()，MONTH()等函数。MySQL5.5版本开始支持COLUMNS分区，可视为RANGE分区和LIST分区的一种进化。COLUMNS分区可以直接使用非整形的数据进行分区，分区根据类型直接比较而得，不需要转化为整形。此外，RANGE COLUMNS分区可以对多个列的值进行分区。</p>
 <p>COLUMNS分区支持以下的数据类型：</p>
 <ul>
 <li>所有的整形类型，如INT、SMALLINT、TINYINT和BIGINT。而FLOAT和DECIMAL则不予支持。</li>
 <li>日期类型，如DATE何DATETIME。其余的日期类型不予支持。</li>
 <li>字符串类型，如CHAR、VARCHAR、BINARY和VARBINARY。而BLOB和TEXT类型不予支持。</li>
 </ul>
-<h1 id="分区中的NULL值"><a href="#分区中的NULL值" class="headerlink" title="分区中的NULL值"></a>分区中的NULL值</h1><p>MySQL数据库允许对NULL值做分区，但是处理的方法与其他数据库可能完全不同。MySQL数据库的分区总是视NULL值小于任何的一个非NULL值，这和MySQL数据库中处理NULL值的ORDER BY操作是一样的。 因此对于不同的分区类型，MySQL数据库对于NULL值的处理也是各不相同。</p>
+<h1>分区中的NULL值</h1>
+<p>MySQL数据库允许对NULL值做分区，但是处理的方法与其他数据库可能完全不同。MySQL数据库的分区总是视NULL值小于任何的一个非NULL值，这和MySQL数据库中处理NULL值的ORDER BY操作是一样的。 因此对于不同的分区类型，MySQL数据库对于NULL值的处理也是各不相同。</p>
 <ul>
 <li>对于RANGE分区，如果向分区列插入了NULL值，则MySQL数据库会将该值放入最左边的分区。</li>
 <li>对于LIST分区，如果向分区列插入了NULL值，则必须显示地指出哪个分区放入NULL值，否则会报错。对于LIST分区，如果向分区列插入了NULL值，则必须显示地指出哪个分区放入NULL值，否则会报错。</li>
 <li>对于HASH和KEY分区，对于NULL值的处理方法和RANGE分区、LIST分区不一样。任何分区函数都会将含有NULL值的记录返回为0。</li>
 </ul>
-<h1 id="分区和性能"><a href="#分区和性能" class="headerlink" title="分区和性能"></a>分区和性能</h1><p>分区真的会加快数据库的查询吗？实际上可能根本感觉不到查询速度的提升，甚至会发现查询速度急剧下降，因此在合理使用分区之前，必须了解分区的使用环境。</p>
+<h1>分区和性能</h1>
+<p>分区真的会加快数据库的查询吗？实际上可能根本感觉不到查询速度的提升，甚至会发现查询速度急剧下降，因此在合理使用分区之前，必须了解分区的使用环境。</p>
 <p>数据库的应用分为两类：一类是OLTP（在线事务处理），如Blog、电子商务、网络游戏等；另一类是OLAP（在线分析处理），如数据仓库、数据集市。对于OLAP的应用，分区的确是可以很好地提高查询的性能，因为OLAP应用大多数查询需要频繁地扫描一张很大的表。假设有一张1亿行的表，其中有一个时间戳属性列。用户的查询需要从这张表中获取一年的数据。如果按时间戳进行分区，则只需要扫描相应的分区即可。这就是前面介绍的分区修剪技术。</p>
 <p><font color="DeepPink"><strong>对于OLTP的应用，分区应该非常小心。在这种应用下，通常不可能会获取一张大表10%的数据，大部分都是通过索引返回几条记录即可。而根据B+树索引的原理可知，对于一张大表，一般的B+树需要2~3次的磁盘IO。因此B+树可以很好地完成操作，不需要分区的帮助，并且设计不好的分区会带来严重的性能问题。</strong></font></p>
-<p>如很多开发团队会认为含有1000w行的表是一张非常巨大的表，所以他们往往会选择采用分区，如对主键做10个HASH的分区，这样每个分区就只有100w的数据了，因此查询应该变得更快了。如select * from table where pk&#x3D;@pk。但是有没有考虑过这样一种情况：100w和1000w行的数据本身构成的B+树的层次都是一样的，可能都是2~3层。那么上述走主键分区的索引并不会带来性能的提高。好的，如果1000w的B+树高度是3,100w的B+树高度是2，那么上述按主键分区的索引可以避免1次IO，从而提高查询的效率。这没问题，但是这张表只有主键索引，没有任何其他的列需要查询的。如果还有类似如下的SQL：select * from table where key&#x3D;@key，这时对于key的查询需要扫描所有的10个分区，即使每个分区的查询开销为2次IO，则一共需要20次IO。而对于原来单表的设计，对于KEY的查询只需要2~3次IO。</p>
+<p>如很多开发团队会认为含有1000w行的表是一张非常巨大的表，所以他们往往会选择采用分区，如对主键做10个HASH的分区，这样每个分区就只有100w的数据了，因此查询应该变得更快了。如select * from table where pk=@pk。但是有没有考虑过这样一种情况：100w和1000w行的数据本身构成的B+树的层次都是一样的，可能都是2~3层。那么上述走主键分区的索引并不会带来性能的提高。好的，如果1000w的B+树高度是3,100w的B+树高度是2，那么上述按主键分区的索引可以避免1次IO，从而提高查询的效率。这没问题，但是这张表只有主键索引，没有任何其他的列需要查询的。如果还有类似如下的SQL：select * from table where key=@key，这时对于key的查询需要扫描所有的10个分区，即使每个分区的查询开销为2次IO，则一共需要20次IO。而对于原来单表的设计，对于KEY的查询只需要2~3次IO。</p>
 <p>由以上结论可以看出，对于在OLTP场景中使用分区一定要特别小心了。</p>
-<h1 id="MySQL-5-7对分区的改进"><a href="#MySQL-5-7对分区的改进" class="headerlink" title="MySQL 5.7对分区的改进"></a>MySQL 5.7对分区的改进</h1><p>在MySQL 5.6里面，分区的信息是在MySQL Server层维护的（在.par文件里面），InnoDB引擎层是不知道有分区这个概念的，InnoDB引擎层把每一个分区都当成一张普通的InnoDB表。在打开一个分区表时，会打开很多个分区，打开这些分区表就相当于打开了同等数量的InnoDB表，这需要更多内存存放InnoDB表的元数据和各种与ibd文件打开相关的各种cache与handler的信息。在MySQL 5.7里面，InnoDB引入了Native Partitioning，它把分区的信息从Server层移到了InnoDB层，打开一个分区表和打开一个InnoDB表的内存开销基本是一样的。</p>
+<h1>MySQL 5.7对分区的改进</h1>
+<p>在MySQL 5.6里面，分区的信息是在MySQL Server层维护的（在.par文件里面），InnoDB引擎层是不知道有分区这个概念的，InnoDB引擎层把每一个分区都当成一张普通的InnoDB表。在打开一个分区表时，会打开很多个分区，打开这些分区表就相当于打开了同等数量的InnoDB表，这需要更多内存存放InnoDB表的元数据和各种与ibd文件打开相关的各种cache与handler的信息。在MySQL 5.7里面，InnoDB引入了Native Partitioning，它把分区的信息从Server层移到了InnoDB层，打开一个分区表和打开一个InnoDB表的内存开销基本是一样的。</p>
 
     </div>
 
@@ -510,7 +520,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL分区表介绍"><span class="nav-number">1.</span> <span class="nav-text">MySQL分区表介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL分区类型"><span class="nav-number">2.</span> <span class="nav-text">MySQL分区类型</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RANGE分区"><span class="nav-number">2.1.</span> <span class="nav-text">RANGE分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LIST分区"><span class="nav-number">2.2.</span> <span class="nav-text">LIST分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HASH分区"><span class="nav-number">2.3.</span> <span class="nav-text">HASH分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LINER-HASH"><span class="nav-number">2.4.</span> <span class="nav-text">LINER HASH</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#KEY分区"><span class="nav-number">2.5.</span> <span class="nav-text">KEY分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#COLUMNS"><span class="nav-number">2.6.</span> <span class="nav-text">COLUMNS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分区中的NULL值"><span class="nav-number">3.</span> <span class="nav-text">分区中的NULL值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分区和性能"><span class="nav-number">4.</span> <span class="nav-text">分区和性能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL-5-7对分区的改进"><span class="nav-number">5.</span> <span class="nav-text">MySQL 5.7对分区的改进</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">MySQL分区表介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">MySQL分区类型</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RANGE分区"><span class="nav-number">2.1.</span> <span class="nav-text">RANGE分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LIST分区"><span class="nav-number">2.2.</span> <span class="nav-text">LIST分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HASH分区"><span class="nav-number">2.3.</span> <span class="nav-text">HASH分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LINER-HASH"><span class="nav-number">2.4.</span> <span class="nav-text">LINER HASH</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#KEY分区"><span class="nav-number">2.5.</span> <span class="nav-text">KEY分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#COLUMNS"><span class="nav-number">2.6.</span> <span class="nav-text">COLUMNS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">分区中的NULL值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">分区和性能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">MySQL 5.7对分区的改进</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -526,19 +536,19 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-count">165</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">242</span>
+        <span class="site-state-item-count">244</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

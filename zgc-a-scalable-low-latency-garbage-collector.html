@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="翻译自：JEP 333地址：https://openjdk.java.net/jeps/333">
-<meta name="keywords" content="Java,原创,翻译,GC,JVM,ZGC">
+  <meta name="description" content="翻译自：JEP 333 地址：https://openjdk.java.net/jeps/333">
+<meta name="keywords" content="原创,Java,翻译,GC,JVM,ZGC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[译]ZGC: 一个可伸缩的低延迟垃圾收集器">
 <meta property="og:url" content="https://jiankunking.com/zgc-a-scalable-low-latency-garbage-collector.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="翻译自：JEP 333地址：https://openjdk.java.net/jeps/333">
+<meta property="og:description" content="翻译自：JEP 333 地址：https://openjdk.java.net/jeps/333">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2020-04-07T13:13:30.633Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[译]ZGC: 一个可伸缩的低延迟垃圾收集器">
-<meta name="twitter:description" content="翻译自：JEP 333地址：https://openjdk.java.net/jeps/333">
+<meta name="twitter:description" content="翻译自：JEP 333 地址：https://openjdk.java.net/jeps/333">
 
 <link rel="canonical" href="https://jiankunking.com/zgc-a-scalable-low-latency-garbage-collector.html">
 
@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">164</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">165</span></a>
 
   </li>
         <li class="menu-item menu-item-书籍">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">242</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">244</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -280,7 +280,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3k</span>
+              <span>2.9k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -300,58 +300,64 @@
 
       
         <blockquote>
-<p>翻译自：JEP 333<br>地址：<a href="https://openjdk.java.net/jeps/333" target="_blank" rel="noopener">https://openjdk.java.net/jeps/333</a></p>
+<p>翻译自：JEP 333<br>
+地址：<a href="https://openjdk.java.net/jeps/333" target="_blank" rel="noopener">https://openjdk.java.net/jeps/333</a></p>
 </blockquote>
 <a id="more"></a>
-
-<h1 id="一、摘要"><a href="#一、摘要" class="headerlink" title="一、摘要"></a>一、摘要</h1><p>Z垃圾收集器，也称为ZGC，是一个可伸缩的低延迟垃圾收集器。</p>
-<h1 id="二、目标"><a href="#二、目标" class="headerlink" title="二、目标"></a>二、目标</h1><ul>
+<h1>一、摘要</h1>
+<p>Z垃圾收集器，也称为ZGC，是一个可伸缩的低延迟垃圾收集器。</p>
+<h1>二、目标</h1>
+<ul>
 <li>GC暂停时间不超过10ms</li>
 <li>能处理大小从相对较小(几百MB)到非常大(TB级)的堆</li>
 <li>与使用G1相比，应用程序吞吐量减少不超过15%</li>
 <li>方便日后在此基础上利用彩色指针和内存屏障进一步优化收集器及实现新特性。【原文：Lay a foundation for future GC features and optimizations leveraging colored pointers and load barriers】</li>
-<li>支持平台:Linux&#x2F;x64</li>
+<li>支持平台:Linux/x64</li>
 </ul>
 <blockquote>
 <p>注：此处及下文中的内存屏障即load barrier，在ZGC中用的是读屏障。</p>
 </blockquote>
-<h1 id="三、动机"><a href="#三、动机" class="headerlink" title="三、动机"></a>三、动机</h1><p>垃圾收集是Java的主要优势之一。但是，当垃圾收集暂停太长时，就会对应用程序的响应时间产生负面影响。通过大幅度缩短停顿时间，我们可以让Java适用于更多类型的应用程序。</p>
+<h1>三、动机</h1>
+<p>垃圾收集是Java的主要优势之一。但是，当垃圾收集暂停太长时，就会对应用程序的响应时间产生负面影响。通过大幅度缩短停顿时间，我们可以让Java适用于更多类型的应用程序。</p>
 <p>此外，现代系统中可用的内存数量还在继续增长。<strong>用户和应用程序开发人员希望JVM能够以一种有效的方式充分利用这种内存，并且不会出现很长的GC暂停时间。</strong></p>
-<h1 id="四、-描述"><a href="#四、-描述" class="headerlink" title="四、 描述"></a>四、 描述</h1><p>ZGC是一个并发的、单代（不再区分新生代和老年代）的、基于region的、支持numa的压缩收集器。Stop-the-world阶段仅限于根扫描，所以GC暂停时间不会随着堆或存活对象的多少而增加。</p>
+<h1>四、 描述</h1>
+<p>ZGC是一个并发的、单代（不再区分新生代和老年代）的、基于region的、支持numa的压缩收集器。Stop-the-world阶段仅限于根扫描，所以GC暂停时间不会随着堆或存活对象的多少而增加。</p>
 <p><font color="DeepPink"><strong>ZGC的一个核心设计原则是结合使用内存屏障和彩色对象指针。这使得ZGC能够在运行Java应用程序线程时执行并发操作，比如对象重定位。从Java线程的角度来看，在Java对象中加载引用字段的行为受到内存屏障的限制。除了对象地址之外，有色对象指针还包含内存屏障需要的信息，用于确定在允许Java线程使用该指针之前是否需要采取某些操作。</strong></font>例如，对象可能已经被重新定位，在这种情况下，内存屏障将检测情况并采取适当的操作。</p>
 <p>与其他技术相比，我们认为颜色指针方案提供了一些非常吸引人的特性。特别是:</p>
 <ul>
-<li><p>这允许我们在移动对象&#x2F;整理内存阶段，在指向可回收&#x2F;重用区域的指针确定之前回收&#x2F;重用这部分内存【原文：It allows us to reclaim and reuse memory during the relocation&#x2F;compaction phase, before pointers pointing into the reclaimed&#x2F;reused regions have been fixed. 】。这有助于降低堆开销。这还意味着不需要实现单独的标记压缩算法来处理完整的GC。</p>
+<li>
+<p>这允许我们在移动对象/整理内存阶段，在指向可回收/重用区域的指针确定之前回收/重用这部分内存【原文：It allows us to reclaim and reuse memory during the relocation/compaction phase, before pointers pointing into the reclaimed/reused regions have been fixed. 】。这有助于降低堆开销。这还意味着不需要实现单独的标记压缩算法来处理完整的GC。</p>
 </li>
-<li><p>这允许我们使用相对较少且简单的GC屏障。这有助于降低运行时开销。这还意味着在解释器和JIT编译器中更容易实现、优化和维护GC barrier代码。</p>
+<li>
+<p>这允许我们使用相对较少且简单的GC屏障。这有助于降低运行时开销。这还意味着在解释器和JIT编译器中更容易实现、优化和维护GC barrier代码。</p>
 </li>
-<li><p>我们目前将标记和重新定位相关信息存储在彩色指针中。然而，此方案的通用性允许我们存储任何类型的信息(只要我们能将其放入指针中)，并允许内存屏障根据该信息采取它想要采取的任何操作。我们相信这将为将来的许多特性打下基础。举一个例子，在异构内存环境中，这可以用来跟踪堆访问模式，以指导GC重新定位决策，将很少使用的对象移动到冷存储(不常访问的内存区域)中【原文：To pick one example, in a heterogeneous memory environment, this could be used to track heap access patterns to guide GC relocation decisions to move rarely used objects to cold storage.】。</p>
+<li>
+<p>我们目前将标记和重新定位相关信息存储在彩色指针中。然而，此方案的通用性允许我们存储任何类型的信息(只要我们能将其放入指针中)，并允许内存屏障根据该信息采取它想要采取的任何操作。我们相信这将为将来的许多特性打下基础。举一个例子，在异构内存环境中，这可以用来跟踪堆访问模式，以指导GC重新定位决策，将很少使用的对象移动到冷存储(不常访问的内存区域)中【原文：To pick one example, in a heterogeneous memory environment, this could be used to track heap access patterns to guide GC relocation decisions to move rarely used objects to cold storage.】。</p>
 </li>
 </ul>
-<h1 id="五、性能"><a href="#五、性能" class="headerlink" title="五、性能"></a>五、性能</h1><p>我们已经使用SPECjbb 2015[1]做了常规性能测试。从吞吐量和延迟角度来看，性能都很好。下面是使用128G堆在复合模式下比较ZGC和G1的典型基准分数(以百分比为单位，根据ZGC的max-jOPS进行标准化)【原文：Below are typical benchmark scores (in percent, normalized against ZGC’s max-jOPS), comparing ZGC and G1, in composite mode using a 128G heap.】：</p>
+<h1>五、性能</h1>
+<p>我们已经使用SPECjbb 2015[1]做了常规性能测试。从吞吐量和延迟角度来看，性能都很好。下面是使用128G堆在复合模式下比较ZGC和G1的典型基准分数(以百分比为单位，根据ZGC的max-jOPS进行标准化)【原文：Below are typical benchmark scores (in percent, normalized against ZGC’s max-jOPS), comparing ZGC and G1, in composite mode using a 128G heap.】：</p>
 <blockquote>
 <p>越高越好</p>
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ZGC</span><br><span class="line">       max-jOPS: 100%</span><br><span class="line">  critical-jOPS: 76.1%</span><br><span class="line"></span><br><span class="line">G1</span><br><span class="line">       max-jOPS: 91.2%</span><br><span class="line">  critical-jOPS: 54.7%</span><br></pre></td></tr></table></figure>
-
 <p>下面是来自相同基准测试的GC暂停时间。ZGC设法保持远低于10ms的目标。注意，确切的数字可能会根据使用的机器和设置而变化(上下都有，但不是很明显)。</p>
 <blockquote>
 <p>越低越好</p>
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">ZGC</span><br><span class="line">                avg: 1.091ms (+/-0.215ms)</span><br><span class="line">    95th percentile: 1.380ms</span><br><span class="line">    99th percentile: 1.512ms</span><br><span class="line">  99.9th percentile: 1.663ms</span><br><span class="line"> 99.99th percentile: 1.681ms</span><br><span class="line">                max: 1.681ms</span><br><span class="line"></span><br><span class="line">G1</span><br><span class="line">                avg: 156.806ms (+/-71.126ms)</span><br><span class="line">    95th percentile: 316.672ms</span><br><span class="line">    99th percentile: 428.095ms</span><br><span class="line">  99.9th percentile: 543.846ms</span><br><span class="line"> 99.99th percentile: 543.846ms</span><br><span class="line">                max: 543.846ms</span><br></pre></td></tr></table></figure>
-
 <p>我们还对其他各种SPEC®基准测试和内部工作负载进行了特别的性能测量。一般情况下，ZGC能够维护个位数的毫秒暂停时间。</p>
-<h1 id="六、-局限性"><a href="#六、-局限性" class="headerlink" title="六、 局限性"></a>六、 局限性</h1><p>ZGC的初始实验版本将不支持类卸载。默认情况下，classunload和ClassUnloadingWithConcurrentMark选项将被禁用。即便你启用也是不生效的。</p>
+<h1>六、 局限性</h1>
+<p>ZGC的初始实验版本将不支持类卸载。默认情况下，classunload和ClassUnloadingWithConcurrentMark选项将被禁用。即便你启用也是不生效的。</p>
 <p>此外，ZGC最初不支持JVMCI(即Graal)。如果启用EnableJVMCI选项，将打印一条错误消息。</p>
 <p>这些限制将在本项目的后期解决。</p>
-<h1 id="七、-构建和使用"><a href="#七、-构建和使用" class="headerlink" title="七、 构建和使用"></a>七、 构建和使用</h1><p>按照惯例，构建系统默认禁用JVM中的实验性特性。ZGC是一个实验性特性，因此不会出现在JDK构建中，除非在编译时使用configure选项:</p>
+<h1>七、 构建和使用</h1>
+<p>按照惯例，构建系统默认禁用JVM中的实验性特性。ZGC是一个实验性特性，因此不会出现在JDK构建中，除非在编译时使用configure选项:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--with-jvm-features=zgc</span><br></pre></td></tr></table></figure>
-
 <p>显式地启用它。</p>
-<p>(ZGC将出现在Oracle发布的所有Linux&#x2F;x64 JDK版本中)</p>
-<p>JVM中的实验特性还需要在运行时显式地解锁。因此，要启用&#x2F;使用ZGC，需要以下JVM选项:</p>
+<p>(ZGC将出现在Oracle发布的所有Linux/x64 JDK版本中)</p>
+<p>JVM中的实验特性还需要在运行时显式地解锁。因此，要启用/使用ZGC，需要以下JVM选项:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+ unlockexperimental alvmoptions -XX:+UseZGC</span><br></pre></td></tr></table></figure>
-
 <p>有关如何设置和调优ZGC的更多信息，请参阅ZGC项目Wiki（wiki地址：<a href="https://wiki.openjdk.java.net/display/zgc/Main%EF%BC%89%E3%80%82" target="_blank" rel="noopener">https://wiki.openjdk.java.net/display/zgc/Main）。</a></p>
 <p>ZGC paper可以参考Azul Pauseless GC Algorithm：</p>
 <p><a href="https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/Azul_Pauseless_GC_Algorithm.pdf" target="_blank" rel="noopener">https://github.com/jiankunking/books-recommendation/blob/master/GC/ZGC/Azul_Pauseless_GC_Algorithm.pdf</a></p>
@@ -452,8 +458,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/java/" rel="tag"># Java</a>
               <a href="/tags/原创/" rel="tag"># 原创</a>
+              <a href="/tags/java/" rel="tag"># Java</a>
               <a href="/tags/翻译/" rel="tag"># 翻译</a>
               <a href="/tags/gc/" rel="tag"># GC</a>
               <a href="/tags/jvm/" rel="tag"># JVM</a>
@@ -532,7 +538,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、摘要"><span class="nav-number">1.</span> <span class="nav-text">一、摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、目标"><span class="nav-number">2.</span> <span class="nav-text">二、目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、动机"><span class="nav-number">3.</span> <span class="nav-text">三、动机</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、-描述"><span class="nav-number">4.</span> <span class="nav-text">四、 描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#五、性能"><span class="nav-number">5.</span> <span class="nav-text">五、性能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#六、-局限性"><span class="nav-number">6.</span> <span class="nav-text">六、 局限性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#七、-构建和使用"><span class="nav-number">7.</span> <span class="nav-text">七、 构建和使用</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">一、摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">二、目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">三、动机</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">四、 描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">五、性能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">六、 局限性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">七、 构建和使用</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -548,19 +554,19 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-count">165</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">242</span>
+        <span class="site-state-item-count">244</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
