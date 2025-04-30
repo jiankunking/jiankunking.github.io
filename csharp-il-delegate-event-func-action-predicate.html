@@ -306,92 +306,51 @@
 </blockquote>
 <p>delegate声明的变量与delegate声明的事件，并没有本质的区别，事件是在delegate声明变量的基础上包装而成的，类似于变量与属性的关系（在IL代码中可以看到每一个delegate声明的事件都对应是私有的delegate声明的变量），提升了安全性。</p>
 <p>Action 与Func：这两个其实说白了就是系统定义好的Delegate，他有很多重载的方法，便于各种应用情况下的调用。他在系统的System命名空间下，因此全局可见。</p>
-<p>首先了解一下， ILDasm中图标含义：  <br>
-<img data-src="/images/csharp-delegate/ILDasm.png" alt><br>
-该图来自：<a href="http://www.cnblogs.com/zery/p/3366175.html" target="_blank" rel="noopener">http://www.cnblogs.com/zery/p/3366175.html</a></p>
+<p>首先了解一下， ILDasm中图标含义：  <br><img data-src="/images/csharp-delegate/ILDasm.png"><br>该图来自：<a href="http://www.cnblogs.com/zery/p/3366175.html" target="_blank" rel="noopener">http://www.cnblogs.com/zery/p/3366175.html</a></p>
 <p>委托创建步骤：</p>
 <ol>
 <li><font color="DeepPink"><strong>用delegate关键字创建一个委托，包括声明返回值和参数类型。</strong></font></li>
 <li><font color="DeepPink"><strong>使用的地方接收这个委托。</strong></font></li>
 <li><font color="DeepPink"><strong>创建这个委托的实例并指定一个返回值和参数类型匹配的方法传递过去。</strong></font></li>
 </ol>
-<h1>一、事件与委托</h1>
-<p>新建一个事件委托测试项目：EventDelegateTest。</p>
+<h1 id="一、事件与委托"><a href="#一、事件与委托" class="headerlink" title="一、事件与委托"></a>一、事件与委托</h1><p>新建一个事件委托测试项目：EventDelegateTest。</p>
 <p>具体代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">namespace EventDelegateTest</span><br><span class="line">&#123;</span><br><span class="line">    public class TestClass</span><br><span class="line">    &#123;</span><br><span class="line">        public delegate int delegateAction();</span><br><span class="line">        public event delegateAction OnActionEvent;</span><br><span class="line">        public delegateAction daNew;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>编译代码后，使用 Visual Studio 2010自带的ILDASM.EXE：<br>
-<img data-src="/images/csharp-delegate/IL%E5%8F%8D%E6%B1%87%E7%BC%96%E7%A8%8B%E5%BA%8F.png" alt></p>
-<p>打开该dll，可以看到如下信息：<br>
-<img data-src="/images/csharp-delegate/%E5%8F%8D%E7%BC%96%E8%AF%91DLL%E4%BF%A1%E6%81%AF.png" alt></p>
+
+<p>编译代码后，使用 Visual Studio 2010自带的ILDASM.EXE：<br><img data-src="/images/csharp-delegate/IL%E5%8F%8D%E6%B1%87%E7%BC%96%E7%A8%8B%E5%BA%8F.png"></p>
+<p>打开该dll，可以看到如下信息：<br><img data-src="/images/csharp-delegate/%E5%8F%8D%E7%BC%96%E8%AF%91DLL%E4%BF%A1%E6%81%AF.png"></p>
 <p>从上图可以看出如下几点信息：</p>
-<h2 id="1、delegate">1、delegate</h2>
-<p>委托 public delegate int delegateAction();在IL中是以类（delegateAction）的形式存在的<br>
-.NET将委托定义为一个密封类，派生自基类System.MulticastDelegate，并继承了基类的三个方法:<br>
-<img data-src="/images/csharp-delegate/delegateAction.png" alt></p>
-<h2 id="2、event">2、event</h2>
-<p>public event delegateAction OnActionEvent;在IL中不仅仅对应event OnActionEvent而且还对应一个field OnActionEvent;而field OnActionEvent与 public delegateAction daNew生成的field daNew是一样的.<br>
-<img data-src="/images/csharp-delegate/OnActionEvent.png" alt><br>
-<img data-src="/images/csharp-delegate/daNew.png" alt><br>
-都是以字段（field ）的形式存在的。<br>
-双击event OnActionEvent可以看到如下信息：<br>
-<img data-src="/images/csharp-delegate/event-OnActionEvent.png" alt></p>
-<p>在IL中事件被封装成了包含一个add_前缀和一个remove_前缀的的代码段。<br>
-其中，add_前缀的方法其实是通过调用Delegate.Combine()方法来实现的，组成了一个多播委托；remove_就是调用Delegate.Remove()方法，用于移除多播委托中的某个委托。</p>
+<h2 id="1、delegate"><a href="#1、delegate" class="headerlink" title="1、delegate"></a>1、delegate</h2><p>委托 public delegate int delegateAction();在IL中是以类（delegateAction）的形式存在的<br>.NET将委托定义为一个密封类，派生自基类System.MulticastDelegate，并继承了基类的三个方法:<br><img data-src="/images/csharp-delegate/delegateAction.png"></p>
+<h2 id="2、event"><a href="#2、event" class="headerlink" title="2、event"></a>2、event</h2><p>public event delegateAction OnActionEvent;在IL中不仅仅对应event OnActionEvent而且还对应一个field OnActionEvent;而field OnActionEvent与 public delegateAction daNew生成的field daNew是一样的.<br><img data-src="/images/csharp-delegate/OnActionEvent.png"><br><img data-src="/images/csharp-delegate/daNew.png"><br>都是以字段（field ）的形式存在的。<br>双击event OnActionEvent可以看到如下信息：<br><img data-src="/images/csharp-delegate/event-OnActionEvent.png"></p>
+<p>在IL中事件被封装成了包含一个add_前缀和一个remove_前缀的的代码段。<br>其中，add_前缀的方法其实是通过调用Delegate.Combine()方法来实现的，组成了一个多播委托；remove_就是调用Delegate.Remove()方法，用于移除多播委托中的某个委托。</p>
 <blockquote>
 <p>也就是说：事件其实就是一个特殊的多播委托。</p>
 </blockquote>
-<p>那么对于事件进行这一次封装有什么好处呢？<br>
-1、因为delegate可以支持的操作非常多，比如我们可以写onXXXChanged += aaaFunc，把某个函数指针挂载到这个委托上面，但是我们也可以简单粗暴地直接写onXXXChanged = aaaFunc，让这个委托只包含这一个函数指针。不过这样一来会产生一个安全问题：如果我们用onXXXChanged = aaaFunc这样的写法，那么会把这个委托已拥有的其他函数指针给覆盖掉，这大概不是定义onXXXChanged的程序员想要看到的结果。</p>
+<p>那么对于事件进行这一次封装有什么好处呢？<br>1、因为delegate可以支持的操作非常多，比如我们可以写onXXXChanged +&#x3D; aaaFunc，把某个函数指针挂载到这个委托上面，但是我们也可以简单粗暴地直接写onXXXChanged &#x3D; aaaFunc，让这个委托只包含这一个函数指针。不过这样一来会产生一个安全问题：如果我们用onXXXChanged &#x3D; aaaFunc这样的写法，那么会把这个委托已拥有的其他函数指针给覆盖掉，这大概不是定义onXXXChanged的程序员想要看到的结果。</p>
 <blockquote>
-<p>小注：虽然事件不能直接=某个函数，也不可以直接=null</p>
+<p>小注：虽然事件不能直接&#x3D;某个函数，也不可以直接&#x3D;null</p>
 </blockquote>
-<p><img data-src="/images/csharp-delegate/event_not_null.png" alt></p>
-<p>2、还有一个问题就是onXXXChanged这个委托应该什么时候触发（即调用它所包含的函数指针）。从面向对象的角度来说，XXX改变了这个事实（即onXXXChaned的字面含义）应该由包含它的那个对象来决定。但实际上我们可以从这个对象的外部环境调用onXXXChanged，这既产生了安全问题也不符合面向对象的初衷。 <br>
-说到这里对于事件与委托的管理算是说明白了，那么平时常用的Action与Func，与委托又有什么关系呢？</p>
-<h1>二、Action 与Func</h1>
-<p><strong>Action 委托：封装一个方法，该方法具有参数（0到16个参数）并且不返回值。</strong><br>
-具体形式如下：<a href="https://msdn.microsoft.com/zh-cn/library/system.action(v=vs.110).aspx" target="_blank" rel="noopener">https://msdn.microsoft.com/zh-cn/library/system.action(v=vs.110).aspx</a><br>
-<img data-src="/images/csharp-delegate/Action.png" alt></p>
-<p><strong>Func&lt;T, TResult&gt; 委托：封装一个具有参数（0到16个参数）并返回 TResult 参数指定的类型值的方法。</strong><br>
-具体形式如下：<a href="https://msdn.microsoft.com/zh-cn/library/bb534960(v=vs.110).aspx" target="_blank" rel="noopener">https://msdn.microsoft.com/zh-cn/library/bb534960(v=vs.110).aspx</a><br>
-<img data-src="/images/csharp-delegate/Func_T_TResult.png" alt></p>
-<p>那么这Action与Func是怎么实现的呢？<br>
-1、Action（以Action&lt;T1, T2&gt; 委托：封装一个方法，该方法具有两个参数并且不返回值为例）<br>
-从微软公布的源码中，可以看到，如下实现：<br>
-<img data-src="/images/csharp-delegate/Action_T.png" alt></p>
+<p><img data-src="/images/csharp-delegate/event_not_null.png"></p>
+<p>2、还有一个问题就是onXXXChanged这个委托应该什么时候触发（即调用它所包含的函数指针）。从面向对象的角度来说，XXX改变了这个事实（即onXXXChaned的字面含义）应该由包含它的那个对象来决定。但实际上我们可以从这个对象的外部环境调用onXXXChanged，这既产生了安全问题也不符合面向对象的初衷。 <br>说到这里对于事件与委托的管理算是说明白了，那么平时常用的Action与Func，与委托又有什么关系呢？</p>
+<h1 id="二、Action-与Func"><a href="#二、Action-与Func" class="headerlink" title="二、Action 与Func"></a>二、Action 与Func</h1><p><strong>Action 委托：封装一个方法，该方法具有参数（0到16个参数）并且不返回值。</strong><br>具体形式如下：<a href="https://msdn.microsoft.com/zh-cn/library/system.action(v=vs.110).aspx" target="_blank" rel="noopener">https://msdn.microsoft.com/zh-cn/library/system.action(v=vs.110).aspx</a><br><img data-src="/images/csharp-delegate/Action.png"></p>
+<p><strong>Func&lt;T, TResult&gt; 委托：封装一个具有参数（0到16个参数）并返回 TResult 参数指定的类型值的方法。</strong><br>具体形式如下：<a href="https://msdn.microsoft.com/zh-cn/library/bb534960(v=vs.110).aspx" target="_blank" rel="noopener">https://msdn.microsoft.com/zh-cn/library/bb534960(v=vs.110).aspx</a><br><img data-src="/images/csharp-delegate/Func_T_TResult.png"></p>
+<p>那么这Action与Func是怎么实现的呢？<br>1、Action（以Action&lt;T1, T2&gt; 委托：封装一个方法，该方法具有两个参数并且不返回值为例）<br>从微软公布的源码中，可以看到，如下实现：<br><img data-src="/images/csharp-delegate/Action_T.png"></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public Action&lt;bool,bool&gt;  ac;</span><br></pre></td></tr></table></figure>
-<p>上面这个声明就是：该方法具有两个参数并且不返回值的委托。<br>
-其余使用方式与委托变量一样。<br>
-2、Func（以Func&lt;T1, T2, TResult&gt; 委托：封装一个具有两个参数并返回 TResult 参数指定的类型值的方法为例）<br>
-从微软公布的源码中，可以看到，如下实现：<br>
-<img data-src="/images/csharp-delegate/Func_T_TResult_%E6%BA%90%E7%A0%81.png" alt></p>
-<p>此处，可以看出Func与Action是类似的，唯一的区别就是，Func必须指定返回值的类型，使用方式与委托咱们自己使用委托变量是一样的，直接使用相应参数的Func或者Action声明变量，=或者+=挂载函数（方法即可）<br>
-这两个其实说白了就是系统定义好的Delegate，他有很多重载的方法，便于各种应用情况下的调用。他在系统的System命名空间下，因此全局可见。</p>
-<h1>三、Predicate</h1>
-<p><strong>是返回bool型的泛型委托，Predicate有且只有一个参数，返回值固定为bool。表示定义一组条件并确定指定对象是否符合这些条件的方法。</strong></p>
+
+<p>上面这个声明就是：该方法具有两个参数并且不返回值的委托。<br>其余使用方式与委托变量一样。<br>2、Func（以Func&lt;T1, T2, TResult&gt; 委托：封装一个具有两个参数并返回 TResult 参数指定的类型值的方法为例）<br>从微软公布的源码中，可以看到，如下实现：<br><img data-src="/images/csharp-delegate/Func_T_TResult_%E6%BA%90%E7%A0%81.png"></p>
+<p>此处，可以看出Func与Action是类似的，唯一的区别就是，Func必须指定返回值的类型，使用方式与委托咱们自己使用委托变量是一样的，直接使用相应参数的Func或者Action声明变量，&#x3D;或者+&#x3D;挂载函数（方法即可）<br>这两个其实说白了就是系统定义好的Delegate，他有很多重载的方法，便于各种应用情况下的调用。他在系统的System命名空间下，因此全局可见。</p>
+<h1 id="三、Predicate"><a href="#三、Predicate" class="headerlink" title="三、Predicate"></a>三、Predicate</h1><p><strong>是返回bool型的泛型委托，Predicate有且只有一个参数，返回值固定为bool。表示定义一组条件并确定指定对象是否符合这些条件的方法。</strong></p>
 <p>此方法常在集合（Array 和 List<t>）的查找中被用到，如：数组，正则拼配的结果集中被用到。</t></p>
-<p>官方文档：<br>
-<a href="https://docs.microsoft.com/zh-cn/dotnet/api/system.predicate-1?redirectedfrom=MSDN&amp;view=netframework-4.8" target="_blank" rel="noopener">https://docs.microsoft.com/zh-cn/dotnet/api/system.predicate-1?redirectedfrom=MSDN&amp;view=netframework-4.8</a></p>
+<p>官方文档：<br><a href="https://docs.microsoft.com/zh-cn/dotnet/api/system.predicate-1?redirectedfrom=MSDN&view=netframework-4.8" target="_blank" rel="noopener">https://docs.microsoft.com/zh-cn/dotnet/api/system.predicate-1?redirectedfrom=MSDN&amp;view=netframework-4.8</a></p>
 <p>具体用法demo如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">using System;</span><br><span class="line">using System.Collections.Generic;</span><br><span class="line">using System.ComponentModel;</span><br><span class="line">using System.Data;</span><br><span class="line">using System.Drawing;</span><br><span class="line">using System.Linq;</span><br><span class="line">using System.Text;</span><br><span class="line">using System.Windows.Forms;</span><br><span class="line"> </span><br><span class="line">namespace IconTest</span><br><span class="line">&#123;</span><br><span class="line">    public partial class Form2 : Form</span><br><span class="line">    &#123;</span><br><span class="line">        Predicate&lt;int&gt; myPredicate;</span><br><span class="line">        int[] myNum = new int[8] &#123; 12, 33, 89, 21, 15, 29, 40, 52 &#125;;</span><br><span class="line">        public int[] myResult;</span><br><span class="line">        public Form2()</span><br><span class="line">        &#123;</span><br><span class="line">            InitializeComponent();</span><br><span class="line">            myPredicate = delegate(int curNum) 　　　　　　　　　　　　</span><br><span class="line">            &#123;</span><br><span class="line">                if (curNum % 2 == 0)</span><br><span class="line">                &#123;</span><br><span class="line">                    return true;</span><br><span class="line">                &#125;</span><br><span class="line">                else</span><br><span class="line">                &#123;</span><br><span class="line">                    return false;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;;</span><br><span class="line">        &#125;</span><br><span class="line">        private void Form2_Load(object sender, EventArgs e)</span><br><span class="line">        &#123;</span><br><span class="line">            myResult = Array.FindAll(myNum, myPredicate);</span><br><span class="line">        &#125;          </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>上例中说明了Predicate的使用，FindAll方法中，参数2即是一个Predicate，在具体的执行中，每一个数组的元素都会执行指定的方法，如果满足要求返回true，并会被存放在结果集中，不符合的则被剔除，最终返回的集合，即是结果判断后想要的集合。<br>
-Array.FindAll 泛型方法：<br>
-<a href="https://docs.microsoft.com/zh-cn/dotnet/api/system.array.findall?redirectedfrom=MSDN&amp;view=netframework-4.8#System_Array_FindAll__1___0___System_Predicate___0__" target="_blank" rel="noopener">https://docs.microsoft.com/zh-cn/dotnet/api/system.array.findall?redirectedfrom=MSDN&amp;view=netframework-4.8#System_Array_FindAll__1___0___System_Predicate___0__</a><br>
-以上代码执行结果为：<br>
-<img data-src="/images/csharp-delegate/Form2_Load.png" alt><br>
-那么Predicate<t>与委托又有什么关系呢？<br>
-<img data-src="/images/csharp-delegate/Predicate_T.png" alt></t></p>
+
+<p>上例中说明了Predicate的使用，FindAll方法中，参数2即是一个Predicate，在具体的执行中，每一个数组的元素都会执行指定的方法，如果满足要求返回true，并会被存放在结果集中，不符合的则被剔除，最终返回的集合，即是结果判断后想要的集合。<br>Array.FindAll 泛型方法：<br><a href="https://docs.microsoft.com/zh-cn/dotnet/api/system.array.findall?redirectedfrom=MSDN&view=netframework-4.8#System_Array_FindAll__1___0___System_Predicate___0" target="_blank" rel="noopener">https://docs.microsoft.com/zh-cn/dotnet/api/system.array.findall?redirectedfrom=MSDN&amp;view=netframework-4.8#System_Array_FindAll__1___0___System_Predicate___0</a>__<br>以上代码执行结果为：<br><img data-src="/images/csharp-delegate/Form2_Load.png"><br>那么Predicate<t>与委托又有什么关系呢？<br><img data-src="/images/csharp-delegate/Predicate_T.png"></t></p>
 <p>从微软源码中可以看出Predicate<t>是返回bool型的泛型委托，从本质上来说与Func、Action、事件、委托变量并无本质区别。</t></p>
-<h1>四、资料</h1>
-<p>参考文章：<br>
-<a href="http://www.zhihu.com/question/28932542" target="_blank" rel="noopener">http://www.zhihu.com/question/28932542</a></p>
-<p>关于事件部分应用注意可以参考：<br>
-<a href="http://www.cnblogs.com/buptzym/archive/2013/03/15/2962300.html" target="_blank" rel="noopener">http://www.cnblogs.com/buptzym/archive/2013/03/15/2962300.html</a></p>
-<p>.NET Framework 源码：<br>
-<a href="https://referencesource.microsoft.com" target="_blank" rel="noopener">https://referencesource.microsoft.com</a><br>
-Delegate 类:<br>
-<a href="https://docs.microsoft.com/zh-cn/dotnet/api/system.delegate?redirectedfrom=MSDN&amp;view=netframework-4.8" target="_blank" rel="noopener">https://docs.microsoft.com/zh-cn/dotnet/api/system.delegate?redirectedfrom=MSDN&amp;view=netframework-4.8</a></p>
-<p><img data-src="/images/csharp-delegate/%E5%A7%94%E6%89%98%E5%9B%BE%E8%A7%A3.png" alt></p>
+<h1 id="四、资料"><a href="#四、资料" class="headerlink" title="四、资料"></a>四、资料</h1><p>参考文章：<br><a href="http://www.zhihu.com/question/28932542" target="_blank" rel="noopener">http://www.zhihu.com/question/28932542</a></p>
+<p>关于事件部分应用注意可以参考：<br><a href="http://www.cnblogs.com/buptzym/archive/2013/03/15/2962300.html" target="_blank" rel="noopener">http://www.cnblogs.com/buptzym/archive/2013/03/15/2962300.html</a></p>
+<p>.NET Framework 源码：<br><a href="https://referencesource.microsoft.com/" target="_blank" rel="noopener">https://referencesource.microsoft.com</a><br>Delegate 类:<br><a href="https://docs.microsoft.com/zh-cn/dotnet/api/system.delegate?redirectedfrom=MSDN&view=netframework-4.8" target="_blank" rel="noopener">https://docs.microsoft.com/zh-cn/dotnet/api/system.delegate?redirectedfrom=MSDN&amp;view=netframework-4.8</a></p>
+<p><img data-src="/images/csharp-delegate/%E5%A7%94%E6%89%98%E5%9B%BE%E8%A7%A3.png"></p>
 
     </div>
 
@@ -563,7 +522,7 @@ Delegate 类:<br>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">一、事件与委托</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、delegate"><span class="nav-number">1.1.</span> <span class="nav-text">1、delegate</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、event"><span class="nav-number">1.2.</span> <span class="nav-text">2、event</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">二、Action 与Func</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">三、Predicate</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">四、资料</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、事件与委托"><span class="nav-number">1.</span> <span class="nav-text">一、事件与委托</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、delegate"><span class="nav-number">1.1.</span> <span class="nav-text">1、delegate</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、event"><span class="nav-number">1.2.</span> <span class="nav-text">2、event</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、Action-与Func"><span class="nav-number">2.</span> <span class="nav-text">二、Action 与Func</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、Predicate"><span class="nav-number">3.</span> <span class="nav-text">三、Predicate</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#四、资料"><span class="nav-number">4.</span> <span class="nav-text">四、资料</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
