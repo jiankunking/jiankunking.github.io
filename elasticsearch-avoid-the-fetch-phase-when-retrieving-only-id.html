@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="整理自Github的一个issue,也正好解答了我的疑惑https://github.com/elastic/elasticsearch/issues/17159">
-<meta name="keywords" content="原创,ElasticSearch,fetch,phase,_id">
+  <meta name="description" content="整理自Github的一个issue,也正好解答了我的疑惑 https://github.com/elastic/elasticsearch/issues/17159">
+<meta name="keywords" content="ElasticSearch,原创,fetch,phase,_id">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ElasticSearch为什么不能在query阶段直接返回_id,从而避免fetch?">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-avoid-the-fetch-phase-when-retrieving-only-id.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="整理自Github的一个issue,也正好解答了我的疑惑https://github.com/elastic/elasticsearch/issues/17159">
+<meta property="og:description" content="整理自Github的一个issue,也正好解答了我的疑惑 https://github.com/elastic/elasticsearch/issues/17159">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2025-01-16T01:01:47.232Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ElasticSearch为什么不能在query阶段直接返回_id,从而避免fetch?">
-<meta name="twitter:description" content="整理自Github的一个issue,也正好解答了我的疑惑https://github.com/elastic/elasticsearch/issues/17159">
+<meta name="twitter:description" content="整理自Github的一个issue,也正好解答了我的疑惑 https://github.com/elastic/elasticsearch/issues/17159">
 
 <link rel="canonical" href="https://jiankunking.com/elasticsearch-avoid-the-fetch-phase-when-retrieving-only-id.html">
 
@@ -300,20 +300,22 @@
 
       
         <blockquote>
-<p>整理自Github的一个issue,也正好解答了我的疑惑<br><a href="https://github.com/elastic/elasticsearch/issues/17159" target="_blank" rel="noopener">https://github.com/elastic/elasticsearch/issues/17159</a></p>
+<p>整理自Github的一个issue,也正好解答了我的疑惑<br>
+<a href="https://github.com/elastic/elasticsearch/issues/17159" target="_blank" rel="noopener">https://github.com/elastic/elasticsearch/issues/17159</a></p>
 </blockquote>
 <a id="more"></a>
-
-<h2 id="提问"><a href="#提问" class="headerlink" title="提问"></a>提问</h2><p>是否可以避免搜索的fetch阶段并仅返回文档ID？查询阶段结束时是否有_id，这样当我只需要_id时，fetch就多余了？可以通过当前API完成此操作吗?</p>
+<h2 id="提问">提问</h2>
+<p>是否可以避免搜索的fetch阶段并仅返回文档ID？查询阶段结束时是否有_id，这样当我只需要_id时，fetch就多余了？可以通过当前API完成此操作吗?</p>
 <p>最终，我希望能够比目前所见的速度更快地从搜索中检索文档ID。我已经尝试了所有文档中记录的各种方法来获得更好的性能，但没有找到令人满意的结果。我所取得的最佳成果只是通过并行查询每个5个分片中的每个分片而获得了25%的速度提升。一个可接受的速度提升应该快90%。了解这是否合理以及如果不合理的原因将会很有帮助。很难理解为什么我可以快速得到a)前100个结果，b)总计数，以及c)快速排序它们，但检索结果却非常慢。</p>
 <p>此外，通过开发插件是否有可能提高此（仅限ID）场景的性能？是否有其他选项，无论是记录在案还是未记录在案，可以减少开销？</p>
 <p>强调一下这一点的重要性，这对我们的实施至关重要，很可能是我们决定采用Elastic以替换当前庞大的持久性层的关键因素。</p>
-<h2 id="回答"><a href="#回答" class="headerlink" title="回答"></a>回答</h2><p>搜索阶段获取 Lucene的文档 ID（整数），而不是 elasticsearch 的 ID（字符串）。fetch阶段使用 Lucene 的存储字段机制查找文档 ID。存储字段以压缩块的形式存储在一起。由于 _source 是一个存储字段，因此您必须解压缩大量 _source 才能获得 ID 字段。由于它是分块的，因此您还必须解压缩未命中的文档的存储字段。</p>
+<h2 id="回答">回答</h2>
+<p>搜索阶段获取 Lucene的文档 ID（整数），而不是 elasticsearch 的 ID（字符串）。fetch阶段使用 Lucene 的存储字段机制查找文档 ID。存储字段以压缩块的形式存储在一起。由于 _source 是一个存储字段，因此您必须解压缩大量 _source 才能获得 ID 字段。由于它是分块的，因此您还必须解压缩未命中的文档的存储字段。</p>
 <p>聚合速度很快，因为它们使用文档值(doc values)，这是一种非分块的列式结构。它经过压缩，但使用的是数值技巧，而不是通用的压缩算法。如果能够将您的工作重新设计为一个聚合操作，通过将感兴趣的工作推送到 Elasticsearch，那么您的操作速度可以提升数个数量级。</p>
-<h3 id="一个推荐-优化"><a href="#一个推荐-优化" class="headerlink" title="一个推荐&#x2F;优化"></a>一个推荐&#x2F;优化</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">GET test/_search</span><br><span class="line">&#123;</span><br><span class="line">  &quot;query&quot;: &#123;</span><br><span class="line">    &quot;match_all&quot;: &#123;&#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;_source&quot;: false,</span><br><span class="line">  &quot;stored_fields&quot;: &quot;_none_&quot;,</span><br><span class="line">  &quot;docvalue_fields&quot;: [&quot;my_id_field&quot;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<h3 id="一个推荐-优化">一个推荐/优化</h3>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">GET test/_search</span><br><span class="line">&#123;</span><br><span class="line">  &quot;query&quot;: &#123;</span><br><span class="line">    &quot;match_all&quot;: &#123;&#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;_source&quot;: false,</span><br><span class="line">  &quot;stored_fields&quot;: &quot;_none_&quot;,</span><br><span class="line">  &quot;docvalue_fields&quot;: [&quot;my_id_field&quot;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <ul>
-<li>“stored_fields”: “<em>none</em>“:这将禁止检索所有存储字段，如 _source 和 _id。</li>
+<li>“stored_fields”: “<em>none</em>”:这将禁止检索所有存储字段，如 _source 和 _id。</li>
 <li>“docvalue_fields”: [“my_id_field”]:这样就可以只检索选定的 doc_values 字段。</li>
 </ul>
 <p>来源</p>
@@ -415,8 +417,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
+              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/fetch/" rel="tag"># fetch</a>
               <a href="/tags/phase/" rel="tag"># phase</a>
               <a href="/tags/id/" rel="tag"># _id</a>

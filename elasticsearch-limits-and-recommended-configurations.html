@@ -25,7 +25,7 @@
   </script>
 
   <meta name="description" content="ElasticSearch的一些限制及推荐配置">
-<meta name="keywords" content="原创,ElasticSearch,限制,推荐,配置">
+<meta name="keywords" content="ElasticSearch,原创,限制,推荐,配置">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ElasticSearch的一些限制及推荐配置">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-limits-and-recommended-configurations.html">
@@ -303,20 +303,25 @@
 <p>ElasticSearch的一些限制及推荐配置</p>
 </blockquote>
 <a id="more"></a>
-
-<h1 id="限制"><a href="#限制" class="headerlink" title="限制"></a>限制</h1><h2 id="数组字段，数组大小无限制。"><a href="#数组字段，数组大小无限制。" class="headerlink" title="数组字段，数组大小无限制。"></a>数组字段，数组大小无限制。</h2><p><a href="https://discuss.elastic.co/t/what-are-the-limitations-of-array-size-in-elastic-search/108413" target="_blank" rel="noopener">There is no hard limit but it’s definitely recommended to keep those arrays “reasonable”. When performing an update, Elasticsearch needs to fetch the entire doc, apply the update, then index the updated document and replicate the entire updated document to the replica, so very large arrays would come with a performance penalty indeed.</a></p>
-<h2 id="文档大小限制：2GB"><a href="#文档大小限制：2GB" class="headerlink" title="文档大小限制：2GB"></a>文档大小限制：2GB</h2><p>Given that the default http.max_content_length is set to 100MB, Elasticsearch will refuse to index any document that is larger than that. You might decide to increase that particular setting, but Lucene still has a limit of about 2GB.</p>
+<h1>限制</h1>
+<h2 id="数组字段，数组大小无限制。">数组字段，数组大小无限制。</h2>
+<p><a href="https://discuss.elastic.co/t/what-are-the-limitations-of-array-size-in-elastic-search/108413" target="_blank" rel="noopener">There is no hard limit but it’s definitely recommended to keep those arrays “reasonable”. When performing an update, Elasticsearch needs to fetch the entire doc, apply the update, then index the updated document and replicate the entire updated document to the replica, so very large arrays would come with a performance penalty indeed.</a></p>
+<h2 id="文档大小限制：2GB">文档大小限制：2GB</h2>
+<p>Given that the default http.max_content_length is set to 100MB, Elasticsearch will refuse to index any document that is larger than that. You might decide to increase that particular setting, but Lucene still has a limit of about 2GB.</p>
 <p><a href="https://stackoverflow.com/questions/28841221/what-is-the-maximum-elasticsearch-document-size/28841656#28841656" target="_blank" rel="noopener">https://stackoverflow.com/questions/28841221/what-is-the-maximum-elasticsearch-document-size/28841656#28841656</a></p>
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/general-recommendations.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/general-recommendations.html</a></p>
-<h2 id="单字段大小限制"><a href="#单字段大小限制" class="headerlink" title="单字段大小限制"></a>单字段大小限制</h2><p>未找到资料，感觉整个文档不超就好</p>
-<h1 id="推荐配置"><a href="#推荐配置" class="headerlink" title="推荐配置"></a>推荐配置</h1><h2 id="模板参考配置"><a href="#模板参考配置" class="headerlink" title="模板参考配置"></a>模板参考配置</h2><p>从ES 5.x开始，索引级设置需要写在模板中，或者在创建索引时指定，我们把各个索引通用的配置写到了模板中，这个模板匹配全部的索引，并且具有最低的优先级，让用户定义的模板有更高的优先级，以覆盖这个模板中的配置。</p>
+<h2 id="单字段大小限制">单字段大小限制</h2>
+<p>未找到资料，感觉整个文档不超就好</p>
+<h1>推荐配置</h1>
+<h2 id="模板参考配置">模板参考配置</h2>
+<p>从ES 5.x开始，索引级设置需要写在模板中，或者在创建索引时指定，我们把各个索引通用的配置写到了模板中，这个模板匹配全部的索引，并且具有最低的优先级，让用户定义的模板有更高的优先级，以覆盖这个模板中的配置。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;template&quot;: &quot;*&quot;,</span><br><span class="line">  &quot;order&quot;: 0,</span><br><span class="line">  &quot;settings&quot;: &#123;</span><br><span class="line">    &quot;index.merge.policy.max_merged_segment&quot;: &quot;2gb&quot;,</span><br><span class="line">    &quot;index.merge.policy.segments_per_tier&quot;: &quot;24&quot;,</span><br><span class="line">    &quot;index.number_of_replicas&quot;: &quot;1&quot;,</span><br><span class="line">    &quot;index.number_of_shards&quot;: &quot;24&quot;,</span><br><span class="line">    &quot;index.optimize_auto_generated_id&quot;: &quot;true&quot;,</span><br><span class="line">    &quot;index.refresh_interval&quot;: &quot;120s&quot;,</span><br><span class="line">    &quot;index.translog.durability&quot;: &quot;async&quot;,</span><br><span class="line">    &quot;index.translog.flush_threshold_size&quot;: &quot;1000mb&quot;,</span><br><span class="line">    &quot;index.translog.sync_interval&quot;: &quot;120s&quot;,</span><br><span class="line">    &quot;index.unassigned.node_left.delayed_timeout&quot;: &quot;5d&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="避免热索引分片不均"><a href="#避免热索引分片不均" class="headerlink" title="避免热索引分片不均"></a>避免热索引分片不均</h2><p>默认情况下，ES的分片均衡策略是尽量保持各个节点分片数量大致相同。但是当集群扩容时，新加入集群的节点没有分片，此时新创建的索引分片会集中在新节点上，这导致新节点拥有太多热点数据，该节点可能会面临巨大的写入压力。因此，对于一个索引的全部分片，我们需要控制单个节点上存储的该索引的分片总数，使索引分片在节点上分布得更均匀一些。</p>
-<p>例如，10个节点的集群，索引主分片数为5，副本数量为1，那么平均下来每个节点应该有(5×2)&#x2F;10&#x3D;1个分片，考虑到节点故障、分片迁移的情况，可以设置节点分片总数为2：</p>
+<h2 id="避免热索引分片不均">避免热索引分片不均</h2>
+<p>默认情况下，ES的分片均衡策略是尽量保持各个节点分片数量大致相同。但是当集群扩容时，新加入集群的节点没有分片，此时新创建的索引分片会集中在新节点上，这导致新节点拥有太多热点数据，该节点可能会面临巨大的写入压力。因此，对于一个索引的全部分片，我们需要控制单个节点上存储的该索引的分片总数，使索引分片在节点上分布得更均匀一些。</p>
+<p>例如，10个节点的集群，索引主分片数为5，副本数量为1，那么平均下来每个节点应该有(5×2)/10=1个分片，考虑到节点故障、分片迁移的情况，可以设置节点分片总数为2：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">curl --location --request PUT &apos;http://127.0.0.1:9200/myindex/_settings&apos; \</span><br><span class="line">--header &apos;Content-Type: application/json&apos; \</span><br><span class="line">--data &apos;&#123;</span><br><span class="line">  &quot;index&quot;: &#123;</span><br><span class="line">    &quot;routing.allocation.total_shards_per_node&quot;: &quot;2&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;&apos;</span><br></pre></td></tr></table></figure>
-
-<h2 id="延时分片分配策略-节点离开延迟分片分配"><a href="#延时分片分配策略-节点离开延迟分片分配" class="headerlink" title="延时分片分配策略(节点离开延迟分片分配)"></a>延时分片分配策略(节点离开延迟分片分配)</h2><p>当节点出于任何原因（人为原因或系统异常）离开集群时，主节点会做出以下反应（如下称为步骤 X 是方便后续的解读）：</p>
+<h2 id="延时分片分配策略-节点离开延迟分片分配">延时分片分配策略(节点离开延迟分片分配)</h2>
+<p>当节点出于任何原因（人为原因或系统异常）离开集群时，主节点会做出以下反应（如下称为步骤 X 是方便后续的解读）：</p>
 <ul>
 <li>步骤1：将副本分片提升为主分片以替换节点上的任何主分片。</li>
 <li>步骤2：分配副本分片以替换丢失的副本（在有足够的节点的前提下）。</li>
@@ -326,14 +331,14 @@
 <p>但可能带来的副作用也非常明显：其一，会给集群带来额外的负载（分片分配非常耗费系统资源）；其二，若离开集群的节点很快返回，上述机制的必要性就有待商榷。</p>
 <p>此时，延迟分片分配就显得非常必要，设置如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PUT _all/_settings</span><br><span class="line">&#123;</span><br><span class="line">  &quot;settings&quot;: &#123;</span><br><span class="line">    &quot;index.unassigned.node_left.delayed_timeout&quot;: &quot;5m&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>延时分片分配策略的本质：</p>
 <p>当节点离开集群并确认几分钟（自己设定）可以快速上线的情况下，离开的过程中只触发步骤1的将离开节点上的对应的副本分片提升为主分片。此时集群至少不是red 状态，而是yellow状态。步骤2、步骤3不会发生，此时集群是可用的，待设定的几分钟内下线集群确保重新上线后，分片再重新转为副本分片，此时集群恢复绿色状态。</p>
 <p>这个过程有效避免了步骤2、步骤3的分片分配，整体上以最短的时间确保了集群的高可用性。</p>
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html</a></p>
-<h2 id="每个节点将被恢复的并发分片数"><a href="#每个节点将被恢复的并发分片数" class="headerlink" title="每个节点将被恢复的并发分片数"></a>每个节点将被恢复的并发分片数</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PUT _cluster/settings</span><br><span class="line">&#123;</span><br><span class="line">  &quot;transient&quot;: &#123;</span><br><span class="line">    &quot;cluster.routing.allocation.node_concurrent_recoveries&quot;: 3</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>以上配置:node_concurrent_incoming_recoveries和 node_concurrent_outgoing_recoveries同时生效。<br>incoming_recoverie:通常是其他节点上的副本 shard 恢复到该节点上outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分片到其他节点上。</p>
+<h2 id="每个节点将被恢复的并发分片数">每个节点将被恢复的并发分片数</h2>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PUT _cluster/settings</span><br><span class="line">&#123;</span><br><span class="line">  &quot;transient&quot;: &#123;</span><br><span class="line">    &quot;cluster.routing.allocation.node_concurrent_recoveries&quot;: 3</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上配置:node_concurrent_incoming_recoveries和 node_concurrent_outgoing_recoveries同时生效。<br>
+incoming_recoverie:通常是其他节点上的副本 shard 恢复到该节点上outgoing_recoveries:通常是当前节点上的主分片 shard 恢复副本分片到其他节点上。</p>
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html</a></p>
 
     </div>
@@ -430,8 +435,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
+              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/限制/" rel="tag"># 限制</a>
               <a href="/tags/推荐/" rel="tag"># 推荐</a>
               <a href="/tags/配置/" rel="tag"># 配置</a>
@@ -509,7 +514,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#限制"><span class="nav-number">1.</span> <span class="nav-text">限制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数组字段，数组大小无限制。"><span class="nav-number">1.1.</span> <span class="nav-text">数组字段，数组大小无限制。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文档大小限制：2GB"><span class="nav-number">1.2.</span> <span class="nav-text">文档大小限制：2GB</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#单字段大小限制"><span class="nav-number">1.3.</span> <span class="nav-text">单字段大小限制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#推荐配置"><span class="nav-number">2.</span> <span class="nav-text">推荐配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#模板参考配置"><span class="nav-number">2.1.</span> <span class="nav-text">模板参考配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#避免热索引分片不均"><span class="nav-number">2.2.</span> <span class="nav-text">避免热索引分片不均</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#延时分片分配策略-节点离开延迟分片分配"><span class="nav-number">2.3.</span> <span class="nav-text">延时分片分配策略(节点离开延迟分片分配)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#每个节点将被恢复的并发分片数"><span class="nav-number">2.4.</span> <span class="nav-text">每个节点将被恢复的并发分片数</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">限制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数组字段，数组大小无限制。"><span class="nav-number">1.1.</span> <span class="nav-text">数组字段，数组大小无限制。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文档大小限制：2GB"><span class="nav-number">1.2.</span> <span class="nav-text">文档大小限制：2GB</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#单字段大小限制"><span class="nav-number">1.3.</span> <span class="nav-text">单字段大小限制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">推荐配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#模板参考配置"><span class="nav-number">2.1.</span> <span class="nav-text">模板参考配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#避免热索引分片不均"><span class="nav-number">2.2.</span> <span class="nav-text">避免热索引分片不均</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#延时分片分配策略-节点离开延迟分片分配"><span class="nav-number">2.3.</span> <span class="nav-text">延时分片分配策略(节点离开延迟分片分配)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#每个节点将被恢复的并发分片数"><span class="nav-number">2.4.</span> <span class="nav-text">每个节点将被恢复的并发分片数</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
