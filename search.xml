@@ -122,11 +122,11 @@
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">// CloudGateway 核心网关接口定义 - 包含域名、服务、路由的CRUD操作</span><br><span class="line">// 产品的一步操作 对应云的多步操作</span><br><span class="line">// 具体需要实现哪些接口,按需实现即可</span><br><span class="line">type CloudGateway interface &#123;</span><br><span class="line">        // ----------------- 域名管理 -----------------</span><br><span class="line"></span><br><span class="line">        // CreateDomain 域名管理--可重入</span><br><span class="line">        CreateDomain(ctx context.Context, request *model.CreateDomainRequest) (*model.CreateDomainResponse, error)</span><br><span class="line"></span><br><span class="line">        // GetDomain 查询域名</span><br><span class="line">        GetDomain(ctx context.Context, request *model.GetDomainRequest) (*model.GetDomainResponse, error)</span><br><span class="line"></span><br><span class="line">        // UpdateDomain 更新域名</span><br><span class="line">        UpdateDomain(ctx context.Context, request *model.UpdateDomainRequest) (*model.UpdateDomainResponse, error)</span><br><span class="line"></span><br><span class="line">        // DeleteDomain 删除域名</span><br><span class="line">        DeleteDomain(ctx context.Context, request *model.DeleteDomainRequest) (*model.DeleteDomainResponse, error)</span><br><span class="line"></span><br><span class="line">        // ListDomains 查询域名列表</span><br><span class="line">        ListDomains(ctx context.Context, request *model.ListDomainRequest) (*model.ListDomainResponse, error)</span><br><span class="line"></span><br><span class="line">        // ConflictCheckDomain 冲突检查域名</span><br><span class="line">        ConflictCheckDomain(ctx context.Context, request *model.ConflictCheckDomainRequest) (*model.ConflictCheckDomainResponse, error)</span><br><span class="line"></span><br><span class="line">        // ----------------- 服务管理 -----------------</span><br><span class="line"></span><br><span class="line">        // CreateService 服务管理 --可重入</span><br><span class="line">        CreateService(ctx context.Context, request *model.CreateServiceRequest) (*model.CreateServiceResponse, error)</span><br><span class="line"></span><br><span class="line">        // GetService 查询服务</span><br><span class="line">        GetService(ctx context.Context, request *model.GetServiceRequest) (*model.GetServiceResponse, error)</span><br><span class="line"></span><br><span class="line">        // UpdateService 更新服务</span><br><span class="line">        UpdateService(ctx context.Context, request *model.UpdateServiceRequest) (*model.UpdateServiceResponse, error)</span><br><span class="line"></span><br><span class="line">        // DeleteService 删除服务</span><br><span class="line">        DeleteService(ctx context.Context, request *model.DeleteServiceRequest) (*model.DeleteServiceResponse, error)</span><br><span class="line"></span><br><span class="line">        // ListServices 查询服务列表</span><br><span class="line">        ListServices(ctx context.Context, request *model.ListServiceRequest) (*model.ListServiceResponse, error)</span><br><span class="line"></span><br><span class="line">        // ServiceConflictCheck 服务冲突检查</span><br><span class="line">        ServiceConflictCheck(ctx context.Context, request *model.ConflictCheckServiceRequest) (*model.ConflictCheckServiceResponse, error)</span><br><span class="line"></span><br><span class="line">        // CreateRoute ----------------- 路由管理 -----------------</span><br><span class="line"></span><br><span class="line">        // CreateRoute 创建路由--可重入</span><br><span class="line">        CreateRoute(ctx context.Context, request *model.CreateRouteRequest) (*model.CreateRouteResponse, error)</span><br><span class="line"></span><br><span class="line">        // GetRoute 查询路由</span><br><span class="line">        GetRoute(ctx context.Context, request *model.GetRouteRequest) (*model.GetRouteResponse, error)</span><br><span class="line"></span><br><span class="line">        // UpdateRoute 更新路由</span><br><span class="line">        UpdateRoute(ctx context.Context, request *model.UpdateRouteRequest) (*model.UpdateRouteResponse, error)</span><br><span class="line"></span><br><span class="line">        // DeleteRoute 删除路由--可重入</span><br><span class="line">        DeleteRoute(ctx context.Context, request *model.DeleteRouteRequest) (*model.DeleteRouteResponse, error)</span><br><span class="line"></span><br><span class="line">        // ListRoutes 查询路由列表</span><br><span class="line">        ListRoutes(ctx context.Context, request *model.ListRouteRequest) (*model.ListRouteResponse, error)</span><br><span class="line"></span><br><span class="line">        // PatchRoute 部分更新路由</span><br><span class="line">        PatchRoute(ctx context.Context, request *model.PatchRouteRequest) (*model.PatchRouteResponse, error)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// CloudClientManager 客户端管理接口 - 用于初始化和获取云SDK客户端</span><br><span class="line">type CloudClientManager[T any] interface &#123;</span><br><span class="line">        // InitClient 初始化云SDK客户端</span><br><span class="line">        InitClient(ctx context.Context, config *model.CloudClientInitConfig) error</span><br><span class="line"></span><br><span class="line">        // GetClient 获取初始化好的客户端</span><br><span class="line">        GetClient(ctx context.Context, config model.CloudClientGetConfig) (T, error)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// CloudGatewayProvider 综合接口，组合核心功能和客户端管理</span><br><span class="line">type CloudGatewayProvider interface &#123;</span><br><span class="line">        CloudGateway</span><br><span class="line">        GetCloudGatewayProviderType() model.CloudGatewayProvider</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// NewGatewayProvider 工厂函数，用于创建特定云厂商的网关实例</span><br><span class="line">func NewGatewayProvider(provider model.CloudProvider) (CloudGatewayProvider, error) &#123;</span><br><span class="line">        switch provider &#123;</span><br><span class="line">        case model.HuaweiCloud:</span><br><span class="line">                return huawei_apig.NewHuaweiAPIGProvider(), nil</span><br><span class="line">        case model.AliCloud:</span><br><span class="line">                return ali_mse.NewAliMSEProvider(), nil</span><br><span class="line">        default:</span><br><span class="line">                return nil, &amp;bizerrors.GatewayError&#123;</span><br><span class="line">                        Code:    &quot;unsupported_provider&quot;,</span><br><span class="line">                        Message: &quot;不支持的云厂商&quot;,</span><br><span class="line">                &#125;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="设计思路">设计思路</h2>
 <ul>
-<li>统一抽象很重要：不同云厂商的网关API差异很大，有的关注&quot;域名&quot;，有的主打&quot;服务&quot;。通过CloudGateway接口，我们把这些差异都藏在适配层下面，让业务代码不用关心具体是哪家云厂商。</li>
-<li>工厂模式实用：用工厂模式创建不同云厂商的网关实例，后面要加新的云厂商时，直接加个case分支就行，不用改现有代码。实际落地时，这个设计帮我们省了不少对接新云平台的时间。</li>
-<li>客户端管理要封装：每个云厂商的SDK初始化方式都不一样，通过CloudClientManager接口，我们把这些复杂逻辑包起来，让代码更简洁，维护也更容易。</li>
-<li>幂等性很关键：我在接口中标注了&quot;可重入&quot;，这是从运维经验里总结的。分布式环境下网络不稳定，请求很容易重试。确保核心操作幂等，就能避免重复创建资源或状态混乱的问题。</li>
-<li>按需实现更灵活：接口虽然覆盖了完整生命周期，但我们允许具体实现&quot;按需实现&quot;。实际落地时，确实有些云厂商的某些功能不完善，这种设计让我们能灵活应对。</li>
+<li>统一抽象：不同云厂商的网关API差异很大，有的关注&quot;域名&quot;，有的主打&quot;服务&quot;。通过CloudGateway接口，我们把这些差异都藏在适配层下面，让业务代码不用关心具体是哪家云厂商。</li>
+<li>工厂模式：用工厂模式创建不同云厂商的网关实例，后面要加新的云厂商时，直接加个case分支就行，不用改现有代码。实际落地时，这个设计帮我们省了不少对接新云平台的时间。</li>
+<li>客户端管理封装：每个云厂商的SDK初始化方式都不一样，通过CloudClientManager接口，我们把这些复杂逻辑包起来，让代码更简洁，维护也更容易。</li>
+<li>幂等性：我在接口中标注了&quot;可重入&quot;，这是从运维经验里总结的。分布式环境下网络不稳定，请求很容易重试。确保核心操作幂等，就能避免重复创建资源或状态混乱的问题。</li>
+<li>按需实现：接口虽然覆盖了完整生命周期，但我们允许具体实现&quot;按需实现&quot;。实际落地时，确实有些云厂商的某些功能不完善，这种设计让我们能灵活应对。</li>
 <li>错误处理要精细：专门定义了GatewayError类型，提供详细的错误码和信息。排查问题时，这个设计帮我们快速定位是哪个云厂商的哪个功能出了问题。</li>
 </ul>
 <h1>部署架构及高可用</h1>
@@ -157,13 +157,13 @@
 </ul>
 ]]></content>
       <categories>
-        <category>网关</category>
+        <category>Architecture</category>
       </categories>
       <tags>
         <tag>Architecture</tag>
-        <tag>网关</tag>
-        <tag>多云</tag>
-        <tag>高可用</tag>
+        <tag>Gateway</tag>
+        <tag>Multi-Cloud</tag>
+        <tag>High Availability</tag>
       </tags>
   </entry>
   <entry>
@@ -485,8 +485,8 @@
         <category>Kubernetes</category>
       </categories>
       <tags>
-        <tag>Kubernetes</tag>
         <tag>Gateway</tag>
+        <tag>Kubernetes</tag>
         <tag>Api</tag>
         <tag>Istio</tag>
         <tag>Envoy</tag>
@@ -1431,10 +1431,10 @@
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>Executor</tag>
         <tag>ThreadPool</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
       </tags>
   </entry>
   <entry>
@@ -2949,8 +2949,8 @@ mapping字段总数：23w<br>
       <tags>
         <tag>原创</tag>
         <tag>ElasticSearch</tag>
-        <tag>Shard</tag>
         <tag>Network</tag>
+        <tag>Shard</tag>
         <tag>Disk</tag>
       </tags>
   </entry>
@@ -3892,10 +3892,13 @@ FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内�
 <h1>原文地址</h1>
 <p><a href="https://cloud.tencent.com/developer/article/1636527" target="_blank" rel="noopener">https://cloud.tencent.com/developer/article/1636527</a></p>
 ]]></content>
+      <categories>
+        <category>ElasticSearch</category>
+      </categories>
       <tags>
         <tag>Performance</tag>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>源码</tag>
         <tag>Memory</tag>
       </tags>
@@ -4301,8 +4304,8 @@ Ngram分词会消耗大量资源(尤其是磁盘),reindex有可能会超时</p>
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>ElasticSearch</tag>
         <tag>Architecture</tag>
+        <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
       </tags>
   </entry>
@@ -4413,8 +4416,8 @@ Ngram分词会消耗大量资源(尤其是磁盘),reindex有可能会超时</p>
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>ElasticSearch</tag>
         <tag>Architecture</tag>
+        <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
       </tags>
   </entry>
@@ -7032,8 +7035,8 @@ incoming_recoverie:通常是其他节点上的副本 shard 恢复到该节点上
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Heap</tag>
         <tag>Index</tag>
       </tags>
@@ -8372,8 +8375,8 @@ CompletableFuture.get() 等于 Join</p>
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Lucene</tag>
         <tag>Score</tag>
       </tags>
@@ -8501,9 +8504,9 @@ CompletableFuture.get() 等于 Join</p>
         <category>ElasticSearch</category>
       </categories>
       <tags>
+        <tag>转载</tag>
         <tag>ElasticSearch</tag>
         <tag>Shard</tag>
-        <tag>转载</tag>
         <tag>Cluster</tag>
       </tags>
   </entry>
@@ -8666,9 +8669,9 @@ CompletableFuture.get() 等于 Join</p>
       </categories>
       <tags>
         <tag>原创</tag>
+        <tag>JDK</tag>
         <tag>Java</tag>
         <tag>翻译</tag>
-        <tag>JDK</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>Volatile</tag>
@@ -8700,8 +8703,8 @@ CompletableFuture.get() 等于 Join</p>
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>ReentrantLock</tag>
@@ -12616,8 +12619,8 @@ doc_values已经排好序了,所以通过每次search_after指定的值,往后�
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>Final</tag>
       </tags>
   </entry>
@@ -14758,8 +14761,8 @@ Java Rest Client HTTPS连接操作</p>
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>ElasticSearch</tag>
         <tag>Java</tag>
+        <tag>ElasticSearch</tag>
         <tag>Rest</tag>
         <tag>Client</tag>
         <tag>Encrypted</tag>
@@ -16110,8 +16113,8 @@ WebSocket 的 Key 和 Accept 握手可以解决其中一些问题：这是服务
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
       </tags>
@@ -16163,8 +16166,8 @@ value）相加，并返回结果。</li>
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
         <tag>AtomicLong</tag>
@@ -16265,8 +16268,8 @@ Define a way to specify that one or more fields in an object are likely to be hi
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
         <tag>LongAdder</tag>
@@ -18040,8 +18043,8 @@ es通过FST找到倒排索引的位置获取文档id列表,再通过跳表等来
         <category>ElasticSearch</category>
       </categories>
       <tags>
-        <tag>ElasticSearch</tag>
         <tag>转载</tag>
+        <tag>ElasticSearch</tag>
         <tag>Query</tag>
       </tags>
   </entry>
@@ -18312,8 +18315,8 @@ table th:nth-of-type(2) {
         <category>JDK</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>Concurrent</tag>
         <tag>Atomic</tag>
       </tags>
@@ -19413,8 +19416,8 @@ Humongous regions：巨型区域</p>
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>ReentrantReadWriteLock</tag>
@@ -19464,8 +19467,8 @@ Humongous regions：巨型区域</p>
         <category>JUC</category>
       </categories>
       <tags>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>Condition</tag>
@@ -19838,8 +19841,8 @@ Running Filebeat on Kubernetes</p>
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>ElasticSearch</tag>
         <tag>Architecture</tag>
+        <tag>ElasticSearch</tag>
         <tag>Log</tag>
         <tag>Filebeat</tag>
       </tags>
@@ -20319,8 +20322,8 @@ PDF，图片，或者其他类型的内容。资源的位置通过用户提供�
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
         <tag>Volatile</tag>
@@ -20667,8 +20670,8 @@ mutex和condition保护了一个_counter的变量，当park时，这个变量被
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>JUC</tag>
         <tag>AQS</tag>
       </tags>
@@ -21594,8 +21597,8 @@ enhancer.setSuperclass(this.target.getClass())<br>
       </categories>
       <tags>
         <tag>原创</tag>
-        <tag>Java</tag>
         <tag>JDK</tag>
+        <tag>Java</tag>
         <tag>Spring</tag>
         <tag>AOP</tag>
       </tags>
