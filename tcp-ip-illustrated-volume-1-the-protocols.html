@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文整理自：《TCP/IP详解 卷1:协议》 作者：W. Richard Stevens">
+  <meta name="description" content="本文整理自：《TCP&amp;#x2F;IP详解 卷1:协议》作者：W. Richard Stevens">
 <meta name="keywords" content="读书笔记,Network,TCP,IP,Protocol">
 <meta property="og:type" content="article">
 <meta property="og:title" content="TCP&#x2F;IP详解 卷1：协议 笔记">
 <meta property="og:url" content="https://jiankunking.com/tcp-ip-illustrated-volume-1-the-protocols.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="本文整理自：《TCP/IP详解 卷1:协议》 作者：W. Richard Stevens">
+<meta property="og:description" content="本文整理自：《TCP&amp;#x2F;IP详解 卷1:协议》作者：W. Richard Stevens">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-07-20T08:25:05.584Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP&#x2F;IP详解 卷1：协议 笔记">
-<meta name="twitter:description" content="本文整理自：《TCP/IP详解 卷1:协议》 作者：W. Richard Stevens">
+<meta name="twitter:description" content="本文整理自：《TCP&amp;#x2F;IP详解 卷1:协议》作者：W. Richard Stevens">
 
 <link rel="canonical" href="https://jiankunking.com/tcp-ip-illustrated-volume-1-the-protocols.html">
 
@@ -299,73 +299,57 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>本文整理自：《TCP/IP详解 卷1:协议》<br>
-作者：W. Richard Stevens</p>
+        <p>本文整理自：《TCP&#x2F;IP详解 卷1:协议》<br>作者：W. Richard Stevens</p>
 <a id="more"></a>
-<p><font color="DeepPink"><strong>一个bit是二进制中的最小单位，代表一个0或1的位置。 bit是位。 Byte是字节。 1Byte=8bit。</strong></font></p>
-<h1>概述</h1>
-<h2 id="分层">分层</h2>
-<p>网络协议通常分不同层次进行开发，每一层分别负责不同的通信功能。一个协议族，比如TCP/IP，是一组不同层次上的多个协议的组合。TCP/IP通常被认为是一个四层协议系统，如图1-1所示。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/TCPIP%E5%8D%8F%E8%AE%AE%E6%97%8F%E7%9A%84%E5%9B%9B%E4%B8%AA%E5%B1%82%E6%AC%A1.png" alt></p>
-<p>每一层负责不同的功能：<br>
-1)<font color="DeepPink"><strong>链路层，有时也称作数据链路层或网络接口层，通常包括操作系统中的设备驱动程序和计算机中对应的网络接口卡。它们一起处理与电缆（或其他任何传输媒介）的物理接口细节。</strong></font><br>
-2)<font color="DeepPink"><strong>网络层，有时也称作互联网层，处理分组在网络中的活动，例如分组的选路。</strong></font>在TCP/IP协议族中，网络层协议包括IP协议（网际协议），ICMP协议（Internet互联网控制报文协议），以及IGMP协议（Internet组管理协议）。<br>
-3)<font color="DeepPink"><strong>运输层主要为两台主机上的应用程序提供端到端的通信。</strong></font>在TCP/IP协议族中，有两个互不相同的传输协议：TCP（传输控制协议）和UDP（用户数据报协议）。TCP为两台主机提供高可靠性的数据通信。它所做的工作包括把应用程序交给它的数据分成合适的小块交给下面的网络层，确认接收到的分组，设置发送最后确认分组的超时时钟等。由于运输层提供了高可靠性的端到端的通信，因此应用层可以忽略所有这些细节。而另一方面，UDP则为应用层提供一种非常简单的服务。它只是把称作数据报的分组从一台主机发送到另一台主机，但并不保证该数据报能到达另一端。任何必需的可靠性必须由应用层来提供。这两种运输层协议分别在不同的应用程序中有不同的用途，这一点将在后面看到。<br>
-4)应用层负责处理特定的应用程序细节。几乎各种不同的TCP/IP实现都会提供下面这些通用的应用程序：</p>
+
+<p><font color="DeepPink"><strong>一个bit是二进制中的最小单位，代表一个0或1的位置。 bit是位。 Byte是字节。 1Byte&#x3D;8bit。</strong></font></p>
+<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><h2 id="分层"><a href="#分层" class="headerlink" title="分层"></a>分层</h2><p>网络协议通常分不同层次进行开发，每一层分别负责不同的通信功能。一个协议族，比如TCP&#x2F;IP，是一组不同层次上的多个协议的组合。TCP&#x2F;IP通常被认为是一个四层协议系统，如图1-1所示。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/TCPIP%E5%8D%8F%E8%AE%AE%E6%97%8F%E7%9A%84%E5%9B%9B%E4%B8%AA%E5%B1%82%E6%AC%A1.png"></p>
+<p>每一层负责不同的功能：<br>1)<font color="DeepPink"><strong>链路层，有时也称作数据链路层或网络接口层，通常包括操作系统中的设备驱动程序和计算机中对应的网络接口卡。它们一起处理与电缆（或其他任何传输媒介）的物理接口细节。</strong></font><br>2)<font color="DeepPink"><strong>网络层，有时也称作互联网层，处理分组在网络中的活动，例如分组的选路。</strong></font>在TCP&#x2F;IP协议族中，网络层协议包括IP协议（网际协议），ICMP协议（Internet互联网控制报文协议），以及IGMP协议（Internet组管理协议）。<br>3)<font color="DeepPink"><strong>运输层主要为两台主机上的应用程序提供端到端的通信。</strong></font>在TCP&#x2F;IP协议族中，有两个互不相同的传输协议：TCP（传输控制协议）和UDP（用户数据报协议）。TCP为两台主机提供高可靠性的数据通信。它所做的工作包括把应用程序交给它的数据分成合适的小块交给下面的网络层，确认接收到的分组，设置发送最后确认分组的超时时钟等。由于运输层提供了高可靠性的端到端的通信，因此应用层可以忽略所有这些细节。而另一方面，UDP则为应用层提供一种非常简单的服务。它只是把称作数据报的分组从一台主机发送到另一台主机，但并不保证该数据报能到达另一端。任何必需的可靠性必须由应用层来提供。这两种运输层协议分别在不同的应用程序中有不同的用途，这一点将在后面看到。<br>4)应用层负责处理特定的应用程序细节。几乎各种不同的TCP&#x2F;IP实现都会提供下面这些通用的应用程序：</p>
 <ul>
 <li>Telnet 远程登录。</li>
 <li>FTP 文件传输协议。</li>
 <li>SMTP 简单邮件传送协议。</li>
 <li>SNMP 简单网络管理协议。</li>
 </ul>
-<p>在TCP/IP协议族中，网络层IP提供的是一种不可靠的服务。也就是说，它只是尽可能快地把分组从源结点送到目的结点，但是并不提供任何可靠性保证。而另一方面，TCP在不可靠的IP层上提供了一个可靠的运输层。为了提供这种可靠的服务，TCP采用了超时重传、发送和接收端到端的确认分组等机制。由此可见，运输层和网络层分别负责不同的功能。</p>
+<p>在TCP&#x2F;IP协议族中，网络层IP提供的是一种不可靠的服务。也就是说，它只是尽可能快地把分组从源结点送到目的结点，但是并不提供任何可靠性保证。而另一方面，TCP在不可靠的IP层上提供了一个可靠的运输层。为了提供这种可靠的服务，TCP采用了超时重传、发送和接收端到端的确认分组等机制。由此可见，运输层和网络层分别负责不同的功能。</p>
 <p>连接网络的另一个途径是使用网桥。网桥是在链路层上对网络进行互连，而路由器则是在网络层上对网络进行互连。网桥使得多个局域网（LAN）组合在一起，这样对上层来说就好像是一个局域网。</p>
-<h2 id="TCP-IP的分层">TCP/IP的分层</h2>
-<p>在TCP/IP协议族中，有很多种协议。图1-4给出了本书将要讨论的其他协议。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/TCPIP%E5%8D%8F%E8%AE%AE%E6%97%8F%E4%B8%AD%E4%B8%8D%E5%90%8C%E5%B1%82%E6%AC%A1%E7%9A%84%E5%8D%8F%E8%AE%AE.png" alt></p>
+<h2 id="TCP-IP的分层"><a href="#TCP-IP的分层" class="headerlink" title="TCP&#x2F;IP的分层"></a>TCP&#x2F;IP的分层</h2><p>在TCP&#x2F;IP协议族中，有很多种协议。图1-4给出了本书将要讨论的其他协议。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/TCPIP%E5%8D%8F%E8%AE%AE%E6%97%8F%E4%B8%AD%E4%B8%8D%E5%90%8C%E5%B1%82%E6%AC%A1%E7%9A%84%E5%8D%8F%E8%AE%AE.png"></p>
 <p>IP是网络层上的主要协议，同时被TCP和UDP使用。TCP和UDP的每组数据都通过端系统和每个中间路由器中的IP层在互联网中进行传输。</p>
 <p>ICMP是IP协议的附属协议。IP层用它来与其他主机或路由器交换错误报文和其他重要信息。</p>
 <p>IGMP是Internet组管理协议。它用来把一个UDP数据报多播到多个主机。</p>
 <p>ARP（地址解析协议）和RARP（逆地址解析协议）是某些网络接口（如以太网和令牌环网）使用的特殊协议，用来转换IP层和网络接口层使用的地址。</p>
-<h2 id="互联网地址">互联网地址</h2>
-<p>互联网上的每个接口必须有一个唯一的Internet地址（也称作IP地址）。IP地址长32bit。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E4%BA%94%E7%B1%BB%E4%BA%92%E8%81%94%E7%BD%91%E5%9C%B0%E5%9D%80.png" alt></p>
+<h2 id="互联网地址"><a href="#互联网地址" class="headerlink" title="互联网地址"></a>互联网地址</h2><p>互联网上的每个接口必须有一个唯一的Internet地址（也称作IP地址）。IP地址长32bit。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E4%BA%94%E7%B1%BB%E4%BA%92%E8%81%94%E7%BD%91%E5%9C%B0%E5%9D%80.png"></p>
 <p>这些32位的地址通常写成四个十进制的数，其中每个整数对应一个字节。这种表示方法称作“点分十进制表示法（Dotted decimal notation）”。</p>
 <p>区分各类地址的最简单方法是看它的第一个十进制整数。图1-6列出了各类地址的起止范围，其中第一个十进制整数用加黑字体表示。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%90%84%E7%B1%BBIP%E5%9C%B0%E5%9D%80%E7%9A%84%E8%8C%83%E5%9B%B4.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%90%84%E7%B1%BBIP%E5%9C%B0%E5%9D%80%E7%9A%84%E8%8C%83%E5%9B%B4.png"></p>
 <p>需要再次指出的是，多接口主机具有多个IP地址，其中每个接口都对应一个IP地址。由于互联网上的每个接口必须有一个唯一的IP地址，因此必须要有一个管理机构为接入互联网的网络分配IP地址。这个管理机构就是互联网络信息中心（Internet Network Information Centre），称作InterNIC。InterNIC只分配网络号。主机号的分配由系统管理员来负责。</p>
 <p>有三类IP地址：单播地址（目的为单个主机）、广播地址（目的端为给定网络上的所有主机）以及多播地址（目的端为同一组内的所有主机）。</p>
-<h2 id="封装">封装</h2>
-<p>当应用程序用TCP传送数据时，数据被送入协议栈中，然后逐个通过每一层直到被当作一串比特流送入网络。其中每一层对收到的数据都要增加一些首部信息（有时还要增加尾部信息），该过程如图1-7所示。TCP传给IP的数据单元称作TCP报文段或简称为TCP段（TCP segment）。IP传给网络接口层的数据单元称作IP数据报(IP datagram)。通过以太网传输的比特流称作帧(Frame)。</p>
+<h2 id="封装"><a href="#封装" class="headerlink" title="封装"></a>封装</h2><p>当应用程序用TCP传送数据时，数据被送入协议栈中，然后逐个通过每一层直到被当作一串比特流送入网络。其中每一层对收到的数据都要增加一些首部信息（有时还要增加尾部信息），该过程如图1-7所示。TCP传给IP的数据单元称作TCP报文段或简称为TCP段（TCP segment）。IP传给网络接口层的数据单元称作IP数据报(IP datagram)。通过以太网传输的比特流称作帧(Frame)。</p>
 <p>图1-7中帧头和帧尾下面所标注的数字是典型以太网帧首部的字节长度。</p>
 <p>以太网数据帧的物理特性是其长度必须在46～1500字节之间。</p>
 <blockquote>
 <p>更准确地说，图1-7中IP和网络接口层之间传送的数据单元应该是分组（packet）。分组既可以是一个IP数据报，也可以是IP数据报的一个片（fragment）。</p>
 </blockquote>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E6%95%B0%E6%8D%AE%E8%BF%9B%E5%85%A5%E5%8D%8F%E8%AE%AE%E6%A0%88%E6%97%B6%E7%9A%84%E5%B0%81%E8%A3%85%E8%BF%87%E7%A8%8B.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E6%95%B0%E6%8D%AE%E8%BF%9B%E5%85%A5%E5%8D%8F%E8%AE%AE%E6%A0%88%E6%97%B6%E7%9A%84%E5%B0%81%E8%A3%85%E8%BF%87%E7%A8%8B.png"></p>
 <p>UDP数据与TCP数据基本一致。唯一的不同是UDP传给IP的信息单元称作UDP数据报（UDP datagram），而且UDP的首部长为8字节。</p>
 <p><font color="DeepPink"><strong>由于TCP、UDP、ICMP和IGMP都要向IP传送数据，因此IP必须在生成的IP首部中加入某种标识，以表明数据属于哪一层。为此，IP在首部中存入一个长度为8 bit的数值，称作协议域。1表示为ICMP协议，2表示为IGMP协议，6表示为TCP协议，17表示为UDP协议。</strong></font></p>
 <p>类似地，许多应用程序都可以使用TCP或UDP来传送数据。运输层协议在生成报文首部时要存入一个应用程序的标识符。TCP和UDP都用一个16 bit的端口号来表示不同的应用程序。TCP和UDP把源端口号和目的端口号分别存入报文首部中。</p>
 <p>网络接口分别要发送和接收IP、ARP和RARP数据，因此也必须在以太网的帧首部中加入某种形式的标识，以指明生成数据的网络层协议。为此，以太网的帧首部也有一个16 bit的帧类型域。</p>
-<h2 id="分用">分用</h2>
-<p><font color="DeepPink"><strong>当目的主机收到一个以太网数据帧时，数据就开始从协议栈中由底向上升，同时去掉各层协议加上的报文首部。</strong></font>每层协议盒都要去检查报文首部中的协议标识，以确定接收数据的上层协议。这个过程称作分用（Demultiplexing），图1-8显示了该过程是如何发生的。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E4%BB%A5%E5%A4%AA%E7%BD%91%E6%95%B0%E6%8D%AE%E5%B8%A7%E7%9A%84%E5%88%86%E7%94%A8%E8%BF%87%E7%A8%8B.png" alt></p>
-<h2 id="小结">小结</h2>
-<p>TCP/IP协议族分为四层：链路层、网络层、运输层和应用层，每一层各有不同的责任。在TCP/IP中，网络层和运输层之间的区别是最为关键的：<font color="DeepPink"><strong>网络层（IP）提供点到点的服务，而运输层（TCP和UDP）提供端到端的服务。</strong></font></p>
-<h1>链路层</h1>
-<p>从图1-4中可以看出，在TCP/IP协议族中，链路层主要有三个目的：（1）为IP模块发送和接收IP数据报；（2）为ARP模块发送ARP请求和接收ARP应答；（3）为RARP发送RARP请求和接收RARP应答。</p>
-<h2 id="环回接口">环回接口</h2>
-<p>大多数的产品都支持环回接口（Loopback Interface），以允许运行在同一台主机上的客户程序和服务器程序通过TCP/IP进行通信。A类网络号127就是为环回接口预留的。根据惯例，大多数系统把IP地址127.0.0.1分配给这个接口，并命名为localhost。一个传给环回接口的IP数据报不能在任何网络上出现。</p>
-<h1>IP：网际协议</h1>
-<h2 id="引言">引言</h2>
-<p>IP是TCP/IP协议族中最为核心的协议。所有的TCP、UDP、ICMP及IGMP数据都以IP数据报格式传输（见图1-4）。</p>
+<h2 id="分用"><a href="#分用" class="headerlink" title="分用"></a>分用</h2><p><font color="DeepPink"><strong>当目的主机收到一个以太网数据帧时，数据就开始从协议栈中由底向上升，同时去掉各层协议加上的报文首部。</strong></font>每层协议盒都要去检查报文首部中的协议标识，以确定接收数据的上层协议。这个过程称作分用（Demultiplexing），图1-8显示了该过程是如何发生的。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E4%BB%A5%E5%A4%AA%E7%BD%91%E6%95%B0%E6%8D%AE%E5%B8%A7%E7%9A%84%E5%88%86%E7%94%A8%E8%BF%87%E7%A8%8B.png"></p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>TCP&#x2F;IP协议族分为四层：链路层、网络层、运输层和应用层，每一层各有不同的责任。在TCP&#x2F;IP中，网络层和运输层之间的区别是最为关键的：<font color="DeepPink"><strong>网络层（IP）提供点到点的服务，而运输层（TCP和UDP）提供端到端的服务。</strong></font></p>
+<h1 id="链路层"><a href="#链路层" class="headerlink" title="链路层"></a>链路层</h1><p>从图1-4中可以看出，在TCP&#x2F;IP协议族中，链路层主要有三个目的：（1）为IP模块发送和接收IP数据报；（2）为ARP模块发送ARP请求和接收ARP应答；（3）为RARP发送RARP请求和接收RARP应答。</p>
+<h2 id="环回接口"><a href="#环回接口" class="headerlink" title="环回接口"></a>环回接口</h2><p>大多数的产品都支持环回接口（Loopback Interface），以允许运行在同一台主机上的客户程序和服务器程序通过TCP&#x2F;IP进行通信。A类网络号127就是为环回接口预留的。根据惯例，大多数系统把IP地址127.0.0.1分配给这个接口，并命名为localhost。一个传给环回接口的IP数据报不能在任何网络上出现。</p>
+<h1 id="IP：网际协议"><a href="#IP：网际协议" class="headerlink" title="IP：网际协议"></a>IP：网际协议</h1><h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>IP是TCP&#x2F;IP协议族中最为核心的协议。所有的TCP、UDP、ICMP及IGMP数据都以IP数据报格式传输（见图1-4）。</p>
 <p>不可靠（unreliable）的意思是它不能保证IP数据报能成功地到达目的地。IP仅提供最好的传输服务。如果发生某种错误时，如某个路由器暂时用完了缓冲区，IP有一个简单的错误处理算法：丢弃该数据报，然后发送ICMP消息报给信源端。任何要求的可靠性必须由上层来提供（如TCP）。</p>
 <p>无连接（connectionless）这个术语的意思是IP并不维护任何关于后续数据报的状态信息。每个数据报的处理是相互独立的。这也说明，IP数据报可以不按发送顺序接收。如果一信源向相同的信宿发送两个连续的数据报（先是A，然后是B），每个数据报都是独立地进行路由选择，可能选择不同的路线，因此B可能在A到达之前先到达。</p>
-<h2 id="IP首部">IP首部</h2>
-<p>IP数据报的格式如图3-1所示。普通的IP首部长为20个字节，除非含有选项字段。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/IP%E6%95%B0%E6%8D%AE%E6%8A%A5%E6%A0%BC%E5%BC%8F%E5%8F%8A%E9%A6%96%E9%83%A8%E4%B8%AD%E7%9A%84%E5%90%84%E5%AD%97%E6%AE%B5.png" alt></p>
+<h2 id="IP首部"><a href="#IP首部" class="headerlink" title="IP首部"></a>IP首部</h2><p>IP数据报的格式如图3-1所示。普通的IP首部长为20个字节，除非含有选项字段。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/IP%E6%95%B0%E6%8D%AE%E6%8A%A5%E6%A0%BC%E5%BC%8F%E5%8F%8A%E9%A6%96%E9%83%A8%E4%B8%AD%E7%9A%84%E5%90%84%E5%AD%97%E6%AE%B5.png"></p>
 <p>分析图3-1中的首部。最高位在左边，记为0 bit；最低位在右边，记为31 bit。</p>
-<p>4个字节的32 bit值以下面的次序传输：首先是0～7 bit，其次8～15 bit，然后16～23 bit，最后是24~31 bit。这种传输次序称作bigendian字节序。由于TCP/IP首部中所有的二进制整数在网络中传输时都要求以这种次序，因此它又称作网络字节序。以其他形式存储二进制整数的机器，如little endian格式，则必须在传输数据之前把首部转换成网络字节序。</p>
+<p>4个字节的32 bit值以下面的次序传输：首先是0～7 bit，其次8～15 bit，然后16～23 bit，最后是24~31 bit。这种传输次序称作bigendian字节序。由于TCP&#x2F;IP首部中所有的二进制整数在网络中传输时都要求以这种次序，因此它又称作网络字节序。以其他形式存储二进制整数的机器，如little endian格式，则必须在传输数据之前把首部转换成网络字节序。</p>
 <p>目前的协议版本号是4，因此IP有时也称作IPv4。</p>
 <p>首部长度指的是首部占32 bit字的数目，包括任何选项。由于它是一个4比特字段，因此首部最长为60个字节。普通IP数据报（没有任何选择项）字段的值是5。</p>
 <p>总长度字段是指整个IP数据报的长度，以字节为单位。利用首部长度字段和总长度字段，就可以知道IP数据报中数据内容的起始位置和长度。</p>
@@ -375,8 +359,7 @@
 <p>首部检验和字段是根据IP首部计算的检验和码。它不对首部后面的数据进行计算。ICMP、IGMP、UDP和TCP在它们各自的首部中均含有同时覆盖首部和数据检验和码。</p>
 <p>为了计算一份数据报的IP检验和，首先把检验和字段置为 0。然后，对首部中每个16 bit进行二进制反码求和（整个首部看成是由一串 16 bit的字组成），结果存在检验和字段中。当收到一份IP数据报后，同样对首部中每个 16 bit进行二进制反码的求和。由于接收方在计算过程中包含了发送方存在首部中的检验和，因此，如果首部在传输过程中没有发生任何差错，那么接收方计算的结果应该为全 1。如果结果不是全1（即检验和错误），那么IP就丢弃收到的数据报。但是不生成差错报文，由上层去发现丢失的数据报并进行重传。</p>
 <p>选项字段一直都是以 32 bit作为界限，在必要的时候插入值为 0的填充字节。这样就保证IP首部始终是32 bit的整数倍（这是首部长度字段所要求的）。</p>
-<h2 id="IP路由选择">IP路由选择</h2>
-<p>从概念上说，IP路由选择是简单的，特别对于主机来说。如果目的主机与源主机直接相连（如点对点链路）或都在一个共享网络上（以太网或令牌环网），那么IP数据报就直接送到目的主机上。否则，主机把数据报发往一默认的路由器上，由路由器来转发该数据报。大多数的主机都是采用这种简单机制。</p>
+<h2 id="IP路由选择"><a href="#IP路由选择" class="headerlink" title="IP路由选择"></a>IP路由选择</h2><p>从概念上说，IP路由选择是简单的，特别对于主机来说。如果目的主机与源主机直接相连（如点对点链路）或都在一个共享网络上（以太网或令牌环网），那么IP数据报就直接送到目的主机上。否则，主机把数据报发往一默认的路由器上，由路由器来转发该数据报。大多数的主机都是采用这种简单机制。</p>
 <p>在一般的体制中，IP可以从TCP、UDP、ICMP和IGMP接收数据报（即在本地生成的数据报）并进行发送，或者从一个网络接口接收数据报（待转发的数据报）并进行发送。IP层在内存中有一个路由表。当收到一份数据报并进行发送时，它都要对该表搜索一次。当数据报来自某个网络接口时，IP首先检查目的IP地址是否为本机的IP地址之一或者IP广播地址。如果确实是这样，数据报就被送到由IP首部协议字段所指定的协议模块进行处理。如果数据报的目的不是这些地址，那么（1）如果IP层被设置为路由器的功能，那么就对数据报进行转发（也就是说，像下面对待发出的数据报一样处理）；否则（2）数据报被丢弃。</p>
 <p>路由表中的每一项都包含下面这些信息：</p>
 <ul>
@@ -394,58 +377,52 @@
 </ol>
 <p>如果上面这些步骤都没有成功，那么该数据报就不能被传送。如果不能传送的数据报来自本机，那么一般会向生成数据报的应用程序返回一个“主机不可达”或“网络不可达”的错误。完整主机地址匹配在网络号匹配之前执行。只有当它们都失败后才选择默认路由。默认路由，以及下一站路由器发送的ICMP间接报文（如果我们为数据报选择了错误的默认路由），是IP路由选择机制中功能强大的特性。</p>
 <p>为一个网络指定一个路由器，而不必为每个主机指定一个路由器，这是IP路由选择机制的另一个基本特性。这样做可以极大地缩小路由表的规模，比如Internet上的路由器有只有几千个表目，而不会是超过100万个表目。</p>
-<h2 id="子网寻址">子网寻址</h2>
-<p>现在所有的主机都要求支持子网编址（RFC 950 [Mogul and Postel 1985]）。不是把IP地址看成由单纯的一个网络号和一个主机号组成，而是把主机号再分成一个子网号和一个主机号。</p>
+<h2 id="子网寻址"><a href="#子网寻址" class="headerlink" title="子网寻址"></a>子网寻址</h2><p>现在所有的主机都要求支持子网编址（RFC 950 [Mogul and Postel 1985]）。不是把IP地址看成由单纯的一个网络号和一个主机号组成，而是把主机号再分成一个子网号和一个主机号。</p>
 <p>这样做的原因是因为A类和B类地址为主机号分配了太多的空间，可分别容纳的主机数为2^24 -2和2^16 -2。事实上，在一个网络中人们并不安排这么多的主机（各类IP地址的格式如图1-5所示）。由于全0或全1的主机号都是无效的，因此我们把总数减去 2。</p>
-<h2 id="子网掩码">子网掩码</h2>
-<p>任何主机在引导时进行的部分配置是指定主机IP地址。大多数系统把IP地址存在一个磁盘文件里供引导时读用。</p>
+<h2 id="子网掩码"><a href="#子网掩码" class="headerlink" title="子网掩码"></a>子网掩码</h2><p>任何主机在引导时进行的部分配置是指定主机IP地址。大多数系统把IP地址存在一个磁盘文件里供引导时读用。</p>
 <p>除了IP地址以外，主机还需要知道有多少比特用于子网号及多少比特用于主机号。这是在引导过程中通过子网掩码来确定的。这个掩码是一个32 bit的值，其中值为1的比特留给网络号和子网号，为0的比特留给主机号。图3-7是一个B类地址的两种不同的子网掩码格式。第一个例子是noao.edu网络采用的子网划分方法，子网号和主机号都是8 bit宽。第二个例子是一个B类地址划分成10 bit的子网号和6 bit的主机号。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E4%B8%A4%E7%A7%8D%E4%B8%8D%E5%90%8C%E7%9A%84B%E7%B1%BB%E5%9C%B0%E5%9D%80%E5%AD%90%E7%BD%91%E6%8E%A9%E7%A0%81%E7%9A%84%E4%BE%8B%E5%AD%90.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E4%B8%A4%E7%A7%8D%E4%B8%8D%E5%90%8C%E7%9A%84B%E7%B1%BB%E5%9C%B0%E5%9D%80%E5%AD%90%E7%BD%91%E6%8E%A9%E7%A0%81%E7%9A%84%E4%BE%8B%E5%AD%90.png"></p>
 <p>给定IP地址和子网掩码以后，主机就可以确定IP数据报的目的是：(1)本子网上的主机；(2)本网络中其他子网中的主机；(3)其他网络上的主机。如果知道本机的IP地址，那么就知道它是否为A类、B类或C类地址(从IP地址的高位可以得知)，也就知道网络号和子网号之间的分界线。而根据子网掩码就可知道子网号与主机号之间的分界线。</p>
 <p>将来或许会有更多的主机和网络，但是为了不让主机跨越不同的网络就得使用不同的子网号。我们的解决方法是把子网号从8 bit扩充到11 bit，把主机号从8 bit减为5 bit。这就叫作变长子网，因为140.252网络中的大多数子网都采用8 bit子网掩码，而我们的子网却采用11 bit的子网掩码。</p>
 <p>作者子网中的IP地址结构如图3-11所示，11位子网号中的前8bit始终是13。在剩下的3 bit中，我们用二进制001表示以太网，010表示点对点SLIP链路。这个变长子网掩码在140.252网络中不会给其他主机和路由器带来问题—只要目的是子网140.252.13的所有数据报都传给路由器sun（IP地址是140.252.1.29），如图3-11所示。如果sun知道子网13中的主机有11bit子网号，那么一切都好办了。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%8F%98%E9%95%BF%E5%AD%90%E7%BD%91.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%8F%98%E9%95%BF%E5%AD%90%E7%BD%91.png"></p>
 <p>140.252.13子网中的所有接口的子网掩码是255.255.255.224，或0xffffffe0。这表明最右边的5bit留给主机号，左边的27bit留给网络号和子网号。</p>
-<h2 id="ifconfig命令">ifconfig命令</h2>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# ifconfig -a</span><br><span class="line">docker0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255</span><br><span class="line">        ether 02:42:a5:fc:a8:b0  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 1803610  bytes 751152220 (716.3 MiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 1715508  bytes 1981302829 (1.8 GiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">eth0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 172.21.0.3  netmask 255.255.240.0  broadcast 172.21.15.255</span><br><span class="line">        ether 52:54:00:9f:9a:52  txqueuelen 1000  (Ethernet)</span><br><span class="line">        RX packets 25626090  bytes 6434619435 (5.9 GiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 27765770  bytes 6026731597 (5.6 GiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536</span><br><span class="line">        inet 127.0.0.1  netmask 255.0.0.0</span><br><span class="line">        loop  txqueuelen 1000  (Local Loopback)</span><br><span class="line">        RX packets 2  bytes 272 (272.0 B)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 2  bytes 272 (272.0 B)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">veth7423cb0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        ether 0a:19:63:74:aa:32  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 1939  bytes 158399 (154.6 KiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 1810  bytes 2114402 (2.0 MiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br></pre></td></tr></table></figure>
+<h2 id="ifconfig命令"><a href="#ifconfig命令" class="headerlink" title="ifconfig命令"></a>ifconfig命令</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# ifconfig -a</span><br><span class="line">docker0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255</span><br><span class="line">        ether 02:42:a5:fc:a8:b0  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 1803610  bytes 751152220 (716.3 MiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 1715508  bytes 1981302829 (1.8 GiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">eth0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 172.21.0.3  netmask 255.255.240.0  broadcast 172.21.15.255</span><br><span class="line">        ether 52:54:00:9f:9a:52  txqueuelen 1000  (Ethernet)</span><br><span class="line">        RX packets 25626090  bytes 6434619435 (5.9 GiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 27765770  bytes 6026731597 (5.6 GiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536</span><br><span class="line">        inet 127.0.0.1  netmask 255.0.0.0</span><br><span class="line">        loop  txqueuelen 1000  (Local Loopback)</span><br><span class="line">        RX packets 2  bytes 272 (272.0 B)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 2  bytes 272 (272.0 B)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">veth7423cb0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        ether 0a:19:63:74:aa:32  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 1939  bytes 158399 (154.6 KiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 1810  bytes 2114402 (2.0 MiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br></pre></td></tr></table></figure>
+
 <p>环回接口被认为是一个网络接口。它是一个 A类地址，没有进行子网划分。</p>
-<h2 id="小结-v2">小结</h2>
-<p>在进行路由选择决策时，主机和路由器都使用路由表。在表中有三种类型的路由：特定主机型、特定网络型和默认路由型。路由表中的表目具有一定的优先级。在选择路由时，主机路由优先于网络路由，最后在没有其他可选路由存在时才选择默认路由。</p>
+<h2 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h2><p>在进行路由选择决策时，主机和路由器都使用路由表。在表中有三种类型的路由：特定主机型、特定网络型和默认路由型。路由表中的表目具有一定的优先级。在选择路由时，主机路由优先于网络路由，最后在没有其他可选路由存在时才选择默认路由。</p>
 <p>IP路由选择是通过逐跳来实现的。数据报在各站的传输过程中目的 IP地址始终不变，但是封装和目的链路层地址在每一站都可以改变。大多数的主机和许多路由器对于非本地网络的数据报都使用默认的下一站路由器。</p>
-<h1>ARP：地址解析协议</h1>
-<h2 id="引言-v2">引言</h2>
-<p>当一台主机把以太网数据帧发送到位于同一局域网上的另一台主机时，是根据 48 bit的以太网地址来确定目的接口的。设备驱动程序从不检查 IP数据报中的目的IP地址。</p>
+<h1 id="ARP：地址解析协议"><a href="#ARP：地址解析协议" class="headerlink" title="ARP：地址解析协议"></a>ARP：地址解析协议</h1><h2 id="引言-1"><a href="#引言-1" class="headerlink" title="引言"></a>引言</h2><p>当一台主机把以太网数据帧发送到位于同一局域网上的另一台主机时，是根据 48 bit的以太网地址来确定目的接口的。设备驱动程序从不检查 IP数据报中的目的IP地址。</p>
 <p>地址解析为这两种不同的地址形式提供映射： 32 bit的IP地址和数据链路层使用的任何类型的地址。</p>
 <p>ARP为IP地址到对应的硬件地址之间提供动态映射。我们之所以用动态这个词是因为这个过程是自动完成的，一般应用程序用户或系统管理员不必关心。</p>
 <p>RARP是被那些没有磁盘驱动器的系统使用（一般是无盘工作站或X终端），它需要系统管理员进行手工设置。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%9C%B0%E5%9D%80%E8%A7%A3%E6%9E%90%E5%8D%8F%E8%AE%AEARP%E5%92%8CRARP.png" alt></p>
-<h2 id="一个例子">一个例子</h2>
-<p>任何时候我们敲入下面这个形式的命令：</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%9C%B0%E5%9D%80%E8%A7%A3%E6%9E%90%E5%8D%8F%E8%AE%AEARP%E5%92%8CRARP.png"></p>
+<h2 id="一个例子"><a href="#一个例子" class="headerlink" title="一个例子"></a>一个例子</h2><p>任何时候我们敲入下面这个形式的命令：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">%ftp bsdi</span><br></pre></td></tr></table></figure>
+
 <p>都会进行以下这些步骤。这些步骤的序号如图4-2所示。</p>
 <ol>
-<li>应用程序FTP客户端调用函数gethostbyname(3)把主机名（bsdi）转换成32bit的IP地址。这个函数在DNS（域名系统）中称作解析器，我们将在第14章对它进行介绍。这个转换过程或者使用DNS，或者在较小网络中使用一个静态的主机文件（/etc/hosts）。</li>
+<li>应用程序FTP客户端调用函数gethostbyname(3)把主机名（bsdi）转换成32bit的IP地址。这个函数在DNS（域名系统）中称作解析器，我们将在第14章对它进行介绍。这个转换过程或者使用DNS，或者在较小网络中使用一个静态的主机文件（&#x2F;etc&#x2F;hosts）。</li>
 <li>FTP客户端请求TCP用得到的IP地址建立连接。</li>
 <li>TCP发送一个连接请求分段到远端的主机，即用上述IP地址发送一份IP数据报。</li>
 <li>如果目的主机在本地网络上（如以太网、令牌环网或点对点链接的另一端），那么IP数据报可以直接送到目的主机上。如果目的主机在一个远程网络上，那么就通过IP选路函数来确定位于本地网络上的下一站路由器地址，并让它转发IP数据报。在这两种情况下，IP数据报都是被送到位于本地网络上的一台主机或路由器。</li>
 <li>假定是一个以太网，那么发送端主机必须把32bit的IP地址变换成48bit的以太网地址。从逻辑Internet地址到对应的物理硬件地址需要进行翻译。这就是ARP的功能。ARP本来是用于广播网络的，有许多主机或路由器连在同一个网络上。</li>
 <li>ARP发送一份称作ARP请求的以太网数据帧给以太网上的每个主机。这个过程称作广播，如图4-2中的虚线所示。ARP请求数据帧中包含目的主机的IP地址（主机名为bsdi），其意思是“如果你是这个IP地址的拥有者，请回答你的硬件地址。”</li>
 </ol>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%BD%93%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E5%91%BD%E4%BB%A4ftp%E4%B8%BB%E6%9C%BA%E5%90%8D%E6%97%B6ARP%E7%9A%84%E6%93%8D%E4%BD%9C.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%BD%93%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E5%91%BD%E4%BB%A4ftp%E4%B8%BB%E6%9C%BA%E5%90%8D%E6%97%B6ARP%E7%9A%84%E6%93%8D%E4%BD%9C.png"></p>
 <ol start="7">
 <li>目的主机的ARP层收到这份广播报文后，识别出这是发送端在寻问它的IP地址，于是发送一个ARP应答。这个ARP应答包含IP地址及对应的硬件地址。</li>
 <li>收到ARP应答后，使ARP进行请求—应答交换的IP数据报现在就可以传送了。</li>
 <li>发送IP数据报到目的主机。</li>
 </ol>
-<p><font color="DeepPink"><strong>在ARP背后有一个基本概念，那就是网络接口有一个硬件地址（一个48bit的值，标识不同的以太网或令牌环网络接口）。在硬件层次上进行的数据帧交换必须有正确的接口地址。但是，TCP/IP有自己的地址：32bit的IP地址。知道主机的IP地址并不能让内核发送一帧数据给主机。内核（如以太网驱动程序）必须知道目的端的硬件地址才能发送数据。ARP的功能是在32bit的IP地址和采用不同网络技术的硬件地址之间提供动态映射。</strong></font></p>
-<h2 id="ARP高速缓存">ARP高速缓存</h2>
-<p>ARP高效运行的关键是由于每个主机上都有一个ARP高速缓存。这个高速缓存存放了最近Internet地址到硬件地址之间的映射记录。高速缓存中每一项的生存时间一般为20分钟，起始时间从被创建时开始算起。</p>
+<p><font color="DeepPink"><strong>在ARP背后有一个基本概念，那就是网络接口有一个硬件地址（一个48bit的值，标识不同的以太网或令牌环网络接口）。在硬件层次上进行的数据帧交换必须有正确的接口地址。但是，TCP&#x2F;IP有自己的地址：32bit的IP地址。知道主机的IP地址并不能让内核发送一帧数据给主机。内核（如以太网驱动程序）必须知道目的端的硬件地址才能发送数据。ARP的功能是在32bit的IP地址和采用不同网络技术的硬件地址之间提供动态映射。</strong></font></p>
+<h2 id="ARP高速缓存"><a href="#ARP高速缓存" class="headerlink" title="ARP高速缓存"></a>ARP高速缓存</h2><p>ARP高效运行的关键是由于每个主机上都有一个ARP高速缓存。这个高速缓存存放了最近Internet地址到硬件地址之间的映射记录。高速缓存中每一项的生存时间一般为20分钟，起始时间从被创建时开始算起。</p>
 <p>我们可以用arp命令来检查ARP高速缓存。参数-a的意思是显示高速缓存中所有的内容。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# arp -a</span><br><span class="line">? (169.254.0.15) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (169.254.0.3) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (172.17.0.4) at 02:42:ac:11:00:04 [ether] on docker0</span><br><span class="line">? (169.254.0.2) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (169.254.0.4) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (172.17.0.3) at 02:42:ac:11:00:03 [ether] on docker0</span><br><span class="line">? (172.17.0.2) at 02:42:ac:11:00:02 [ether] on docker0</span><br><span class="line">? (169.254.0.23) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (169.254.128.3) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">? (169.254.128.5) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">gateway (172.21.0.1) at fe:ee:0b:ca:e5:69 [ether] on eth0</span><br><span class="line">[jiankunking@VM_0_3_centos ~]#</span><br></pre></td></tr></table></figure>
+
 <p>48 bit的以太网地址用6个十六进制的数来表示，中间以冒号隔开。</p>
-<h2 id="ARP的分组格式">ARP的分组格式</h2>
-<p>在以太网上解析IP地址时，ARP请求和应答分组的格式如图4-3所示（ARP可以用于其他类型的网络，可以解析IP地址以外的地址。紧跟着帧类型字段的前四个字段指定了最后四个字段的类型和长度）。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E7%94%A8%E4%BA%8E%E4%BB%A5%E5%A4%AA%E7%BD%91%E7%9A%84ARP%E8%AF%B7%E6%B1%82%E6%88%96%E5%BA%94%E7%AD%94%E5%88%86%E7%BB%84%E6%A0%BC%E5%BC%8F.png" alt></p>
+<h2 id="ARP的分组格式"><a href="#ARP的分组格式" class="headerlink" title="ARP的分组格式"></a>ARP的分组格式</h2><p>在以太网上解析IP地址时，ARP请求和应答分组的格式如图4-3所示（ARP可以用于其他类型的网络，可以解析IP地址以外的地址。紧跟着帧类型字段的前四个字段指定了最后四个字段的类型和长度）。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E7%94%A8%E4%BA%8E%E4%BB%A5%E5%A4%AA%E7%BD%91%E7%9A%84ARP%E8%AF%B7%E6%B1%82%E6%88%96%E5%BA%94%E7%AD%94%E5%88%86%E7%BB%84%E6%A0%BC%E5%BC%8F.png"></p>
 <p>以太网报头中的前两个字段是以太网的源地址和目的地址。目的地址为全 1的特殊地址是广播地址。电缆上的所有以太网接口都要接收广播的数据帧。</p>
 <p>两个字节长的以太网帧类型表示后面数据的类型。对于ARP请求或应答来说，该字段的值为0x0806。</p>
 <p>形容词hardware(硬件)和protocol(协议)用来描述ARP分组中的各个字段。例如，一个ARP请求分组询问协议地址（这里是IP地址）对应的硬件地址（这里是以太网地址）。</p>
@@ -454,58 +431,44 @@
 <p>操作字段指出四种操作类型，它们是ARP请求（值为1）、ARP应答（值为2）、RARP请求（值为3）和RARP应答（值为4）（我们在第5章讨论RARP）。这个字段必需的，因为ARP请求和ARP应答的帧类型字段值是相同的。</p>
 <p>接下来的四个字段是发送端的硬件地址（在本例中是以太网地址）、发送端的协议地址（IP地址）、目的端的硬件地址和目的端的协议地址。注意，这里有一些重复信息：在以太网的数据帧报头中和ARP请求数据帧中都有发送端的硬件地址。</p>
 <p>对于一个ARP请求来说，除目的端硬件地址外的所有其他的字段都有填充值。当系统收到一份目的端为本机的ARP请求报文后，它就把硬件地址填进去，然后用两个目的端地址分别替换两个发送端地址，并把操作字段置为2，最后把它发送回去。</p>
-<h2 id="ARP代理">ARP代理</h2>
-<p>如果ARP请求是从一个网络的主机发往另一个网络上的主机，那么连接这两个网络的路由器就可以回答该请求，这个过程称作委托ARP或ARP代理(Proxy ARP)。这样可以欺骗发起ARP请求的发送端，使它误以为路由器就是目的主机，而事实上目的主机是在路由器的“另一边”。路由器的功能相当于目的主机的代理，把分组从其他主机转发给它。</p>
-<p>ARP代理也称作混合ARP（promiscuousARP）或ARP出租(ARPhack)。这些名字来自于ARP代理的其他用途：通过两个物理网络之间的路由器可以互相隐藏物理网络。在这种情况下，两个物理网络可以使用相同的网络号，只要把中间的路由器设置成一个ARP代理，以响应一个网络到另一个网络主机的ARP请求。这种技术在过去用来隐藏一组在不同物理电缆上运行旧版TCP/IP的主机。分开这些旧主机有两个共同的理由，其一是它们不能处理子网划分，其二是它们使用旧的广播地址（所有比特值为0的主机号，而不是目前使用的所有比特值为1的主机号）。</p>
-<h2 id="免费ARP">免费ARP</h2>
-<p>我们可以看到的另一个ARP特性称作免费ARP(gratuitous ARP)。它是指主机发送ARP查找自己的IP地址。通常，它发生在系统引导期间进行接口配置的时候。</p>
+<h2 id="ARP代理"><a href="#ARP代理" class="headerlink" title="ARP代理"></a>ARP代理</h2><p>如果ARP请求是从一个网络的主机发往另一个网络上的主机，那么连接这两个网络的路由器就可以回答该请求，这个过程称作委托ARP或ARP代理(Proxy ARP)。这样可以欺骗发起ARP请求的发送端，使它误以为路由器就是目的主机，而事实上目的主机是在路由器的“另一边”。路由器的功能相当于目的主机的代理，把分组从其他主机转发给它。</p>
+<p>ARP代理也称作混合ARP（promiscuousARP）或ARP出租(ARPhack)。这些名字来自于ARP代理的其他用途：通过两个物理网络之间的路由器可以互相隐藏物理网络。在这种情况下，两个物理网络可以使用相同的网络号，只要把中间的路由器设置成一个ARP代理，以响应一个网络到另一个网络主机的ARP请求。这种技术在过去用来隐藏一组在不同物理电缆上运行旧版TCP&#x2F;IP的主机。分开这些旧主机有两个共同的理由，其一是它们不能处理子网划分，其二是它们使用旧的广播地址（所有比特值为0的主机号，而不是目前使用的所有比特值为1的主机号）。</p>
+<h2 id="免费ARP"><a href="#免费ARP" class="headerlink" title="免费ARP"></a>免费ARP</h2><p>我们可以看到的另一个ARP特性称作免费ARP(gratuitous ARP)。它是指主机发送ARP查找自己的IP地址。通常，它发生在系统引导期间进行接口配置的时候。</p>
 <p>免费ARP可以有两个方面的作用：</p>
 <ol>
-<li>一个主机可以通过它来确定另一个主机是否设置了相同的IP地址。主机bsdi并不希望对此请求有一个回答。但是，如果收到一个回答，那么就会在终端日志上产生一个错误消息“以太网地址：a🅱️c:d:e:f发送来重复的IP地址”。这样就可以警告系统管理员，某个系统有不正确的设置。</li>
+<li>一个主机可以通过它来确定另一个主机是否设置了相同的IP地址。主机bsdi并不希望对此请求有一个回答。但是，如果收到一个回答，那么就会在终端日志上产生一个错误消息“以太网地址：a:b:c:d:e:f发送来重复的IP地址”。这样就可以警告系统管理员，某个系统有不正确的设置。</li>
 <li>如果发送免费ARP的主机正好改变了硬件地址（很可能是主机关机了，并换了一块接口卡，然后重新启动），那么这个分组就可以使其他主机高速缓存中旧的硬件地址进行相应的更新。一个比较著名的ARP协议事实[Plummer1982]是，如果主机收到某个IP地址的ARP请求，而且它已经在接收者的高速缓存中，那么就要用ARP请求中的发送端硬件地址（如以太网地址）对高速缓存中相应的内容进行更新。主机接收到任何ARP请求都要完成这个操作（ARP请求是在网上广播的，因此每次发送ARP请求时网络上的所有主机都要这样做）。</li>
 </ol>
-<h2 id="arp命令">arp命令</h2>
-<ul>
+<h2 id="arp命令"><a href="#arp命令" class="headerlink" title="arp命令"></a>arp命令</h2><ul>
 <li>参数-a来显示ARP高速缓存中的所有内容</li>
 <li>超级用户可以用选项-d来删除ARP高速缓存中的某一项内容</li>
 <li>可以通过选项-s来增加高速缓存中的内容。这个参数需要主机名和以太网地址：对应于主机名的IP地址和以太网地址被增加到高速缓存中。新增加的内容是永久性的（比如，它没有超时值），除非在命令行的末尾附上关键字temp。</li>
 <li>位于命令行末尾的关键字pub和-s选项一起，可以使系统起着主机ARP代理的作用。系统将回答与主机名对应的IP地址的ARP请求，并以指定的以太网地址作为应答。如果广播的地址是系统本身，那么系统就为指定的主机名起着委托ARP代理的作用。</li>
 </ul>
-<h1>RARP：逆地址解析协议</h1>
-<h2 id="引言-v3">引言</h2>
-<p>具有本地磁盘的系统引导时，一般是从磁盘上的配置文件中读取IP地址。但是无盘机，如X终端或无盘工作站，则需要采用其他方法来获得IP地址。</p>
+<h1 id="RARP：逆地址解析协议"><a href="#RARP：逆地址解析协议" class="headerlink" title="RARP：逆地址解析协议"></a>RARP：逆地址解析协议</h1><h2 id="引言-2"><a href="#引言-2" class="headerlink" title="引言"></a>引言</h2><p>具有本地磁盘的系统引导时，一般是从磁盘上的配置文件中读取IP地址。但是无盘机，如X终端或无盘工作站，则需要采用其他方法来获得IP地址。</p>
 <p>网络上的每个系统都具有唯一的硬件地址，它是由网络接口生产厂家配置的。无盘系统的RARP实现过程是从接口卡上读取唯一的硬件地址，然后发送一份RARP请求（一帧在网络上广播的数据），请求某个主机响应该无盘系统的IP地址（在RARP应答中）。</p>
-<h2 id="RARP的分组格式">RARP的分组格式</h2>
-<p>RARP分组的格式与ARP分组基本一致（见图4-3）。它们之间主要的差别是RARP请求或应答的帧类型代码为0x8035，而且RARP请求的操作代码为3，应答操作代码为4。</p>
+<h2 id="RARP的分组格式"><a href="#RARP的分组格式" class="headerlink" title="RARP的分组格式"></a>RARP的分组格式</h2><p>RARP分组的格式与ARP分组基本一致（见图4-3）。它们之间主要的差别是RARP请求或应答的帧类型代码为0x8035，而且RARP请求的操作代码为3，应答操作代码为4。</p>
 <p>对应于ARP，RARP请求以广播方式传送，而RARP应答一般是单播(unicast)传送的。</p>
-<h2 id="RARP服务器的设计">RARP服务器的设计</h2>
-<p>虽然RARP在概念上很简单，但是一个RARP服务器的设计与系统相关而且比较复杂。相反，提供一个ARP服务器很简单，通常是TCP/IP在内核中实现的一部分。由于内核知道IP地址和硬件地址，因此当它收到一个询问IP地址的ARP请求时，只需用相应的硬件地址来提供应答就可以了。</p>
-<h3 id="作为用户进程的RARP服务器">作为用户进程的RARP服务器</h3>
-<p>RARP服务器的复杂性在于，服务器一般要为多个主机（网络上所有的无盘系统）提供硬件地址到IP地址的映射。该映射包含在一个磁盘文件中（在Unix系统中一般位于/etc/ethers目录中）。由于内核一般不读取和分析磁盘文件，因此RARP服务器的功能就由用户进程来提供，而不是作为内核的TCP/IP实现的一部分。</p>
+<h2 id="RARP服务器的设计"><a href="#RARP服务器的设计" class="headerlink" title="RARP服务器的设计"></a>RARP服务器的设计</h2><p>虽然RARP在概念上很简单，但是一个RARP服务器的设计与系统相关而且比较复杂。相反，提供一个ARP服务器很简单，通常是TCP&#x2F;IP在内核中实现的一部分。由于内核知道IP地址和硬件地址，因此当它收到一个询问IP地址的ARP请求时，只需用相应的硬件地址来提供应答就可以了。</p>
+<h3 id="作为用户进程的RARP服务器"><a href="#作为用户进程的RARP服务器" class="headerlink" title="作为用户进程的RARP服务器"></a>作为用户进程的RARP服务器</h3><p>RARP服务器的复杂性在于，服务器一般要为多个主机（网络上所有的无盘系统）提供硬件地址到IP地址的映射。该映射包含在一个磁盘文件中（在Unix系统中一般位于&#x2F;etc&#x2F;ethers目录中）。由于内核一般不读取和分析磁盘文件，因此RARP服务器的功能就由用户进程来提供，而不是作为内核的TCP&#x2F;IP实现的一部分。</p>
 <p>更为复杂的是，RARP请求是作为一个特殊类型的以太网数据帧来传送的（帧类型字段值为0x8035）。这说明RARP服务器必须能够发送和接收这种类型的以太网数据帧。在附录A中，我们描述了BSD分组过滤器、Sun的网络接口栓以及SVR4数据链路提供者接口都可用来接收这些数据帧。由于发送和接收这些数据帧与系统有关，因此RARP服务器的实现是与系统捆绑在一起的。</p>
-<h3 id="每个网络有多个RARP服务器">每个网络有多个RARP服务器</h3>
-<p>RARP服务器实现的一个复杂因素是RARP请求是在硬件层上进行广播的。这意味着它们不经过路由器进行转发。为了让无盘系统在RARP服务器关机的状态下也能引导，<br>
-通常在一个网络上（例如一根电缆）要提供多个RARP服务器。</p>
+<h3 id="每个网络有多个RARP服务器"><a href="#每个网络有多个RARP服务器" class="headerlink" title="每个网络有多个RARP服务器"></a>每个网络有多个RARP服务器</h3><p>RARP服务器实现的一个复杂因素是RARP请求是在硬件层上进行广播的。这意味着它们不经过路由器进行转发。为了让无盘系统在RARP服务器关机的状态下也能引导，<br>通常在一个网络上（例如一根电缆）要提供多个RARP服务器。</p>
 <p>当服务器的数目增加时（以提供冗余备份），网络流量也随之增加，因为每个服务器对每个RARP请求都要发送RARP应答。发送RARP请求的无盘系统一般采用最先收到的RARP应答（对于ARP，我们从来没有遇到这种情况，因为只有一台主机发送ARP应答）。另外，还有一种可能发生的情况是每个RARP服务器同时应答，这样会增加以太网发生冲突的概率。</p>
-<h2 id="小结-v3">小结</h2>
-<p>RARP协议是许多无盘系统在引导时用来获取IP地址的。RARP分组格式基本上与ARP分组一致。一个RARP请求在网络上进行广播，它在分组中标明发送端的硬件地址，以请求相应IP地址的响应。应答通常是单播传送的。</p>
+<h2 id="小结-2"><a href="#小结-2" class="headerlink" title="小结"></a>小结</h2><p>RARP协议是许多无盘系统在引导时用来获取IP地址的。RARP分组格式基本上与ARP分组一致。一个RARP请求在网络上进行广播，它在分组中标明发送端的硬件地址，以请求相应IP地址的响应。应答通常是单播传送的。</p>
 <p>RARP带来的问题包括使用链路层广播，这样就阻止大多数路由器转发RARP请求，只返回很少信息：只是系统的IP地址。</p>
-<p>虽然RARP在概念上很简单，但是RARP服务器的实现却与系统相关。因此，并不是所有的TCP/IP实现都提供RARP服务器。</p>
-<h1>ICMP：Internet控制报文协议</h1>
-<h2 id="引言-v4">引言</h2>
-<blockquote>
+<p>虽然RARP在概念上很简单，但是RARP服务器的实现却与系统相关。因此，并不是所有的TCP&#x2F;IP实现都提供RARP服务器。</p>
+<h1 id="ICMP：Internet控制报文协议"><a href="#ICMP：Internet控制报文协议" class="headerlink" title="ICMP：Internet控制报文协议"></a>ICMP：Internet控制报文协议</h1><h2 id="引言-3"><a href="#引言-3" class="headerlink" title="引言"></a>引言</h2><blockquote>
 <p>ICMP（Internet Control Message Protocol）</p>
 </blockquote>
 <p>ICMP经常被认为是IP层的一个组成部分。它传递差错报文以及其他需要注意的信息。ICMP报文通常被IP层或更高层协议（TCP或UDP）使用。一些ICMP报文把差错报文返回给用户进程。</p>
 <p>ICMP报文是在IP数据报内部被传输的，如图6-1所示。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E5%B0%81%E8%A3%85%E5%9C%A8IP%E6%95%B0%E6%8D%AE%E6%8A%A5%E5%86%85%E9%83%A8.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E5%B0%81%E8%A3%85%E5%9C%A8IP%E6%95%B0%E6%8D%AE%E6%8A%A5%E5%86%85%E9%83%A8.png"></p>
 <p>ICMP报文的格式如图6-2所示。所有报文的前4个字节都是一样的，但是剩下的其他字节则互不相同。下面我们将逐个介绍各种报文格式。</p>
 <p>类型字段可以有15个不同的值，以描述特定类型的ICMP报文。某些ICMP报文还使用代码字段的值来进一步描述不同的条件。</p>
 <p>检验和字段覆盖整个ICMP报文。ICMP的检验和是必需的。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E6%8A%A5%E6%96%87.png" alt></p>
-<h2 id="ICMP报文的类型">ICMP报文的类型</h2>
-<p>各种类型的ICMP报文如图6-3所示，不同类型由报文中的类型字段和代码字段来共同决定。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E6%8A%A5%E6%96%87%E7%B1%BB%E5%9E%8B.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E6%8A%A5%E6%96%87.png"></p>
+<h2 id="ICMP报文的类型"><a href="#ICMP报文的类型" class="headerlink" title="ICMP报文的类型"></a>ICMP报文的类型</h2><p>各种类型的ICMP报文如图6-3所示，不同类型由报文中的类型字段和代码字段来共同决定。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E6%8A%A5%E6%96%87%E7%B1%BB%E5%9E%8B.png"></p>
 <p>图中的最后两列表明ICMP报文是一份查询报文还是一份差错报文。因为对ICMP差错报文有时需要作特殊处理，因此我们需要对它们进行区分。例如，在对ICMP差错报文进行响应时，永远不会生成另一份ICMP差错报文（如果没有这个限制规则，可能会遇到一个差错产生另一个差错的情况，而差错再产生差错，这样会无休止地循环下去）。</p>
 <p>当发送一份ICMP差错报文时，报文始终包含IP的首部和产生ICMP差错报文的IP数据报的前8个字节。这样，接收ICMP差错报文的模块就会把它与某个特定的协议（根据IP数据报首部中的协议字段来判断）和用户进程（根据包含在IP数据报前8个字节中的TCP或UDP报文首部中的TCP或UDP端口号来判断）联系起来。</p>
 <p>下面各种情况都不会导致产生ICMP差错报文：</p>
@@ -517,35 +480,30 @@
 <li>源地址不是单个主机的数据报。这就是说，源地址不能为零地址、环回地址、广播地址或多播地址。</li>
 </ol>
 <p>这些规则是为了防止过去允许ICMP差错报文对广播分组响应所带来的广播风暴。</p>
-<h2 id="ICMP地址掩码请求与应答">ICMP地址掩码请求与应答</h2>
-<p>ICMP地址掩码请求用于无盘系统在引导过程中获取自己的子网掩码。系统广播它的ICMP请求报文（这一过程与无盘系统在引导过程中用RARP获取IP地址是类似的）。无盘系统获取子网掩码的另一个方法是BOOTP协议。</p>
+<h2 id="ICMP地址掩码请求与应答"><a href="#ICMP地址掩码请求与应答" class="headerlink" title="ICMP地址掩码请求与应答"></a>ICMP地址掩码请求与应答</h2><p>ICMP地址掩码请求用于无盘系统在引导过程中获取自己的子网掩码。系统广播它的ICMP请求报文（这一过程与无盘系统在引导过程中用RARP获取IP地址是类似的）。无盘系统获取子网掩码的另一个方法是BOOTP协议。</p>
 <p>ICMP地址掩码请求和应答报文的格式如图6-4所示。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E5%9C%B0%E5%9D%80%E6%8E%A9%E7%A0%81%E8%AF%B7%E6%B1%82%E5%92%8C%E5%BA%94%E7%AD%94%E6%8A%A5%E6%96%87.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E5%9C%B0%E5%9D%80%E6%8E%A9%E7%A0%81%E8%AF%B7%E6%B1%82%E5%92%8C%E5%BA%94%E7%AD%94%E6%8A%A5%E6%96%87.png"></p>
 <p>ICMP报文中的标识符和序列号字段由发送端任意选择设定，这些值在应答中将被返回。这样，发送端就可以把应答与请求进行匹配。</p>
-<h1>Ping程序</h1>
-<p><strong>ping</strong><br>
-测试主机之间网络的连通性</p>
-<p><strong>补充说明</strong><br>
-ping命令 用来测试主机之间网络的连通性。执行ping指令会使用ICMP传输协议，发出要求回应的信息，若远端主机的网络功能没有问题，就会回应该信息，因而得知该主机运作正常。</p>
+<h1 id="Ping程序"><a href="#Ping程序" class="headerlink" title="Ping程序"></a>Ping程序</h1><p><strong>ping</strong><br>测试主机之间网络的连通性</p>
+<p><strong>补充说明</strong><br>ping命令 用来测试主机之间网络的连通性。执行ping指令会使用ICMP传输协议，发出要求回应的信息，若远端主机的网络功能没有问题，就会回应该信息，因而得知该主机运作正常。</p>
 <p><strong>语法</strong></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ping(选项)(参数)</span><br></pre></td></tr></table></figure>
+
 <p><strong>选项</strong></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">-d：使用Socket的SO_DEBUG功能；</span><br><span class="line">-c&lt;完成次数&gt;：设置完成要求回应的次数；</span><br><span class="line">-f：极限检测；</span><br><span class="line">-i&lt;间隔秒数&gt;：指定收发信息的间隔时间；</span><br><span class="line">-I&lt;网络界面&gt;：使用指定的网络界面送出数据包；</span><br><span class="line">-l&lt;前置载入&gt;：设置在送出要求信息之前，先行发出的数据包；</span><br><span class="line">-n：只输出数值；</span><br><span class="line">-p&lt;范本样式&gt;：设置填满数据包的范本样式；</span><br><span class="line">-q：不显示指令执行过程，开头和结尾的相关信息除外；</span><br><span class="line">-r：忽略普通的Routing Table，直接将数据包送到远端主机上；</span><br><span class="line">-R：记录路由过程；</span><br><span class="line">-s&lt;数据包大小&gt;：设置数据包的大小；</span><br><span class="line">-t&lt;存活数值&gt;：设置存活数值TTL的大小；</span><br><span class="line">-v：详细显示指令的执行过程。</span><br></pre></td></tr></table></figure>
-<p><strong>参数</strong><br>
-目的主机：指定发送ICMP报文的目的主机。</p>
-<h2 id="引言-v5">引言</h2>
-<p>“ping”这个名字源于声纳定位操作。Ping程序由MikeMuuss编写，目的是为了测试另一台主机是否可达。该程序发送一份ICMP回显请求报文给主机，并等待返回ICMP回显应答（图6-3列出了所有的ICMP报文类型）。</p>
+
+<p><strong>参数</strong><br>目的主机：指定发送ICMP报文的目的主机。</p>
+<h2 id="引言-4"><a href="#引言-4" class="headerlink" title="引言"></a>引言</h2><p>“ping”这个名字源于声纳定位操作。Ping程序由MikeMuuss编写，目的是为了测试另一台主机是否可达。该程序发送一份ICMP回显请求报文给主机，并等待返回ICMP回显应答（图6-3列出了所有的ICMP报文类型）。</p>
 <p>一般来说，如果不能Ping到某台主机，那么就不能Telnet或者FTP到那台主机。反过来，如果不能Telnet到某台主机，那么通常可以用Ping程序来确定问题出在哪里。Ping程序还能测出到这台主机的往返时间，以表明该主机离我们有“多远”。</p>
-<h2 id="Ping程序">Ping程序</h2>
-<p>我们称发送回显请求的ping程序为客户，而称被ping的主机为服务器。大多数的TCP/IP实现都在内核中直接支持Ping服务器—这种服务器不是一个用户进程。</p>
+<h2 id="Ping程序-1"><a href="#Ping程序-1" class="headerlink" title="Ping程序"></a>Ping程序</h2><p>我们称发送回显请求的ping程序为客户，而称被ping的主机为服务器。大多数的TCP&#x2F;IP实现都在内核中直接支持Ping服务器—这种服务器不是一个用户进程。</p>
 <p>ICMP回显请求和回显应答报文如图7-1所示。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E5%9B%9E%E6%98%BE%E8%AF%B7%E6%B1%82%E5%92%8C%E5%9B%9E%E6%98%BE%E5%BA%94%E7%AD%94%E6%8A%A5%E6%96%87%E6%A0%BC%E5%BC%8F.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E5%9B%9E%E6%98%BE%E8%AF%B7%E6%B1%82%E5%92%8C%E5%9B%9E%E6%98%BE%E5%BA%94%E7%AD%94%E6%8A%A5%E6%96%87%E6%A0%BC%E5%BC%8F.png"></p>
 <p>对于其他类型的ICMP查询报文，服务器必须响应标识符和序列号字段。另外，客户发送的选项数据必须回显，假设客户对这些信息都会感兴趣。</p>
 <p>Unix系统在实现ping程序时是把ICMP报文中的标识符字段置成发送进程的ID号。这样即使在同一台主机上同时运行了多个ping程序实例，ping程序也可以识别出返回的信息。</p>
 <p>序列号从0开始，每发送一次新的回显请求就加1。ping程序打印出返回的每个分组的序列号，允许我们查看是否有分组丢失、失序或重复。IP是一种最好的数据报传递服务，因此这三个条件都有可能发生。</p>
 <p>旧版本的ping程序曾经以这种模式运行，即每秒发送一个回显请求，并打印出返回的每个回显应答。但是，新版本的实现需要加上-s选项才能以这种模式运行。默认情况下，新版本的ping程序只发送一个回显请求。如果收到回显应答，则输出“host is alive”；否则，在20秒内没有收到应答就输出“no answer（没有回答）”。</p>
-<h3 id="LAN-WAN-输出">LAN/WAN 输出</h3>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# ping jiankunking.com</span><br><span class="line">PING jiankunking.com (139.199.31.69) 56(84) bytes of data.</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=1 ttl=63 time=0.336 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=2 ttl=63 time=0.288 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=3 ttl=63 time=0.295 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=4 ttl=63 time=0.295 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=5 ttl=63 time=0.323 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=6 ttl=63 time=0.324 ms</span><br><span class="line">^C 键入中断来停止显示</span><br><span class="line">--- jiankunking.com ping statistics ---</span><br><span class="line">6 packets transmitted, 6 received, 0% packet loss, time 6510ms</span><br><span class="line">rtt min/avg/max/mdev = 0.288/0.310/0.336/0.020 ms</span><br><span class="line">[jiankunking@VM_0_3_centos ~]#</span><br></pre></td></tr></table></figure>
+<h3 id="LAN-WAN-输出"><a href="#LAN-WAN-输出" class="headerlink" title="LAN&#x2F;WAN 输出"></a>LAN&#x2F;WAN 输出</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# ping jiankunking.com</span><br><span class="line">PING jiankunking.com (139.199.31.69) 56(84) bytes of data.</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=1 ttl=63 time=0.336 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=2 ttl=63 time=0.288 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=3 ttl=63 time=0.295 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=4 ttl=63 time=0.295 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=5 ttl=63 time=0.323 ms</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=6 ttl=63 time=0.324 ms</span><br><span class="line">^C 键入中断来停止显示</span><br><span class="line">--- jiankunking.com ping statistics ---</span><br><span class="line">6 packets transmitted, 6 received, 0% packet loss, time 6510ms</span><br><span class="line">rtt min/avg/max/mdev = 0.288/0.310/0.336/0.020 ms</span><br><span class="line">[jiankunking@VM_0_3_centos ~]#</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>默认情况下发送的ICMP报文有56个字节。再加上20个字节的IP首部和8个字节的ICMP首部，IP数据报的总长度为84字节。</p>
 </blockquote>
@@ -553,34 +511,28 @@ ping命令 用来测试主机之间网络的连通性。执行ping指令会使�
 <p>从上面的输出中可以看出，回显应答是以发送的次序返回的（0，1，2等）。</p>
 <p>ping程序通过在ICMP报文数据中存放发送请求的时间值来计算往返时间。当应答返回时，用当前时间减去存放在ICMP报文中的时间值，即是往返时间。</p>
 <p>通过广域网还有可能看到重复的分组（即相同序列号的分组被打印两次或更多次），失序的分组（序列号为N + 1的分组在序列号为N的分组之前被打印）。</p>
-<h2 id="IP记录路由选项">IP记录路由选项</h2>
-<p>ping程序为我们提供了查看IP记录路由（RR）选项的机会。大多数不同版本的ping程序都提供-R选项，以提供记录路由的功能。它使得ping程序在发送出去的IP数据报中设置IP RR选项（该IP数据报包含ICMP回显请求报文）。这样，每个处理该数据报的路由器都把它的IP地址放入选项字段中。当数据报到达目的端时，IP地址清单应该复制到ICMP回显应答中，这样返回途中所经过的路由器地址也被加入清单中。当ping程序收到回显应答时，它就打印出这份IP地址清单。</p>
+<h2 id="IP记录路由选项"><a href="#IP记录路由选项" class="headerlink" title="IP记录路由选项"></a>IP记录路由选项</h2><p>ping程序为我们提供了查看IP记录路由（RR）选项的机会。大多数不同版本的ping程序都提供-R选项，以提供记录路由的功能。它使得ping程序在发送出去的IP数据报中设置IP RR选项（该IP数据报包含ICMP回显请求报文）。这样，每个处理该数据报的路由器都把它的IP地址放入选项字段中。当数据报到达目的端时，IP地址清单应该复制到ICMP回显应答中，这样返回途中所经过的路由器地址也被加入清单中。当ping程序收到回显应答时，它就打印出这份IP地址清单。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# ping -R jiankunking.com</span><br><span class="line">PING jiankunking.com (139.199.31.69) 56(124) bytes of data.</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=1 ttl=63 time=13.3 ms</span><br><span class="line">RR: 	VM_0_3_centos (172.21.0.3)</span><br><span class="line">	10.53.209.129 (10.53.209.129)</span><br><span class="line">	VM_0_3_centos (172.21.0.3)</span><br><span class="line">	VM_0_3_centos (172.21.0.3)</span><br><span class="line">	10.53.209.130 (10.53.209.130)</span><br><span class="line">	VM_0_3_centos (172.21.0.3)</span><br><span class="line"></span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=2 ttl=63 time=4.91 ms	(same route)</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=3 ttl=63 time=6.81 ms	(same route)</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=4 ttl=63 time=5.03 ms	(same route)</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=5 ttl=63 time=4.59 ms	(same route)</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=6 ttl=63 time=4.77 ms	(same route)</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=7 ttl=63 time=5.18 ms	(same route)</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=8 ttl=63 time=3.69 ms	(same route)</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=9 ttl=63 time=4.24 ms	(same route)</span><br><span class="line">64 bytes from 139.199.31.69 (139.199.31.69): icmp_seq=10 ttl=63 time=5.43 ms	(same route)</span><br><span class="line">^C</span><br><span class="line">--- jiankunking.com ping statistics ---</span><br><span class="line">11 packets transmitted, 11 received, 0% packet loss, time 10015ms</span><br><span class="line">rtt min/avg/max/mdev = 3.697/5.696/13.385/2.545 ms</span><br><span class="line">[jiankunking@VM_0_3_centos ~]#</span><br></pre></td></tr></table></figure>
+
 <p>但是，最大的问题是IP首部中只有有限的空间来存放IP地址。我们从图3-1可以看到，IP首部中的首部长度字段只有4bit，因此整个IP首部最长只能包括15个32bit长的字（即60个字节）。由于IP首部固定长度为20字节，RR选项用去3个字节（下面我们再讨论），这样只剩下37个字节（60-20-3）来存放IP地址清单，也就是说只能存放9个IP地址。对于早期的ARPANET来说，9个IP地址似乎是很多了，但是现在看来是非常有限的。除了这些缺点，记录路由选项工作得很好，为详细查看如何处理IP选项提供了一个机会。</p>
 <p>IP数据报中的RR选项的一般格式如图7-3所示。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/IP%E9%A6%96%E9%83%A8%E4%B8%AD%E7%9A%84%E8%AE%B0%E5%BD%95%E8%B7%AF%E7%94%B1%E9%80%89%E9%A1%B9%E7%9A%84%E4%B8%80%E8%88%AC%E6%A0%BC%E5%BC%8F.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/IP%E9%A6%96%E9%83%A8%E4%B8%AD%E7%9A%84%E8%AE%B0%E5%BD%95%E8%B7%AF%E7%94%B1%E9%80%89%E9%A1%B9%E7%9A%84%E4%B8%80%E8%88%AC%E6%A0%BC%E5%BC%8F.png"></p>
 <p>code是一个字节，指明IP选项的类型。对于RR选项来说，它的值为7。len是RR选项总字节长度，在这种情况下为39（尽管可以为RR选项设置比最大长度小的长度，但是ping程序是提供39字节的选项字段，最多可以记录9个IP地址。由于IP首部中留给选项的空间有限，它一般情况都设置成最大长度）。</p>
 <p>ptr称作指针字段。它是一个基于1的指针，指向存放下一个IP地址的位置。它的最小值为4，指向存放第一个IP地址的位置。随着每个IP地址存入清单，ptr的值分别为8，12，16，最大到36。当记录下9个IP地址后，ptr的值为40，表示清单已满。</p>
 <p>当路由器（根据定义应该是多穴的）在清单中记录IP地址时，它应该记录哪个地址呢？是入口地址还是出口地址？为此，RFC791[Postel1981a]指定路由器记录出口IP地址。我们在后面将看到，当原始主机（运行ping程序的主机）收到带有RR选项的ICMP回显应答时，它也要把它的入口IP地址放入清单中。</p>
-<h2 id="小结-v4">小结</h2>
-<p>ping程序是对两个TCP/IP系统连通性进行测试的基本工具。它只利用ICMP回显请求和回显应答报文，而不用经过传输层（TCP/UDP）。Ping服务器一般在内核中实现ICMP的功能。</p>
-<h1>Traceroute程序</h1>
-<p><strong>traceroute</strong><br>
-显示数据包到主机间的路径</p>
-<p><strong>补充说明</strong><br>
-traceroute命令 用于追踪数据包在网络上的传输时的全部路径，它默认发送的数据包大小是40字节。</p>
+<h2 id="小结-3"><a href="#小结-3" class="headerlink" title="小结"></a>小结</h2><p>ping程序是对两个TCP&#x2F;IP系统连通性进行测试的基本工具。它只利用ICMP回显请求和回显应答报文，而不用经过传输层（TCP&#x2F;UDP）。Ping服务器一般在内核中实现ICMP的功能。</p>
+<h1 id="Traceroute程序"><a href="#Traceroute程序" class="headerlink" title="Traceroute程序"></a>Traceroute程序</h1><p><strong>traceroute</strong><br>显示数据包到主机间的路径</p>
+<p><strong>补充说明</strong><br>traceroute命令 用于追踪数据包在网络上的传输时的全部路径，它默认发送的数据包大小是40字节。</p>
 <p>通过traceroute我们可以知道信息从你的计算机到互联网另一端的主机是走的什么路径。当然每次数据包由某一同样的出发点（source）到达某一同样的目的地(destination)走的路径可能会不一样，但基本上来说大部分时候所走的路由是相同的。</p>
-<p>traceroute通过发送小的数据包到目的设备直到其返回，来测量其需要多长时间。一条路径上的每个设备traceroute要测3次。输出结果中包括每次测试的时间(ms)和设备的名称（如有的话）及其ip地址。<br>
-<strong>语法</strong></p>
+<p>traceroute通过发送小的数据包到目的设备直到其返回，来测量其需要多长时间。一条路径上的每个设备traceroute要测3次。输出结果中包括每次测试的时间(ms)和设备的名称（如有的话）及其ip地址。<br><strong>语法</strong></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">traceroute(选项)(参数)</span><br></pre></td></tr></table></figure>
+
 <p><strong>选项</strong></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">-d：使用Socket层级的排错功能；</span><br><span class="line">-f&lt;存活数值&gt;：设置第一个检测数据包的存活数值TTL的大小；</span><br><span class="line">-F：设置勿离断位；</span><br><span class="line">-g&lt;网关&gt;：设置来源路由网关，最多可设置8个；</span><br><span class="line">-i&lt;网络界面&gt;：使用指定的网络界面送出数据包；</span><br><span class="line">-I：使用ICMP回应取代UDP资料信息；</span><br><span class="line">-m&lt;存活数值&gt;：设置检测数据包的最大存活数值TTL的大小；</span><br><span class="line">-n：直接使用IP地址而非主机名称；</span><br><span class="line">-p&lt;通信端口&gt;：设置UDP传输协议的通信端口；</span><br><span class="line">-r：忽略普通的Routing Table，直接将数据包送到远端主机上。</span><br><span class="line">-s&lt;来源地址&gt;：设置本地主机送出数据包的IP地址；</span><br><span class="line">-t&lt;服务类型&gt;：设置检测数据包的TOS数值；</span><br><span class="line">-v：详细显示指令的执行过程；</span><br><span class="line">-w&lt;超时秒数&gt;：设置等待远端主机回报的时间；</span><br><span class="line">-x：开启或关闭数据包的正确性检验。</span><br></pre></td></tr></table></figure>
-<p><strong>参数</strong><br>
-主机：指定目的主机IP地址或主机名。</p>
-<h2 id="引言-v6">引言</h2>
-<p>Traceroute程序可以让我们看到IP数据报从一台主机传到另一台主机所经过的路由。</p>
-<h2 id="Traceroute程序的操作">Traceroute程序的操作</h2>
-<p>在上节中，我们描述了IP记录路由选项（RR）。为什么不使用这个选项而另外开发一个新的应用程序？有三个方面的原因。首先，原先并不是所有的路由器都支持记录路由选项，因此该选项在某些路径上不能使用（Traceroute程序不需要中间路由器具备任何特殊的或可选的功能）。</p>
+
+<p><strong>参数</strong><br>主机：指定目的主机IP地址或主机名。</p>
+<h2 id="引言-5"><a href="#引言-5" class="headerlink" title="引言"></a>引言</h2><p>Traceroute程序可以让我们看到IP数据报从一台主机传到另一台主机所经过的路由。</p>
+<h2 id="Traceroute程序的操作"><a href="#Traceroute程序的操作" class="headerlink" title="Traceroute程序的操作"></a>Traceroute程序的操作</h2><p>在上节中，我们描述了IP记录路由选项（RR）。为什么不使用这个选项而另外开发一个新的应用程序？有三个方面的原因。首先，原先并不是所有的路由器都支持记录路由选项，因此该选项在某些路径上不能使用（Traceroute程序不需要中间路由器具备任何特殊的或可选的功能）。</p>
 <p>其次，记录路由一般是单向的选项。发送端设置了该选项，那么接收端不得不从收到的IP首部中提取出所有的信息，然后全部返回给发送端。在上节中，我们看到大多数Ping服务器的实现（内核中的ICMP回显应答功能）把接收到的RR清单返回，但是这样使得记录下来的IP地址翻了一番（一来一回）。这样做会受到一些限制，这一点我们在下一段讨论（Traceroute程序只需要目的端运行一个UDP模块—其他不需要任何特殊的服务器应用程序）。</p>
 <p>最后一个原因也是最主要的原因是，IP首部中留给选项的空间有限，不能存放当前大多数的路径。在IP首部选项字段中最多只能存放9个IP地址。在原先的ARPANET中这是足够的，但是对现在来说是远远不够的。</p>
 <p>Traceroute程序使用ICMP报文和IP首部中的TTL字段（生存周期）。TTL字段是由发送端初始设置一个8bit字段。推荐的初始值由分配数字RFC指定，当前值为64。较老版本的系统经常初始化为15或32。我们从第7章中的一些ping程序例子中可以看出，发送ICMP回显应答时经常把TTL设为最大值255。</p>
@@ -593,28 +545,24 @@ traceroute命令 用于追踪数据包在网络上的传输时的全部路径，
 <p><font color="DeepPink"><strong>我们现在可以猜想一下Traceroute程序的操作过程。它发送一份TTL字段为1的IP数据报给目的主机。处理这份数据报的第一个路由器将TTL值减1，丢弃该数据报，并发回一份超时ICMP报文。这样就得到了该路径中的第一个路由器的地址。然后Traceroute程序发送一份TTL值为2的数据报，这样我们就可以得到第二个路由器的地址。继续这个过程直至该数据报到达目的主机。但是目的主机哪怕接收到TTL值为1的IP数据报，也不会丢弃该数据报并产生一份超时ICMP报文，这是因为数据报已经到达其最终目的地。那么我们该如何判断是否已经到达目的主机了呢？</strong></font></p>
 <p><font color="DeepPink"><strong>Traceroute程序发送一份UDP数据报给目的主机，但它选择一个不可能的值作为UDP端口号（大于30000），使目的主机的任何一个应用程序都不可能使用该端口。因为，当该数据报到达时，将使目的主机的UDP模块产生一份“端口不可达”错误的ICMP报文。这样，Traceroute程序所要做的就是区分接收到的ICMP报文是超时还是端口不可达，以判断什么时候结束。</strong></font></p>
 <blockquote>
-<p>Traceroute程序必须可以为发送的数据报设置TTL字段。并非所有与TCP/IP接口的程序都支持这项功能，同时并非所有的实现都支持这项能力，但目前大部分系统都支持这项功能，并可以运行Traceroute程序。这个程序界面通常要求用户具有超级用户权限，这意味着它可能需要特殊的权限以在你的主机上运行该程序。</p>
+<p>Traceroute程序必须可以为发送的数据报设置TTL字段。并非所有与TCP&#x2F;IP接口的程序都支持这项功能，同时并非所有的实现都支持这项能力，但目前大部分系统都支持这项功能，并可以运行Traceroute程序。这个程序界面通常要求用户具有超级用户权限，这意味着它可能需要特殊的权限以在你的主机上运行该程序。</p>
 </blockquote>
-<h2 id="IP源站选路选项">IP源站选路选项</h2>
-<p>通常IP路由是动态的，即每个路由器都要判断数据报下面该转发到哪个路由器。应用程序对此不进行控制，而且通常也并不关心路由。它采用类似Traceroute程序的工具来发现实际的路由。</p>
+<h2 id="IP源站选路选项"><a href="#IP源站选路选项" class="headerlink" title="IP源站选路选项"></a>IP源站选路选项</h2><p>通常IP路由是动态的，即每个路由器都要判断数据报下面该转发到哪个路由器。应用程序对此不进行控制，而且通常也并不关心路由。它采用类似Traceroute程序的工具来发现实际的路由。</p>
 <p>源站选路(source routing)的思想是由发送者指定路由。它可以采用以下两种形式：</p>
 <ul>
 <li>严格的源路由选择。发送端指明IP数据报所必须采用的确切路由。如果一个路由器发现源路由所指定的下一个路由器不在其直接连接的网络上，那么它就返回一个“源站路由失败”的ICMP差错报文。</li>
 <li>宽松的源站选路。发送端指明了一个数据报经过的IP地址清单，但是数据报在清单上指明的任意两个地址之间可以通过其他路由器。</li>
 </ul>
-<h1>IP选路</h1>
-<h2 id="引言-v7">引言</h2>
-<p>选路是IP最重要的功能之一。需要进行选路的数据报可以由本地主机产生，也可以由其他主机产生。在后一种情况下，主机必须配置成一个路由器，否则通过网络接口接收到的数据报，如果目的地址不是本机就要被丢弃（例如，悄无声息地被丢弃）。</p>
-<p><strong>netstat</strong><br>
-查看Linux中网络系统状态信息。</p>
-<p><strong>补充说明</strong><br>
-netstat命令 用来打印Linux中网络系统的状态信息，可让你得知整个Linux系统的网络情况。</p>
+<h1 id="IP选路"><a href="#IP选路" class="headerlink" title="IP选路"></a>IP选路</h1><h2 id="引言-6"><a href="#引言-6" class="headerlink" title="引言"></a>引言</h2><p>选路是IP最重要的功能之一。需要进行选路的数据报可以由本地主机产生，也可以由其他主机产生。在后一种情况下，主机必须配置成一个路由器，否则通过网络接口接收到的数据报，如果目的地址不是本机就要被丢弃（例如，悄无声息地被丢弃）。</p>
+<p><strong>netstat</strong><br>查看Linux中网络系统状态信息。</p>
+<p><strong>补充说明</strong><br>netstat命令 用来打印Linux中网络系统的状态信息，可让你得知整个Linux系统的网络情况。</p>
 <p><strong>语法</strong></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat(选项)</span><br></pre></td></tr></table></figure>
+
 <p><strong>选项</strong></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">-a或--all：显示所有连线中的Socket；</span><br><span class="line">-A&lt;网络类型&gt;或--&lt;网络类型&gt;：列出该网络类型连线中的相关地址；</span><br><span class="line">-c或--continuous：持续列出网络状态；</span><br><span class="line">-C或--cache：显示路由器配置的快取信息；</span><br><span class="line">-e或--extend：显示网络其他相关信息；</span><br><span class="line">-F或--fib：显示FIB；</span><br><span class="line">-g或--groups：显示多重广播功能群组组员名单；</span><br><span class="line">-h或--help：在线帮助；</span><br><span class="line">-i或--interfaces：显示网络界面信息表单；</span><br><span class="line">-l或--listening：显示监控中的服务器的Socket；</span><br><span class="line">-M或--masquerade：显示伪装的网络连线；</span><br><span class="line">-n或--numeric：直接使用ip地址，而不通过域名服务器；</span><br><span class="line">-N或--netlink或--symbolic：显示网络硬件外围设备的符号连接名称；</span><br><span class="line">-o或--timers：显示计时器；</span><br><span class="line">-p或--programs：显示正在使用Socket的程序识别码和程序名称；</span><br><span class="line">-r或--route：显示Routing Table；</span><br><span class="line">-s或--statistice：显示网络工作信息统计表；</span><br><span class="line">-t或--tcp：显示TCP传输协议的连线状况；</span><br><span class="line">-u或--udp：显示UDP传输协议的连线状况；</span><br><span class="line">-v或--verbose：显示指令执行过程；</span><br><span class="line">-V或--version：显示版本信息；</span><br><span class="line">-w或--raw：显示RAW传输协议的连线状况；</span><br><span class="line">-x或--unix：此参数的效果和指定&quot;-A unix&quot;参数相同；</span><br><span class="line">--ip或--inet：此参数的效果和指定&quot;-A inet&quot;参数相同。</span><br></pre></td></tr></table></figure>
-<h2 id="选路的原理">选路的原理</h2>
-<p>开始讨论IP选路之前，首先要理解内核是如何维护路由表的。路由表中包含的信息决定了IP层所做的所有决策。</p>
+
+<h2 id="选路的原理"><a href="#选路的原理" class="headerlink" title="选路的原理"></a>选路的原理</h2><p>开始讨论IP选路之前，首先要理解内核是如何维护路由表的。路由表中包含的信息决定了IP层所做的所有决策。</p>
 <p>IP搜索路由表的几个步骤：</p>
 <ol>
 <li>搜索匹配的主机地址；</li>
@@ -623,9 +571,9 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 </ol>
 <p>匹配主机地址步骤始终发生在匹配网络地址步骤之前。</p>
 <p>IP层进行的选路实际上是一种选路机制，它搜索路由表并决定向哪个网络接口发送分组。这区别于选路策略，它只是一组决定把哪些路由放入路由表的规则。IP执行选路机制，而路由守护程序则一般提供选路策略。</p>
-<h3 id="简单路由表">简单路由表</h3>
-<p>首先来看一看一些典型的主机路由表。在主机上，我们先执行带-r选项的netstat命令列出路由表，然后以-n选项再次执行该命令，以数字格式打印出IP地址。</p>
+<h3 id="简单路由表"><a href="#简单路由表" class="headerlink" title="简单路由表"></a>简单路由表</h3><p>首先来看一看一些典型的主机路由表。在主机上，我们先执行带-r选项的netstat命令列出路由表，然后以-n选项再次执行该命令，以数字格式打印出IP地址。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[jiankunking@VM_0_3_centos ~]# netstat -rn</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface</span><br><span class="line">0.0.0.0         172.21.0.1      0.0.0.0         UG        0 0          0 eth0</span><br><span class="line">169.254.0.0     0.0.0.0         255.255.0.0     U         0 0          0 eth0</span><br><span class="line">172.17.0.0      0.0.0.0         255.255.0.0     U         0 0          0 docker0</span><br><span class="line">172.21.0.0      0.0.0.0         255.255.240.0   U         0 0          0 eth0</span><br><span class="line">[jiankunking@VM_0_3_centos ~]#</span><br></pre></td></tr></table></figure>
+
 <p>对于一个给定的路由器，可以打印出五种不同的标志（flag）：</p>
 <table>
 <thead>
@@ -634,8 +582,7 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 <th>解释</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>U</td>
 <td>该路由可以使用。</td>
 </tr>
@@ -655,37 +602,29 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 <td>M</td>
 <td>该路由已被重定向报文修改。</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>标志G是非常重要的，因为由它区分了间接路由和直接路由（对于直接路由来说是不设置标志G的）。其区别在于，发往直接路由的分组中不但具有指明目的端的IP地址，还具有其链路层地址。当分组被发往一个间接路由时，IP地址指明的是最终的目的地，但是链路层地址指明的是网关（即下一站路由器）。</p>
 <p>理解G和H标志之间的区别是很重要的。G标志区分了直接路由和间接路由，如上所述。但是H标志表明，目的地址（netstat命令输出第一行）是一个完整的主机地址。没有设置H标志说明目的地址是一个网络地址（主机号部分为0）。当为某个目的IP地址搜索路由表时，主机地址项必须与目的地址完全匹配，而网络地址项只需要匹配目的地址的网络号和子网号就可以了。另外，大多数版本的netstat命令首先打印出所有的主机路由表项，然后才是网络路由表项。</p>
-<h2 id="ICMP主机与网络不可达差错">ICMP主机与网络不可达差错</h2>
-<p>当路由器收到一份IP数据报但又不能转发时，就要发送一份ICMP“主机不可达”差错报文。</p>
-<h2 id="ICMP重定向差错">ICMP重定向差错</h2>
-<p>当IP数据报应该被发送到另一个路由器时，收到数据报的路由器就要发送ICMP重定向差错报文给IP数据报的发送端。这在概念上是很简单的，正如图9-3所示的那样。只有当主机可以选择路由器发送分组的情况下，我们才可能看到ICMP重定向报文。</p>
+<h2 id="ICMP主机与网络不可达差错"><a href="#ICMP主机与网络不可达差错" class="headerlink" title="ICMP主机与网络不可达差错"></a>ICMP主机与网络不可达差错</h2><p>当路由器收到一份IP数据报但又不能转发时，就要发送一份ICMP“主机不可达”差错报文。</p>
+<h2 id="ICMP重定向差错"><a href="#ICMP重定向差错" class="headerlink" title="ICMP重定向差错"></a>ICMP重定向差错</h2><p>当IP数据报应该被发送到另一个路由器时，收到数据报的路由器就要发送ICMP重定向差错报文给IP数据报的发送端。这在概念上是很简单的，正如图9-3所示的那样。只有当主机可以选择路由器发送分组的情况下，我们才可能看到ICMP重定向报文。</p>
 <ol>
 <li>我们假定主机发送一份IP数据报给R1。这种选路决策经常发生，因为R1是该主机的默认路由。</li>
 <li>R1收到数据报并且检查它的路由表，发现R2是发送该数据报的下一站。当它把数据报发送给R2时，R1检测到它正在发送的接口与数据报到达接口是相同的（即主机和两个路由器所在的LAN）。这样就给路由器发送重定向报文给原始发送端提供了线索。</li>
 <li>R1发送一份ICMP重定向报文给主机，告诉它以后把数据报发送给R2而不是R1。</li>
 </ol>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E9%87%8D%E5%AE%9A%E5%90%91%E7%9A%84%E4%BE%8B%E5%AD%90.png" alt></p>
-<p>重定向一般用来让具有很少选路信息的主机逐渐建立更完善的路由表。主机启动时路由表中可以只有一个默认表项（在图9-3所示的例子中，为R1或R2）。一旦默认路由发生差错，默认路由器将通知它进行重定向，并允许主机对路由表作相应的改动。ICMP重定向允许TCP/IP主机在进行选路时不需要具备智能特性，而把所有的智能特性放在路由器端。</p>
-<h2 id="小结-v5">小结</h2>
-<p>系统产生的或转发的每份IP数据报都要搜索路由表，它可以被路由守护程序或ICMP重定向报文修改。系统在默认情况下不转发数据报，除非进行特殊的配置。用route命令可以进入静态路由，可以利用新ICMP路由器发现报文来初始化默认表项，并进行动态修改。主机在启动时只有一个简单的路由表，它可以被来自默认路由器的ICMP重定向报文动态修改。</p>
-<h1>动态选路协议</h1>
-<p>在前面各章中，我们讨论了静态选路。在配置接口时，以默认方式生成路由表项（对于直接连接的接口），并通过route命令增加表项（通常从系统自引导程序文件），或是通过ICMP重定向生成表项（通常是在默认方式出错的情况下）。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/ICMP%E9%87%8D%E5%AE%9A%E5%90%91%E7%9A%84%E4%BE%8B%E5%AD%90.png"></p>
+<p>重定向一般用来让具有很少选路信息的主机逐渐建立更完善的路由表。主机启动时路由表中可以只有一个默认表项（在图9-3所示的例子中，为R1或R2）。一旦默认路由发生差错，默认路由器将通知它进行重定向，并允许主机对路由表作相应的改动。ICMP重定向允许TCP&#x2F;IP主机在进行选路时不需要具备智能特性，而把所有的智能特性放在路由器端。</p>
+<h2 id="小结-4"><a href="#小结-4" class="headerlink" title="小结"></a>小结</h2><p>系统产生的或转发的每份IP数据报都要搜索路由表，它可以被路由守护程序或ICMP重定向报文修改。系统在默认情况下不转发数据报，除非进行特殊的配置。用route命令可以进入静态路由，可以利用新ICMP路由器发现报文来初始化默认表项，并进行动态修改。主机在启动时只有一个简单的路由表，它可以被来自默认路由器的ICMP重定向报文动态修改。</p>
+<h1 id="动态选路协议"><a href="#动态选路协议" class="headerlink" title="动态选路协议"></a>动态选路协议</h1><p>在前面各章中，我们讨论了静态选路。在配置接口时，以默认方式生成路由表项（对于直接连接的接口），并通过route命令增加表项（通常从系统自引导程序文件），或是通过ICMP重定向生成表项（通常是在默认方式出错的情况下）。</p>
 <p>在网络很小，且与其他网络只有单个连接点且没有多余路由时（若主路由失败，可以使用备用路由），采用这种方法是可行的。如果上述三种情况不能全部满足，通常使用动态选路。</p>
-<h2 id="动态选路">动态选路</h2>
-<p>当相邻路由器之间进行通信，以告知对方每个路由器当前所连接的网络，这时就出现了动态选路。路由器之间必须采用选路协议进行通信，这样的选路协议有很多种。路由器上有一个进程称为路由守护程序（ routing daemon），它运行选路协议，并与其相邻的一些路由器进行通信。</p>
+<h2 id="动态选路"><a href="#动态选路" class="headerlink" title="动态选路"></a>动态选路</h2><p>当相邻路由器之间进行通信，以告知对方每个路由器当前所连接的网络，这时就出现了动态选路。路由器之间必须采用选路协议进行通信，这样的选路协议有很多种。路由器上有一个进程称为路由守护程序（ routing daemon），它运行选路协议，并与其相邻的一些路由器进行通信。</p>
 <p>路由守护程序将选路策略（routing policy）加入到系统中，选择路由并加入到内核的路由表中。如果守护程序发现前往同一信宿存在多条路由，那么它（以某种方法）将选择最佳路由并加入内核路由表中。如果路由守护程序发现一条链路已经断开（可能是路由器崩溃或电话线路不好），它可以删除受影响的路由或增加另一条路由以绕过该问题。</p>
 <p>在像Internet这样的系统中，目前采用了许多不同的选路协议。Internet是以一组自治系统(AS，Autonomous System)的方式组织的，每个自治系统通常由单个实体管理。常常将一个公司或大学校园定义为一个自治系统。NSFNET的Internet骨干网形成一个自治系统，这是因为骨干网中的所有路由器都在单个的管理控制之下。</p>
 <p>每个自治系统可以选择该自治系统中各个路由器之间的选路协议。这种协议我们称之为内部网关协议IGP（Interior Gateway Protocol）或域内选路协议（intradomain routing protocol）。最常用的IGP是选路信息协议RIP。一种新的IGP是开放最短路径优先OSPF（Open Shortest PathFirst）协议。它意在取代RIP。</p>
 <blockquote>
 <p>新的RFC[Almquist 1993]规定，实现任何动态选路协议的路由器必须同时支持OSPF和RIP，还可以支持其他IGP协议。</p>
 </blockquote>
-<h2 id="RIP：选路信息协议">RIP：选路信息协议</h2>
-<h3 id="正常运行">正常运行</h3>
-<p>让我们来看一下采用RIP协议的routed程序正常运行的结果。RIP常用的UDP端口号是520。</p>
+<h2 id="RIP：选路信息协议"><a href="#RIP：选路信息协议" class="headerlink" title="RIP：选路信息协议"></a>RIP：选路信息协议</h2><h3 id="正常运行"><a href="#正常运行" class="headerlink" title="正常运行"></a>正常运行</h3><p>让我们来看一下采用RIP协议的routed程序正常运行的结果。RIP常用的UDP端口号是520。</p>
 <ul>
 <li>初始化：在启动一个路由守护程序时，它先判断启动了哪些接口，并在每个接口上发送一个请求报文，要求其他路由器发送完整路由表。在点对点链路中，该请求是发送给其他终点的。如果网络支持广播的话，这种请求是以广播形式发送的。目的UDP端口号是520（这是其他路由器的路由守护程序端口号）。这种请求报文的命令字段为1，但地址系列字段设置为0，而度量字段设置为16。这是一种要求另一端完整路由表的特殊请求报文。</li>
 <li>接收到请求。如果这个请求是刚才提到的特殊请求，那么路由器就将完整的路由表发送给请求者。否则，就处理请求中的每一个表项：如果有连接到指明地址的路由，则将度量设置成我们的值，否则将度量置为16（度量为16是一种称为“无穷大”的特殊值，它意味着没有到达目的的路由）。然后发回响应。</li>
@@ -694,15 +633,13 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 <li>触发更新。每当一条路由的度量发生变化时，就对它进行更新。不需要发送完整路由表，而只需要发送那些发生变化的表项。</li>
 </ul>
 <p><font color="DeepPink"><strong>每条路由都有与之相关的定时器。如果运行RIP的系统发现一条路由在3分钟内未更新，就将该路由的度量设置成无穷大（16），并标注为删除。这意味着已经在6个30秒更新时间里没收到通告该路由的路由器的更新了。再过60秒，将从本地路由表中删除该路由，以保证该路由的失效已被传播开。</strong></font></p>
-<h3 id="度量">度量</h3>
-<p>RIP所使用的度量是以跳(hop)计算的。所有直接连接接口的跳数为1。考虑图10-4所示的路由器和网络。画出的4条虚线是广播RIP报文。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E8%B7%AF%E7%94%B1%E5%99%A8%E5%92%8C%E7%BD%91%E7%BB%9C%E7%A4%BA%E4%BE%8B.png" alt></p>
+<h3 id="度量"><a href="#度量" class="headerlink" title="度量"></a>度量</h3><p>RIP所使用的度量是以跳(hop)计算的。所有直接连接接口的跳数为1。考虑图10-4所示的路由器和网络。画出的4条虚线是广播RIP报文。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E8%B7%AF%E7%94%B1%E5%99%A8%E5%92%8C%E7%BD%91%E7%BB%9C%E7%A4%BA%E4%BE%8B.png"></p>
 <p>路由器R1通过发送广播到N1通告它与N2之间的跳数是1（发送给N1的广播中通告它与N1之间的路由是无用的）。同时也通过发送广播给N2通告它与N1之间的跳数为1。同样，R2通告它与N2的度量为1，与N3的度量为1。</p>
 <p>如果相邻路由器通告它与其他网络路由的跳数为1，那么我们与那个网络的度量就是2，这是因为为了发送报文到该网络，我们必须经过那个路由器。在我们的例子中，R2到N1的度量是2，与R1到N3的度量一样。</p>
 <p>由于每个路由器都发送其路由表给邻站，因此，可以判断在同一个自治系统AS内到每个网络的路由。如果在该AS内从一个路由器到一个网络有多条路由，那么路由器将选择跳数最小的路由，而忽略其他路由。</p>
 <p>跳数的最大值是15，这意味着RIP只能用在主机间最大跳数值为15的AS内。度量为16表示到无路由到达该IP地址。</p>
-<h2 id="OSPF：开放最短路径优先">OSPF：开放最短路径优先</h2>
-<p>OSPF是除RIP外的另一个内部网关协议。它克服了RIP的所有限制。RFC1247[Moy 1991]中对第2版OSPF进行了描述。</p>
+<h2 id="OSPF：开放最短路径优先"><a href="#OSPF：开放最短路径优先" class="headerlink" title="OSPF：开放最短路径优先"></a>OSPF：开放最短路径优先</h2><p>OSPF是除RIP外的另一个内部网关协议。它克服了RIP的所有限制。RFC1247[Moy 1991]中对第2版OSPF进行了描述。</p>
 <p>与采用距离向量的RIP协议不同的是，OSPF是一个链路状态协议。距离向量的意思是，RIP发送的报文包含一个距离向量（跳数）。每个路由器都根据它所接收到邻站的这些距离向量来更新自己的路由表。</p>
 <p>在一个链路状态协议中，路由器并不与其邻站交换距离信息。它采用的是每个路由器主动地测试与其邻站相连链路的状态，将这些信息发送给它的其他邻站，而邻站将这些信息在自治系统中传播出去。每个路由器接收这些链路状态信息，并建立起完整的路由表。</p>
 <p>从实际角度来看，二者的不同点是链路状态协议总是比距离向量协议收敛更快。收敛的意思是在路由发生变化后，例如在路由器关闭或链路出故障后，可以稳定下来。</p>
@@ -718,8 +655,7 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 <li>OSPF采用多播，而不是广播形式，以减少不参与OSPF的系统负载。</li>
 </ol>
 <p>随着大部分厂商支持OSPF，在很多网络中OSPF将逐步取代RIP。</p>
-<h2 id="BGP：边界网关协议">BGP：边界网关协议</h2>
-<p>BGP系统与其他BGP系统之间交换网络可到达信息。这些信息包括数据到达这些网络所必须经过的自治系统AS中的所有路径。这些信息足以构造一幅自治系统连接图。然后，可以根据连接图删除选路环，制订选路策略。</p>
+<h2 id="BGP：边界网关协议"><a href="#BGP：边界网关协议" class="headerlink" title="BGP：边界网关协议"></a>BGP：边界网关协议</h2><p>BGP系统与其他BGP系统之间交换网络可到达信息。这些信息包括数据到达这些网络所必须经过的自治系统AS中的所有路径。这些信息足以构造一幅自治系统连接图。然后，可以根据连接图删除选路环，制订选路策略。</p>
 <p>首先，我们将一个自治系统中的IP数据报分成本地流量和通过流量。在自治系统中，本地流量是起始或终止于该自治系统的流量。也就是说，其信源IP地址或信宿IP地址所指定的主机位于该自治系统中。其他的流量则称为通过流量。在Internet中使用BGP的一个目的就是减少通过流量。</p>
 <p>可以将自治系统分为以下几种类型：</p>
 <ol>
@@ -732,8 +668,7 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 <p>BGP与RIP和OSPF的不同之处在于BGP使用TCP作为其传输层协议。两个运行BGP的系统之间建立一条TCP连接，然后交换整个BGP路由表。从这个时候开始，在路由表发生变化时，再发送更新信号。</p>
 <p>BGP是一个距离向量协议，但是与（通告到目的地址跳数的）RIP不同的是，BGP列举了到每个目的地址的路由（自治系统到达目的地址的序列号）。这样就排除了一些距离向量协议的问题。采用16bit数字表示自治系统标识。</p>
 <p>BGP通过定期发送keepalive报文给其邻站来检测TCP连接对端的链路或主机失败。两个报文之间的时间间隔建议值为30秒。应用层的keepalive报文与TCP的keepalive选项是独立的。</p>
-<h2 id="CIDR：无类型域间选路">CIDR：无类型域间选路</h2>
-<p>CIDR的基本观点是采用一种分配多个IP地址的方式，使其能够将路由表中的许多表项总和(summarization)成更少的数目。例如，如果给单个站点分配16个C类地址，以一种可以用总和的方式来分配这16个地址，这样，所有这16个地址可以参照Internet上的单个路由表表项。同时，如果有8个不同的站点是通过同一个Internet服务提供商的同一个连接点接入Internet的，且这8个站点分配的8个不同IP地址可以进行总和，那么，对于这8个站点，在Internet上，只需要单个路由表表项。</p>
+<h2 id="CIDR：无类型域间选路"><a href="#CIDR：无类型域间选路" class="headerlink" title="CIDR：无类型域间选路"></a>CIDR：无类型域间选路</h2><p>CIDR的基本观点是采用一种分配多个IP地址的方式，使其能够将路由表中的许多表项总和(summarization)成更少的数目。例如，如果给单个站点分配16个C类地址，以一种可以用总和的方式来分配这16个地址，这样，所有这16个地址可以参照Internet上的单个路由表表项。同时，如果有8个不同的站点是通过同一个Internet服务提供商的同一个连接点接入Internet的，且这8个站点分配的8个不同IP地址可以进行总和，那么，对于这8个站点，在Internet上，只需要单个路由表表项。</p>
 <p>要使用这种总和，必须满足以下三种特性：</p>
 <ol>
 <li>为进行选路要对多个IP地址进行总和时，这些IP地址必须具有相同的高位地址比特。</li>
@@ -741,24 +676,19 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 <li>必须扩展选路协议使其除了32 bit地址外，还要有32 bit掩码。OSPF和RIP-2都能够携带第4版BGP所提出的32 bit掩码。</li>
 </ol>
 <p>CIDR同时还使用一种技术，使最佳匹配总是最长的匹配：即在32bit掩码中，它具有最大值。</p>
-<h1>UDP：用户数据报协议</h1>
-<h2 id="引言-v8">引言</h2>
-<p>UDP是一个简单的面向数据报的运输层协议：进程的每个输出操作都正好产生一个UDP数据报，并组装成一份待发送的IP数据报。这与面向流字符的协议不同，如TCP，应用程序产生的全体数据与真正发送的单个IP数据报可能没有什么联系。</p>
+<h1 id="UDP：用户数据报协议"><a href="#UDP：用户数据报协议" class="headerlink" title="UDP：用户数据报协议"></a>UDP：用户数据报协议</h1><h2 id="引言-7"><a href="#引言-7" class="headerlink" title="引言"></a>引言</h2><p>UDP是一个简单的面向数据报的运输层协议：进程的每个输出操作都正好产生一个UDP数据报，并组装成一份待发送的IP数据报。这与面向流字符的协议不同，如TCP，应用程序产生的全体数据与真正发送的单个IP数据报可能没有什么联系。</p>
 <p>UDP数据报封装成一份IP数据报的格式如图11-1所示。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/UDP%E5%B0%81%E8%A3%85.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/UDP%E5%B0%81%E8%A3%85.png"></p>
 <p>应用程序必须关心IP数据报的长度。如果它超过网络的MTU，那么就要对IP数据报进行分片。如果需要，源端到目的端之间的每个网络都要进行分片，并不只是发送端主机连接第一个网络才这样做。</p>
-<h2 id="UDP首部">UDP首部</h2>
-<p>UDP首部的各字段如图11-2所示。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/UDP%E9%A6%96%E9%83%A8.png" alt></p>
+<h2 id="UDP首部"><a href="#UDP首部" class="headerlink" title="UDP首部"></a>UDP首部</h2><p>UDP首部的各字段如图11-2所示。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/UDP%E9%A6%96%E9%83%A8.png"></p>
 <p>UDP长度字段指的是UDP首部和UDP数据的字节长度。该字段的最小值为8字节（发送一份0字节的UDP数据报是OK）。这个UDP长度是有冗余的。IP数据报长度指的是数据报全长，因此UDP数据报长度是全长减去IP首部的长度。</p>
-<h2 id="UDP检验和">UDP检验和</h2>
-<p>UDP和TCP在首部中都有覆盖它们首部和数据的检验和。UDP的检验和是可选的，而TCP的检验和是必需的。</p>
+<h2 id="UDP检验和"><a href="#UDP检验和" class="headerlink" title="UDP检验和"></a>UDP检验和</h2><p>UDP和TCP在首部中都有覆盖它们首部和数据的检验和。UDP的检验和是可选的，而TCP的检验和是必需的。</p>
 <p>如果发送端没有计算检验和而接收端检测到检验和有差错，那么UDP数据报就要被悄悄地丢弃。不产生任何差错报文（当IP层检测到IP首部检验和有差错时也这样做）。UDP检验和是一个端到端的检验和。它由发送端计算，然后由接收端验证。其目的是为了发现UDP首部和数据在发送端到接收端之间发生的任何改动。</p>
 <blockquote>
 <p>注意，TCP发生检验和差错的比例与UDP相比要高得多。这很可能是因为在该系统中的TCP连接经常是“远程”连接（经过许多路由器和网桥等中间设备），而UDP一般为本地通信。</p>
 </blockquote>
-<h2 id="IP分片">IP分片</h2>
-<p>物理网络层一般要限制每次发送数据帧的最大长度。任何时候IP层接收到一份要发送的IP数据报时，它要判断向本地哪个接口发送数据（选路），并查询该接口获得其MTU。IP把MTU与数据报长度进行比较，如果需要则进行分片。分片可以发生在原始发送端主机上，也可以发生在中间路由器上。</p>
+<h2 id="IP分片"><a href="#IP分片" class="headerlink" title="IP分片"></a>IP分片</h2><p>物理网络层一般要限制每次发送数据帧的最大长度。任何时候IP层接收到一份要发送的IP数据报时，它要判断向本地哪个接口发送数据（选路），并查询该接口获得其MTU。IP把MTU与数据报长度进行比较，如果需要则进行分片。分片可以发生在原始发送端主机上，也可以发生在中间路由器上。</p>
 <p>把一份IP数据报分片以后，只有到达目的地才进行重新组装（这里的重新组装与其他网络协议不同，它们要求在下一站就进行进行重新组装，而不是在最终的目的地）。重新组装由目的端的IP层来完成，其目的是使分片和重新组装过程对运输层（TCP和UDP）是透明的，除了某些可能的越级操作外。已经分片过的数据报有可能会再次进行分片（可能不止一次）。IP首部中包含的数据为分片和重新组装提供了足够的信息。</p>
 <p>回忆IP首部（图3-1），下面这些字段用于分片过程。对于发送端发送的每份IP数据报来说，其标识字段都包含一个唯一值。该值在数据报分片时被复制到每个片中（我们现在已经看到这个字段的用途）。标志字段用其中一个比特来表示“更多的片”。除了最后一片外，其他每个组成数据报的片都要把该比特置1。片偏移字段指的是该片偏移原始数据报开始处的位置。另外，当数据报被分片后，每个片的总长度值要改为该片的长度值。</p>
 <p>最后，标志字段中有一个比特称作“不分片”位。如果将这一比特置1，IP将不对数据报进行分片。相反把数据报丢弃并发送一个ICMP差错报文（“需要进行分片但设置了不分片比特”，见图6-3）给起始端。在下一节我们将看到出现这个差错的例子。</p>
@@ -768,72 +698,51 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 <p>在一个以太网上，数据帧的最大长度是1500字节，其中1472字节留给数据，假定IP首部为20字节，UDP首部为8字节。</p>
 </blockquote>
 <p>IP数据报是指IP层端到端的传输单元（在分片之前和重新组装之后），分组是指在IP层和链路层之间传送的数据单元。一个分组可以是一个完整的IP数据报，也可以是IP数据报的一个分片。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/UDP%E5%88%86%E7%89%87%E4%B8%BE%E4%BE%8B.png" alt></p>
-<h1>广播和多播</h1>
-<h2 id="引言-v9">引言</h2>
-<p>为了弄清广播和多播，需要了解主机对由信道传送过来帧的过滤过程。图12-1说明了这一过程。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%8D%8F%E8%AE%AE%E6%A0%88%E5%90%84%E5%B1%82%E5%AF%B9%E6%94%B6%E5%88%B0%E5%B8%A7%E7%9A%84%E8%BF%87%E6%BB%A4%E8%BF%87%E7%A8%8B.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/UDP%E5%88%86%E7%89%87%E4%B8%BE%E4%BE%8B.png"></p>
+<h1 id="广播和多播"><a href="#广播和多播" class="headerlink" title="广播和多播"></a>广播和多播</h1><h2 id="引言-8"><a href="#引言-8" class="headerlink" title="引言"></a>引言</h2><p>为了弄清广播和多播，需要了解主机对由信道传送过来帧的过滤过程。图12-1说明了这一过程。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/%E5%8D%8F%E8%AE%AE%E6%A0%88%E5%90%84%E5%B1%82%E5%AF%B9%E6%94%B6%E5%88%B0%E5%B8%A7%E7%9A%84%E8%BF%87%E6%BB%A4%E8%BF%87%E7%A8%8B.png"></p>
 <p>首先，网卡查看由信道传送过来的帧，确定是否接收该帧，若接收后就将它传往设备驱动程序。通常网卡仅接收那些目的地址为网卡物理地址或广播地址的帧。另外，多数接口均被设置为混合模式，这种模式能接收每个帧的一个复制。作为一个例子，tcpdump使用这种模式。</p>
 <p>目前，大多数的网卡经过配置都能接收目的地址为多播地址或某些子网多播地址的帧。对于以太网，当地址中最高字节的最低位设置为1时表示该地址是一个多播地址，用十六进制可表示为01:00:00:00:00:00（以太网广播地址ff:ff:ff:ff:ff:ff可看作是以太网多播地址的特例）。</p>
 <p>如果网卡收到一个帧，这个帧将被传送给设备驱动程序（如果帧检验和错，网卡将丢弃该帧）。设备驱动程序将进行另外的帧过滤。首先，帧类型中必须指定要使用的协议（IP、ARP等等）。其次，进行多播过滤来检测该主机是否属于多播地址说明的多播组。设备驱动程序随后将数据帧传送给下一层，比如，当帧类型指定为IP数据报时，就传往IP层。IP根据IP地址中的源地址和目的地址进行更多的过滤检测。如果正常，就将数据报传送给下一层（如TCP或UDP）。</p>
 <p>每次UDP收到由IP传送来的数据报，就根据目的端口号，有时还有源端口号进行数据报过滤。如果当前没有进程使用该目的端口号，就丢弃该数据报并产生一个ICMP不可达报文（TCP根据它的端口号作相似的过滤）。如果UDP数据报存在检验和错，将被丢弃。</p>
 <p>使用广播的问题在于它增加了对广播数据不感兴趣主机的处理负荷。拿一个使用UDP广播应用作为例子。如果网内有50个主机，但仅有20个参与该应用，每次这20个主机中的一个发送UDP广播数据时，其余30个主机不得不处理这些广播数据报。一直到UDP层，收到的UDP广播数据报才会被丢弃。这30个主机丢弃UDP广播数据报是因为这些主机没有使用这个目的端口。</p>
 <p>多播的出现减少了对应用不感兴趣主机的处理负荷。使用多播，主机可加入一个或多个多播组。这样，网卡将获悉该主机属于哪个多播组，然后仅接收主机所在多播组的那些多播帧。</p>
-<h2 id="广播">广播</h2>
-<h3 id="受限的广播">受限的广播</h3>
-<p>受限的广播地址是255.255.255.255。该地址用于主机配置过程中IP数据报的目的地址，此时，主机可能还不知道它所在网络的网络掩码，甚至连它的IP地址也不知道。</p>
+<h2 id="广播"><a href="#广播" class="headerlink" title="广播"></a>广播</h2><h3 id="受限的广播"><a href="#受限的广播" class="headerlink" title="受限的广播"></a>受限的广播</h3><p>受限的广播地址是255.255.255.255。该地址用于主机配置过程中IP数据报的目的地址，此时，主机可能还不知道它所在网络的网络掩码，甚至连它的IP地址也不知道。</p>
 <p>在任何情况下，路由器都不转发目的地址为受限的广播地址的数据报，这样的数据报仅出现在本地网络中。</p>
-<h3 id="指向网络的广播">指向网络的广播</h3>
-<p>指向网络的广播地址是主机号为全1的地址。A类网络广播地址为netid.255.255.255，其中netid为A类网络的网络号。</p>
+<h3 id="指向网络的广播"><a href="#指向网络的广播" class="headerlink" title="指向网络的广播"></a>指向网络的广播</h3><p>指向网络的广播地址是主机号为全1的地址。A类网络广播地址为netid.255.255.255，其中netid为A类网络的网络号。</p>
 <p>一个路由器必须转发指向网络的广播，但它也必须有一个不进行转发的选择。</p>
-<h3 id="指向子网的广播">指向子网的广播</h3>
-<p>指向子网的广播地址为主机号为全1且有特定子网号的地址。作为子网直接广播地址的IP地址需要了解子网的掩码。例如，如果路由器收到发往128.1.2.255的数据报，当B类网络128.1的子网掩码为255.255.255.0时，该地址就是指向子网的广播地址；但如果该子网的掩码为255.255.254.0，该地址就不是指向子网的广播地址。</p>
-<h3 id="指向所有子网的广播">指向所有子网的广播</h3>
-<p>指向所有子网的广播也需要了解目的网络的子网掩码，以便与指向网络的广播地址区分开。指向所有子网的广播地址的子网号及主机号为全1。例如，如果目的子网掩码为255.255.255.0，那么IP地址128.1.255.255是一个指向所有子网的广播地址。然而，如果网络没有划分子网，这就是一个指向网络的广播。</p>
-<h2 id="多播">多播</h2>
-<p>IP多播提供两类服务：</p>
+<h3 id="指向子网的广播"><a href="#指向子网的广播" class="headerlink" title="指向子网的广播"></a>指向子网的广播</h3><p>指向子网的广播地址为主机号为全1且有特定子网号的地址。作为子网直接广播地址的IP地址需要了解子网的掩码。例如，如果路由器收到发往128.1.2.255的数据报，当B类网络128.1的子网掩码为255.255.255.0时，该地址就是指向子网的广播地址；但如果该子网的掩码为255.255.254.0，该地址就不是指向子网的广播地址。</p>
+<h3 id="指向所有子网的广播"><a href="#指向所有子网的广播" class="headerlink" title="指向所有子网的广播"></a>指向所有子网的广播</h3><p>指向所有子网的广播也需要了解目的网络的子网掩码，以便与指向网络的广播地址区分开。指向所有子网的广播地址的子网号及主机号为全1。例如，如果目的子网掩码为255.255.255.0，那么IP地址128.1.255.255是一个指向所有子网的广播地址。然而，如果网络没有划分子网，这就是一个指向网络的广播。</p>
+<h2 id="多播"><a href="#多播" class="headerlink" title="多播"></a>多播</h2><p>IP多播提供两类服务：</p>
 <ol>
 <li>向多个目的地址传送数据。</li>
 <li>客户对服务器的请求。例如，无盘工作站需要确定启动引导服务器。目前，这项服务是通过广播来提供的，但是使用多播可降低不提供这项服务主机的负担。</li>
 </ol>
-<h3 id="多播组地址">多播组地址</h3>
-<p>图12-2显示了D类IP地址的格式。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/D%E7%B1%BBIP%E5%9C%B0%E5%9D%80%E6%A0%BC%E5%BC%8F.png" alt></p>
+<h3 id="多播组地址"><a href="#多播组地址" class="headerlink" title="多播组地址"></a>多播组地址</h3><p>图12-2显示了D类IP地址的格式。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/D%E7%B1%BBIP%E5%9C%B0%E5%9D%80%E6%A0%BC%E5%BC%8F.png"></p>
 <p>多播组地址包括为1110的最高4bit和多播组号。它们通常可表示为点分十进制数，范围从224.0.0.0到239.255.255.255。</p>
 <p>能够接收发往一个特定多播组地址数据的主机集合称为主机组(hostgroup)。一个主机组可跨越多个网络。主机组中成员可随时加入或离开主机组。主机组中对主机的数量没有限制，同时不属于某一主机组的主机可以向该组发送信息。</p>
-<h2 id="小结-v6">小结</h2>
-<p>广播是将数据报发送到网络中的所有主机（通常是本地相连的网络），而多播是将数据报发送到网络的一个主机组。这两个概念的基本点在于当收到送往上一个协议栈的数据帧时采用不同类型的过滤。每个协议层均可以因为不同的理由丢弃数据报。</p>
+<h2 id="小结-5"><a href="#小结-5" class="headerlink" title="小结"></a>小结</h2><p>广播是将数据报发送到网络中的所有主机（通常是本地相连的网络），而多播是将数据报发送到网络的一个主机组。这两个概念的基本点在于当收到送往上一个协议栈的数据帧时采用不同类型的过滤。每个协议层均可以因为不同的理由丢弃数据报。</p>
 <p>目前有四种类型的广播地址：受限的广播、指向网络的广播、指向子网的广播和指向所有子网的广播。最常用的是指向子网的广播。受限的广播通常只在系统初始启动时才会用到。</p>
 <p>试图通过路由器进行广播而发生的问题，常常是因为路由器不了解目的网络的子网掩码。结果与多种因素有关：广播地址类型、配置参数等等。</p>
 <p>D类IP地址被称为多播组地址。通过将其低位23bit映射到相应以太网地址中便可实现多播组地址到以太网地址的转换。由于地址映射是不唯一的，因此需要其他的协议实现额外的数据报过滤。</p>
-<h1>IGMP：Internet组管理协议</h1>
-<h2 id="引言-v10">引言</h2>
-<p><font color="DeepPink"><strong>本章将介绍用于支持主机和路由器进行多播的Internet组管理协议（IGMP）。它让一个物理网络上的所有系统知道主机当前所在的多播组。</strong></font>多播路由器需要这些信息以便知道多播数据报应该向哪些接口转发。</p>
+<h1 id="IGMP：Internet组管理协议"><a href="#IGMP：Internet组管理协议" class="headerlink" title="IGMP：Internet组管理协议"></a>IGMP：Internet组管理协议</h1><h2 id="引言-9"><a href="#引言-9" class="headerlink" title="引言"></a>引言</h2><p><font color="DeepPink"><strong>本章将介绍用于支持主机和路由器进行多播的Internet组管理协议（IGMP）。它让一个物理网络上的所有系统知道主机当前所在的多播组。</strong></font>多播路由器需要这些信息以便知道多播数据报应该向哪些接口转发。</p>
 <p>正如ICMP一样，IGMP也被当作IP层的一部分。IGMP报文通过IP数据报进行传输。不像我们已经见到的其他协议，IGMP有固定的报文长度，没有可选数据。图13-1显示了IGMP报文如何封装在IP数据报中。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/IGMP%E6%8A%A5%E6%96%87%E5%B0%81%E8%A3%85%E5%9C%A8IP%E6%95%B0%E6%8D%AE%E6%8A%A5%E4%B8%AD.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/IGMP%E6%8A%A5%E6%96%87%E5%B0%81%E8%A3%85%E5%9C%A8IP%E6%95%B0%E6%8D%AE%E6%8A%A5%E4%B8%AD.png"></p>
 <p>IGMP报文通过IP首部中协议字段值为2来指明。</p>
-<h2 id="IGMP报文">IGMP报文</h2>
-<p>图13-2显示了长度为8字节的IGMP报文格式。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/IGMP%E6%8A%A5%E6%96%87%E7%9A%84%E5%AD%97%E6%AE%B5%E6%A0%BC%E5%BC%8F.png" alt></p>
-<p>这是版本为1的IGMP。IGMP类型为1说明是由多播路由器发出的查询报文，为2说明是主机发出的报告报文。检验和的计算和ICMP协议相同。<br>
-组地址为D类IP地址。在查询报文中组地址设置为0，在报告报文中组地址为要参加的组地址。</p>
-<h1>DNS：域名系统</h1>
-<h2 id="引言-v11">引言</h2>
-<p>域名系统（DNS）是一种用于TCP/IP应用程序的分布式数据库，它提供主机名字和IP地址之间的转换及有关电子邮件的选路信息。这里提到的分布式是指在Internet上的单个站点不能拥有所有的信息。</p>
-<h2 id="DNS-基础">DNS 基础</h2>
-<p>DNS的层次组织:</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/DNS%E7%9A%84%E5%B1%82%E6%AC%A1%E7%BB%84%E7%BB%87.png" alt></p>
+<h2 id="IGMP报文"><a href="#IGMP报文" class="headerlink" title="IGMP报文"></a>IGMP报文</h2><p>图13-2显示了长度为8字节的IGMP报文格式。</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/IGMP%E6%8A%A5%E6%96%87%E7%9A%84%E5%AD%97%E6%AE%B5%E6%A0%BC%E5%BC%8F.png"></p>
+<p>这是版本为1的IGMP。IGMP类型为1说明是由多播路由器发出的查询报文，为2说明是主机发出的报告报文。检验和的计算和ICMP协议相同。<br>组地址为D类IP地址。在查询报文中组地址设置为0，在报告报文中组地址为要参加的组地址。</p>
+<h1 id="DNS：域名系统"><a href="#DNS：域名系统" class="headerlink" title="DNS：域名系统"></a>DNS：域名系统</h1><h2 id="引言-10"><a href="#引言-10" class="headerlink" title="引言"></a>引言</h2><p>域名系统（DNS）是一种用于TCP&#x2F;IP应用程序的分布式数据库，它提供主机名字和IP地址之间的转换及有关电子邮件的选路信息。这里提到的分布式是指在Internet上的单个站点不能拥有所有的信息。</p>
+<h2 id="DNS-基础"><a href="#DNS-基础" class="headerlink" title="DNS 基础"></a>DNS 基础</h2><p>DNS的层次组织:</p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/DNS%E7%9A%84%E5%B1%82%E6%AC%A1%E7%BB%84%E7%BB%87.png"></p>
 <p>每个问题有一个查询类型，而每个响应（也称一个资源记录，我们下面将谈到）也有一个类型。大约有20个不同的类型值，其中的一些目前已经过时。图14-7显示了其中的一些值。查询类型是类型的一个超集(superset)：图中显示的类型值中只有两个能用于查询类型。</p>
-<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/DNS%E9%97%AE%E9%A2%98%E5%92%8C%E5%93%8D%E5%BA%94%E7%9A%84%E7%B1%BB%E5%9E%8B%E5%80%BC%E5%92%8C%E6%9F%A5%E8%AF%A2%E7%B1%BB%E5%9E%8B%E5%80%BC.png" alt></p>
+<p><img data-src="/images/tcp-ip-illustrated-volume-1-the-protocols/DNS%E9%97%AE%E9%A2%98%E5%92%8C%E5%93%8D%E5%BA%94%E7%9A%84%E7%B1%BB%E5%9E%8B%E5%80%BC%E5%92%8C%E6%9F%A5%E8%AF%A2%E7%B1%BB%E5%9E%8B%E5%80%BC.png"></p>
 <p>最常用的查询类型是A类型，表示期望获得查询名的IP地址。一个PTR查询则请求获得一个IP地址对应的域名。</p>
 <p>查询类通常是1，指互联网地址（某些站点也支持其他非IP地址）。</p>
-<h2 id="指针查询">指针查询</h2>
-<p>DNS中一直难于理解的部分就是指针查询方式，即给定一个IP地址，返回与该地址对应的域名。</p>
-<h2 id="小结-v7">小结</h2>
-<p>应用程序通过名字解析器将一个主机名转换为一个IP地址，也可将一个IP地址转换为与之对应的主机名。名字解析器将向一个本地名字服务器发出查询请求，这个名字服务器可能通过某个根名字服务器或其他名字服务器来完成这个查询。</p>
-<h1>TCP：传输控制协议</h1>
-<h2 id="TCP的服务">TCP的服务</h2>
-<p>TCP通过下列方式来提供可靠性：</p>
+<h2 id="指针查询"><a href="#指针查询" class="headerlink" title="指针查询"></a>指针查询</h2><p>DNS中一直难于理解的部分就是指针查询方式，即给定一个IP地址，返回与该地址对应的域名。</p>
+<h2 id="小结-6"><a href="#小结-6" class="headerlink" title="小结"></a>小结</h2><p>应用程序通过名字解析器将一个主机名转换为一个IP地址，也可将一个IP地址转换为与之对应的主机名。名字解析器将向一个本地名字服务器发出查询请求，这个名字服务器可能通过某个根名字服务器或其他名字服务器来完成这个查询。</p>
+<h1 id="TCP：传输控制协议"><a href="#TCP：传输控制协议" class="headerlink" title="TCP：传输控制协议"></a>TCP：传输控制协议</h1><h2 id="TCP的服务"><a href="#TCP的服务" class="headerlink" title="TCP的服务"></a>TCP的服务</h2><p>TCP通过下列方式来提供可靠性：</p>
 <ul>
 <li>应用数据被分割成TCP认为最适合发送的数据块。这和UDP完全不同，应用程序产生的数据报长度将保持不变。由TCP传递给IP的信息单位称为报文段或段（segment）。</li>
 <li>当TCP发出一个段后，它启动一个定时器，等待目的端确认收到这个报文段。如果不能及时收到一个确认，将重发这个报文段。</li>
@@ -847,8 +756,7 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 <blockquote>
 <p>这种对字节流的处理方式与Unix操作系统对文件的处理方式很相似。Unix的内核对一个应用读或写的内容不作任何解释，而是交给应用程序处理。对Unix的内核来说，它无法区分一个二进制文件与一个文本文件。</p>
 </blockquote>
-<h1>未读章节</h1>
-<p><font color="DeepPink"><strong>17章之后未读</strong></font></p>
+<h1 id="未读章节"><a href="#未读章节" class="headerlink" title="未读章节"></a>未读章节</h1><p><font color="DeepPink"><strong>17章之后未读</strong></font></p>
 
     </div>
 
@@ -1023,7 +931,7 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层"><span class="nav-number">1.1.</span> <span class="nav-text">分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP的分层"><span class="nav-number">1.2.</span> <span class="nav-text">TCP/IP的分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#互联网地址"><span class="nav-number">1.3.</span> <span class="nav-text">互联网地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#封装"><span class="nav-number">1.4.</span> <span class="nav-text">封装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分用"><span class="nav-number">1.5.</span> <span class="nav-text">分用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">链路层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环回接口"><span class="nav-number">2.1.</span> <span class="nav-text">环回接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">IP：网际协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">3.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP首部"><span class="nav-number">3.2.</span> <span class="nav-text">IP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP路由选择"><span class="nav-number">3.3.</span> <span class="nav-text">IP路由选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网寻址"><span class="nav-number">3.4.</span> <span class="nav-text">子网寻址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网掩码"><span class="nav-number">3.5.</span> <span class="nav-text">子网掩码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ifconfig命令"><span class="nav-number">3.6.</span> <span class="nav-text">ifconfig命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-v2"><span class="nav-number">3.7.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">ARP：地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v2"><span class="nav-number">4.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个例子"><span class="nav-number">4.2.</span> <span class="nav-text">一个例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP高速缓存"><span class="nav-number">4.3.</span> <span class="nav-text">ARP高速缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP的分组格式"><span class="nav-number">4.4.</span> <span class="nav-text">ARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP代理"><span class="nav-number">4.5.</span> <span class="nav-text">ARP代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#免费ARP"><span class="nav-number">4.6.</span> <span class="nav-text">免费ARP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arp命令"><span class="nav-number">4.7.</span> <span class="nav-text">arp命令</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">RARP：逆地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v3"><span class="nav-number">5.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP的分组格式"><span class="nav-number">5.2.</span> <span class="nav-text">RARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP服务器的设计"><span class="nav-number">5.3.</span> <span class="nav-text">RARP服务器的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#作为用户进程的RARP服务器"><span class="nav-number">5.3.1.</span> <span class="nav-text">作为用户进程的RARP服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#每个网络有多个RARP服务器"><span class="nav-number">5.3.2.</span> <span class="nav-text">每个网络有多个RARP服务器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-v3"><span class="nav-number">5.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">ICMP：Internet控制报文协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v4"><span class="nav-number">6.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP报文的类型"><span class="nav-number">6.2.</span> <span class="nav-text">ICMP报文的类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP地址掩码请求与应答"><span class="nav-number">6.3.</span> <span class="nav-text">ICMP地址掩码请求与应答</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">Ping程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v5"><span class="nav-number">7.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Ping程序"><span class="nav-number">7.2.</span> <span class="nav-text">Ping程序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LAN-WAN-输出"><span class="nav-number">7.2.1.</span> <span class="nav-text">LAN/WAN 输出</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP记录路由选项"><span class="nav-number">7.3.</span> <span class="nav-text">IP记录路由选项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-v4"><span class="nav-number">7.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">8.</span> <span class="nav-text">Traceroute程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v6"><span class="nav-number">8.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Traceroute程序的操作"><span class="nav-number">8.2.</span> <span class="nav-text">Traceroute程序的操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP源站选路选项"><span class="nav-number">8.3.</span> <span class="nav-text">IP源站选路选项</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">9.</span> <span class="nav-text">IP选路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v7"><span class="nav-number">9.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#选路的原理"><span class="nav-number">9.2.</span> <span class="nav-text">选路的原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#简单路由表"><span class="nav-number">9.2.1.</span> <span class="nav-text">简单路由表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP主机与网络不可达差错"><span class="nav-number">9.3.</span> <span class="nav-text">ICMP主机与网络不可达差错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP重定向差错"><span class="nav-number">9.4.</span> <span class="nav-text">ICMP重定向差错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-v5"><span class="nav-number">9.5.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">10.</span> <span class="nav-text">动态选路协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#动态选路"><span class="nav-number">10.1.</span> <span class="nav-text">动态选路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RIP：选路信息协议"><span class="nav-number">10.2.</span> <span class="nav-text">RIP：选路信息协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#正常运行"><span class="nav-number">10.2.1.</span> <span class="nav-text">正常运行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#度量"><span class="nav-number">10.2.2.</span> <span class="nav-text">度量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OSPF：开放最短路径优先"><span class="nav-number">10.3.</span> <span class="nav-text">OSPF：开放最短路径优先</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BGP：边界网关协议"><span class="nav-number">10.4.</span> <span class="nav-text">BGP：边界网关协议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CIDR：无类型域间选路"><span class="nav-number">10.5.</span> <span class="nav-text">CIDR：无类型域间选路</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">11.</span> <span class="nav-text">UDP：用户数据报协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v8"><span class="nav-number">11.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP首部"><span class="nav-number">11.2.</span> <span class="nav-text">UDP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP检验和"><span class="nav-number">11.3.</span> <span class="nav-text">UDP检验和</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP分片"><span class="nav-number">11.4.</span> <span class="nav-text">IP分片</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">12.</span> <span class="nav-text">广播和多播</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v9"><span class="nav-number">12.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#广播"><span class="nav-number">12.2.</span> <span class="nav-text">广播</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#受限的广播"><span class="nav-number">12.2.1.</span> <span class="nav-text">受限的广播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指向网络的广播"><span class="nav-number">12.2.2.</span> <span class="nav-text">指向网络的广播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指向子网的广播"><span class="nav-number">12.2.3.</span> <span class="nav-text">指向子网的广播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指向所有子网的广播"><span class="nav-number">12.2.4.</span> <span class="nav-text">指向所有子网的广播</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多播"><span class="nav-number">12.3.</span> <span class="nav-text">多播</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#多播组地址"><span class="nav-number">12.3.1.</span> <span class="nav-text">多播组地址</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-v6"><span class="nav-number">12.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">13.</span> <span class="nav-text">IGMP：Internet组管理协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v10"><span class="nav-number">13.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IGMP报文"><span class="nav-number">13.2.</span> <span class="nav-text">IGMP报文</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">14.</span> <span class="nav-text">DNS：域名系统</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-v11"><span class="nav-number">14.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DNS-基础"><span class="nav-number">14.2.</span> <span class="nav-text">DNS 基础</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#指针查询"><span class="nav-number">14.3.</span> <span class="nav-text">指针查询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-v7"><span class="nav-number">14.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">15.</span> <span class="nav-text">TCP：传输控制协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的服务"><span class="nav-number">15.1.</span> <span class="nav-text">TCP的服务</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">16.</span> <span class="nav-text">未读章节</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分层"><span class="nav-number">1.1.</span> <span class="nav-text">分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP的分层"><span class="nav-number">1.2.</span> <span class="nav-text">TCP/IP的分层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#互联网地址"><span class="nav-number">1.3.</span> <span class="nav-text">互联网地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#封装"><span class="nav-number">1.4.</span> <span class="nav-text">封装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分用"><span class="nav-number">1.5.</span> <span class="nav-text">分用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#链路层"><span class="nav-number">2.</span> <span class="nav-text">链路层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#环回接口"><span class="nav-number">2.1.</span> <span class="nav-text">环回接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP：网际协议"><span class="nav-number">3.</span> <span class="nav-text">IP：网际协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">3.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP首部"><span class="nav-number">3.2.</span> <span class="nav-text">IP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP路由选择"><span class="nav-number">3.3.</span> <span class="nav-text">IP路由选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网寻址"><span class="nav-number">3.4.</span> <span class="nav-text">子网寻址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#子网掩码"><span class="nav-number">3.5.</span> <span class="nav-text">子网掩码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ifconfig命令"><span class="nav-number">3.6.</span> <span class="nav-text">ifconfig命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-1"><span class="nav-number">3.7.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ARP：地址解析协议"><span class="nav-number">4.</span> <span class="nav-text">ARP：地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-1"><span class="nav-number">4.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个例子"><span class="nav-number">4.2.</span> <span class="nav-text">一个例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP高速缓存"><span class="nav-number">4.3.</span> <span class="nav-text">ARP高速缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP的分组格式"><span class="nav-number">4.4.</span> <span class="nav-text">ARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARP代理"><span class="nav-number">4.5.</span> <span class="nav-text">ARP代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#免费ARP"><span class="nav-number">4.6.</span> <span class="nav-text">免费ARP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#arp命令"><span class="nav-number">4.7.</span> <span class="nav-text">arp命令</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RARP：逆地址解析协议"><span class="nav-number">5.</span> <span class="nav-text">RARP：逆地址解析协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-2"><span class="nav-number">5.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP的分组格式"><span class="nav-number">5.2.</span> <span class="nav-text">RARP的分组格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RARP服务器的设计"><span class="nav-number">5.3.</span> <span class="nav-text">RARP服务器的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#作为用户进程的RARP服务器"><span class="nav-number">5.3.1.</span> <span class="nav-text">作为用户进程的RARP服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#每个网络有多个RARP服务器"><span class="nav-number">5.3.2.</span> <span class="nav-text">每个网络有多个RARP服务器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-2"><span class="nav-number">5.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ICMP：Internet控制报文协议"><span class="nav-number">6.</span> <span class="nav-text">ICMP：Internet控制报文协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-3"><span class="nav-number">6.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP报文的类型"><span class="nav-number">6.2.</span> <span class="nav-text">ICMP报文的类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP地址掩码请求与应答"><span class="nav-number">6.3.</span> <span class="nav-text">ICMP地址掩码请求与应答</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Ping程序"><span class="nav-number">7.</span> <span class="nav-text">Ping程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-4"><span class="nav-number">7.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Ping程序-1"><span class="nav-number">7.2.</span> <span class="nav-text">Ping程序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LAN-WAN-输出"><span class="nav-number">7.2.1.</span> <span class="nav-text">LAN/WAN 输出</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP记录路由选项"><span class="nav-number">7.3.</span> <span class="nav-text">IP记录路由选项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-3"><span class="nav-number">7.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Traceroute程序"><span class="nav-number">8.</span> <span class="nav-text">Traceroute程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-5"><span class="nav-number">8.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Traceroute程序的操作"><span class="nav-number">8.2.</span> <span class="nav-text">Traceroute程序的操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP源站选路选项"><span class="nav-number">8.3.</span> <span class="nav-text">IP源站选路选项</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IP选路"><span class="nav-number">9.</span> <span class="nav-text">IP选路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-6"><span class="nav-number">9.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#选路的原理"><span class="nav-number">9.2.</span> <span class="nav-text">选路的原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#简单路由表"><span class="nav-number">9.2.1.</span> <span class="nav-text">简单路由表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP主机与网络不可达差错"><span class="nav-number">9.3.</span> <span class="nav-text">ICMP主机与网络不可达差错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ICMP重定向差错"><span class="nav-number">9.4.</span> <span class="nav-text">ICMP重定向差错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-4"><span class="nav-number">9.5.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#动态选路协议"><span class="nav-number">10.</span> <span class="nav-text">动态选路协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#动态选路"><span class="nav-number">10.1.</span> <span class="nav-text">动态选路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RIP：选路信息协议"><span class="nav-number">10.2.</span> <span class="nav-text">RIP：选路信息协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#正常运行"><span class="nav-number">10.2.1.</span> <span class="nav-text">正常运行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#度量"><span class="nav-number">10.2.2.</span> <span class="nav-text">度量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OSPF：开放最短路径优先"><span class="nav-number">10.3.</span> <span class="nav-text">OSPF：开放最短路径优先</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BGP：边界网关协议"><span class="nav-number">10.4.</span> <span class="nav-text">BGP：边界网关协议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CIDR：无类型域间选路"><span class="nav-number">10.5.</span> <span class="nav-text">CIDR：无类型域间选路</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#UDP：用户数据报协议"><span class="nav-number">11.</span> <span class="nav-text">UDP：用户数据报协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-7"><span class="nav-number">11.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP首部"><span class="nav-number">11.2.</span> <span class="nav-text">UDP首部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDP检验和"><span class="nav-number">11.3.</span> <span class="nav-text">UDP检验和</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP分片"><span class="nav-number">11.4.</span> <span class="nav-text">IP分片</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#广播和多播"><span class="nav-number">12.</span> <span class="nav-text">广播和多播</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-8"><span class="nav-number">12.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#广播"><span class="nav-number">12.2.</span> <span class="nav-text">广播</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#受限的广播"><span class="nav-number">12.2.1.</span> <span class="nav-text">受限的广播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指向网络的广播"><span class="nav-number">12.2.2.</span> <span class="nav-text">指向网络的广播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指向子网的广播"><span class="nav-number">12.2.3.</span> <span class="nav-text">指向子网的广播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指向所有子网的广播"><span class="nav-number">12.2.4.</span> <span class="nav-text">指向所有子网的广播</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多播"><span class="nav-number">12.3.</span> <span class="nav-text">多播</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#多播组地址"><span class="nav-number">12.3.1.</span> <span class="nav-text">多播组地址</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-5"><span class="nav-number">12.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IGMP：Internet组管理协议"><span class="nav-number">13.</span> <span class="nav-text">IGMP：Internet组管理协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-9"><span class="nav-number">13.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IGMP报文"><span class="nav-number">13.2.</span> <span class="nav-text">IGMP报文</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DNS：域名系统"><span class="nav-number">14.</span> <span class="nav-text">DNS：域名系统</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言-10"><span class="nav-number">14.1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DNS-基础"><span class="nav-number">14.2.</span> <span class="nav-text">DNS 基础</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#指针查询"><span class="nav-number">14.3.</span> <span class="nav-text">指针查询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结-6"><span class="nav-number">14.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#TCP：传输控制协议"><span class="nav-number">15.</span> <span class="nav-text">TCP：传输控制协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP的服务"><span class="nav-number">15.1.</span> <span class="nav-text">TCP的服务</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#未读章节"><span class="nav-number">16.</span> <span class="nav-text">未读章节</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -1045,7 +953,7 @@ netstat命令 用来打印Linux中网络系统的状态信息，可让你得知�
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">

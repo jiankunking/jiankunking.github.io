@@ -274,7 +274,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>5.3k</span>
+              <span>5.2k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -295,57 +295,50 @@
       
         <p>原文地址:<a href="https://www.elastic.co/blog/elasticsearch-sequence-ids-6-0" target="_blank" rel="noopener">https://www.elastic.co/blog/elasticsearch-sequence-ids-6-0</a></p>
 <a id="more"></a>
-<h2 id="如果">如果</h2>
-<p>几年前，在Elastic，我们问自己一个&quot;如果&quot;问题，我们知道这将带来有趣的见解：</p>
+
+<h2 id="如果"><a href="#如果" class="headerlink" title="如果"></a>如果</h2><p>几年前，在Elastic，我们问自己一个”如果”问题，我们知道这将带来有趣的见解：</p>
 <blockquote>
-<p>&quot;如果我们在Elasticsearch中对索引操作进行全面排序会怎样？我们可以建立什么？</p>
+<p>“如果我们在Elasticsearch中对索引操作进行全面排序会怎样？我们可以建立什么？</p>
 </blockquote>
 <p>答案涵盖范围很广：</p>
 <ul>
-<li>我们可以构建一种称为&quot;<a href="https://github.com/elastic/elasticsearch/issues/1242" target="_blank" rel="noopener">变更API</a>&quot;的功能，它可以接受操作ID，并为您提供自那时以来数据更改的列表。很棒！</li>
+<li>我们可以构建一种称为”<a href="https://github.com/elastic/elasticsearch/issues/1242" target="_blank" rel="noopener">变更API</a>“的功能，它可以接受操作ID，并为您提供自那时以来数据更改的列表。很棒！</li>
 <li>我们可以只查找发生变化的索引操作，从而<a href="https://github.com/elastic/elasticsearch/issues/20859#issuecomment-252962327" target="_blank" rel="noopener">建立增量reindex</a>！</li>
-<li>我们可以使用增量reindex功能，通过过滤/连续reindex建立<a href="https://github.com/elastic/elasticsearch/issues/17997" target="_blank" rel="noopener">以实体为中心的索引</a>！</li>
-<li>我们可以建立不依赖于数据按时、按顺序和全局精确时间戳到达的数据<a href="https://discuss.elastic.co/t/re-index-aggregation-elasticsearch/75325" target="_blank" rel="noopener">滚动/汇总索引</a>！</li>
-<li>我们可以建立类似<a href="https://en.wikipedia.org/wiki/Materialized_view" target="_blank" rel="noopener">物化视图</a>的东西，在新数据/操作到达时进行更新！</li>
+<li>我们可以使用增量reindex功能，通过过滤&#x2F;连续reindex建立<a href="https://github.com/elastic/elasticsearch/issues/17997" target="_blank" rel="noopener">以实体为中心的索引</a>！</li>
+<li>我们可以建立不依赖于数据按时、按顺序和全局精确时间戳到达的数据<a href="https://discuss.elastic.co/t/re-index-aggregation-elasticsearch/75325" target="_blank" rel="noopener">滚动&#x2F;汇总索引</a>！</li>
+<li>我们可以建立类似<a href="https://en.wikipedia.org/wiki/Materialized_view" target="_blank" rel="noopener">物化视图</a>的东西，在新数据&#x2F;操作到达时进行更新！</li>
 <li>如果节点之间的操作因网络断开等原因而丢失，我们可以建立一种重放操作的方法，<a href="https://github.com/elastic/elasticsearch/pull/19355" target="_blank" rel="noopener">这将大大加快恢复速度</a>！</li>
 <li>我们可以建立一种在集群之间重放操作的方法！<a href="https://discuss.elastic.co/t/cross-data-center-replication/11670" target="_blank" rel="noopener">跨数据中心复制</a>！</li>
 </ul>
 <p>所有这些都需要打破一个小小的障碍：为索引操作添加序列号。很简单：我们只需要在主索引的每个操作中添加一个计数器！太简单了，我们看到社区成员和员工<a href="https://github.com/mikemccand/elasticsearch/commit/baf23885da83920e37bd87080bc2de5ef2d1a71e" target="_blank" rel="noopener">尝试</a>了好几次。但当我们<a href="https://github.com/elastic/elasticsearch/issues/10708" target="_blank" rel="noopener">层层剥开洋葱头时，我们发现它比最初看起来要复杂得多</a>。在我们开始讨论变更应用程序接口的实用性近6年后，我们仍然没有一个变更应用程序接口。原因何在？本博客的目的是分享幕后发生的事情，并就这个问题的答案提供一些见解。</p>
 <p>在过去两年中，我们几乎从头开始重写了复制逻辑。我们从已知的<a href="https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/" target="_blank" rel="noopener">学术算法</a>中汲取精华，同时确保我们仍能确保并行性，这正是Elasticsearch能够如此快速的原因：这是许多甚至所有传统共识算法都无法做到的。我们与分布式系统专家合作，为我们的<a href="https://github.com/elastic/elasticsearch-formal-models" target="_blank" rel="noopener">复制模型</a>建立了<a href="https://en.wikipedia.org/wiki/TLA%2B" target="_blank" rel="noopener">TLA+</a>规范。我们增加了大量<a href="https://github.com/elastic/elasticsearch/pull/17038" target="_blank" rel="noopener">测试</a>和<a href="https://github.com/elastic/elasticsearch/pull/18930" target="_blank" rel="noopener">测试基础设施</a>。</p>
-<p>这篇博客必然是技术性的，因为我们会深入探讨Elasticsearch如何进行复制的一些核心内容。不过，我们的目的是通过解释/定义/链接一些术语（即使您可能已经理解了这些术语），让更多读者能够理解这些术语。首先，让我们深入了解Elasticsearch所面临的一些挑战。</p>
-<h2 id="挑战">挑战</h2>
-<p>在继续深入之前，我们必须先谈谈我们的复制模型以及它的重要性。在Elasticsearch数据索引中，数据被分割成所谓的&quot;分片&quot;，基本上就是索引的子分区。你可以有5个主分片（基本上是索引的5个子分区），每个主分片可以有任意数量的主分片副本（称为<strong>副本</strong>）。但重要的是，每个子分区只有一个&quot;<strong>主分片</strong>&quot;。主分片首先接受索引操作（索引操作包括&quot;添加文档&quot;或&quot;删除文档&quot;等操作），然后<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/docs-replication.html" target="_blank" rel="noopener">将索引操作复制到副本</a>。因此，在将每个操作转发给副本之前，不断递增计数器并为每个操作分配一个序列号是非常简单的。只要没有人重启服务器，网络正常运行时间达到100%，硬件不出现故障，没有长时间的Java垃圾回收事件，也没有人升级软件，这种简单易行的方法就能真正奏效。</p>
-<p>但我们生活在现实世界中，当这些假设发生变化时，Elasticsearch就会进入&quot;故障&quot;模式和&quot;<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/indices-recovery.html" target="_blank" rel="noopener">恢复</a>&quot;过程。如果它们影响到运行主分片的节点，可能需要主分片停机，由另一个副本取而代之。由于变化来得突然，一些正在进行的索引操作可能尚未完全复制。如果您有2个或更多副本，其中一些操作可能只到达了其中一个副本，而没有到达另一个副本。更糟糕的是，由于Elasticsearch会并发索引文档（这也是Elasticsearch速度如此之快的原因之一！），每个副本都可能有不同的操作集，而这些操作集在另一个副本中并不存在。即使只运行一个副本（Elasticsearch的默认设置），也可能会出现问题。如果旧的主副本回来并被添加为副本，它可能包含从未复制到新主副本的操作。所有这些情况都有一个共同点：主节点失效后，分片上的操作历史可能会发生偏离，我们需要一些方法来解决这个问题。</p>
-<h2 id="PrimaryTerms-Sequence-Numbers">PrimaryTerms &amp; Sequence Numbers</h2>
-<p>我们采取的第一步是能够区分旧的和新的主分片。我们必须有一种方法来识别来自旧主分片的操作与来自新主分片的操作。此外，整个集群需要就此达成一致，以确保在出现问题时不会发生争执。这促使我们实现了<a href="https://github.com/elastic/elasticsearch/pull/14062" target="_blank" rel="noopener">主要术语</a>。这些主要术语是增量的，并在主分片被提升时更改。它们被持久化在<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/cluster-state.html" target="_blank" rel="noopener">集群状态</a>中，因此代表了集群所处的主分片的&quot;版本&quot;或&quot;生成&quot;。有了主要术语，操作历史中的任何冲突都可以通过查看操作的主要术语来解决。新术语优于旧术语。我们甚至可以<a href="https://github.com/elastic/elasticsearch/pull/17044" target="_blank" rel="noopener">开始拒绝那些太旧的操作</a>，避免混乱的情况发生。</p>
+<p>这篇博客必然是技术性的，因为我们会深入探讨Elasticsearch如何进行复制的一些核心内容。不过，我们的目的是通过解释&#x2F;定义&#x2F;链接一些术语（即使您可能已经理解了这些术语），让更多读者能够理解这些术语。首先，让我们深入了解Elasticsearch所面临的一些挑战。</p>
+<h2 id="挑战"><a href="#挑战" class="headerlink" title="挑战"></a>挑战</h2><p>在继续深入之前，我们必须先谈谈我们的复制模型以及它的重要性。在Elasticsearch数据索引中，数据被分割成所谓的”分片”，基本上就是索引的子分区。你可以有5个主分片（基本上是索引的5个子分区），每个主分片可以有任意数量的主分片副本（称为<strong>副本</strong>）。但重要的是，每个子分区只有一个”<strong>主分片</strong>“。主分片首先接受索引操作（索引操作包括”添加文档”或”删除文档”等操作），然后<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/docs-replication.html" target="_blank" rel="noopener">将索引操作复制到副本</a>。因此，在将每个操作转发给副本之前，不断递增计数器并为每个操作分配一个序列号是非常简单的。只要没有人重启服务器，网络正常运行时间达到100%，硬件不出现故障，没有长时间的Java垃圾回收事件，也没有人升级软件，这种简单易行的方法就能真正奏效。</p>
+<p>但我们生活在现实世界中，当这些假设发生变化时，Elasticsearch就会进入”故障”模式和”<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/indices-recovery.html" target="_blank" rel="noopener">恢复</a>“过程。如果它们影响到运行主分片的节点，可能需要主分片停机，由另一个副本取而代之。由于变化来得突然，一些正在进行的索引操作可能尚未完全复制。如果您有2个或更多副本，其中一些操作可能只到达了其中一个副本，而没有到达另一个副本。更糟糕的是，由于Elasticsearch会并发索引文档（这也是Elasticsearch速度如此之快的原因之一！），每个副本都可能有不同的操作集，而这些操作集在另一个副本中并不存在。即使只运行一个副本（Elasticsearch的默认设置），也可能会出现问题。如果旧的主副本回来并被添加为副本，它可能包含从未复制到新主副本的操作。所有这些情况都有一个共同点：主节点失效后，分片上的操作历史可能会发生偏离，我们需要一些方法来解决这个问题。</p>
+<h2 id="PrimaryTerms-Sequence-Numbers"><a href="#PrimaryTerms-Sequence-Numbers" class="headerlink" title="PrimaryTerms &amp; Sequence Numbers"></a>PrimaryTerms &amp; Sequence Numbers</h2><p>我们采取的第一步是能够区分旧的和新的主分片。我们必须有一种方法来识别来自旧主分片的操作与来自新主分片的操作。此外，整个集群需要就此达成一致，以确保在出现问题时不会发生争执。这促使我们实现了<a href="https://github.com/elastic/elasticsearch/pull/14062" target="_blank" rel="noopener">主要术语</a>。这些主要术语是增量的，并在主分片被提升时更改。它们被持久化在<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/cluster-state.html" target="_blank" rel="noopener">集群状态</a>中，因此代表了集群所处的主分片的”版本”或”生成”。有了主要术语，操作历史中的任何冲突都可以通过查看操作的主要术语来解决。新术语优于旧术语。我们甚至可以<a href="https://github.com/elastic/elasticsearch/pull/17044" target="_blank" rel="noopener">开始拒绝那些太旧的操作</a>，避免混乱的情况发生。</p>
 <p>一旦我们设置了主要术语的保护机制，我们添加了一个简单的计数器，并开始为每个操作分配一个来自该计数器的<strong>序列号</strong>。因此，这些序列号使我们能够了解在主分片上发生的索引操作的特定顺序，我们可以将其用于接下来几节中将要讨论的各种目的。您可以在响应中看到分配的序列号和主要术语：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">$ curl -H &apos;Content-Type: application/json&apos; -XPOST http://127.0.0.1:9200/foo/doc?pretty -d &apos;&#123; &quot;bar&quot;: &quot;baz&quot; &#125;&apos;</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">	&quot;_index&quot;: &quot;foo&quot;,</span><br><span class="line">	&quot;_type&quot;: &quot;doc&quot;,</span><br><span class="line">	&quot;_id&quot;: &quot;MlDBm10BditXXu4kjj5E&quot;,</span><br><span class="line">	&quot;_version&quot;: 1,</span><br><span class="line">	&quot;result&quot;: &quot;created&quot;,</span><br><span class="line">	&quot;_shards&quot;: &#123;</span><br><span class="line">		&quot;total&quot;: 2,</span><br><span class="line">		&quot;successful&quot;: 1,</span><br><span class="line">		&quot;failed&quot;: 0</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;_seq_no&quot;: 19,</span><br><span class="line">	&quot;_primary_term&quot;: 1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>注意返回的响应中现在包含了_seq_no和_primary_term。</p>
-<h3 id="Local-and-Global-Checkpoints">Local and Global Checkpoints</h3>
-<p>有了主要术语和序列号，我们理论上有了检测分片之间差异并在主分片失败时重新对齐它们的工具。拥有主要术语为x的旧主分片可以通过删除主要术语为x且不存在于新主分片历史记录中的操作来恢复，并且具有更高主要术语的缺失操作可以索引到旧主分片中。</p>
+<h3 id="Local-and-Global-Checkpoints"><a href="#Local-and-Global-Checkpoints" class="headerlink" title="Local and Global Checkpoints"></a>Local and Global Checkpoints</h3><p>有了主要术语和序列号，我们理论上有了检测分片之间差异并在主分片失败时重新对齐它们的工具。拥有主要术语为x的旧主分片可以通过删除主要术语为x且不存在于新主分片历史记录中的操作来恢复，并且具有更高主要术语的缺失操作可以索引到旧主分片中。</p>
 <p>不幸的是，当您同时每秒索引数十万甚至数百万个事件时，比较数百万次操作的历史记录实际上是不切实际的。存储成本过高，直接比较所需的计算工作将耗时过长。为了解决这个问题，Elasticsearch维护了一个名为<strong>全局检查点</strong>的安全标记。全局检查点是一个序列号，我们知道所有活动分片的历史记录都至少与之对齐。换句话说，所有序列号低于全局检查点的操作都已经被所有活动分片处理，并在各自的历史记录中是相等的。这意味着在主分片失败后，我们只需要比较<a href="https://github.com/elastic/elasticsearch/pull/24841" target="_blank" rel="noopener">新主分片和任何剩余副本</a>之间最后已知的全局检查点以上的操作。当旧主分片恢复时，我们取其最后知道的全局检查点，并将其以上的操作与新主分片进行比较。这样，我们只需要比较需要比较的操作，而不是整个历史记录。</p>
 <p>推进全局检查点的责任属于主分片。主分片通过跟踪副本上已完成的操作来实现这一点。一旦检测到所有副本已经超过给定的序列号，主分片将相应地更新全局检查点。分片副本不会一直跟踪所有操作，而是维护一个全局检查点的本地变体，称为<strong>本地检查点</strong>。本地检查点是一个序列号，该副本上处理了所有更低序列号的操作。每当副本确认（或ack）主节点的写操作时，它们也会向主节点提供更新的本地检查点。利用本地检查点，主节点就能更新全局检查点，然后在下一次索引操作中将全局检查点发送给所有分片副本。</p>
-<p>下面的动画展示了在面对有损网络和突发故障等并发挑战时，随着序列号和全局/本地检查点的增加而发生的情况：</p>
-<p><img data-src="/images/elasticsearch-sequence-ids-6-0/seqnos_animation.gif" alt></p>
+<p>下面的动画展示了在面对有损网络和突发故障等并发挑战时，随着序列号和全局&#x2F;本地检查点的增加而发生的情况：</p>
+<p><img data-src="/images/elasticsearch-sequence-ids-6-0/seqnos_animation.gif"></p>
 <blockquote>
 <p>当索引操作从主分片发送到副本时，我们会跟踪每个副本确认收到的最高序列号，并将其称为全局检查点。主分片会告诉所有副本全局检查点是多少。因此，如果主分片切换，我们只需要比较和可能重新处理自上次全局检查点以来的操作，而不是磁盘上的所有文件。</p>
 </blockquote>
 <p>全局检查点还具有另一个很好的特性——它代表了那些被<strong>保证会留下的操作</strong>（它们在所有活动分片的历史记录中），以及<strong>可能</strong>会被<strong>回滚</strong>的操作所在的区域，如果主分片在它们被完全复制并向用户确认之前恰好发生故障。这是一个微妙但重要的特性，对于未来的变更API或跨数据中心复制功能将是至关重要的。</p>
-<h2 id="第一个好处：更快恢复">第一个好处：更快恢复</h2>
-<p>在Elasticsearch6.0之前，我们跳过了实际恢复过程的工作原理。当Elasticsearch在副本处于离线状态后恢复副本时，它必须确保该副本与活动主分片完全相同。非活动分片具有<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/indices-synced-flush.html" target="_blank" rel="noopener">同步刷新标记</a>，以便快速进行验证，但具有活动索引的分片则没有任何保证。如果一个分片在仍有活动索引的情况下掉线，那么新的主分片将通过网络复制Lucene段（即磁盘上的文件）。如果这些分片很大，这可能是一个繁重且耗时的操作。这是因为在6.0之前，我们没有跟踪个别写操作（序列号），而在幕后，Lucene会将所有添加/更新/删除合并到更大的分段中，这样就无法恢复构成更改的单个操作…也就是说，除非你将<strong>事务日志</strong>保留一段时间。</p>
-<p>这就是我们现在所做的：我们保留事务日志，直到它变的&quot;过大&quot;或&quot;过旧&quot;，不再有必要继续保留它。如果副本需要&quot;更新&quot;，我们会使用该副本已知的最后一个全局检查点，仅从主事务日志中回放相关更改，而不是昂贵的大文件复制。如果主事务日志&quot;过大&quot;或&quot;太旧&quot;而无法重放到副本，那么我们将回退到旧的基于文件的恢复方式。</p>
+<h2 id="第一个好处：更快恢复"><a href="#第一个好处：更快恢复" class="headerlink" title="第一个好处：更快恢复"></a>第一个好处：更快恢复</h2><p>在Elasticsearch6.0之前，我们跳过了实际恢复过程的工作原理。当Elasticsearch在副本处于离线状态后恢复副本时，它必须确保该副本与活动主分片完全相同。非活动分片具有<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/indices-synced-flush.html" target="_blank" rel="noopener">同步刷新标记</a>，以便快速进行验证，但具有活动索引的分片则没有任何保证。如果一个分片在仍有活动索引的情况下掉线，那么新的主分片将通过网络复制Lucene段（即磁盘上的文件）。如果这些分片很大，这可能是一个繁重且耗时的操作。这是因为在6.0之前，我们没有跟踪个别写操作（序列号），而在幕后，Lucene会将所有添加&#x2F;更新&#x2F;删除合并到更大的分段中，这样就无法恢复构成更改的单个操作……也就是说，除非你将<strong>事务日志</strong>保留一段时间。</p>
+<p>这就是我们现在所做的：我们保留事务日志，直到它变的”过大”或”过旧”，不再有必要继续保留它。如果副本需要”更新”，我们会使用该副本已知的最后一个全局检查点，仅从主事务日志中回放相关更改，而不是昂贵的大文件复制。如果主事务日志”过大”或”太旧”而无法重放到副本，那么我们将回退到旧的基于文件的恢复方式。</p>
 <p>如果您一直在运行一个大型集群，而该集群经常出现网络断开、重启、升级等情况，我们希望这将大大提高您的工作效率，因为您不必在分片恢复时长时间等待。</p>
-<h3 id="须知">须知</h3>
-<p>正如上一节中提到的，事务日志保留直到它&quot;过大&quot;或&quot;过旧&quot;而不再需要保留。我们如何确定什么是&quot;过大&quot;或&quot;过旧&quot;呢？当然是可配置的！在6.0中，我们引入了两个新的<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/index-modules-translog.html#_translog_settings" target="_blank" rel="noopener">事务日志</a>设置：</p>
-<p>*<font color="DeepPink">index.translog.retention.size</font>:默认为512MB。如果事务日志超过这个大小，我们只保留这么多数据。<br>
-*<font color="DeepPink">index.translog.retention.age</font>:默认为12小时。超过这个时间段，我们将不再保留事务日志文件。</p>
-<p><strong>这些设置很重要</strong>，因为它们影响新的、更快的恢复工作以及磁盘使用情况。较大的事务日志保留大小或较长的保留时间意味着您有更高的机会通过新的更快恢复来进行恢复，而不是依赖于旧的基于文件的恢复。然而，它们也伴随着一定的成本：这会增加磁盘利用率，而且请记住<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/index-modules-translog.html" target="_blank" rel="noopener">事务日志是按分片</a>进行的。举个实际的例子，如果您有20个索引，每个索引有5个主分片，并且在12小时内写入大量数据，那么可能会导致额外20<em>5</em>512mb=50GB的磁盘利用率，直到那12小时窗口过期为止。如果您在不同索引上有不同的恢复和大小需求，您可以根据需要在每个索引上进行调整。例如，如果您预计进行机器或节点维护，您可能需要考虑对事务日志保留窗口进行任何调整。</p>
+<h3 id="须知"><a href="#须知" class="headerlink" title="须知"></a>须知</h3><p>正如上一节中提到的，事务日志保留直到它”过大”或”过旧”而不再需要保留。我们如何确定什么是”过大”或”过旧”呢？当然是可配置的！在6.0中，我们引入了两个新的<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/index-modules-translog.html#_translog_settings" target="_blank" rel="noopener">事务日志</a>设置：</p>
+<p>*<font color="DeepPink">index.translog.retention.size</font>:默认为512MB。如果事务日志超过这个大小，我们只保留这么多数据。<br>*<font color="DeepPink">index.translog.retention.age</font>:默认为12小时。超过这个时间段，我们将不再保留事务日志文件。</p>
+<p><strong>这些设置很重要</strong>，因为它们影响新的、更快的恢复工作以及磁盘使用情况。较大的事务日志保留大小或较长的保留时间意味着您有更高的机会通过新的更快恢复来进行恢复，而不是依赖于旧的基于文件的恢复。然而，它们也伴随着一定的成本：这会增加磁盘利用率，而且请记住<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/index-modules-translog.html" target="_blank" rel="noopener">事务日志是按分片</a>进行的。举个实际的例子，如果您有20个索引，每个索引有5个主分片，并且在12小时内写入大量数据，那么可能会导致额外20<em>5</em>512mb&#x3D;50GB的磁盘利用率，直到那12小时窗口过期为止。如果您在不同索引上有不同的恢复和大小需求，您可以根据需要在每个索引上进行调整。例如，如果您预计进行机器或节点维护，您可能需要考虑对事务日志保留窗口进行任何调整。</p>
 <p>注意：在6.0之前，事务日志的大小在索引过程中也可以增长到512MB（默认值），根据<font color="DeepPink">index.translog.flush_threshold_size</font>设置。这意味着新的保留策略不会改变活动分片的存储需求。这一变化影响了停止索引的分片。现在，我们不清理事务日志，而是将其保留另外12小时。</p>
-<h2 id="下一个优势：跨数据中心复制">下一个优势：跨数据中心复制</h2>
-<p>正如文章开头提到的，如果我们能进行有序的索引操作，我们就能在Elasticsearch中做很多美妙的事情。虽然花了一些时间，但现在我们做到了。更快的恢复是我们决定构建的第一个用例：它允许我们测试我们添加的新功能。</p>
+<h2 id="下一个优势：跨数据中心复制"><a href="#下一个优势：跨数据中心复制" class="headerlink" title="下一个优势：跨数据中心复制"></a>下一个优势：跨数据中心复制</h2><p>正如文章开头提到的，如果我们能进行有序的索引操作，我们就能在Elasticsearch中做很多美妙的事情。虽然花了一些时间，但现在我们做到了。更快的恢复是我们决定构建的第一个用例：它允许我们测试我们添加的新功能。</p>
 <p>但我们知道跨数据中心复制也是我们企业客户常常要求的功能，所以这是我们即将添加的另一个功能。这需要构建新的API、在复制之上增加新的监控功能，以及是的，还需要进行更多的测试和文档编写。</p>
-<h3 id="还有更多工作要做">还有更多工作要做</h3>
-<p>正如您在<a href="https://github.com/elastic/elasticsearch/issues/10708" target="_blank" rel="noopener">序列号GitHub问题</a>上看到的，我们在序列号功能上有了一个良好的开端，但仍有许多工作要做！我们认为迄今为止所做的工作代表了我们向前迈出的一大步，即使它还没有涵盖我们可以建立/围绕序列号的所有功能。如果您有兴趣继续关注我们的工作，请随时关注标有:<a href="https://github.com/elastic/elasticsearch/labels/%3ASequence%20IDs" target="_blank" rel="noopener">Sequence IDs</a>的ticket或PR，或直接在<a href="https://discuss.elastic.co/c/elastic-stack/elasticsearch/6" target="_blank" rel="noopener">讨论区</a>与我们联系！</p>
+<h3 id="还有更多工作要做"><a href="#还有更多工作要做" class="headerlink" title="还有更多工作要做"></a>还有更多工作要做</h3><p>正如您在<a href="https://github.com/elastic/elasticsearch/issues/10708" target="_blank" rel="noopener">序列号GitHub问题</a>上看到的，我们在序列号功能上有了一个良好的开端，但仍有许多工作要做！我们认为迄今为止所做的工作代表了我们向前迈出的一大步，即使它还没有涵盖我们可以建立&#x2F;围绕序列号的所有功能。如果您有兴趣继续关注我们的工作，请随时关注标有:<a href="https://github.com/elastic/elasticsearch/labels/%3ASequence%20IDs" target="_blank" rel="noopener">Sequence IDs</a>的ticket或PR，或直接在<a href="https://discuss.elastic.co/c/elastic-stack/elasticsearch/6" target="_blank" rel="noopener">讨论区</a>与我们联系！</p>
 
     </div>
 
@@ -544,7 +537,7 @@
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
