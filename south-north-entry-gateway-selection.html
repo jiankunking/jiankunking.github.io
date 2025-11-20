@@ -152,9 +152,9 @@
     <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">166</span></a>
 
   </li>
-        <li class="menu-item menu-item-书籍">
+        <li class="menu-item menu-item-读书">
 
-    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>书籍</a>
+    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>读书</a>
 
   </li>
         <li class="menu-item menu-item-tags">
@@ -303,10 +303,11 @@
 <p>南北向网关的选型之旅</p>
 </blockquote>
 <a id="more"></a>
-
-<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>我们这边的容器云是国内外混合云，这里的混合云是指</p>
+<h1>背景</h1>
+<p>我们这边的容器云是国内外混合云，这里的混合云是指</p>
 <ul>
-<li><p>从提供者来分包含：</p>
+<li>
+<p>从提供者来分包含：</p>
 <ul>
 <li>阿里云</li>
 <li>华为云</li>
@@ -315,14 +316,16 @@
 <li>自建</li>
 </ul>
 </li>
-<li><p>从地域来分包含：</p>
+<li>
+<p>从地域来分包含：</p>
 <ul>
 <li>国内</li>
-<li>海外<ul>
+<li>海外
+<ul>
 <li>法兰克福</li>
 <li>俄罗斯</li>
 <li>新加坡</li>
-<li>……</li>
+<li>…</li>
 </ul>
 </li>
 </ul>
@@ -333,14 +336,16 @@
 <li>涵盖住所有集群、所有地域</li>
 <li>最好是能直接用云产品</li>
 <li>对接各个集群的方案是统一的</li>
-<li>能够涵盖<ul>
+<li>能够涵盖
+<ul>
 <li>Ingress Nginx的能力</li>
 <li>业务开发对于网关的日常需求</li>
 </ul>
 </li>
 </ul>
 <blockquote>
-<p>我们一期的目标是先弄南北向网关，二期看情况再弄服务网格(东西向)<br>所以本方案主要侧重在南北向网关的选择，但如果后期要弄服务网格也要能支持</p>
+<p>我们一期的目标是先弄南北向网关，二期看情况再弄服务网格(东西向)<br>
+所以本方案主要侧重在南北向网关的选择，但如果后期要弄服务网格也要能支持</p>
 </blockquote>
 <p>基于上面的背景，业界可以选择的方案，大概有这些：</p>
 <ul>
@@ -352,7 +357,10 @@
 <p>先捋一下业务网关的基础能力</p>
 <ul>
 <li>HTTP 路由</li>
-<li>HTTP 流量拆分<br>  ◦ Canary traffic rollout<br>  ◦ Blue-green traffic rollout<br>  ◦ ……</li>
+<li>HTTP 流量拆分<br>
+◦ Canary traffic rollout<br>
+◦ Blue-green traffic rollout<br>
+◦ …</li>
 <li>Timeout</li>
 <li>Rewrite</li>
 <li>Redirect</li>
@@ -366,60 +374,76 @@
 </ul>
 <p>上面的这些能力也涵盖住了Ingress Nginx的能力。</p>
 <blockquote>
-<p>对于网关部分，大家有可能会想到为啥调研阿里云的MSE？<br>主要是MSE只能部署在阿里云的ACK中，对于非阿里云ACK及自建集群没法纳管。</p>
+<p>对于网关部分，大家有可能会想到为啥调研阿里云的MSE？<br>
+主要是MSE只能部署在阿里云的ACK中，对于非阿里云ACK及自建集群没法纳管。</p>
 </blockquote>
 <p>下面开始逐一分析以上网关的优劣</p>
-<h1 id="网关优劣势分析"><a href="#网关优劣势分析" class="headerlink" title="网关优劣势分析"></a>网关优劣势分析</h1><h2 id="华为云ASM"><a href="#华为云ASM" class="headerlink" title="华为云ASM"></a>华为云ASM</h2><blockquote>
+<h1>网关优劣势分析</h1>
+<h2 id="华为云ASM">华为云ASM</h2>
+<blockquote>
 <p>基于Istio Gateway实现,能支持服务网格但实现方式Sidecar模式。</p>
 </blockquote>
-<h3 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h3><ul>
+<h3 id="优势">优势</h3>
+<ul>
 <li>ASM 完全兼容istio CRD</li>
 </ul>
-<h3 id="劣势"><a href="#劣势" class="headerlink" title="劣势"></a>劣势</h3><ul>
+<h3 id="劣势">劣势</h3>
+<ul>
 <li>ASM基础版本(支持单集群、支持<strong>最大实例数是200</strong>、<font color="DeepPink"><strong>不保证SLA</strong></font>)</li>
-<li>UCS 服务网格商用受限(现在还没有人用过)<ul>
+<li>UCS 服务网格商用受限(现在还没有人用过)
+<ul>
 <li>注1：<code>ASM企业版已经下线了</code></li>
 </ul>
 </li>
 <li>不支持纳管别的云或者自建集群</li>
 <li>同样存在路由优先级问题</li>
 </ul>
-<h2 id="阿里云ASM"><a href="#阿里云ASM" class="headerlink" title="阿里云ASM"></a>阿里云ASM</h2><blockquote>
+<h2 id="阿里云ASM">阿里云ASM</h2>
+<blockquote>
 <p>基于Istio Gateway实现,能支持服务网格，支持：Sidecar、Ambient两种模式，不过现阶段生产不推荐Ambient模式。</p>
 </blockquote>
-<h3 id="优势-1"><a href="#优势-1" class="headerlink" title="优势"></a>优势</h3><ul>
+<h3 id="优势-v2">优势</h3>
+<ul>
 <li>能提供SLA保证</li>
 <li>不需要自己运维相关组件</li>
 <li>支持纳管别的云及自建集群</li>
 <li>针对业务集群阿里云对应地域没有regin及海外网络差的情况，有针对性方案:<a href="https://help.aliyun.com/zh/asm/user-guide/reduce-push-latency-using-asm-remote-control-plane" target="_blank" rel="noopener">ASM远程控制面</a></li>
-<li><a href="https://help.aliyun.com/zh/asm/user-guide/overview-of-asm-gateways?spm=a2c4g.11186623.help-menu-147365.d_2_5_0.681c5bcdGTAA8B&scm=20140722.H_473114._.OR_help-T_cn~zh-V_1" target="_blank" rel="noopener">功能特性全</a></li>
-<li>同一控制面支持纳管多个kubernetes集群<br>*这里需要注意:这些集群都是类似镜像集群,集群内的ASM部署的CRD及下发的路由啥的都是一毛一样的,所以这个功能也没啥用</li>
+<li><a href="https://help.aliyun.com/zh/asm/user-guide/overview-of-asm-gateways?spm=a2c4g.11186623.help-menu-147365.d_2_5_0.681c5bcdGTAA8B&amp;scm=20140722.H_473114._.OR_help-T_cn~zh-V_1" target="_blank" rel="noopener">功能特性全</a></li>
+<li>同一控制面支持纳管多个kubernetes集群<br>
+*这里需要注意:这些集群都是类似镜像集群,集群内的ASM部署的CRD及下发的路由啥的都是一毛一样的,所以这个功能也没啥用</li>
 </ul>
-<h3 id="劣势-1"><a href="#劣势-1" class="headerlink" title="劣势"></a>劣势</h3><ul>
-<li>因为是直接基于Istio Gateway的，所以路由的顺序有问题<ul>
+<h3 id="劣势-v2">劣势</h3>
+<ul>
+<li>因为是直接基于Istio Gateway的，所以路由的顺序有问题
+<ul>
 <li><a href="https://istio.io/latest/zh/docs/concepts/traffic-management/" target="_blank" rel="noopener">同一个虚拟服务内部，按照声明顺序来匹配，匹配到一个满足的就停止了</a></li>
 <li><a href="https://istio.io/latest/zh/docs/ops/best-practices/traffic-management/#multiple-virtual-services-and-destination-rules-for-the-same-host" target="_blank" rel="noopener">同一个域名，不同虚拟服务之间，顺序是不确定的</a></li>
 </ul>
 </li>
-<li>目前支持Kubernetes Gateway API v1.1.0，不支持<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/19?closed=1" target="_blank" rel="noopener">v1.2.0</a>的相关特性<ul>
-<li>标准<ul>
-<li>HTTPRoute 超时</li>
-<li>后端协议支持WebSocket 和 HTTP&#x2F;2</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h2 id="Istio-Gateway-Kubernetes-Gateway-API"><a href="#Istio-Gateway-Kubernetes-Gateway-API" class="headerlink" title="Istio Gateway &#x2F; Kubernetes Gateway API"></a>Istio Gateway &#x2F; Kubernetes Gateway API</h2><p>对于Istio Gateway这里分为两种方案：</p>
+<li>目前支持Kubernetes Gateway API v1.1.0，不支持<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/19?closed=1" target="_blank" rel="noopener">v1.2.0</a>的相关特性
 <ul>
-<li>对接标准，也就是Kubernetes Gateway API<ul>
+<li>标准
+<ul>
+<li>HTTPRoute 超时</li>
+<li>后端协议支持WebSocket 和 HTTP/2</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="Istio-Gateway-Kubernetes-Gateway-API">Istio Gateway / Kubernetes Gateway API</h2>
+<p>对于Istio Gateway这里分为两种方案：</p>
+<ul>
+<li>对接标准，也就是Kubernetes Gateway API
+<ul>
 <li><strong>标准化</strong>：Kubernetes Gateway API旨在成为一种标准，用于描述在Kubernetes集群中如何暴露服务。这意味着它不仅仅限于与某个特定的服务网格或入口控制器（如Istio）一起使用。通过采用Gateway API，您可以<strong>更容易地切换不同的实现或服务提供商，而无需重写您的配置</strong>。</li>
 <li><strong>概念一致性</strong>：跟大家之前使用的MSE、APISIX保持一致</li>
 <li><strong>更好的集成能力</strong>：由于Gateway API是Kubernetes原生的API，因此它能够更好地与其他Kubernetes原生工具和系统集成</li>
 <li><a href="https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1.HTTPRouteRule" target="_blank" rel="noopener"><strong>支持路由优先级</strong></a></li>
 </ul>
 </li>
-<li>直接对接Istio Gateway<ul>
+<li>直接对接Istio Gateway
+<ul>
 <li>现阶段Istio Gateway的能力比Kubernetes Gateway API涵盖的范围更广，比如：<a href="https://istio.io/latest/zh/docs/tasks/traffic-management/circuit-breaking/" target="_blank" rel="noopener">熔断</a>、<a href="https://istio.io/latest/zh/docs/tasks/policy-enforcement/rate-limit/" target="_blank" rel="noopener">限流</a></li>
 <li>但会引入Istio Gateway虚拟服务(VirtualService)、目标规则(DestinationRule)等概念，增加用户的学习成本</li>
 <li>路由顺序不确定</li>
@@ -432,8 +456,10 @@
 <li>Kubernetes Gateway API目前不支持熔断、限流</li>
 <li>对于跨域，也需要等到<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21" target="_blank" rel="noopener">Milestone v1.3.0</a> （当前版本v1.2.1，下一个版本应该就是v1.3.0,但具体发布时间不确定）</li>
 </ul>
-<h3 id="Service-Mesh"><a href="#Service-Mesh" class="headerlink" title="Service Mesh"></a><a href="https://gateway-api.kubernetes.ac.cn/implementations/#service-mesh-implementation-status" target="_blank" rel="noopener">Service Mesh</a></h3><p>从官网上看，Istio对于Kubernetes Gateway API服务网格的支持也已经GA。</p>
-<h3 id="Kubernetes-Gateway-API路由优先级"><a href="#Kubernetes-Gateway-API路由优先级" class="headerlink" title="Kubernetes Gateway API路由优先级"></a>Kubernetes Gateway API路由优先级</h3><p>从HTTPRoutes生成的代理或负载均衡器路由配置必须根据以下标准优先匹配，并在出现平局时继续比较。在适用路由上指定的所有规则中，优先级应给予具有以下条件的匹配：</p>
+<h3 id="Service-Mesh"><a href="https://gateway-api.kubernetes.ac.cn/implementations/#service-mesh-implementation-status" target="_blank" rel="noopener">Service Mesh</a></h3>
+<p>从官网上看，Istio对于Kubernetes Gateway API服务网格的支持也已经GA。</p>
+<h3 id="Kubernetes-Gateway-API路由优先级">Kubernetes Gateway API路由优先级</h3>
+<p>从HTTPRoutes生成的代理或负载均衡器路由配置必须根据以下标准优先匹配，并在出现平局时继续比较。在适用路由上指定的所有规则中，优先级应给予具有以下条件的匹配：</p>
 <ul>
 <li>“精确”路径匹配。</li>
 <li>具有最多字符的“前缀”路径匹配。</li>
@@ -445,36 +471,46 @@
 <p>如果在多个路由之间仍然存在平局，匹配优先级必须按照以下标准依次确定，并在出现平局时继续比较：</p>
 <ul>
 <li>基于创建时间戳的最早的路由。</li>
-<li>按“{命名空间}&#x2F;{名称}”字母顺序排列的第一个路由。</li>
+<li>按“{命名空间}/{名称}”字母顺序排列的第一个路由。</li>
 </ul>
 <p>如果在HTTPRoute内仍然存在平局，则应将匹配优先级授予符合上述条件的第一个匹配规则（按列表顺序）。</p>
 <p>如果未成功附加与请求匹配的规则到请求来源的父级，则必须返回HTTP 404状态码。</p>
 <blockquote>
-<p>原文地址：<br><a href="https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule" target="_blank" rel="noopener">https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule</a></p>
+<p>原文地址：<br>
+<a href="https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule" target="_blank" rel="noopener">https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule</a></p>
 </blockquote>
 <p>从文档注释的位置可以判断同一个HTTPRouteRule内的多个HTTPRouteMatch应该是会满足以上规则的，那么多个HTTPRouteRule之间呢？</p>
 <p>下面逐一验证下以上两种情况：</p>
-<h4 id="验证结果"><a href="#验证结果" class="headerlink" title="验证结果"></a>验证结果</h4><p><img data-src="/images/south-north-entry-gateway-selection/%E8%B7%AF%E7%94%B1%E4%BC%98%E5%85%88%E7%BA%A7%E9%AA%8C%E8%AF%81.png"></p>
+<h4 id="验证结果">验证结果</h4>
+<p><img data-src="/images/south-north-entry-gateway-selection/%E8%B7%AF%E7%94%B1%E4%BC%98%E5%85%88%E7%BA%A7%E9%AA%8C%E8%AF%81.png" alt></p>
 <p>针对常用的</p>
 <ul>
 <li>多个前缀匹配之间的优先级</li>
-<li>前缀匹配与精确匹配的优先级<br>进行验证，通过验证结果可以看出istio路由是遵循了Kubernetes Gateway API规范的。</li>
+<li>前缀匹配与精确匹配的优先级<br>
+进行验证，通过验证结果可以看出istio路由是遵循了Kubernetes Gateway API规范的。</li>
 </ul>
-<h1 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h1><p>从文中所列举的几种方案来看，目前最可行的方案就是</p>
+<h1>结果</h1>
+<p>从文中所列举的几种方案来看，目前最可行的方案就是</p>
 <ul>
-<li>自己部署Istio Gateway，然后直接对接Kubernetes Gateway API的CRD。<ul>
+<li>自己部署Istio Gateway，然后直接对接Kubernetes Gateway API的CRD。
+<ul>
 <li>这个真实要用起来也要等<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21" target="_blank" rel="noopener">Milestone v1.3.0</a> 发布及istio支持之后</li>
 </ul>
 </li>
 <li>或者等阿里云ASM支持<a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21" target="_blank" rel="noopener">Milestone v1.3.0</a>之后</li>
 </ul>
-<h1 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h1><h2 id="云ASM支持Kubernetes版本的范围及云ASM-Istio版本"><a href="#云ASM支持Kubernetes版本的范围及云ASM-Istio版本" class="headerlink" title="云ASM支持Kubernetes版本的范围及云ASM Istio版本"></a>云ASM支持Kubernetes版本的范围及云ASM Istio版本</h2><ul>
+<h1>其它</h1>
+<h2 id="云ASM支持Kubernetes版本的范围及云ASM-Istio版本">云ASM支持Kubernetes版本的范围及云ASM Istio版本</h2>
+<ul>
 <li><a href="https://help.aliyun.com/zh/asm/product-overview/support-for-istio-versions?spm=5176.13895322.console-base_help.dexternal.6dac5fcfo2sie4" target="_blank" rel="noopener">阿里云</a></li>
 <li><a href="https://support.huaweicloud.com/usermanual-asm/asm_01_0020.html" target="_blank" rel="noopener">华为云</a></li>
 </ul>
-<h2 id="Sidecar-vs-Ambient"><a href="#Sidecar-vs-Ambient" class="headerlink" title="Sidecar vs Ambient"></a>Sidecar vs Ambient</h2><p><a href="https://istio.io/latest/zh/docs/overview/dataplane-modes/#choosing-between-sidecar-and-ambient" target="_blank" rel="noopener">https://istio.io/latest/zh/docs/overview/dataplane-modes/#choosing-between-sidecar-and-ambient</a></p>
-<h2 id="Istio-与-Kubernetes-Gateway-API"><a href="#Istio-与-Kubernetes-Gateway-API" class="headerlink" title="Istio 与 Kubernetes Gateway API"></a>Istio 与 Kubernetes Gateway API</h2><p><a href="https://istio.io/latest/zh/docs/ops/configuration/traffic-management/network-topologies/" target="_blank" rel="noopener">Istio 支持 Kubernetes Gateway API， 并计划将其作为未来流量管理的默认 API。</a></p>
-<h2 id="Istio是如何实现Kubernetes-Gateway-API路由优先级的？"><a href="#Istio是如何实现Kubernetes-Gateway-API路由优先级的？" class="headerlink" title="Istio是如何实现Kubernetes Gateway API路由优先级的？"></a>Istio是如何实现Kubernetes Gateway API路由优先级的？</h2><p><a href="https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/conversion.go#L823" target="_blank" rel="noopener">https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/conversion.go#L823</a></p>
+<h2 id="Sidecar-vs-Ambient">Sidecar vs Ambient</h2>
+<p><a href="https://istio.io/latest/zh/docs/overview/dataplane-modes/#choosing-between-sidecar-and-ambient" target="_blank" rel="noopener">https://istio.io/latest/zh/docs/overview/dataplane-modes/#choosing-between-sidecar-and-ambient</a></p>
+<h2 id="Istio-与-Kubernetes-Gateway-API">Istio 与 Kubernetes Gateway API</h2>
+<p><a href="https://istio.io/latest/zh/docs/ops/configuration/traffic-management/network-topologies/" target="_blank" rel="noopener">Istio 支持 Kubernetes Gateway API， 并计划将其作为未来流量管理的默认 API。</a></p>
+<h2 id="Istio是如何实现Kubernetes-Gateway-API路由优先级的？">Istio是如何实现Kubernetes Gateway API路由优先级的？</h2>
+<p><a href="https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/conversion.go#L823" target="_blank" rel="noopener">https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/conversion.go#L823</a></p>
 
     </div>
 
@@ -651,7 +687,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#网关优劣势分析"><span class="nav-number">2.</span> <span class="nav-text">网关优劣势分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#华为云ASM"><span class="nav-number">2.1.</span> <span class="nav-text">华为云ASM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#优势"><span class="nav-number">2.1.1.</span> <span class="nav-text">优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#劣势"><span class="nav-number">2.1.2.</span> <span class="nav-text">劣势</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#阿里云ASM"><span class="nav-number">2.2.</span> <span class="nav-text">阿里云ASM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#优势-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#劣势-1"><span class="nav-number">2.2.2.</span> <span class="nav-text">劣势</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Istio-Gateway-Kubernetes-Gateway-API"><span class="nav-number">2.3.</span> <span class="nav-text">Istio Gateway / Kubernetes Gateway API</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Service-Mesh"><span class="nav-number">2.3.1.</span> <span class="nav-text">Service Mesh</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Kubernetes-Gateway-API路由优先级"><span class="nav-number">2.3.2.</span> <span class="nav-text">Kubernetes Gateway API路由优先级</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#验证结果"><span class="nav-number">2.3.2.1.</span> <span class="nav-text">验证结果</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结果"><span class="nav-number">3.</span> <span class="nav-text">结果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其它"><span class="nav-number">4.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#云ASM支持Kubernetes版本的范围及云ASM-Istio版本"><span class="nav-number">4.1.</span> <span class="nav-text">云ASM支持Kubernetes版本的范围及云ASM Istio版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sidecar-vs-Ambient"><span class="nav-number">4.2.</span> <span class="nav-text">Sidecar vs Ambient</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Istio-与-Kubernetes-Gateway-API"><span class="nav-number">4.3.</span> <span class="nav-text">Istio 与 Kubernetes Gateway API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Istio是如何实现Kubernetes-Gateway-API路由优先级的？"><span class="nav-number">4.4.</span> <span class="nav-text">Istio是如何实现Kubernetes Gateway API路由优先级的？</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">网关优劣势分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#华为云ASM"><span class="nav-number">2.1.</span> <span class="nav-text">华为云ASM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#优势"><span class="nav-number">2.1.1.</span> <span class="nav-text">优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#劣势"><span class="nav-number">2.1.2.</span> <span class="nav-text">劣势</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#阿里云ASM"><span class="nav-number">2.2.</span> <span class="nav-text">阿里云ASM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#优势-v2"><span class="nav-number">2.2.1.</span> <span class="nav-text">优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#劣势-v2"><span class="nav-number">2.2.2.</span> <span class="nav-text">劣势</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Istio-Gateway-Kubernetes-Gateway-API"><span class="nav-number">2.3.</span> <span class="nav-text">Istio Gateway / Kubernetes Gateway API</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Service-Mesh"><span class="nav-number">2.3.1.</span> <span class="nav-text">Service Mesh</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Kubernetes-Gateway-API路由优先级"><span class="nav-number">2.3.2.</span> <span class="nav-text">Kubernetes Gateway API路由优先级</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#验证结果"><span class="nav-number">2.3.2.1.</span> <span class="nav-text">验证结果</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">结果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#云ASM支持Kubernetes版本的范围及云ASM-Istio版本"><span class="nav-number">4.1.</span> <span class="nav-text">云ASM支持Kubernetes版本的范围及云ASM Istio版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sidecar-vs-Ambient"><span class="nav-number">4.2.</span> <span class="nav-text">Sidecar vs Ambient</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Istio-与-Kubernetes-Gateway-API"><span class="nav-number">4.3.</span> <span class="nav-text">Istio 与 Kubernetes Gateway API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Istio是如何实现Kubernetes-Gateway-API路由优先级的？"><span class="nav-number">4.4.</span> <span class="nav-text">Istio是如何实现Kubernetes Gateway API路由优先级的？</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 

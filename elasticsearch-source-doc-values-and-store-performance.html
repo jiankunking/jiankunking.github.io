@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="原文地址https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html">
+  <meta name="description" content="原文地址 https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html">
 <meta name="keywords" content="原创,ElasticSearch,翻译,_source,doc_values,store">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[译]Elasticsearch _source Doc_values And Store Performance">
 <meta property="og:url" content="https://jiankunking.com/elasticsearch-source-doc-values-and-store-performance.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="原文地址https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html">
+<meta property="og:description" content="原文地址 https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2024-05-14T08:36:09.485Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[译]Elasticsearch _source Doc_values And Store Performance">
-<meta name="twitter:description" content="原文地址https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html">
+<meta name="twitter:description" content="原文地址 https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html">
 
 <link rel="canonical" href="https://jiankunking.com/elasticsearch-source-doc-values-and-store-performance.html">
 
@@ -152,9 +152,9 @@
     <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">166</span></a>
 
   </li>
-        <li class="menu-item menu-item-书籍">
+        <li class="menu-item menu-item-读书">
 
-    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>书籍</a>
+    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>读书</a>
 
   </li>
         <li class="menu-item menu-item-tags">
@@ -300,50 +300,56 @@
 
       
         <blockquote>
-<p>原文地址<br><a href="https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html" target="_blank" rel="noopener">https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html</a></p>
+<p>原文地址<br>
+<a href="https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html" target="_blank" rel="noopener">https://sease.io/2021/02/field-retrieval-performance-in-elasticsearch.html</a></p>
 </blockquote>
 <a id="more"></a>
-
 <p>在这篇博文中，我想从<strong>性能的角度探讨 Elasticsearch 为我们存储字段和查询时检索字段提供了哪些可能性。</strong> 事实上，Lucene（Elasticsearch 和 Solr 构建的基础库）提供了两种存储和检索字段的方法:存储字段(stored fields)和文档值(docvalues)。 此外，Elasticsearch 默认使用 _source 字段，这是一个大 JSON，其中包含在索引时作为输入给出的文档的所有字段。</p>
 <p>为什么 Elasticsearch 使用 _source 字段作为默认值？从性能的角度来看，所有这些可能性有什么区别？ 让我们来看看吧！</p>
-<h1 id="Stored-And-Docvalues-Fields-In-Lucene"><a href="#Stored-And-Docvalues-Fields-In-Lucene" class="headerlink" title="Stored And Docvalues Fields In Lucene"></a>Stored And Docvalues Fields In Lucene</h1><p>当我们在 Lucene 中索引文档时，已索引的原始字段的信息会丢失。 根据模式配置对字段进行相应的分析、转换和索引。 在没有任何额外数据结构的情况下，当我们搜索文档时，我们得到的是搜索到的文档的 id，而不是原始字段。 为了获取这些信息，我们需要额外的数据结构。 Lucene 为此提供了两种可能性:存储字段和文档值。</p>
-<h2 id="STORED-FIELDS"><a href="#STORED-FIELDS" class="headerlink" title="STORED FIELDS"></a>STORED FIELDS</h2><p>存储字段的目的是存储字段的值（不进行任何分析）以便在查询时检索它们。</p>
-<h2 id="DOCVALUES"><a href="#DOCVALUES" class="headerlink" title="DOCVALUES"></a>DOCVALUES</h2><p>引入文档值是为了加速分面、排序和分组等操作。 文档值还可用于在查询时返回字段值。 我们唯一的限制是我们不能将它们用于文本字段。</p>
+<h1>Stored And Docvalues Fields In Lucene</h1>
+<p>当我们在 Lucene 中索引文档时，已索引的原始字段的信息会丢失。 根据模式配置对字段进行相应的分析、转换和索引。 在没有任何额外数据结构的情况下，当我们搜索文档时，我们得到的是搜索到的文档的 id，而不是原始字段。 为了获取这些信息，我们需要额外的数据结构。 Lucene 为此提供了两种可能性:存储字段和文档值。</p>
+<h2 id="STORED-FIELDS">STORED FIELDS</h2>
+<p>存储字段的目的是存储字段的值（不进行任何分析）以便在查询时检索它们。</p>
+<h2 id="DOCVALUES">DOCVALUES</h2>
+<p>引入文档值是为了加速分面、排序和分组等操作。 文档值还可用于在查询时返回字段值。 我们唯一的限制是我们不能将它们用于文本字段。</p>
 <p>存储字段和文档值在 Lucene 库中实现，它们可以在 Solr 和 Elasticsearch 中使用。</p>
 <p>我写了一篇博客文章，其中比较了 Solr 中存储字段和文档值的字段检索性能:</p>
 <p><a href="https://sease.io/2020/03/docvalues-vs-stored-fields-apache-solr-features-and-performance-smackdown.html" target="_blank" rel="noopener">DocValues VS 存储字段:Apache Solr 功能和性能 SmackDown</a></p>
 <p>在那里您可以找到有关存储字段和文档值、其利用率和约束的更详细描述。</p>
-<h1 id="Field-Retrieval-In-Elasticsearch"><a href="#Field-Retrieval-In-Elasticsearch" class="headerlink" title="Field Retrieval In Elasticsearch"></a>Field Retrieval In Elasticsearch</h1><p>如果我们在映射中显式定义存储字段和文档值，则可以在 Elasticsearch 中使用它们:</p>
+<h1>Field Retrieval In Elasticsearch</h1>
+<p>如果我们在映射中显式定义存储字段和文档值，则可以在 Elasticsearch 中使用它们:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&quot;properties&quot; : &#123;</span><br><span class="line"> &quot;field&quot;: &#123;</span><br><span class="line">  &quot;type&quot;: &quot;keyword&quot;,</span><br><span class="line">   &quot;store&quot;: true,</span><br><span class="line">  &quot;doc_values&quot; true</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>默认情况下，每个字段的存储设置为 false。 相反，所有支持文档值的字段都默认启用它们。</p>
 <p>独立于存储和文档值配置，在查询时返回查询命中的文档中每个字段的值。 发生这种情况是因为 Elasticsearch 使用另一个工具进行字段检索:<strong>elasticsearch _source</strong> 字段。</p>
-<h2 id="ELASTICSEARCH-SOURCE-FIELD"><a href="#ELASTICSEARCH-SOURCE-FIELD" class="headerlink" title="ELASTICSEARCH _SOURCE FIELD"></a>ELASTICSEARCH _SOURCE FIELD</h2><p>源字段是在索引时传递到 Elasticsearch 的 JSON。 该字段在 Elasticsearch 中默认设置为 true，并且可以通过以下方式使用映射来禁用:</p>
+<h2 id="ELASTICSEARCH-SOURCE-FIELD">ELASTICSEARCH _SOURCE FIELD</h2>
+<p>源字段是在索引时传递到 Elasticsearch 的 JSON。 该字段在 Elasticsearch 中默认设置为 true，并且可以通过以下方式使用映射来禁用:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&quot;mappings&quot;: &#123;</span><br><span class="line">  &quot;_source&quot;: &#123;</span><br><span class="line">   &quot;enabled&quot;: false</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>查询时默认返回所有字段。 您甚至可以仅指定要在响应中返回的源中的字段子集。 这应该可以加快响应在网络上的传输速度。</p>
 <p>通过正确的配置，某些字段可以被源字段排除:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">PUT logs</span><br><span class="line">&#123;</span><br><span class="line"> &quot;mappings&quot;: &#123;</span><br><span class="line">  &quot;_source&quot;: &#123;</span><br><span class="line">   &quot;excludes&quot;: [</span><br><span class="line">    &quot;meta.description&quot;,</span><br><span class="line">     &quot;meta.other.*&quot;</span><br><span class="line">   ]</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>从源中排除字段将减少磁盘空间使用量，但排除的字段永远不会在响应中返回。</p>
 <p>禁用 elasticsearch _source 字段将导致无法在不从头开始重新索引的情况下更新文档(Disabling the elasticsearch _source field will make it impossible to update a document without reindexing that from scratch)。 事实上，为了更新文档，我们需要从旧文档中获取字段的值。 从逻辑上讲，使用存储的字段或文档值从旧文档中获取字段的值应该是可行的（这就是 Solr 中原子更新的工作方式）。 但是，由于设计决策，Elasticsearch 中不允许这样做，如果您需要更新文档，则必须在 Elasticsearch 索引配置中启用 _source 字段。</p>
-<h2 id="RETRIEVING-FIELDS"><a href="#RETRIEVING-FIELDS" class="headerlink" title="RETRIEVING FIELDS"></a>RETRIEVING FIELDS</h2><p>在 Elasticsearch 中，您可以启用或禁用 _source 字段并使字段存储和&#x2F;或文档值。 但是我们如何在查询时检索字段呢？</p>
+<h2 id="RETRIEVING-FIELDS">RETRIEVING FIELDS</h2>
+<p>在 Elasticsearch 中，您可以启用或禁用 _source 字段并使字段存储和/或文档值。 但是我们如何在查询时检索字段呢？</p>
 <p>默认情况下，如果定义了整个源，则返回整个源。 您可以避免它并仅返回源的子集，如下所示:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&quot;fields&quot;: [&quot;field1&quot;, &quot;field2&quot;],</span><br><span class="line">&quot;_source&quot;: false</span><br></pre></td></tr></table></figure>
-
 <p>但是，如果您没有启用源字段，并且想要从存储的或文档值返回字段，则必须以其他方式告诉 Elasticsearch。 对于您使用的每个源，您必须以不同的方式指定字段列表:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&quot;fields&quot;: [&quot;sv1&quot;, &quot;sv2&quot;,...],</span><br><span class="line">&quot;docvalue_fields&quot;: [&quot;dv1&quot;, &quot;dv2&quot;,...],</span><br><span class="line">&quot;stored_fields&quot; : [&quot;s1&quot;, &quot;s2&quot;,...],</span><br></pre></td></tr></table></figure>
-
 <p>例如，如果您有一个存储字段和文档值字段，您可以选择是否要从文档值或存储字段中检索它。 从功能的角度来看，这是完全相同的，但您的选择可能会影响查询的执行时间。</p>
-<h1 id="STORED-FIELDS-DOCVALUES-AND-ELASTICSEARCH-SOURCE-INTERNAL-REPRESENTATION"><a href="#STORED-FIELDS-DOCVALUES-AND-ELASTICSEARCH-SOURCE-INTERNAL-REPRESENTATION" class="headerlink" title="STORED FIELDS,DOCVALUES AND ELASTICSEARCH_SOURCE INTERNAL REPRESENTATION"></a>STORED FIELDS,DOCVALUES AND ELASTICSEARCH_SOURCE INTERNAL REPRESENTATION</h1><p>在本节中，我只想对存储字段、_source 字段和文档值的内部结构进行简要概述，以便有一些工具来理解使用这些方法进行字段检索的性能期望是什么。</p>
-<h2 id="STORED-FIELDS-INTERNALS"><a href="#STORED-FIELDS-INTERNALS" class="headerlink" title="STORED FIELDS INTERNALS"></a>STORED FIELDS INTERNALS</h2><p>存储的字段以行的方式放置在磁盘上:对于每个文档，我们都有一行连续包含所有存储的字段。</p>
-<p><img data-src="/images/elasticsearch-source-doc-values-and-store-performance/storedfields.jpg"></p>
+<h1>STORED FIELDS,DOCVALUES AND ELASTICSEARCH_SOURCE INTERNAL REPRESENTATION</h1>
+<p>在本节中，我只想对存储字段、_source 字段和文档值的内部结构进行简要概述，以便有一些工具来理解使用这些方法进行字段检索的性能期望是什么。</p>
+<h2 id="STORED-FIELDS-INTERNALS">STORED FIELDS INTERNALS</h2>
+<p>存储的字段以行的方式放置在磁盘上:对于每个文档，我们都有一行连续包含所有存储的字段。</p>
+<p><img data-src="/images/elasticsearch-source-doc-values-and-store-performance/storedfields.jpg" alt></p>
 <p>以上图为例。 要访问文档 x 的 field3，我们必须访问文档 x 的行并跳过 field3 之前存储的所有字段。 跳过字段需要获取其长度。 跳过字段并不像读取字段那么昂贵，但此操作并不是免费的。</p>
-<h2 id="DOCVALUES-INTERNALS"><a href="#DOCVALUES-INTERNALS" class="headerlink" title="DOCVALUES INTERNALS"></a>DOCVALUES INTERNALS</h2><p>文档值以列的方式存储。 不同文档的相同字段的值都连续地存储在内存中，并且可以”几乎”直接访问某个文档的某个字段。 计算所需值的地址并不是一项简单的操作，并且具有计算成本，但我们可以想象，如果我们只需要一个字段，那么使用这种访问会更有效。</p>
-<h2 id="ELASTICSEARCH-SOURCE-FIELD-INTERNALS"><a href="#ELASTICSEARCH-SOURCE-FIELD-INTERNALS" class="headerlink" title="ELASTICSEARCH _SOURCE FIELD INTERNALS"></a>ELASTICSEARCH _SOURCE FIELD INTERNALS</h2><p>那 _source 呢？ 嗯，如上所述，源是一个大字段，其中包含一个 JSON，其中包含索引时提供给 Elasticsearch 的所有输入。 但是，这个字段是如何存储的呢？ 毫不奇怪，Elasticsearch 利用了 Lucene 已经实现和提供的机制:存储字段。 特别是，_source 字段是该行中第一个存储的字段。</p>
-<p><img data-src="/images/elasticsearch-source-doc-values-and-store-performance/sourcefield.jpg"></p>
+<h2 id="DOCVALUES-INTERNALS">DOCVALUES INTERNALS</h2>
+<p>文档值以列的方式存储。 不同文档的相同字段的值都连续地存储在内存中，并且可以&quot;几乎&quot;直接访问某个文档的某个字段。 计算所需值的地址并不是一项简单的操作，并且具有计算成本，但我们可以想象，如果我们只需要一个字段，那么使用这种访问会更有效。</p>
+<h2 id="ELASTICSEARCH-SOURCE-FIELD-INTERNALS">ELASTICSEARCH _SOURCE FIELD INTERNALS</h2>
+<p>那 _source 呢？ 嗯，如上所述，源是一个大字段，其中包含一个 JSON，其中包含索引时提供给 Elasticsearch 的所有输入。 但是，这个字段是如何存储的呢？ 毫不奇怪，Elasticsearch 利用了 Lucene 已经实现和提供的机制:存储字段。 特别是，_source 字段是该行中第一个存储的字段。</p>
+<p><img data-src="/images/elasticsearch-source-doc-values-and-store-performance/sourcefield.jpg" alt></p>
 <p>必须读取整个 _source 才能使用它包含的信息。 如果我们要返回文档的所有字段，这个过程直观上是最快的。 另一方面，如果我们只需要返回它包含的信息的一小部分，读取这个巨大的字段可能会浪费计算能力。</p>
-<h1 id="Benchmarking"><a href="#Benchmarking" class="headerlink" title="Benchmarking"></a>Benchmarking</h1><p>为了对 3 种类型的字段进行基准测试，我在 Elasticsearch 中创建了 3 个不同的索引。 我对来自 Wikipedia 的 100 万份文档建立了索引，对于每个文档，我用三种不同的方法对 100 个包含 15 个字符的字符串字段建立了索引:在第一个索引中，我将字段设置为存储，在第二个索引中将字段设置为文档值。 在这两个索引中，我禁用了源字段。 相反，在第三个索引中，我只是启用了源字段。</p>
+<h1>Benchmarking</h1>
+<p>为了对 3 种类型的字段进行基准测试，我在 Elasticsearch 中创建了 3 个不同的索引。 我对来自 Wikipedia 的 100 万份文档建立了索引，对于每个文档，我用三种不同的方法对 100 个包含 15 个字符的字符串字段建立了索引:在第一个索引中，我将字段设置为存储，在第二个索引中将字段设置为文档值。 在这两个索引中，我禁用了源字段。 相反，在第三个索引中，我只是启用了源字段。</p>
 <p>文档和查询集合取自<a href="https://github.com/quickwit-oss/search-benchmark-game" target="_blank" rel="noopener">此处</a>。 我使用真实的集合来模拟现实场景。</p>
 <p>执行详情:</p>
 <ul>
@@ -351,15 +357,18 @@
 <li>内存:32GB</li>
 </ul>
 <p>对于每个查询，我请求最好的 200 个文档，并重复测试，将要返回的字段数（在我创建的 100 个随机字符串字段中）从 1 更改为 100。</p>
-<p>这是基准测试的结果:<br><img data-src="/images/elasticsearch-source-doc-values-and-store-performance/elastic-benachmarks.jpg"></p>
-<p>结果完全符合我们的预期。<strong>如果每个文档需要几个字段，则建议使用文档值。</strong>另一方面，<strong>当我们想要返回整个文档时，_source字段是最好的字段，而存储字段的使用是其他两个字段之间的完美折衷。</strong></p>
+<p>这是基准测试的结果:<br>
+<img data-src="/images/elasticsearch-source-doc-values-and-store-performance/elastic-benachmarks.jpg" alt></p>
+<p>结果完全符合我们的预期。**如果每个文档需要几个字段，则建议使用文档值。**另一方面，<strong>当我们想要返回整个文档时，_source字段是最好的字段，而存储字段的使用是其他两个字段之间的完美折衷。</strong></p>
 <p>在我执行的基准测试场景中，<strong>如果我们只需要一个字段，则 docvalues 的速度几乎是 _source 字段的两倍</strong>，而在极端相反的情况下，如果我们想返回所有字段，则图表显示，当我们只需要一个字段时，速度几乎提高了 2 倍。 使用 _source 字段代替 docvalues。</p>
 <p>总之，性能并不是我们必须考虑的唯一参数。 正如我们在这篇博文中简要解释的那样，使用一种或另一种方法存在一些限制。 由于您的用例的某些限制，您可能被迫使用这三种方法之一。 即使从表现来看，我们也没有明显的赢家。</p>
 <p>如果磁盘空间不是问题，<strong>您甚至可以混合使用不同的方法并将字段设置为存储和文档值，并启用源。</strong> 在查询时，Elasticsearch 使您能够选择所需的字段列表，以及是否希望从 _source、stored 或 docvalues 返回它们。</p>
-<h1 id="译者补充"><a href="#译者补充" class="headerlink" title="译者补充"></a>译者补充</h1><p>文档的_source为Lucene中的单个字段。此结构意味着，即使您只请求整个_source对象的一部分，也必须加载和解析该对象。为了避免此限制，您可以尝试加载字段的其他选项：</p>
+<h1>译者补充</h1>
+<p>文档的_source为Lucene中的单个字段。此结构意味着，即使您只请求整个_source对象的一部分，也必须加载和解析该对象。为了避免此限制，您可以尝试加载字段的其他选项：</p>
 <ul>
 <li>使用docvalue_fields参数获取所选字段的值。当返回相当少的支持文档值的字段（如关键字和日期）时，这是一个很好的选择。</li>
-<li>使用stored_fields参数获取特定存储字段（使用存储映射选项的字段）的值。<ul>
+<li>使用stored_fields参数获取特定存储字段（使用存储映射选项的字段）的值。
+<ul>
 <li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-fields.html#stored-fields" target="_blank" rel="noopener">stored_fields通常是不被推荐的</a></li>
 </ul>
 </li>
@@ -540,7 +549,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Stored-And-Docvalues-Fields-In-Lucene"><span class="nav-number">1.</span> <span class="nav-text">Stored And Docvalues Fields In Lucene</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#STORED-FIELDS"><span class="nav-number">1.1.</span> <span class="nav-text">STORED FIELDS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DOCVALUES"><span class="nav-number">1.2.</span> <span class="nav-text">DOCVALUES</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Field-Retrieval-In-Elasticsearch"><span class="nav-number">2.</span> <span class="nav-text">Field Retrieval In Elasticsearch</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ELASTICSEARCH-SOURCE-FIELD"><span class="nav-number">2.1.</span> <span class="nav-text">ELASTICSEARCH _SOURCE FIELD</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RETRIEVING-FIELDS"><span class="nav-number">2.2.</span> <span class="nav-text">RETRIEVING FIELDS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#STORED-FIELDS-DOCVALUES-AND-ELASTICSEARCH-SOURCE-INTERNAL-REPRESENTATION"><span class="nav-number">3.</span> <span class="nav-text">STORED FIELDS,DOCVALUES AND ELASTICSEARCH_SOURCE INTERNAL REPRESENTATION</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#STORED-FIELDS-INTERNALS"><span class="nav-number">3.1.</span> <span class="nav-text">STORED FIELDS INTERNALS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DOCVALUES-INTERNALS"><span class="nav-number">3.2.</span> <span class="nav-text">DOCVALUES INTERNALS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ELASTICSEARCH-SOURCE-FIELD-INTERNALS"><span class="nav-number">3.3.</span> <span class="nav-text">ELASTICSEARCH _SOURCE FIELD INTERNALS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Benchmarking"><span class="nav-number">4.</span> <span class="nav-text">Benchmarking</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#译者补充"><span class="nav-number">5.</span> <span class="nav-text">译者补充</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">Stored And Docvalues Fields In Lucene</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#STORED-FIELDS"><span class="nav-number">1.1.</span> <span class="nav-text">STORED FIELDS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DOCVALUES"><span class="nav-number">1.2.</span> <span class="nav-text">DOCVALUES</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Field Retrieval In Elasticsearch</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ELASTICSEARCH-SOURCE-FIELD"><span class="nav-number">2.1.</span> <span class="nav-text">ELASTICSEARCH _SOURCE FIELD</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RETRIEVING-FIELDS"><span class="nav-number">2.2.</span> <span class="nav-text">RETRIEVING FIELDS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">STORED FIELDS,DOCVALUES AND ELASTICSEARCH_SOURCE INTERNAL REPRESENTATION</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#STORED-FIELDS-INTERNALS"><span class="nav-number">3.1.</span> <span class="nav-text">STORED FIELDS INTERNALS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DOCVALUES-INTERNALS"><span class="nav-number">3.2.</span> <span class="nav-text">DOCVALUES INTERNALS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ELASTICSEARCH-SOURCE-FIELD-INTERNALS"><span class="nav-number">3.3.</span> <span class="nav-text">ELASTICSEARCH _SOURCE FIELD INTERNALS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">Benchmarking</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">译者补充</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

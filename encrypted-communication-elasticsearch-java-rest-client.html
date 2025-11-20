@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="ElasticSearch 7.3.1Java Rest Client HTTPS连接操作">
-<meta name="keywords" content="原创,Java,ElasticSearch,Rest,Client,Encrypted,Communication">
+  <meta name="description" content="ElasticSearch 7.3.1 Java Rest Client HTTPS连接操作">
+<meta name="keywords" content="Java,原创,ElasticSearch,Rest,Client,Encrypted,Communication">
 <meta property="og:type" content="article">
 <meta property="og:title" content="encrypted communication elasticsearch java rest client">
 <meta property="og:url" content="https://jiankunking.com/encrypted-communication-elasticsearch-java-rest-client.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="ElasticSearch 7.3.1Java Rest Client HTTPS连接操作">
+<meta property="og:description" content="ElasticSearch 7.3.1 Java Rest Client HTTPS连接操作">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2019-09-07T02:24:25.421Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="encrypted communication elasticsearch java rest client">
-<meta name="twitter:description" content="ElasticSearch 7.3.1Java Rest Client HTTPS连接操作">
+<meta name="twitter:description" content="ElasticSearch 7.3.1 Java Rest Client HTTPS连接操作">
 
 <link rel="canonical" href="https://jiankunking.com/encrypted-communication-elasticsearch-java-rest-client.html">
 
@@ -152,9 +152,9 @@
     <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">166</span></a>
 
   </li>
-        <li class="menu-item menu-item-书籍">
+        <li class="menu-item menu-item-读书">
 
-    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>书籍</a>
+    <a href="/books/" rel="section"><i class="fa fa-th fa-fw"></i>读书</a>
 
   </li>
         <li class="menu-item menu-item-tags">
@@ -300,13 +300,12 @@
 
       
         <blockquote>
-<p>ElasticSearch 7.3.1<br>Java Rest Client HTTPS连接操作</p>
+<p>ElasticSearch 7.3.1<br>
+Java Rest Client HTTPS连接操作</p>
 </blockquote>
 <a id="more"></a>
-
 <p>ElasticSearch版本7.3.1，elasticsearch.yml配置如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">xpack.security.enabled: true</span><br><span class="line">xpack.security.transport.ssl.enabled: true</span><br><span class="line">xpack.security.transport.ssl.verification_mode: certificate</span><br><span class="line">xpack.security.transport.ssl.key: /home/jiankunking/elasticsearch-7.3.1/config/certs/_.jiankunking.com.key</span><br><span class="line">xpack.security.transport.ssl.certificate: /home/jiankunking/elasticsearch-7.3.1/config/certs/_.jiankunking.com.cer</span><br><span class="line">xpack.security.transport.ssl.certificate_authorities: [ &quot;/home/jiankunking/elasticsearch-7.3.1/config/certs/_.jiankunking.com_ca.crt&quot; ]</span><br><span class="line">xpack.security.http.ssl.enabled: true</span><br><span class="line">xpack.security.http.ssl.key:  /home/jiankunking/elasticsearch-7.3.1/config/certs/_.jiankunking.com.key</span><br><span class="line">xpack.security.http.ssl.certificate: /home/jiankunking/elasticsearch-7.3.1/config/certs/_.jiankunking.com.cer</span><br><span class="line">xpack.security.http.ssl.certificate_authorities: [ &quot;/home/jiankunking/elasticsearch-7.3.1/config/certs/_.jiankunking.com_ca.crt&quot; ]</span><br></pre></td></tr></table></figure>
-
 <p>由于ElasticSearch Java client中的<a href="https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#KeyStore" target="_blank" rel="noopener">KeyStore Types</a>只支持以下几种：</p>
 <table>
 <thead>
@@ -315,7 +314,8 @@
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>jceks</td>
 <td>The proprietary keystore implementation provided by the SunJCE provider.</td>
 </tr>
@@ -335,10 +335,10 @@
 <td>pkcs12</td>
 <td>The transfer syntax for personal identity information as defined in PKCS #12.</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>而我这边证书格式为cer，所以通过keytool进行转换：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">keytool -import -v -trustcacerts -file _.jiankunking.com.cer  -keystore my_keystore.jks -keypass password -storepass password</span><br></pre></td></tr></table></figure>
-
 <p>证书转换完成后，操作代码如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line">package ssl;</span><br><span class="line"></span><br><span class="line">import org.apache.http.HttpHost;</span><br><span class="line">import org.apache.http.auth.AuthScope;</span><br><span class="line">import org.apache.http.auth.UsernamePasswordCredentials;</span><br><span class="line">import org.apache.http.client.CredentialsProvider;</span><br><span class="line">import org.apache.http.impl.client.BasicCredentialsProvider;</span><br><span class="line">import org.apache.http.ssl.SSLContexts;</span><br><span class="line">import org.elasticsearch.client.RequestOptions;</span><br><span class="line">import org.elasticsearch.client.RestClient;</span><br><span class="line">import org.elasticsearch.client.RestClientBuilder;</span><br><span class="line">import org.elasticsearch.client.RestHighLevelClient;</span><br><span class="line">import org.elasticsearch.client.indices.CreateIndexRequest;</span><br><span class="line">import org.elasticsearch.client.indices.CreateIndexResponse;</span><br><span class="line">import org.elasticsearch.common.settings.Settings;</span><br><span class="line">import org.elasticsearch.common.xcontent.XContentType;</span><br><span class="line"></span><br><span class="line">import javax.net.ssl.SSLContext;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.security.KeyManagementException;</span><br><span class="line">import java.security.KeyStoreException;</span><br><span class="line">import java.security.NoSuchAlgorithmException;</span><br><span class="line">import java.security.cert.CertificateException;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * @Author: jiankunking</span><br><span class="line"> * @Date: 2019/8/27 15:32</span><br><span class="line"> * @Description:</span><br><span class="line"> */</span><br><span class="line">public class es &#123;</span><br><span class="line">    public static void main(String[] args) throws KeyStoreException, IOException, NoSuchAlgorithmException, KeyManagementException, CertificateException &#123;</span><br><span class="line">        </span><br><span class="line">        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();</span><br><span class="line">        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(&quot;elastic&quot;, &quot;jiankunking&quot;));</span><br><span class="line"></span><br><span class="line">        SSLContext sslContext = SSLContexts.custom()</span><br><span class="line">                .loadTrustMaterial(new File(&quot;I:\\certs\\my_keystore.jks&quot;))</span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line">        String host = &quot;es.jiankunking.com&quot;;</span><br><span class="line">        int port = 9200;</span><br><span class="line">        String scheme = &quot;https&quot;;</span><br><span class="line">        String indexName = &quot;twitter2&quot;;</span><br><span class="line"></span><br><span class="line">        RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(host, port, scheme)).setHttpClientConfigCallback(httpClientBuilder -&gt; httpClientBuilder</span><br><span class="line">                .setDefaultCredentialsProvider(credentialsProvider)</span><br><span class="line">                .setSSLContext(sslContext)</span><br><span class="line">        );</span><br><span class="line"></span><br><span class="line">		// 到这里RestHighLevelClient已经初始化完成，下面的创建索引是测试</span><br><span class="line">        RestHighLevelClient restHighLevelClient = new RestHighLevelClient(restClientBuilder);</span><br><span class="line"></span><br><span class="line">        // 创建索引请求</span><br><span class="line">        CreateIndexRequest request = new CreateIndexRequest(indexName);</span><br><span class="line">        request.settings(Settings.builder()</span><br><span class="line">                .put(&quot;index.number_of_shards&quot;, 3)</span><br><span class="line">                .put(&quot;index.number_of_replicas&quot;, 2)</span><br><span class="line">        );</span><br><span class="line">        request.mapping(</span><br><span class="line">                &quot;&#123;\n&quot; +</span><br><span class="line">                        &quot;  \&quot;properties\&quot;: &#123;\n&quot; +</span><br><span class="line">                        &quot;    \&quot;message\&quot;: &#123;\n&quot; +</span><br><span class="line">                        &quot;      \&quot;type\&quot;: \&quot;text\&quot;\n&quot; +</span><br><span class="line">                        &quot;    &#125;\n&quot; +</span><br><span class="line">                        &quot;  &#125;\n&quot; +</span><br><span class="line">                        &quot;&#125;&quot;,</span><br><span class="line">                XContentType.JSON);</span><br><span class="line">        Map&lt;String, Object&gt; message = new HashMap&lt;&gt;();</span><br><span class="line">        message.put(&quot;type&quot;, &quot;text&quot;);</span><br><span class="line">        Map&lt;String, Object&gt; properties = new HashMap&lt;&gt;();</span><br><span class="line">        properties.put(&quot;message&quot;, message);</span><br><span class="line">        Map&lt;String, Object&gt; mapping = new HashMap&lt;&gt;();</span><br><span class="line">        mapping.put(&quot;properties&quot;, properties);</span><br><span class="line">        request.mapping(mapping);</span><br><span class="line">        CreateIndexResponse createIndexResponse;</span><br><span class="line">        try &#123;</span><br><span class="line">            createIndexResponse = restHighLevelClient.indices().create(request, RequestOptions.DEFAULT);</span><br><span class="line">            System.out.println(createIndexResponse);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
     </div>
@@ -350,19 +350,19 @@
   <div class="popular-posts-header">相关文章</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\how-to-optimize-elasticsearch-large-document-query.html" rel="bookmark">如何优化Elasticsearch大文档查询？</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\another-incident-caused-by-not-accepting-elasticsearch-official-advice.html" rel="bookmark">又一次不接受Elasticsearch官方建议导致的事故</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-avoid-the-fetch-phase-when-retrieving-only-id.html" rel="bookmark">ElasticSearch为什么不能在query阶段直接返回_id,从而避免fetch?</a></div>
-    </li>
-    <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\elasticsearch-sequence-ids-6-0.html" rel="bookmark">[译]Elasticsearch Sequence ID实现思路及用途</a></div>
-    </li>
-    <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="\a-problem-caused-by-a-thread-pool-usage-error.html" rel="bookmark">一次线程池使用错误导致的问题</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\an-accident-caused-by-excessive-cpu-usage-of-fegin.html" rel="bookmark">一次Fegin CPU占用过高导致的事故</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\org-apache-rocketmq-shaded-io-grpc-statusruntimeexception-deadline-exceeded-clientcall-started-after-deadline-exceeded-2-591386886s-from-now.html" rel="bookmark">记一次RocketMQ Client超时问题排查</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\personal-views-on-the-advanced-features-of-java.html" rel="bookmark">对于Java系高级特性的个人看法</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\java-volatile-keyword.html" rel="bookmark">[译]Java Volatile Keyword</a></div>
     </li>
   </ul>
 
@@ -435,8 +435,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/java/" rel="tag"># Java</a>
+              <a href="/tags/原创/" rel="tag"># 原创</a>
               <a href="/tags/elasticsearch/" rel="tag"># ElasticSearch</a>
               <a href="/tags/rest/" rel="tag"># Rest</a>
               <a href="/tags/client/" rel="tag"># Client</a>
