@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记">
+  <meta name="description" content="大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？ 本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记">
 <meta name="keywords" content="Architecture,Apache,APISIX">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Apache APISIX 架构浅析">
 <meta property="og:url" content="https://jiankunking.com/apache-apisix-architecture.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记">
+<meta property="og:description" content="大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？ 本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2025-03-21T19:33:18.230Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Apache APISIX 架构浅析">
-<meta name="twitter:description" content="大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记">
+<meta name="twitter:description" content="大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？ 本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记">
 
 <link rel="canonical" href="https://jiankunking.com/apache-apisix-architecture.html">
 
@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">166</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">167</span></a>
 
   </li>
         <li class="menu-item menu-item-读书">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">246</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">247</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -294,11 +294,13 @@
 
       
         <blockquote>
-<p>大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？<br>本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记</p>
+<p>大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？<br>
+本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记</p>
 </blockquote>
 <a id="more"></a>
-
-<h2 id="简单分析"><a href="#简单分析" class="headerlink" title="简单分析"></a>简单分析</h2><p>先看一下官网的架构图<br><img data-src="/images/apache-apisix-architecture/flow-software-architecture.png"></p>
+<h2 id="简单分析">简单分析</h2>
+<p>先看一下官网的架构图<br>
+<img data-src="/images/apache-apisix-architecture/flow-software-architecture.png" alt></p>
 <p>从图中可以看到APISIX是基于OpenResty与Nginx实现的。</p>
 <p>这里需要注意<font color="DeepPink"><strong>OpenResty并不是Nginx的fork，也不是在Nginx的基础上加了一些常用库重新打包，而只是把Nginx当作底层的网络库来使用。</strong></font></p>
 <p>那具体是如何使用Nginx来作为网络库的呢？</p>
@@ -307,19 +309,23 @@
 <p>注：Nginx默认不支持Lua的，这部分是OpenResty的能力</p>
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 9080;</span><br><span class="line"></span><br><span class="line">    init_worker_by_lua_block &#123;</span><br><span class="line">        apisix.http_init_worker()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        access_by_lua_block &#123;</span><br><span class="line">            apisix.http_access_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        header_filter_by_lua_block &#123;</span><br><span class="line">            apisix.http_header_filter_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        body_filter_by_lua_block &#123;</span><br><span class="line">            apisix.http_body_filter_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        log_by_lua_block &#123;</span><br><span class="line">            apisix.http_log_phase()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># 这里只是一个简单的示意，完整的配置可以看到文末的nginx.conf文件</span><br></pre></td></tr></table></figure>
-
 <p>在这个示例中，监听了 9080 端口，并通过<code>location /</code>的方式，把这个端口的所有请求都拦截下来，并依次通过<code>access</code>、<code>rewrite</code>、<code>header filter</code>、<code>body filter</code>和<code>log</code>这几个阶段进行处理，在每个阶段中都会去调用对应的插件函数。其中，<code>rewrite</code>阶段便是在<code>apisix.http_access_phase</code>函数中合并处理的。</p>
 <p>这里是一份完整的Nginx的配置文件:<a href="/attachments/APISIX/apisix_nginx.conf" target="_blank">APISIX Nginx.conf</a></p>
-<p>这里补充下OpenResty Phases<br><img data-src="/images/apache-apisix-architecture/openresty_phases.png"></p>
+<p>这里补充下OpenResty Phases<br>
+<img data-src="/images/apache-apisix-architecture/openresty_phases.png" alt></p>
 <blockquote>
 <p>为了实现足够高的性能，Apache APISIX 使用 C 编写了基于前缀树的匹配路由算法，并在此基础上使用 LuaJIT 提供的 FFI 编写了适用于 Lua 的接口。而 Lua 的灵活性，也使得 Apache APISIX 的路由分发模块，可以轻易地支持通过特定的表达式等方法，对同一前缀的下级路由进行匹配。最终在替代 NGINX 原生路由分发功能的前提下，实现了兼具高性能、高灵活性的动态配置功能。有关这部分功能的详细实现，可以查看 <a href="https://github.com/api7/lua-resty-radixtree" target="_blank" rel="noopener">lua-resty-radixtree</a> 和 <a href="https://github.com/apache/apisix/blob/master/apisix/http/route.lua" target="_blank" rel="noopener">route.lua</a>。</p>
 </blockquote>
 <p>那Lua层面是如何保证高性能的呢？</p>
-<h3 id="协程-事件"><a href="#协程-事件" class="headerlink" title="协程+事件"></a>协程+事件</h3><p>在OpenResty层面，Lua的协程会与Nginx的事件机制相互配合。如果Lua代码中出现类似查询 MySQL 数据库这样的 I&#x2F;O 操作，就会先调用Lua协程的 yield 把自己挂起，然后在Nginx中注册回调；在 I&#x2F;O 操作完成（也可能是超时或者出错）后，再由Nginx回调 resume 来唤醒Lua协程。这样就完成了Lua协程和Nginx事件驱动的配合，避免在Lua代码中写回调。 </p>
-<p><img data-src="/images/apache-apisix-architecture/openresty_lua_%E5%8D%8F%E7%A8%8B_nginx%E4%BA%8B%E4%BB%B6%E6%9C%BA%E5%88%B6.png"></p>
-<h3 id="LuaJIT"><a href="#LuaJIT" class="headerlink" title="LuaJIT"></a>LuaJIT</h3><p>我们先来看下LuaJIT在OpenResty整体架构中的位置：<br><img data-src="/images/apache-apisix-architecture/openresty_luajit.png"></p>
+<h3 id="协程-事件">协程+事件</h3>
+<p>在OpenResty层面，Lua的协程会与Nginx的事件机制相互配合。如果Lua代码中出现类似查询 MySQL 数据库这样的 I/O 操作，就会先调用Lua协程的 yield 把自己挂起，然后在Nginx中注册回调；在 I/O 操作完成（也可能是超时或者出错）后，再由Nginx回调 resume 来唤醒Lua协程。这样就完成了Lua协程和Nginx事件驱动的配合，避免在Lua代码中写回调。</p>
+<p><img data-src="/images/apache-apisix-architecture/openresty_lua_%E5%8D%8F%E7%A8%8B_nginx%E4%BA%8B%E4%BB%B6%E6%9C%BA%E5%88%B6.png" alt></p>
+<h3 id="LuaJIT">LuaJIT</h3>
+<p>我们先来看下LuaJIT在OpenResty整体架构中的位置：<br>
+<img data-src="/images/apache-apisix-architecture/openresty_luajit.png" alt></p>
 <p>OpenResty的worker进程都是fork master进程而得到的，其实，master进程中的LuaJIT虚拟机也会一起fork过来。在同一个worker内的所有协程，都会共享这个LuaJIT虚拟机，Lua代码的执行也是在这个虚拟机中完成的。</p>
-<h4 id="标准-Lua-和-LuaJIT"><a href="#标准-Lua-和-LuaJIT" class="headerlink" title="标准 Lua 和 LuaJIT"></a>标准 Lua 和 LuaJIT</h4><p>其实标准Lua出于性能考虑，也内置了虚拟机，所以Lua代码并不是直接被解释执行的，而是先由Lua编译器编译为字节码（Byte Code），然后再由Lua虚拟机执行。</p>
+<h4 id="标准-Lua-和-LuaJIT">标准 Lua 和 LuaJIT</h4>
+<p>其实标准Lua出于性能考虑，也内置了虚拟机，所以Lua代码并不是直接被解释执行的，而是先由Lua编译器编译为字节码（Byte Code），然后再由Lua虚拟机执行。</p>
 <p>而LuaJIT的运行时环境，除了一个汇编实现的Lua解释器外，还有一个可以直接生成机器代码的JIT编译器。开始的时候，LuaJIT和标准Lua一样，Lua代码被编译为字节码，字节码被LuaJIT的解释器解释执行。</p>
 <p>但不同的是，LuaJIT的解释器会在执行字节码的同时，记录一些运行时的统计信息，比如每个Lua函数调用入口的实际运行次数，还有每个Lua循环的实际执行次数。当这些次数超过某个随机的阈值时，便认为对应的Lua函数入口或者对应的Lua循环足够热，这时便会触发JIT编译器开始工作。</p>
 <p>JIT 编译器会从热函数的入口或者热循环的某个位置开始，尝试编译对应的Lua代码路径。编译的过程，是把LuaJIT字节码先转换成LuaJIT 自己定义的中间码（IR），然后再生成针对目标体系结构的机器码。</p>
@@ -330,32 +336,39 @@
 <li>LuaJIT 的作者目前处于半退休状态</li>
 <li>OpenResty用的LuaJIT是LuaJIT自己维护的分支</li>
 </ul>
-<h3 id="语句摘录"><a href="#语句摘录" class="headerlink" title="语句摘录"></a>语句摘录</h3><p>在学习《OpenResty从入门到实战》的过程中对于一下几句话深有感触,这里摘录一下与大家共勉：</p>
+<h3 id="语句摘录">语句摘录</h3>
+<p>在学习《OpenResty从入门到实战》的过程中对于一下几句话深有感触,这里摘录一下与大家共勉：</p>
 <ul>
 <li>在我看来，明白一个技术为何存在，并弄清楚它和别的类似技术之间的差异和优势，远比你只会熟练调用它提供的 API 更为重要。这种技术视野，会给你带来一定程度的远见和洞察力，这也可以说是工程师和架构师的一个重要区别。</li>
 <li>任何技术课程的学习，都不能代替对官方文档的仔细研读。这些耗时的笨功夫，每个人都省不掉的。</li>
 <li>OpenResty 现在的官方文档只有英文版本，国内工程师在阅读时，难免会因为语言问题，抓不住重点，甚至误解其中的内容。但越是这样，越没有捷径可走，你更应该仔细地把文档从头到尾读完，并在有疑问时，结合测试案例集和自己的尝试，去确定出答案。这才是辅助我们学习OpenResty的正确途径。</li>
 <li>对待技术的选择，我们可以有倾向，但还是不要一概而论绝对化，因为并没有一个可以适合所有缓存场景的银弹。根据实际场景的需要，构建一个最小化可用的方案，然后逐步地增加，是一个不错的法子。</li>
 </ul>
-<h2 id="OpenResty-vs-Envoy-底座比对"><a href="#OpenResty-vs-Envoy-底座比对" class="headerlink" title="OpenResty vs Envoy 底座比对"></a>OpenResty vs Envoy 底座比对</h2><p>随着云原生的普及，Kubernetes技术栈的南北向流量网关也开始普及:<a href="https://jiankunking.com/south-north-entry-gateway-selection.html">南北入口网关选型</a></p>
-<p>虽然从目前的南北向网关功能来看还不如以OpenResty为底座的Kong或者APISIX，但云原生社区明显更加活跃。<br>下面从Contributors、Star、Commits、Releases四方面来分析比对(数据取值时间:2025.03.22):</p>
+<h2 id="OpenResty-vs-Envoy-底座比对">OpenResty vs Envoy 底座比对</h2>
+<p>随着云原生的普及，Kubernetes技术栈的南北向流量网关也开始普及:<a href="https://jiankunking.com/south-north-entry-gateway-selection.html">南北入口网关选型</a></p>
+<p>虽然从目前的南北向网关功能来看还不如以OpenResty为底座的Kong或者APISIX，但云原生社区明显更加活跃。<br>
+下面从Contributors、Star、Commits、Releases四方面来分析比对(数据取值时间:2025.03.22):</p>
 <ul>
-<li>Contributors<ul>
+<li>Contributors
+<ul>
 <li><a href="https://github.com/openresty/openresty" target="_blank" rel="noopener">OpenResty</a>:35</li>
 <li><a href="https://github.com/envoyproxy/envoy" target="_blank" rel="noopener">Envoy</a>:1227</li>
 </ul>
 </li>
-<li>Star<ul>
+<li>Star
+<ul>
 <li><a href="https://github.com/openresty/openresty" target="_blank" rel="noopener">OpenResty</a>:12.9k</li>
 <li><a href="https://github.com/envoyproxy/envoy" target="_blank" rel="noopener">Envoy</a>:25.7k</li>
 </ul>
 </li>
-<li>Commits<ul>
+<li>Commits
+<ul>
 <li><a href="https://github.com/openresty/openresty" target="_blank" rel="noopener">OpenResty</a>:1746</li>
 <li><a href="https://github.com/envoyproxy/envoy" target="_blank" rel="noopener">Envoy</a>:24125</li>
 </ul>
 </li>
-<li>Releases<ul>
+<li>Releases
+<ul>
 <li><a href="https://github.com/openresty/openresty" target="_blank" rel="noopener">OpenResty</a>:16</li>
 <li><a href="https://github.com/envoyproxy/envoy" target="_blank" rel="noopener">Envoy</a>:196</li>
 </ul>
@@ -554,7 +567,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">166</span>
+          <span class="site-state-item-count">167</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -566,7 +579,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">246</span>
+        <span class="site-state-item-count">247</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

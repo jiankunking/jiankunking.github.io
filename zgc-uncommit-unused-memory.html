@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="翻译自：JEP 351地址：https://openjdk.java.net/jeps/351">
+  <meta name="description" content="翻译自：JEP 351 地址：https://openjdk.java.net/jeps/351">
 <meta name="keywords" content="原创,Java,GC,JVM,ZGC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[译]ZGC: 未使用堆内存归还操作系统">
 <meta property="og:url" content="https://jiankunking.com/zgc-uncommit-unused-memory.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="翻译自：JEP 351地址：https://openjdk.java.net/jeps/351">
+<meta property="og:description" content="翻译自：JEP 351 地址：https://openjdk.java.net/jeps/351">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2021-02-27T01:41:07.777Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[译]ZGC: 未使用堆内存归还操作系统">
-<meta name="twitter:description" content="翻译自：JEP 351地址：https://openjdk.java.net/jeps/351">
+<meta name="twitter:description" content="翻译自：JEP 351 地址：https://openjdk.java.net/jeps/351">
 
 <link rel="canonical" href="https://jiankunking.com/zgc-uncommit-unused-memory.html">
 
@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">166</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">167</span></a>
 
   </li>
         <li class="menu-item menu-item-读书">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">246</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">247</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -280,7 +280,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>1.4k</span>
+              <span>1.3k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -300,24 +300,27 @@
 
       
         <blockquote>
-<p>翻译自：JEP 351<br>地址：<a href="https://openjdk.java.net/jeps/351" target="_blank" rel="noopener">https://openjdk.java.net/jeps/351</a></p>
+<p>翻译自：JEP 351<br>
+地址：<a href="https://openjdk.java.net/jeps/351" target="_blank" rel="noopener">https://openjdk.java.net/jeps/351</a></p>
 </blockquote>
 <a id="more"></a>
-
-<h1 id="一、摘要"><a href="#一、摘要" class="headerlink" title="一、摘要"></a>一、摘要</h1><p>增强ZGC，将未使用的堆内存返回给操作系统。</p>
-<h1 id="二、动机"><a href="#二、动机" class="headerlink" title="二、动机"></a>二、动机</h1><p>目前ZGC不会将未使用的内存归还给操作系统，即使该内存已经很长时间没有使用了。这种行为并不适合所有类型的应用程序和环境，特别是那些需要考虑内存占用的应用程序和环境。例如：</p>
+<h1>一、摘要</h1>
+<p>增强ZGC，将未使用的堆内存返回给操作系统。</p>
+<h1>二、动机</h1>
+<p>目前ZGC不会将未使用的内存归还给操作系统，即使该内存已经很长时间没有使用了。这种行为并不适合所有类型的应用程序和环境，特别是那些需要考虑内存占用的应用程序和环境。例如：</p>
 <ul>
 <li>按资源使用付费的容器环境。</li>
 <li>应用程序可能长时间处于空闲状态并与许多其他应用程序共享或竞争资源的环境。</li>
 <li>应用程序在执行期间可能有非常不同的堆空间需求。例如，启动期间所需的堆可能大于稍后在稳定状态执行期间所需的堆。</li>
 </ul>
 <p>HotSpot中的其他垃圾收集器(如G1和Shenandoah)已经提供了这种功能，该功能对于一些用户非常有用。将此功能添加到ZGC将受到这些用户的欢迎。</p>
-<h1 id="三、描述"><a href="#三、描述" class="headerlink" title="三、描述"></a>三、描述</h1><p>ZGC堆由一组称为ZPages的堆区域组成。每个Zpage与数量可变的已提交内存相关联。当ZGC压缩堆时，ZPages被释放并插入到页面缓存ZPageCache中。页面缓存中的ZPages可以重用，以满足新的堆分配，在这种情况下，它们将从缓存中删除。页面缓存对性能至关重要，因为提交和不提交内存都是昂贵的操作。</p>
+<h1>三、描述</h1>
+<p>ZGC堆由一组称为ZPages的堆区域组成。每个Zpage与数量可变的已提交内存相关联。当ZGC压缩堆时，ZPages被释放并插入到页面缓存ZPageCache中。页面缓存中的ZPages可以重用，以满足新的堆分配，在这种情况下，它们将从缓存中删除。页面缓存对性能至关重要，因为提交和不提交内存都是昂贵的操作。</p>
 <p>页面缓存中的ZPages集合表示堆中未使用的部分，这些部分可以归还给操作系统。因此，取消提交内存可以通过简单地从页面缓存中删除一组精心选择的ZPages，并取消与这些页面关联的内存的提交来完成。页面缓存已经将ZPages保持在最近最少使用(LRU)的顺序，并按大小(小、中、大)进行分隔，因此清除ZPages和取消提交内存的机制相对简单。挑战在于设计策略来决定何时从缓存中驱逐ZPage。</p>
-<p><font color="DeepPink"><strong>一个简单的策略是设置一个timeout或delay值，该值指定ZPage在被清除之前可以在页面缓存中驻留多长时间。这个超时将有一些合理的默认值，可以使用命令行选项覆盖它。Shenandoah GC使用这样的策略，默认值为5分钟，命令行选项-XX:ShenandoahUncommitDelay&#x3D;&lt;milliseconds&gt;来覆盖默认值。</strong></font></p>
-<p><font color="DeepPink"><strong>类似上述策略的效果可能相当不错。然而，人们也可以设想更复杂的策略，不涉及添加新的命令行选项。例如，根据GC频率或其他数据找到合适超时值的启发式方法。我们将首先提供一个简单的超时策略，使用-XX:ZUncommitDelay&#x3D;&lt;seconds&gt;选项，稍后再提供一个更复杂的策略(如果找到了)。</strong></font></p>
+<p><font color="DeepPink"><strong>一个简单的策略是设置一个timeout或delay值，该值指定ZPage在被清除之前可以在页面缓存中驻留多长时间。这个超时将有一些合理的默认值，可以使用命令行选项覆盖它。Shenandoah GC使用这样的策略，默认值为5分钟，命令行选项-XX:ShenandoahUncommitDelay=&lt;milliseconds&gt;来覆盖默认值。</strong></font></p>
+<p><font color="DeepPink"><strong>类似上述策略的效果可能相当不错。然而，人们也可以设想更复杂的策略，不涉及添加新的命令行选项。例如，根据GC频率或其他数据找到合适超时值的启发式方法。我们将首先提供一个简单的超时策略，使用-XX:ZUncommitDelay=&lt;seconds&gt;选项，稍后再提供一个更复杂的策略(如果找到了)。</strong></font></p>
 <p><font color="DeepPink"><strong>默认情况下将启用uncommit功能。但是无论策略如何决定，ZGC都不能把堆内存降到低于Xms。这就意味着，如果Xmx和Xms相等的话，这个能力就失效了，-XX:-ZUncommit这个参数也能让这个内存管理能力失效。</strong></font></p>
-<p>最后，Linux&#x2F;x64上的ZGC使用tmpfs或hugetlbfs文件来支持堆。这些文件使用的未提交内存需要fallocate(2)和FALLOC_FL_PUNCH_HOLE支持，FALLOC_FL_PUNCH_HOLE支持最早出现在Linux 3.5 (tmpfs)和4.3(hugetlbfs)中。在旧的Linux内核上运行时，ZGC应该像以前一样继续工作，但是禁用了uncommit功能。</p>
+<p>最后，Linux/x64上的ZGC使用tmpfs或hugetlbfs文件来支持堆。这些文件使用的未提交内存需要fallocate(2)和FALLOC_FL_PUNCH_HOLE支持，FALLOC_FL_PUNCH_HOLE支持最早出现在Linux 3.5 (tmpfs)和4.3(hugetlbfs)中。在旧的Linux内核上运行时，ZGC应该像以前一样继续工作，但是禁用了uncommit功能。</p>
 <blockquote>
 <p>Java 越来越云原生了，下一个期盼就是fiber了。</p>
 </blockquote>
@@ -495,7 +498,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一、摘要"><span class="nav-number">1.</span> <span class="nav-text">一、摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#二、动机"><span class="nav-number">2.</span> <span class="nav-text">二、动机</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#三、描述"><span class="nav-number">3.</span> <span class="nav-text">三、描述</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">一、摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">二、动机</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">三、描述</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -511,7 +514,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">166</span>
+          <span class="site-state-item-count">167</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -523,7 +526,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">246</span>
+        <span class="site-state-item-count">247</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+  <meta name="description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta name="keywords" content="读书笔记,MySQL,InnoDB">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL InnoDB存储引擎：一致性非锁定读">
 <meta property="og:url" content="https://jiankunking.com/mysql-innodb-consistent-nonlocking-read.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+<meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2024-04-18T07:10:55.469Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MySQL InnoDB存储引擎：一致性非锁定读">
-<meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+<meta name="twitter:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 作者：姜承尧 出版时间：2013-05">
 
 <link rel="canonical" href="https://jiankunking.com/mysql-innodb-consistent-nonlocking-read.html">
 
@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">166</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">167</span></a>
 
   </li>
         <li class="menu-item menu-item-读书">
@@ -159,7 +159,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">246</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">247</span></a>
 
   </li>
         <li class="menu-item menu-item-友链">
@@ -299,35 +299,30 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 </p>
+        <p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版</p>
 <p>作者：姜承尧</p>
 <p>出版时间：2013-05</p>
 <a id="more"></a>
-
 <p><strong>一致性的非锁定行读（consistent nonlocking read）是指InnoDB存储引擎通过行多版本控制（multi versioning）的方式来读取当前执行时间数据库中行的数据。如果读取的行正在执行DELETE、UPDATE操作，这是读取操作不会因此而会等待行上锁的释放，相反，InnoDB会去读取行的一个快照数据。</strong></p>
-<p>下图直观展示了一致性的非锁定行读：<br><img data-src="/images/MySQL-innodb-consistent-nonlocking-read/%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E9%9D%9E%E9%94%81%E5%AE%9A%E8%A1%8C%E8%AF%BB.png"></p>
+<p>下图直观展示了一致性的非锁定行读：<br>
+<img data-src="/images/MySQL-innodb-consistent-nonlocking-read/%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E9%9D%9E%E9%94%81%E5%AE%9A%E8%A1%8C%E8%AF%BB.png" alt></p>
 <p><strong>之所以称其为非锁定读，因为不需要等待访问的行上X锁的释放。快照数据是指该行的之前版本的数据，该实现是通过undo段来完成。而undo段用来在此事务中回滚数据，因此快照数据本身是没有额外的开销。此外，读取快照数据是不需要上锁的，因为没有事务需要对历史的数据进行修改操作。</strong></p>
 <p>可以看到，非锁定读机制极大地提髙了数据库的并发性。<strong>在InnoDB存储引擎的默认设置下，这是默认的读取方式，即读取不会占用和等待表上的锁。但是在不同事务隔离级别下，读取的方式不同，并不是在每个事务隔离级别下都是采用非锁定的一致性读。此外，即使都是使用非锁定的一致性读，但是对于快照数据的定义也各不相同。</strong></p>
 <p>通过图6-4可以知道，快照数据其实就是当前行数据之前的历史版本，每行记录可能有多个版本。就图6-4所显示的，<strong>一个行记录可能有不止一个快照数据，一般称这种技术为行多版本技术。由此带来的并发控制，称之为多版本并发控制（MultiVersionConcurrencyControl MVCC）。</strong></p>
 <p>在事务隔离级别READ COMMITTED和REPEATABLE READ(InnoDB存储引擎的默认事务隔离级别）下，InnoDB存储引擎使用非锁定的一致性读。然而，对于快照数据的定义却不相同。<font color="DeepPink"><strong>在READ COMMITTED事务隔离级别下，对于快照数据，非一致性读总是读取被锁定行的最新一份快照数据。而在REPEATABLE READ事务隔离级别下，对于快照数据，非一致性读总是读取事务开始时的行数据版本（关键在于事务之间的隔离性）。</strong></font>来看下面的一个例子，首先在当前MySQL数据库的连接会话A中执行如下SQL语句：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># Session A</span><br><span class="line">MySQL&gt; BEGIN;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">Sql&gt; SELECT * FROM parent WHERE id =1;</span><br><span class="line">+----+</span><br><span class="line">| id |</span><br><span class="line">+----+</span><br><span class="line">| 1 |</span><br><span class="line">+----+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
 <p>会话A中已通过显式地执行命令BEGIN开启了一个事务，并读取了表parent中id为1的数据，但是事务并没有结束。与此同时，用户再开启另一个会话B，这样可以模拟并发的情况，然后对会话B做如下的操作：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; BEGIN;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">MySQL&gt; UPDATE parent SET id=3 WHERE id=l;</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line">Rows matched: 1 Changed: 1 warnings: 0</span><br></pre></td></tr></table></figure>
-
-<p>在会话B中将事务表parent中id为1的记录修改为id&#x3D;3，但是事务同样没有提交，这样id&#x3D;1的行其实加了一个X锁。这时如果在会话A中再次读取id为1的记录，根据InnoDB存储引擎的特性，即在READ COMMITTED和REPEATETABLE READ的事务隔离级别下会使用非锁定的一致性读。回到之前的会话A,接着上次未提交的事务，执行SQL语句SELECT * FROM parent WHERE id&#x3D;1的操作，这时不管使用READ COMMITTED还是REPEATABLE READ的事务隔离级别，显示的数据应该都是：</p>
+<p>在会话B中将事务表parent中id为1的记录修改为id=3，但是事务同样没有提交，这样id=1的行其实加了一个X锁。这时如果在会话A中再次读取id为1的记录，根据InnoDB存储引擎的特性，即在READ COMMITTED和REPEATETABLE READ的事务隔离级别下会使用非锁定的一致性读。回到之前的会话A,接着上次未提交的事务，执行SQL语句SELECT * FROM parent WHERE id=1的操作，这时不管使用READ COMMITTED还是REPEATABLE READ的事务隔离级别，显示的数据应该都是：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; SELECT FROM parent WHERE id =l;</span><br><span class="line">+----+</span><br><span class="line">| id |</span><br><span class="line">+----+</span><br><span class="line">| 1  |</span><br><span class="line">+----+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<p>由于当前id&#x3D;1的数据被修改了1次，因此只有一个行版本的记录。接着，在会话B中提交上次的事务。</p>
+<p>由于当前id=1的数据被修改了1次，因此只有一个行版本的记录。接着，在会话B中提交上次的事务。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># Session B</span><br><span class="line">MySQL&gt; commit</span><br><span class="line">Query OK, 0 rows affected (0.01 sec)</span><br></pre></td></tr></table></figure>
-
-<p>在会话B提交事务后，这时在会话A中再运行SELECT * FROM parent WHERE id&#x3D;1的SQL语句，在READ COMMITTED和REPEATABLE事务隔离级别下得到结果 就不一样了。对于READ COMMITTED的事务隔离级别，它总是读取行的最新版本，如果行被锁定了，则读取该行版本的最新一个快照（fresh snapshot）。在上述例子中，因为会话B已经提交了事务，所以READ COMMITTED事务隔离级别下会得到如下结果：</p>
+<p>在会话B提交事务后，这时在会话A中再运行SELECT * FROM parent WHERE id=1的SQL语句，在READ COMMITTED和REPEATABLE事务隔离级别下得到结果 就不一样了。对于READ COMMITTED的事务隔离级别，它总是读取行的最新版本，如果行被锁定了，则读取该行版本的最新一个快照（fresh snapshot）。在上述例子中，因为会话B已经提交了事务，所以READ COMMITTED事务隔离级别下会得到如下结果：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt;SELECT @@tx_isolation\G;</span><br><span class="line">**************************** 1.row ****************************</span><br><span class="line">@@tx_isolation: READ-COMMITTED</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">MySQL&gt; SELECT FROM parent WHERE id=1:</span><br><span class="line">Empty set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
 <p>而对于REPEATETABLE 的事务隔离级别，总是读取事务开始时的行数据。因此对于REPEATETABLE READ事务隔离级别,其得到的结果如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; SELECT @@tx_isolation\G;</span><br><span class="line">**************************** 1.row ****************************</span><br><span class="line">@@tx_isolation: REPEATABLE-READ</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">MySQL&gt; SELECT FROM parent WHERE id=1;</span><br><span class="line">+----+</span><br><span class="line">| id |</span><br><span class="line">+----+</span><br><span class="line">| 1  |</span><br><span class="line">+----+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<p>下面将从时间的角度展现上述演示的示例过程，如表6-8所示。需要特别注意的是，对于READ COMMITTED 的事务隔离级别而言，从数据库理论的角度来看，其违反了事务ACID中的I的特性，即隔离性。<br><img data-src="/images/MySQL-innodb-consistent-nonlocking-read/%E8%A1%A868.png"></p>
+<p>下面将从时间的角度展现上述演示的示例过程，如表6-8所示。需要特别注意的是，对于READ COMMITTED 的事务隔离级别而言，从数据库理论的角度来看，其违反了事务ACID中的I的特性，即隔离性。<br>
+<img data-src="/images/MySQL-innodb-consistent-nonlocking-read/%E8%A1%A868.png" alt></p>
 
     </div>
 
@@ -515,7 +510,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">166</span>
+          <span class="site-state-item-count">167</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -527,7 +522,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">246</span>
+        <span class="site-state-item-count">247</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
