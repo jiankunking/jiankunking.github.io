@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="大家可以着重看下 FST 部分  FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。">
+  <meta name="description" content="本文介绍腾讯ES团队如何通过FST OffHeap优化，将堆内存使用率降低80%，单节点存储量从5TB提升至50TB。重点分析FST内存占用问题及零拷贝内存OffHeap的实现方案。">
 <meta name="keywords" content="Performance,转载,ElasticSearch,源码,Memory">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[转]腾讯万亿级 Elasticsearch 内存效率提升解密">
 <meta property="og:url" content="https://jiankunking.com/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="大家可以着重看下 FST 部分  FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。">
+<meta property="og:description" content="本文介绍腾讯ES团队如何通过FST OffHeap优化，将堆内存使用率降低80%，单节点存储量从5TB提升至50TB。重点分析FST内存占用问题及零拷贝内存OffHeap的实现方案。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2025-11-08T22:48:54.316Z">
+<meta property="og:updated_time" content="2026-03-13T23:39:54.960Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[转]腾讯万亿级 Elasticsearch 内存效率提升解密">
-<meta name="twitter:description" content="大家可以着重看下 FST 部分  FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。">
+<meta name="twitter:description" content="本文介绍腾讯ES团队如何通过FST OffHeap优化，将堆内存使用率降低80%，单节点存储量从5TB提升至50TB。重点分析FST内存占用问题及零拷贝内存OffHeap的实现方案。">
 
 <link rel="canonical" href="https://jiankunking.com/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption.html">
 
@@ -255,7 +255,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-11-09 06:48:54" itemprop="dateModified" datetime="2025-11-09T06:48:54+08:00">2025-11-09</time>
+                <time title="修改时间：2026-03-14 07:39:54" itemprop="dateModified" datetime="2026-03-14T07:39:54+08:00">2026-03-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -280,7 +280,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>5k</span>
+              <span>5.1k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -299,10 +299,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p><strong>大家可以着重看下 FST 部分</strong></p>
-<p><font color="DeepPink"> <strong>FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。</strong> </font></p>
+        <p>本文介绍腾讯ES团队如何通过FST OffHeap优化，将堆内存使用率降低80%，单节点存储量从5TB提升至50TB。重点分析FST内存占用问题及零拷贝内存OffHeap的实现方案。</p>
 <a id="more"></a>
 
+<p><strong>大家可以着重看下 FST 部分</strong></p>
+<p><font color="DeepPink"> <strong>FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。</strong> </font></p>
 <p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/1.png"></p>
 <p>Elasticsearch( ES）是一款功能强大的开源分布式实时搜索引擎，在日志分析(主要应用场景）、企业级搜索、时序分析等领域有广泛应用，几乎是各大公司搜索分析引擎的开源首选方案。</p>
 <p>Tencent ES 是内核级深度优化的 ES 分支，持续地进行高可用、高性能、低成本等全方位优化，已支撑的单集群规模达到千级节点、万亿级吞吐。Tencent ES 已在公司内部开源，同时也积极贡献开源社区，截止目前已向社区提交 PR 25+。</p>

@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Linux性能优化实战作者： 倪朋飞">
+  <meta name="description" content="《Linux性能优化实战》学习笔记，涵盖平均负载、CPU使用率、内存管理、I&amp;#x2F;O性能、网络性能等核心知识点。">
 <meta name="keywords" content="读书笔记,原创,Linux">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linux性能优化实战 笔记">
 <meta property="og:url" content="https://jiankunking.com/linux-performance-optimization-practices.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="Linux性能优化实战作者： 倪朋飞">
+<meta property="og:description" content="《Linux性能优化实战》学习笔记，涵盖平均负载、CPU使用率、内存管理、I&amp;#x2F;O性能、网络性能等核心知识点。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2024-03-02T01:04:57.674Z">
+<meta property="og:updated_time" content="2026-03-13T23:43:00.328Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux性能优化实战 笔记">
-<meta name="twitter:description" content="Linux性能优化实战作者： 倪朋飞">
+<meta name="twitter:description" content="《Linux性能优化实战》学习笔记，涵盖平均负载、CPU使用率、内存管理、I&amp;#x2F;O性能、网络性能等核心知识点。">
 
 <link rel="canonical" href="https://jiankunking.com/linux-performance-optimization-practices.html">
 
@@ -255,7 +255,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-03-02 09:04:57" itemprop="dateModified" datetime="2024-03-02T09:04:57+08:00">2024-03-02</time>
+                <time title="修改时间：2026-03-14 07:43:00" itemprop="dateModified" datetime="2026-03-14T07:43:00+08:00">2026-03-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -299,9 +299,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>Linux性能优化实战<br>作者： 倪朋飞</p>
+        <p>《Linux性能优化实战》学习笔记，涵盖平均负载、CPU使用率、内存管理、I&#x2F;O性能、网络性能等核心知识点。</p>
 <a id="more"></a>
 
+<p>Linux性能优化实战<br>作者： 倪朋飞</p>
 <h1 id="平均负载"><a href="#平均负载" class="headerlink" title="平均负载"></a>平均负载</h1><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>简单来说，平均负载是指单位时间内，系统处于可运行状态和不可中断状态的平均进程数，也就是平均活跃进程数，它和CPU使用率并没有直接关系。这里我先解释下，可运行状态和不可中断状态这俩词儿。</p>
 <p>所谓可运行状态的进程，是指正在使用CPU或者正在等待CPU的进程，也就是我们常用ps命令看到的，处于R状态（Running或Runnable）的进程。</p>
 <p>不可中断状态的进程则是正处于内核态关键流程中的进程，并且这些流程是不可打断的，比如最常见的是等待硬件设备的I&#x2F;O响应，也就是我们在ps命令中看到的D状态（Uninterruptible Sleep，也称为 Disk leep）的进程。<br>比如，当一个进程向磁盘读写数据时，为了保证数据的一致性，在得到磁盘回复前，它是不能被其他进程或者中断打断的，这个时候的进程就处于不可中断状态。如果此时的进程被打断了，就容易出现磁盘数据与进程数据不一致的问题。</p>
