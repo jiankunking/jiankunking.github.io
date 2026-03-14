@@ -303,21 +303,23 @@
 <p>通过Fescar（Seata）了解分布式事务框架设计思路</p>
 </blockquote>
 <a id="more"></a>
-
 <p>Fescar 是 <strong>阿里巴巴</strong> 开源的 <strong>分布式事务</strong>中间件，以 <strong>高效</strong> 并且对业务 <strong>0 侵入</strong> 的方式，解决 <strong>微服务</strong> 场景下面临的分布式事务问题。</p>
-<h1 id="什么是微服务化带来的分布式事务问题？"><a href="#什么是微服务化带来的分布式事务问题？" class="headerlink" title="什么是微服务化带来的分布式事务问题？"></a>什么是微服务化带来的分布式事务问题？</h1><p>首先，设想一个传统的单体应用（Monolithic App），通过 3 个 Module，在同一个数据源上更新数据来完成一项业务。</p>
+<h1>什么是微服务化带来的分布式事务问题？</h1>
+<p>首先，设想一个传统的单体应用（Monolithic App），通过 3 个 Module，在同一个数据源上更新数据来完成一项业务。</p>
 <p>很自然的，整个业务过程的数据一致性由本地事务来保证。</p>
-<p><img data-src="/images/alibaba-seata-design/monolithic_architecture.png"></p>
+<p><img data-src="/images/alibaba-seata-design/monolithic_architecture.png" alt></p>
 <p>随着业务需求和架构的变化，单体应用被拆分为微服务：原来的 3 个 Module 被拆分为 3 个独立的服务，分别使用独立的数据源（<a href="http://microservices.io/patterns/data/database-per-service.html" target="_blank" rel="noopener">Pattern: Database per service</a>）。业务过程将由 3 个服务的调用来完成。</p>
-<p><img data-src="/images/alibaba-seata-design/microservices_architecture.png"></p>
+<p><img data-src="/images/alibaba-seata-design/microservices_architecture.png" alt></p>
 <p>此时，每一个服务内部的数据一致性仍由本地事务来保证。而整个业务层面的全局数据一致性要如何保障呢？这就是微服务架构下面临的，典型的分布式事务需求：我们需要一个分布式事务的解决方案保障业务全局的数据一致性。</p>
-<p><img data-src="/images/alibaba-seata-design/fescar_solution.png"></p>
-<h1 id="Fescar-的发展历程"><a href="#Fescar-的发展历程" class="headerlink" title="Fescar 的发展历程"></a>Fescar 的发展历程</h1><p>阿里是国内最早一批进行应用分布式（微服务化）改造的企业，所以很早就遇到微服务架构下的分布式事务问题。</p>
+<p><img data-src="/images/alibaba-seata-design/fescar_solution.png" alt></p>
+<h1>Fescar 的发展历程</h1>
+<p>阿里是国内最早一批进行应用分布式（微服务化）改造的企业，所以很早就遇到微服务架构下的分布式事务问题。</p>
 <p>2014 年，阿里中间件团队发布 <strong>TXC（Taobao Transaction Constructor）</strong>，为集团内应用提供分布式事务服务。</p>
 <p>2016 年，TXC 经过产品化改造，以 <strong>GTS（Global Transaction Service）</strong> 的身份登陆阿里云，成为当时业界唯一一款云上分布式事务产品，在阿云里的公有云、专有云解决方案中，开始服务于众多外部客户。</p>
 <p>2019 年起，基于 TXC 和 GTS 的技术积累，阿里中间件团队发起了开源项目 <strong>Fescar（Fast &amp; EaSy Commit And Rollback, FESCAR）</strong>，和社区一起建设这个分布式事务解决方案。</p>
-<p>TXC&#x2F;GTS&#x2F;Fescar 一脉相承，为解决微服务架构下的分布式事务问题交出了一份与众不同的答卷。</p>
-<h2 id="设计初衷"><a href="#设计初衷" class="headerlink" title="设计初衷"></a>设计初衷</h2><p>高速增长的互联网时代，<strong>快速试错</strong> 的能力对业务来说是至关重要的：</p>
+<p>TXC/GTS/Fescar 一脉相承，为解决微服务架构下的分布式事务问题交出了一份与众不同的答卷。</p>
+<h2 id="设计初衷">设计初衷</h2>
+<p>高速增长的互联网时代，<strong>快速试错</strong> 的能力对业务来说是至关重要的：</p>
 <ul>
 <li>一方面，不应该因为技术架构上的微服务化和分布式事务支持的引入，给业务层面带来额外的研发负担。</li>
 <li>另一方面，引入分布式事务支持的业务应该基本保持在同一量级上的性能表现，不能因为事务机制显著拖慢业务。</li>
@@ -327,52 +329,61 @@
 <li><strong>对业务无侵入：</strong> 这里的 <strong>侵入</strong> 是指，因为分布式事务这个技术问题的制约，要求应用在业务层面进行设计和改造。这种设计和改造往往会给应用带来很高的研发和维护成本。我们希望把分布式事务问题在 <strong>中间件</strong> 这个层次解决掉，不要求应用在业务层面做额外的工作。</li>
 <li><strong>高性能：</strong> 引入分布式事务的保障，必然会有额外的开销，引起性能的下降。我们希望把分布式事务引入的性能损耗降到非常低的水平，让应用不因为分布式事务的引入导致业务的可用性受影响。</li>
 </ul>
-<h2 id="既有的解决方案为什么不满足？"><a href="#既有的解决方案为什么不满足？" class="headerlink" title="既有的解决方案为什么不满足？"></a>既有的解决方案为什么不满足？</h2><p>既有的分布式事务解决方案按照对业务侵入性分为两类，即：对业务无侵入的和对业务有侵入的。</p>
-<h3 id="业务无侵入的方案"><a href="#业务无侵入的方案" class="headerlink" title="业务无侵入的方案"></a>业务无侵入的方案</h3><p>既有的主流分布式事务解决方案中，对业务无侵入的只有基于 XA 的方案，但应用 XA 方案存在 3 个方面的问题：</p>
+<h2 id="既有的解决方案为什么不满足？">既有的解决方案为什么不满足？</h2>
+<p>既有的分布式事务解决方案按照对业务侵入性分为两类，即：对业务无侵入的和对业务有侵入的。</p>
+<h3 id="业务无侵入的方案">业务无侵入的方案</h3>
+<p>既有的主流分布式事务解决方案中，对业务无侵入的只有基于 XA 的方案，但应用 XA 方案存在 3 个方面的问题：</p>
 <ol>
 <li>要求数据库提供对 XA 的支持。如果遇到不支持 XA（或支持得不好，比如 MySQL 5.7 以前的版本）的数据库，则不能使用。</li>
 <li>受协议本身的约束，事务资源（数据记录、数据库连接）的锁定周期长。长周期的资源锁定从业务层面来看，往往是不必要的，而因为事务资源的管理器是数据库本身，应用层无法插手。这样形成的局面就是，基于 XA 的应用往往性能会比较差，而且很难优化。</li>
-<li>已经落地的基于 XA 的分布式解决方案，都依托于重量级的应用服务器（Tuxedo&#x2F;WebLogic&#x2F;WebSphere 等)，这是不适用于微服务架构的。</li>
+<li>已经落地的基于 XA 的分布式解决方案，都依托于重量级的应用服务器（Tuxedo/WebLogic/WebSphere 等)，这是不适用于微服务架构的。</li>
 </ol>
-<h3 id="侵入业务的方案"><a href="#侵入业务的方案" class="headerlink" title="侵入业务的方案"></a>侵入业务的方案</h3><p>实际上，最初分布式事务只有 XA 这个唯一方案。XA 是完备的，但在实践过程中，由于种种原因（包含但不限于上面提到的 3 点）往往不得不放弃，转而从业务层面着手来解决分布式事务问题。比如：</p>
+<h3 id="侵入业务的方案">侵入业务的方案</h3>
+<p>实际上，最初分布式事务只有 XA 这个唯一方案。XA 是完备的，但在实践过程中，由于种种原因（包含但不限于上面提到的 3 点）往往不得不放弃，转而从业务层面着手来解决分布式事务问题。比如：</p>
 <ul>
 <li>基于可靠消息的最终一致性方案</li>
 <li>TCC</li>
 <li>Saga</li>
 </ul>
 <p>都属于这一类。这些方案的具体机制在这里不做展开，网上这方面的论述文章非常多。总之，这些方案都要求在应用的业务层面把分布式事务技术约束考虑到设计中，通常每一个服务都需要设计实现正向和反向的幂等接口。这样的设计约束，往往会导致很高的研发和维护成本。</p>
-<h2 id="理想的方案应该是什么样子？"><a href="#理想的方案应该是什么样子？" class="headerlink" title="理想的方案应该是什么样子？"></a>理想的方案应该是什么样子？</h2><p>不可否认，侵入业务的分布式事务方案都经过大量实践验证，能有效解决问题，在各行各业的业务应用系统中起着重要作用。但回到原点来思考，这些方案的采用实际上都是 <strong>迫于无奈</strong>。设想，如果基于 XA 的方案能够不那么 <strong>重</strong>，并且能保证业务的性能需求，相信不会有人愿意把分布式事务问题拿到业务层面来解决。</p>
+<h2 id="理想的方案应该是什么样子？">理想的方案应该是什么样子？</h2>
+<p>不可否认，侵入业务的分布式事务方案都经过大量实践验证，能有效解决问题，在各行各业的业务应用系统中起着重要作用。但回到原点来思考，这些方案的采用实际上都是 <strong>迫于无奈</strong>。设想，如果基于 XA 的方案能够不那么 <strong>重</strong>，并且能保证业务的性能需求，相信不会有人愿意把分布式事务问题拿到业务层面来解决。</p>
 <p>一个理想的分布式事务解决方案应该：像使用 <strong>本地事务</strong> 一样简单，业务逻辑只关注业务层面的需求，不需要考虑事务机制上的约束。</p>
-<h1 id="原理和设计"><a href="#原理和设计" class="headerlink" title="原理和设计"></a>原理和设计</h1><p>我们要设计一个对业务无侵入的方案，所以从业务无侵入的 XA 方案来思考：</p>
+<h1>原理和设计</h1>
+<p>我们要设计一个对业务无侵入的方案，所以从业务无侵入的 XA 方案来思考：</p>
 <p>是否可以在 XA 的基础上演进，解决掉 XA 方案面临的问题呢？</p>
-<h2 id="如何定义一个分布式事务？"><a href="#如何定义一个分布式事务？" class="headerlink" title="如何定义一个分布式事务？"></a>如何定义一个分布式事务？</h2><p>首先，很自然的，我们可以把一个分布式事务理解成一个包含了若干 <strong>分支事务</strong> 的 <strong>全局事务</strong>。<strong>全局事务</strong> 的职责是协调其下管辖的 <strong>分支事务</strong> 达成一致，要么一起成功提交，要么一起失败回滚。此外，通常 <strong>分支事务</strong> 本身就是一个满足 ACID 的 <strong>本地事务</strong>。这是我们对分布式事务结构的基本认识，与 XA 是一致的。</p>
-<p><img data-src="/images/alibaba-seata-design/global_branch_transaction.png"></p>
+<h2 id="如何定义一个分布式事务？">如何定义一个分布式事务？</h2>
+<p>首先，很自然的，我们可以把一个分布式事务理解成一个包含了若干 <strong>分支事务</strong> 的 <strong>全局事务</strong>。<strong>全局事务</strong> 的职责是协调其下管辖的 <strong>分支事务</strong> 达成一致，要么一起成功提交，要么一起失败回滚。此外，通常 <strong>分支事务</strong> 本身就是一个满足 ACID 的 <strong>本地事务</strong>。这是我们对分布式事务结构的基本认识，与 XA 是一致的。</p>
+<p><img data-src="/images/alibaba-seata-design/global_branch_transaction.png" alt></p>
 <p>其次，与 XA 的模型类似，我们定义 3 个组件来协议分布式事务的处理过程。</p>
-<p><img data-src="/images/alibaba-seata-design/fescar_model.png"></p>
+<p><img data-src="/images/alibaba-seata-design/fescar_model.png" alt></p>
 <ul>
 <li><strong>Transaction Coordinator (TC)：</strong> 事务协调器，维护全局事务的运行状态，负责协调并驱动全局事务的提交或回滚。</li>
-<li><strong>Transaction Manager (TM)：</strong> 控制全局事务的边界，负责开启一个全局事务，并最终发起全局提交或全局回滚的决议。</li>
+<li><strong>Transaction Manager ™：</strong> 控制全局事务的边界，负责开启一个全局事务，并最终发起全局提交或全局回滚的决议。</li>
 <li><strong>Resource Manager (RM)：</strong> 控制分支事务，负责分支注册、状态汇报，并接收事务协调器的指令，驱动分支（本地）事务的提交和回滚。</li>
 </ul>
 <p>一个典型的分布式事务过程：</p>
 <ol>
 <li>TM 向 TC 申请开启一个全局事务，全局事务创建成功并生成一个全局唯一的 XID。</li>
 <li>XID 在微服务调用链路的上下文中传播。</li>
-<li>RM 向 TC 注册分支事务，将其纳入 XID 对应全局事务的管辖。 </li>
+<li>RM 向 TC 注册分支事务，将其纳入 XID 对应全局事务的管辖。</li>
 <li>TM 向 TC 发起针对 XID 的全局提交或回滚决议。</li>
 <li>TC 调度 XID 下管辖的全部分支事务完成提交或回滚请求。</li>
 </ol>
-<p><img data-src="/images/alibaba-seata-design/architecture.png"></p>
+<p><img data-src="/images/alibaba-seata-design/architecture.png" alt></p>
 <p>至此，Fescar 的协议机制总体上看与 XA 是一致的。</p>
-<h3 id="与-XA-的差别在什么地方？"><a href="#与-XA-的差别在什么地方？" class="headerlink" title="与 XA 的差别在什么地方？"></a>与 XA 的差别在什么地方？</h3><h4 id="架构层次"><a href="#架构层次" class="headerlink" title="架构层次"></a>架构层次</h4><p><img data-src="/images/alibaba-seata-design/rm_in_architecture.png"></p>
+<h3 id="与-XA-的差别在什么地方？">与 XA 的差别在什么地方？</h3>
+<h4 id="架构层次">架构层次</h4>
+<p><img data-src="/images/alibaba-seata-design/rm_in_architecture.png" alt></p>
 <p>XA 方案的 RM 实际上是在数据库层，RM 本质上就是数据库自身（通过提供支持 XA 的驱动程序来供应用使用）。</p>
 <p>而 <font color="DeepPink"><strong>Fescar 的 RM 是以二方包的形式作为中间件层部署在应用程序这一侧的，不依赖与数据库本身对协议的支持，当然也不需要数据库支持 XA 协议。</strong></font>这点对于微服务化的架构来说是非常重要的：应用层不需要为本地事务和分布式事务两类不同场景来适配两套不同的数据库驱动。</p>
 <p>这个设计，剥离了分布式事务方案对数据库在 <strong>协议支持</strong> 上的要求。</p>
-<h4 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h4><p>先来看一下 XA 的 2PC 过程。</p>
-<p><img data-src="/images/alibaba-seata-design/xa_2pc.png"></p>
+<h4 id="两阶段提交">两阶段提交</h4>
+<p>先来看一下 XA 的 2PC 过程。</p>
+<p><img data-src="/images/alibaba-seata-design/xa_2pc.png" alt></p>
 <p>无论 Phase2 的决议是 commit 还是 rollback，事务性资源的锁都要保持到 Phase2 完成才释放。</p>
 <p>设想一个正常运行的业务，大概率是 90% 以上的事务最终应该是成功提交的，我们是否可以在 Phase1 就将本地事务提交呢？这样 90% 以上的情况下，可以省去 Phase2 持锁的时间，整体提高效率。</p>
-<p><img data-src="/images/alibaba-seata-design/seata_2pc.png"></p>
+<p><img data-src="/images/alibaba-seata-design/seata_2pc.png" alt></p>
 <ul>
 <li>分支事务中数据的 <strong>本地锁</strong> 由本地事务管理，在分支事务 Phase1 结束时释放。</li>
 <li>同时，随着本地事务结束，<strong>连接</strong> 也得以释放。</li>
@@ -380,23 +391,25 @@
 </ul>
 <p>这个设计，极大地减少了分支事务对资源（数据和连接）的锁定时间，给整体并发和吞吐的提升提供了基础。</p>
 <p>当然，你肯定会问：Phase1 即提交的情况下，Phase2 如何回滚呢？</p>
-<h2 id="分支事务如何提交和回滚？"><a href="#分支事务如何提交和回滚？" class="headerlink" title="分支事务如何提交和回滚？"></a>分支事务如何提交和回滚？</h2><p>首先，<font color="DeepPink"><strong>应用需要使用 Fescar 的 JDBC 数据源代理，也就是 Fescar 的 RM。</strong></font></p>
-<p><img data-src="/images/alibaba-seata-design/data_sourc_proxy.png"></p>
+<h2 id="分支事务如何提交和回滚？">分支事务如何提交和回滚？</h2>
+<p>首先，<font color="DeepPink"><strong>应用需要使用 Fescar 的 JDBC 数据源代理，也就是 Fescar 的 RM。</strong></font></p>
+<p><img data-src="/images/alibaba-seata-design/data_sourc_proxy.png" alt></p>
 <p><strong>Phase1：</strong></p>
 <p><font color="DeepPink">Fescar 的 JDBC 数据源代理通过对业务 SQL 的解析，把业务数据在更新前后的数据镜像组织成回滚日志，利用 <strong>本地事务</strong> 的 ACID 特性，将业务数据的更新和回滚日志的写入在同一个 <strong>本地事务</strong> 中提交。</font></p>
 <p>这样，可以保证：<font color="DeepPink"><strong>任何提交的业务数据的更新一定有相应的回滚日志存在。</strong></font></p>
-<p><img data-src="/images/alibaba-seata-design/branch_transaction_with_undo_log.png"></p>
+<p><img data-src="/images/alibaba-seata-design/branch_transaction_with_undo_log.png" alt></p>
 <p>基于这样的机制，分支的本地事务便可以在全局事务的 Phase1 提交，马上释放本地事务锁定的资源。</p>
 <p><strong>Phase2：</strong></p>
 <ul>
 <li><font color="DeepPink"><strong>如果决议是全局提交，此时分支事务此时已经完成提交，不需要同步协调处理（只需要异步清理回滚日志），Phase2 可以非常快速地完成。</strong></font></li>
 </ul>
-<p><img data-src="/images/alibaba-seata-design/global_commit.png"></p>
+<p><img data-src="/images/alibaba-seata-design/global_commit.png" alt></p>
 <ul>
 <li><font color="DeepPink"><strong>如果决议是全局回滚，RM 收到协调器发来的回滚请求，通过 XID 和 Branch ID 找到相应的回滚日志记录，通过回滚记录生成反向的更新 SQL 并执行，以完成分支的回滚。</strong></font></li>
 </ul>
-<p><img data-src="/images/alibaba-seata-design/global_rollback.png"></p>
-<h2 id="事务传播机制"><a href="#事务传播机制" class="headerlink" title="事务传播机制"></a>事务传播机制</h2><p>XID 是一个全局事务的唯一标识，事务传播机制要做的就是把 XID 在服务调用链路中传递下去，并绑定到服务的事务上下文中，这样，服务链路中的数据库更新操作，就都会向该 XID 代表的全局事务注册分支，纳入同一个全局事务的管辖。</p>
+<p><img data-src="/images/alibaba-seata-design/global_rollback.png" alt></p>
+<h2 id="事务传播机制">事务传播机制</h2>
+<p>XID 是一个全局事务的唯一标识，事务传播机制要做的就是把 XID 在服务调用链路中传递下去，并绑定到服务的事务上下文中，这样，服务链路中的数据库更新操作，就都会向该 XID 代表的全局事务注册分支，纳入同一个全局事务的管辖。</p>
 <p>基于这个机制，Fescar 是可以支持任何微服务 RPC 框架的。只要在特定框架中找到可以透明传播 XID 的机制即可，比如，Dubbo 的 Filter + RpcContext。</p>
 <p>对应到 Java EE 规范和 Spring 定义的事务传播属性，Fescar 的支持如下：</p>
 <ul>
@@ -408,81 +421,106 @@
 <li>PROPAGATION_NEVER：应用通过 API 来实现</li>
 <li>PROPAGATION_NESTED：不支持</li>
 </ul>
-<h2 id="隔离性"><a href="#隔离性" class="headerlink" title="隔离性"></a>隔离性</h2><p>全局事务的隔离性是建立在分支事务的本地隔离级别基础之上的。</p>
+<h2 id="隔离性">隔离性</h2>
+<p>全局事务的隔离性是建立在分支事务的本地隔离级别基础之上的。</p>
 <p>在数据库本地隔离级别 <strong>读已提交</strong> 或以上的前提下，Fescar 设计了由事务协调器维护的 <strong>全局写排他锁</strong>，来保证事务间的 <strong>写隔离</strong>，将全局事务默认定义在 <strong>读未提交</strong> 的隔离级别上。</p>
 <p>我们对隔离级别的共识是：微服务场景产生的分布式事务，绝大部分应用在 <strong>读已提交</strong> 的隔离级别下工作是没有问题的。而实际上，这当中又有绝大多数的应用场景，实际上工作在 <strong>读未提交</strong> 的隔离级别下同样没有问题。</p>
 <p>在极端场景下，应用如果需要达到全局的 <strong>读已提交</strong>，Fescar 也提供了相应的机制来达到目的。默认，Fescar 是工作在 <strong>读未提交</strong> 的隔离级别下，保证绝大多数场景的高效性。</p>
-<p><img data-src="/images/alibaba-seata-design/isolation.png"><br>事务的 ACID 属性在 Fescar 中的体现是一个比较复杂的话题，我们会有专门的文章来深入分析，这里不做进一步展开。</p>
-<h1 id="适用场景分析"><a href="#适用场景分析" class="headerlink" title="适用场景分析"></a>适用场景分析</h1><p>前文所述的 <font color="DeepPink">Fescar 的核心原理中有一个 <strong>重要前提</strong>：分支事务中涉及的资源，<strong>必须</strong> 是支持 <strong>ACID 事务</strong>的 <strong>关系型数据库</strong>。分支的提交和回滚机制，都依赖于本地事务的保障。所以，如果应用使用的数据库是不支持事务的，或根本不是关系型数据库，就不适用。</font></p>
+<p><img data-src="/images/alibaba-seata-design/isolation.png" alt><br>
+事务的 ACID 属性在 Fescar 中的体现是一个比较复杂的话题，我们会有专门的文章来深入分析，这里不做进一步展开。</p>
+<h1>适用场景分析</h1>
+<p>前文所述的 <font color="DeepPink">Fescar 的核心原理中有一个 <strong>重要前提</strong>：分支事务中涉及的资源，<strong>必须</strong> 是支持 <strong>ACID 事务</strong>的 <strong>关系型数据库</strong>。分支的提交和回滚机制，都依赖于本地事务的保障。所以，如果应用使用的数据库是不支持事务的，或根本不是关系型数据库，就不适用。</font></p>
 <p>另外，目前 Fescar 的实现还存在一些局限，比如：事务隔离级别最高支持到 <strong>读已提交</strong> 的水平，SQL 的解析还不能涵盖全部的语法等。</p>
 <p>为了覆盖 Fescar 原生机制暂时不能支持应用场景，我们定义了另外一种工作模式。</p>
 <p>上面介绍的 Fescar 原生工作模式称为 AT（Automatic Transaction）模式，这种模式是对业务无侵入的。与之相应的另外一种工作模式称为 MT（Manual Transaction）模式，这种模式下，分支事务需要应用自己来定义业务本身及提交和回滚的逻辑。</p>
-<h2 id="分支的基本行为模式"><a href="#分支的基本行为模式" class="headerlink" title="分支的基本行为模式"></a>分支的基本行为模式</h2><p>作为全局事务一部分的分支事务，除本身的业务逻辑外，都包含 4 个与协调器交互的行为：</p>
+<h2 id="分支的基本行为模式">分支的基本行为模式</h2>
+<p>作为全局事务一部分的分支事务，除本身的业务逻辑外，都包含 4 个与协调器交互的行为：</p>
 <ul>
 <li><strong>分支注册：</strong> 在分支事务的数据操作进行之前，需要向协调器注册，把即将进行的分支事务数据操作，纳入一个已经开启的全局事务的管理中去，在分支注册成功后，才可以进行数据操作。</li>
 <li><strong>状态上报：</strong> 在分支事务的数据操作完成后，需要向事务协调器上报其执行结果。</li>
 <li><strong>分支提交</strong>：响应协调器发出的分支事务提交的请求，完成分支提交。</li>
 <li><strong>分支回滚</strong>：响应协调器发出的分支事务回滚的请求，完成分支回滚。</li>
 </ul>
-<p><img data-src="/images/alibaba-seata-design/how_does_rm_talk_to_tc.png"></p>
-<h2 id="AT-模式分支的行为模式"><a href="#AT-模式分支的行为模式" class="headerlink" title="AT 模式分支的行为模式"></a>AT 模式分支的行为模式</h2><p>业务逻辑不需要关注事务机制，分支与全局事务的交互过程自动进行。</p>
-<p><img data-src="/images/alibaba-seata-design/at_branch.png"></p>
-<h2 id="MT-模式分支的行为模式"><a href="#MT-模式分支的行为模式" class="headerlink" title="MT 模式分支的行为模式"></a>MT 模式分支的行为模式</h2><p>业务逻辑需要被分解为 Prepare&#x2F;Commit&#x2F;Rollback 3 部分，形成一个 MT 分支，加入全局事务。</p>
-<p><img data-src="/images/alibaba-seata-design/mt_branch.png"></p>
+<p><img data-src="/images/alibaba-seata-design/how_does_rm_talk_to_tc.png" alt></p>
+<h2 id="AT-模式分支的行为模式">AT 模式分支的行为模式</h2>
+<p>业务逻辑不需要关注事务机制，分支与全局事务的交互过程自动进行。</p>
+<p><img data-src="/images/alibaba-seata-design/at_branch.png" alt></p>
+<h2 id="MT-模式分支的行为模式">MT 模式分支的行为模式</h2>
+<p>业务逻辑需要被分解为 Prepare/Commit/Rollback 3 部分，形成一个 MT 分支，加入全局事务。</p>
+<p><img data-src="/images/alibaba-seata-design/mt_branch.png" alt></p>
 <p>MT 模式一方面是 AT 模式的补充。另外，更重要的价值在于，通过 MT 模式可以把众多非事务性资源纳入全局事务的管理中。</p>
-<h2 id="混合模式"><a href="#混合模式" class="headerlink" title="混合模式"></a>混合模式</h2><p>因为 AT 和 MT 模式的分支从根本上行为模式是一致的，所以可以完全兼容，即，一个全局事务中，可以同时存在 AT 和 MT 的分支。这样就可以达到全面覆盖业务场景的目的：AT 模式可以支持的，使用 AT 模式；AT 模式暂时支持不了的，用 MT 模式来替代。另外，自然的，MT 模式管理的非事务性资源也可以和支持事务的关系型数据库资源一起，纳入同一个分布式事务的管理中。</p>
-<h2 id="应用场景的远景"><a href="#应用场景的远景" class="headerlink" title="应用场景的远景"></a>应用场景的远景</h2><p>回到我们设计的初衷：一个理想的分布式事务解决方案是不应该侵入业务的。MT 模式是在 AT 模式暂时不能完全覆盖所有场景的情况下，一个比较自然的补充方案。我们希望通过 AT 模式的不断演进增强，逐步扩大所支持的场景，MT 模式逐步收敛。未来，我们会纳入对 XA 的原生支持，用 XA 这种无侵入的方式来覆盖 AT 模式无法触达的场景。</p>
-<p><img data-src="/images/alibaba-seata-design/roadmap_of_transaction_mode.png"></p>
-<h1 id="扩展点"><a href="#扩展点" class="headerlink" title="扩展点"></a>扩展点</h1><h2 id="微服务框架的支持"><a href="#微服务框架的支持" class="headerlink" title="微服务框架的支持"></a>微服务框架的支持</h2><p>事务上下文在微服务间的传播需要根据微服务框架本身的机制，订制最优的，对应用层透明的解决方案。有兴趣在这方面共建的开发者可以参考内置的对 Dubbo 的支持方案，来实现对其他微服务框架的支持。</p>
-<h2 id="所支持的数据库类型"><a href="#所支持的数据库类型" class="headerlink" title="所支持的数据库类型"></a>所支持的数据库类型</h2><p>因为 AT 涉及 SQL 的解析，所以在不同类型的数据库上工作，会有一些特定的适配。有兴趣在这方面共建的开发者可以参考内置的对 MySQL 的支持方案，来实现对其他数据库的支持。</p>
-<h2 id="配置和服务注册发现"><a href="#配置和服务注册发现" class="headerlink" title="配置和服务注册发现"></a>配置和服务注册发现</h2><p>支持接入不同的配置和服务注册发现解决方案。比如：Nacos、Eureka、ZooKeeper 等。</p>
-<h2 id="MT-模式的场景拓展"><a href="#MT-模式的场景拓展" class="headerlink" title="MT 模式的场景拓展"></a>MT 模式的场景拓展</h2><p>MT 模式的一个重要作用就是，可以把非关系型数据库的资源，通过 MT 模式分支的包装，纳入到全局事务的管辖中来。比如，Redis、HBase、RocketMQ 的事务消息等。有兴趣在这方面共建的开发者可以在这里贡献一系列相关生态的适配方案。</p>
-<h2 id="事务协调器的分布式高可用方案"><a href="#事务协调器的分布式高可用方案" class="headerlink" title="事务协调器的分布式高可用方案"></a>事务协调器的分布式高可用方案</h2><p>针对不同场景，支持不同的方式作为事务协调器 Server 端的高可用方案。比如，针对事务状态的持久化，可以是基于文件的实现方案，也可以是基于数据库的实现方案；集群间的状态同步，可以是基于 RPC 通信的方案，也可以是基于高可用 KV 存储的方案。</p>
-<h1 id="Roadmap"><a href="#Roadmap" class="headerlink" title="Roadmap"></a>Roadmap</h1><h2 id="Lanscape"><a href="#Lanscape" class="headerlink" title="Lanscape"></a>Lanscape</h2><p><img data-src="/images/alibaba-seata-design/landscape.png"></p>
-<p><strong>The green</strong> part is already open sourced, <strong>the yellow</strong> part will open source by Alibaba&#x2F;AntFinancial, <strong>the blue</strong> part we want co-building with out community:</p>
+<h2 id="混合模式">混合模式</h2>
+<p>因为 AT 和 MT 模式的分支从根本上行为模式是一致的，所以可以完全兼容，即，一个全局事务中，可以同时存在 AT 和 MT 的分支。这样就可以达到全面覆盖业务场景的目的：AT 模式可以支持的，使用 AT 模式；AT 模式暂时支持不了的，用 MT 模式来替代。另外，自然的，MT 模式管理的非事务性资源也可以和支持事务的关系型数据库资源一起，纳入同一个分布式事务的管理中。</p>
+<h2 id="应用场景的远景">应用场景的远景</h2>
+<p>回到我们设计的初衷：一个理想的分布式事务解决方案是不应该侵入业务的。MT 模式是在 AT 模式暂时不能完全覆盖所有场景的情况下，一个比较自然的补充方案。我们希望通过 AT 模式的不断演进增强，逐步扩大所支持的场景，MT 模式逐步收敛。未来，我们会纳入对 XA 的原生支持，用 XA 这种无侵入的方式来覆盖 AT 模式无法触达的场景。</p>
+<p><img data-src="/images/alibaba-seata-design/roadmap_of_transaction_mode.png" alt></p>
+<h1>扩展点</h1>
+<h2 id="微服务框架的支持">微服务框架的支持</h2>
+<p>事务上下文在微服务间的传播需要根据微服务框架本身的机制，订制最优的，对应用层透明的解决方案。有兴趣在这方面共建的开发者可以参考内置的对 Dubbo 的支持方案，来实现对其他微服务框架的支持。</p>
+<h2 id="所支持的数据库类型">所支持的数据库类型</h2>
+<p>因为 AT 涉及 SQL 的解析，所以在不同类型的数据库上工作，会有一些特定的适配。有兴趣在这方面共建的开发者可以参考内置的对 MySQL 的支持方案，来实现对其他数据库的支持。</p>
+<h2 id="配置和服务注册发现">配置和服务注册发现</h2>
+<p>支持接入不同的配置和服务注册发现解决方案。比如：Nacos、Eureka、ZooKeeper 等。</p>
+<h2 id="MT-模式的场景拓展">MT 模式的场景拓展</h2>
+<p>MT 模式的一个重要作用就是，可以把非关系型数据库的资源，通过 MT 模式分支的包装，纳入到全局事务的管辖中来。比如，Redis、HBase、RocketMQ 的事务消息等。有兴趣在这方面共建的开发者可以在这里贡献一系列相关生态的适配方案。</p>
+<h2 id="事务协调器的分布式高可用方案">事务协调器的分布式高可用方案</h2>
+<p>针对不同场景，支持不同的方式作为事务协调器 Server 端的高可用方案。比如，针对事务状态的持久化，可以是基于文件的实现方案，也可以是基于数据库的实现方案；集群间的状态同步，可以是基于 RPC 通信的方案，也可以是基于高可用 KV 存储的方案。</p>
+<h1>Roadmap</h1>
+<h2 id="Lanscape">Lanscape</h2>
+<p><img data-src="/images/alibaba-seata-design/landscape.png" alt></p>
+<p><strong>The green</strong> part is already open sourced, <strong>the yellow</strong> part will open source by Alibaba/AntFinancial, <strong>the blue</strong> part we want co-building with out community:</p>
 <ul>
 <li>Developers can refer to Seata implementation of MySQL support if you want to support different databases transaction</li>
 <li>Developers can refer to Seata implementation of Dubbo support if you want to support different microservices</li>
 <li>Developers can refer to Seata implementation of TCC support if you want to support different data source(such as MQ, NoSQL)</li>
 <li>Developers can refer to Seata implementation of TCC support if you want to support different data source(such as MQ, NoSQL)</li>
-<li>Developers can easily support configuration&#x2F;registry services with just a little work</li>
+<li>Developers can easily support configuration/registry services with just a little work</li>
 <li><strong>The blue</strong> part is warmly welcome you, join it and contribute excellent solution</li>
 <li>We will support XA which is the standard of distributed transaction in our product roadmap</li>
 </ul>
-<h2 id="Roadmap-1"><a href="#Roadmap-1" class="headerlink" title="Roadmap"></a>Roadmap</h2><h3 id="v0-1-0"><a href="#v0-1-0" class="headerlink" title="v0.1.0"></a>v0.1.0</h3><ul>
+<h2 id="Roadmap">Roadmap</h2>
+<h3 id="v0-1-0">v0.1.0</h3>
+<ul>
 <li>Microservice framework support: Dubbo</li>
 <li>Database support: MySQL</li>
 <li>Spring AOP annotation Support</li>
 <li>Transaction coordinator: Stand-alone Server</li>
 </ul>
-<h3 id="v0-5-x"><a href="#v0-5-x" class="headerlink" title="v0.5.x"></a>v0.5.x</h3><ul>
+<h3 id="v0-5-x">v0.5.x</h3>
+<ul>
 <li>Rename Fescar to Seata</li>
 <li>Microservice framework support: SOFA, Spring Cloud</li>
 <li>Support TCC(Try Confirm Cancel) transaction mode</li>
 <li>Dynamic configuration</li>
 <li>Services discovery</li>
 </ul>
-<h3 id="v0-6-x"><a href="#v0-6-x" class="headerlink" title="v0.6.x"></a>v0.6.x</h3><ul>
+<h3 id="v0-6-x">v0.6.x</h3>
+<ul>
 <li>Transaction coordinator: Cluster Server with HA</li>
 </ul>
-<h3 id="v0-8-x"><a href="#v0-8-x" class="headerlink" title="v0.8.x"></a>v0.8.x</h3><ul>
+<h3 id="v0-8-x">v0.8.x</h3>
+<ul>
 <li>Promethus support</li>
 <li>Management console: Monitor, Deployment, Upgrating, etc.</li>
 </ul>
-<h3 id="v1-0-0"><a href="#v1-0-0" class="headerlink" title="v1.0.0"></a>v1.0.0</h3><ul>
+<h3 id="v1-0-0">v1.0.0</h3>
+<ul>
 <li>Production ready</li>
 </ul>
-<h3 id="v1-5-x"><a href="#v1-5-x" class="headerlink" title="v1.5.x"></a>v1.5.x</h3><ul>
+<h3 id="v1-5-x">v1.5.x</h3>
+<ul>
 <li>Database support: Oracle, PostgreSQL, OceanBase</li>
 <li>Optimization of conflict datas</li>
 <li>Independent of Spring Annotation</li>
 <li>Multiple source of data transaction support: MessageQueue(RocketMQ), HBase, Redis, etc.</li>
 </ul>
-<h3 id="v2-0-0"><a href="#v2-0-0" class="headerlink" title="v2.0.0"></a>v2.0.0</h3><ul>
+<h3 id="v2-0-0">v2.0.0</h3>
+<ul>
 <li>XA transaction mode support</li>
 </ul>
 <p>当然，项目迭代演进的过程，我们最重视的是社区的声音，路线图会和社区充分交流及时进行调整。</p>
-<h1 id="相关链接"><a href="#相关链接" class="headerlink" title="相关链接"></a>相关链接</h1><ul>
+<h1>相关链接</h1>
+<ul>
 <li><a href="https://github.com/alibaba/fescar" target="_blank" rel="noopener">FESCAR on GitHub</a></li>
 <li><a href="https://help.aliyun.com/product/48444.html?spm=5176.doc55547.3.1.Gg1hcs" target="_blank" rel="noopener">GTS on Aliyun</a></li>
 </ul>
@@ -661,7 +699,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是微服务化带来的分布式事务问题？"><span class="nav-number">1.</span> <span class="nav-text">什么是微服务化带来的分布式事务问题？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Fescar-的发展历程"><span class="nav-number">2.</span> <span class="nav-text">Fescar 的发展历程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#设计初衷"><span class="nav-number">2.1.</span> <span class="nav-text">设计初衷</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#既有的解决方案为什么不满足？"><span class="nav-number">2.2.</span> <span class="nav-text">既有的解决方案为什么不满足？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#业务无侵入的方案"><span class="nav-number">2.2.1.</span> <span class="nav-text">业务无侵入的方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#侵入业务的方案"><span class="nav-number">2.2.2.</span> <span class="nav-text">侵入业务的方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#理想的方案应该是什么样子？"><span class="nav-number">2.3.</span> <span class="nav-text">理想的方案应该是什么样子？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原理和设计"><span class="nav-number">3.</span> <span class="nav-text">原理和设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#如何定义一个分布式事务？"><span class="nav-number">3.1.</span> <span class="nav-text">如何定义一个分布式事务？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#与-XA-的差别在什么地方？"><span class="nav-number">3.1.1.</span> <span class="nav-text">与 XA 的差别在什么地方？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#架构层次"><span class="nav-number">3.1.1.1.</span> <span class="nav-text">架构层次</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#两阶段提交"><span class="nav-number">3.1.1.2.</span> <span class="nav-text">两阶段提交</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分支事务如何提交和回滚？"><span class="nav-number">3.2.</span> <span class="nav-text">分支事务如何提交和回滚？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#事务传播机制"><span class="nav-number">3.3.</span> <span class="nav-text">事务传播机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#隔离性"><span class="nav-number">3.4.</span> <span class="nav-text">隔离性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#适用场景分析"><span class="nav-number">4.</span> <span class="nav-text">适用场景分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分支的基本行为模式"><span class="nav-number">4.1.</span> <span class="nav-text">分支的基本行为模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AT-模式分支的行为模式"><span class="nav-number">4.2.</span> <span class="nav-text">AT 模式分支的行为模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MT-模式分支的行为模式"><span class="nav-number">4.3.</span> <span class="nav-text">MT 模式分支的行为模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#混合模式"><span class="nav-number">4.4.</span> <span class="nav-text">混合模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#应用场景的远景"><span class="nav-number">4.5.</span> <span class="nav-text">应用场景的远景</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#扩展点"><span class="nav-number">5.</span> <span class="nav-text">扩展点</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#微服务框架的支持"><span class="nav-number">5.1.</span> <span class="nav-text">微服务框架的支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#所支持的数据库类型"><span class="nav-number">5.2.</span> <span class="nav-text">所支持的数据库类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置和服务注册发现"><span class="nav-number">5.3.</span> <span class="nav-text">配置和服务注册发现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MT-模式的场景拓展"><span class="nav-number">5.4.</span> <span class="nav-text">MT 模式的场景拓展</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#事务协调器的分布式高可用方案"><span class="nav-number">5.5.</span> <span class="nav-text">事务协调器的分布式高可用方案</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Roadmap"><span class="nav-number">6.</span> <span class="nav-text">Roadmap</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Lanscape"><span class="nav-number">6.1.</span> <span class="nav-text">Lanscape</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Roadmap-1"><span class="nav-number">6.2.</span> <span class="nav-text">Roadmap</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#v0-1-0"><span class="nav-number">6.2.1.</span> <span class="nav-text">v0.1.0</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v0-5-x"><span class="nav-number">6.2.2.</span> <span class="nav-text">v0.5.x</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v0-6-x"><span class="nav-number">6.2.3.</span> <span class="nav-text">v0.6.x</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v0-8-x"><span class="nav-number">6.2.4.</span> <span class="nav-text">v0.8.x</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v1-0-0"><span class="nav-number">6.2.5.</span> <span class="nav-text">v1.0.0</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v1-5-x"><span class="nav-number">6.2.6.</span> <span class="nav-text">v1.5.x</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v2-0-0"><span class="nav-number">6.2.7.</span> <span class="nav-text">v2.0.0</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#相关链接"><span class="nav-number">7.</span> <span class="nav-text">相关链接</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">什么是微服务化带来的分布式事务问题？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">Fescar 的发展历程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#设计初衷"><span class="nav-number">2.1.</span> <span class="nav-text">设计初衷</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#既有的解决方案为什么不满足？"><span class="nav-number">2.2.</span> <span class="nav-text">既有的解决方案为什么不满足？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#业务无侵入的方案"><span class="nav-number">2.2.1.</span> <span class="nav-text">业务无侵入的方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#侵入业务的方案"><span class="nav-number">2.2.2.</span> <span class="nav-text">侵入业务的方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#理想的方案应该是什么样子？"><span class="nav-number">2.3.</span> <span class="nav-text">理想的方案应该是什么样子？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">3.</span> <span class="nav-text">原理和设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#如何定义一个分布式事务？"><span class="nav-number">3.1.</span> <span class="nav-text">如何定义一个分布式事务？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#与-XA-的差别在什么地方？"><span class="nav-number">3.1.1.</span> <span class="nav-text">与 XA 的差别在什么地方？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#架构层次"><span class="nav-number">3.1.1.1.</span> <span class="nav-text">架构层次</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#两阶段提交"><span class="nav-number">3.1.1.2.</span> <span class="nav-text">两阶段提交</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分支事务如何提交和回滚？"><span class="nav-number">3.2.</span> <span class="nav-text">分支事务如何提交和回滚？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#事务传播机制"><span class="nav-number">3.3.</span> <span class="nav-text">事务传播机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#隔离性"><span class="nav-number">3.4.</span> <span class="nav-text">隔离性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">4.</span> <span class="nav-text">适用场景分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分支的基本行为模式"><span class="nav-number">4.1.</span> <span class="nav-text">分支的基本行为模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AT-模式分支的行为模式"><span class="nav-number">4.2.</span> <span class="nav-text">AT 模式分支的行为模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MT-模式分支的行为模式"><span class="nav-number">4.3.</span> <span class="nav-text">MT 模式分支的行为模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#混合模式"><span class="nav-number">4.4.</span> <span class="nav-text">混合模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#应用场景的远景"><span class="nav-number">4.5.</span> <span class="nav-text">应用场景的远景</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">5.</span> <span class="nav-text">扩展点</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#微服务框架的支持"><span class="nav-number">5.1.</span> <span class="nav-text">微服务框架的支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#所支持的数据库类型"><span class="nav-number">5.2.</span> <span class="nav-text">所支持的数据库类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置和服务注册发现"><span class="nav-number">5.3.</span> <span class="nav-text">配置和服务注册发现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MT-模式的场景拓展"><span class="nav-number">5.4.</span> <span class="nav-text">MT 模式的场景拓展</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#事务协调器的分布式高可用方案"><span class="nav-number">5.5.</span> <span class="nav-text">事务协调器的分布式高可用方案</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">6.</span> <span class="nav-text">Roadmap</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Lanscape"><span class="nav-number">6.1.</span> <span class="nav-text">Lanscape</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Roadmap"><span class="nav-number">6.2.</span> <span class="nav-text">Roadmap</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#v0-1-0"><span class="nav-number">6.2.1.</span> <span class="nav-text">v0.1.0</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v0-5-x"><span class="nav-number">6.2.2.</span> <span class="nav-text">v0.5.x</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v0-6-x"><span class="nav-number">6.2.3.</span> <span class="nav-text">v0.6.x</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v0-8-x"><span class="nav-number">6.2.4.</span> <span class="nav-text">v0.8.x</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v1-0-0"><span class="nav-number">6.2.5.</span> <span class="nav-text">v1.0.0</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v1-5-x"><span class="nav-number">6.2.6.</span> <span class="nav-text">v1.5.x</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#v2-0-0"><span class="nav-number">6.2.7.</span> <span class="nav-text">v2.0.0</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">7.</span> <span class="nav-text">相关链接</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
