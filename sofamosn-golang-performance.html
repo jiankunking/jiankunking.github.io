@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+) 高并发的场景还是NIO比较适合">
+  <meta name="description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)高并发的场景还是NIO比较适合">
 <meta name="keywords" content="Performance,Go,SOFAMosn">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SOFAMosn 如何提高 GoLang 的转发性能">
 <meta property="og:url" content="https://jiankunking.com/sofamosn-golang-performance.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+) 高并发的场景还是NIO比较适合">
+<meta property="og:description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)高并发的场景还是NIO比较适合">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:updated_time" content="2023-09-14T09:26:13.063Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="SOFAMosn 如何提高 GoLang 的转发性能">
-<meta name="twitter:description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+) 高并发的场景还是NIO比较适合">
+<meta name="twitter:description" content="通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)高并发的场景还是NIO比较适合">
 
 <link rel="canonical" href="https://jiankunking.com/sofamosn-golang-performance.html">
 
@@ -280,7 +280,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>701</span>
+              <span>711</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -300,23 +300,20 @@
 
       
         <blockquote>
-<p>通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)<br>
-高并发的场景还是NIO比较适合</p>
+<p>通过SOFAMosn了解goroutine只能在一定并发量级上降低并发编程的难度(goroutine内存占用2kb+)<br>高并发的场景还是NIO比较适合</p>
 </blockquote>
 <a id="more"></a>
+
 <p>GoLang 的转发性能比起 C++ 肯定是稍有逊色的，为了尽可能的提高 MOSN 的转发性能，我们在线程模型上进行优化，当前 MOSN 支持两种线程模型，用户可根据场景选择开启适用的模型。</p>
-<h1>模型一</h1>
-<p>如下图所示，使用 GoLang 默认的 epoll 机制，对每个连接分配独立的读写协程进行阻塞读写操作，proxy 层做转发时，使用常驻 worker 协程池负责处理 Stream Event</p>
-<p><img data-src="/images/sofamosn-golang-performance/MOSNThreadModelStage1.png" alt></p>
+<h1 id="模型一"><a href="#模型一" class="headerlink" title="模型一"></a>模型一</h1><p>如下图所示，使用 GoLang 默认的 epoll 机制，对每个连接分配独立的读写协程进行阻塞读写操作，proxy 层做转发时，使用常驻 worker 协程池负责处理 Stream Event</p>
+<p><img data-src="/images/sofamosn-golang-performance/MOSNThreadModelStage1.png"></p>
 <ul>
 <li>此模型在 IO 上使用 GoLang 的调度机制，适用于连接数较少的场景，例如：mosn 作为 sidecar、与 client 同机部署的场景</li>
 </ul>
-<h1>模型二</h1>
-<p>如下图所示，基于 <a href="https://godoc.org/github.com/mailru/easygo/netpoll" target="_blank" rel="noopener">Netpoll</a> 重写 epoll 机制，将 IO 和 PROXY 均进行池化，downstream connection 将自身的读写事件注册到 netpoll 的 epoll/kqueue wait 协程，epoll/kqueue wait 协程接受到可读事件，触发回调，从协程池中挑选一个执行读操作。</p>
-<p><img data-src="/images/sofamosn-golang-performance/MOSNThreadModelStage2.png" alt></p>
+<h1 id="模型二"><a href="#模型二" class="headerlink" title="模型二"></a>模型二</h1><p>如下图所示，基于 <a href="https://godoc.org/github.com/mailru/easygo/netpoll" target="_blank" rel="noopener">Netpoll</a> 重写 epoll 机制，将 IO 和 PROXY 均进行池化，downstream connection 将自身的读写事件注册到 netpoll 的 epoll&#x2F;kqueue wait 协程，epoll&#x2F;kqueue wait 协程接受到可读事件，触发回调，从协程池中挑选一个执行读操作。</p>
+<p><img data-src="/images/sofamosn-golang-performance/MOSNThreadModelStage2.png"></p>
 <ul>
-<li>使用自定义 Netpoll IO 池化操作带来的好处是：
-<ul>
+<li>使用自定义 Netpoll IO 池化操作带来的好处是：<ul>
 <li>当可读事件触发时，从协程池中获取一个 goroutine 来执行读处理，而不是新分配一个 goroutine，以此来控制高并发下的协程数量</li>
 <li>当收到链接可读事件时，才真正为其分配 read buffer 以及相应的执行协程。这样 GetBytes() 可以降低因为大量空闲链接场景导致的额外协程和 read buffer 开销</li>
 </ul>
@@ -498,7 +495,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">1.</span> <span class="nav-text">模型一</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#null"><span class="nav-number">2.</span> <span class="nav-text">模型二</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#模型一"><span class="nav-number">1.</span> <span class="nav-text">模型一</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#模型二"><span class="nav-number">2.</span> <span class="nav-text">模型二</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

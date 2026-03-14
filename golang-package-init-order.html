@@ -24,18 +24,18 @@
     var CONFIG = {"hostname":"jiankunking.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":320,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="golang package init order">
+  <meta name="description" content="详解Go程序初始化顺序，包括包导入、常量变量初始化、init函数执行的完整流程和注意事项。">
 <meta name="keywords" content="Go,Init,Order">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Golang 初始化顺序">
 <meta property="og:url" content="https://jiankunking.com/golang-package-init-order.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="golang package init order">
+<meta property="og:description" content="详解Go程序初始化顺序，包括包导入、常量变量初始化、init函数执行的完整流程和注意事项。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-02T02:12:52.049Z">
+<meta property="og:updated_time" content="2026-03-14T22:43:08.873Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Golang 初始化顺序">
-<meta name="twitter:description" content="golang package init order">
+<meta name="twitter:description" content="详解Go程序初始化顺序，包括包导入、常量变量初始化、init函数执行的完整流程和注意事项。">
 
 <link rel="canonical" href="https://jiankunking.com/golang-package-init-order.html">
 
@@ -255,7 +255,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-09-02 10:12:52" itemprop="dateModified" datetime="2019-09-02T10:12:52+08:00">2019-09-02</time>
+                <time title="修改时间：2026-03-15 06:43:08" itemprop="dateModified" datetime="2026-03-15T06:43:08+08:00">2026-03-15</time>
               </span>
 
           
@@ -271,7 +271,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>600</span>
+              <span>623</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -290,17 +290,14 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <blockquote>
-<p>golang package init order</p>
-</blockquote>
+        <p>详解Go程序初始化顺序，包括包导入、常量变量初始化、init函数执行的完整流程和注意事项。</p>
 <a id="more"></a>
+
 <p>Go程序的初始化和执行总是从 main.main  函数开始的。但是如果 main  包里导入了其它的包，则会按照顺序将它们包含进 main  包里（这里的导入顺序依赖具体实现，一般可能是以文件名或包路径名的字符串顺序导入）。如果某个包被多次导入的话，在执行的时候只会导入一次。当一个包被导入时，如果它还导入了其它的包，则先将其它的包包含进来，然后创建和初始化这个包的常量和变量。然后就是调用包里的 init  函数，如果一个包有多个 init  函数的话，实现可能是以文件名的顺序调用，同一个文件内的多个 init  则是以出现的顺序依次调用（ init  不是普通函数，可以定义有多个，所以不能被其它函数调用）。最终，在 main  包的所有包常量、包变量被创建和初始化，并且 init  函数被执行后，才会进入 main.main  函数，程序开始正常执行。下图是Go程序函数启动顺序的示意图：</p>
-<p><img data-src="/images/golang-package-init-order/init.png" alt></p>
-<p>要注意的是，在 main.main  函数执行之前所有代码都运行在同一个Goroutine中，也是运行在程序的主系统线程中。如果某个 init  函数内部用go关键字启动了新的Goroutine的话，新的Goroutine和 main.main  函数是并发执行的。<br>
-因为所有的 init  函数和 main  函数都是在主线程完成，它们也是满足顺序一致性模型的。</p>
+<p><img data-src="/images/golang-package-init-order/init.png"></p>
+<p>要注意的是，在 main.main  函数执行之前所有代码都运行在同一个Goroutine中，也是运行在程序的主系统线程中。如果某个 init  函数内部用go关键字启动了新的Goroutine的话，新的Goroutine和 main.main  函数是并发执行的。<br>因为所有的 init  函数和 main  函数都是在主线程完成，它们也是满足顺序一致性模型的。</p>
 <blockquote>
-<p>整理自：Go语言高级编程 作者：柴树杉、曹春晖<br>
-图片来自：beego官网router部分</p>
+<p>整理自：Go语言高级编程 作者：柴树杉、曹春晖<br>图片来自：beego官网router部分</p>
 </blockquote>
 
     </div>
