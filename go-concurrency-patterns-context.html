@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.1">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Muse","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="翻译自：Go Concurrency Patterns: Context地址：https:&#x2F;&#x2F;blog.golang.org&#x2F;context">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译]Go 并发 : Context">
+<meta property="og:url" content="https://jiankunking.com/go-concurrency-patterns-context.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="翻译自：Go Concurrency Patterns: Context地址：https:&#x2F;&#x2F;blog.golang.org&#x2F;context">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-06-13T10:01:33.000Z">
+<meta property="article:modified_time" content="2026-05-01T00:23:51.688Z">
+<meta property="article:author" content="jiankunking">
+<meta property="article:tag" content="Concurrency">
+<meta property="article:tag" content="Context">
+<meta property="article:tag" content="Go">
+<meta property="article:tag" content="原创">
+<meta property="article:tag" content="翻译">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jiankunking.com/go-concurrency-patterns-context.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/go-concurrency-patterns-context.html","path":"go-concurrency-patterns-context.html","title":"[译]Go 并发 : Context"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>[译]Go 并发 : Context | 衣舞晨风</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">衣舞晨风</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Context"><span class="nav-number">2.</span> <span class="nav-text">Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Derived-contexts"><span class="nav-number">3.</span> <span class="nav-text">Derived contexts</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">168</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">240</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/go-concurrency-patterns-context.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="jiankunking">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="[译]Go 并发 : Context | 衣舞晨风">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          [译]Go 并发 : Context
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-06-13 10:01:33" itemprop="dateCreated datePublished" datetime="2020-06-13T10:01:33+00:00">2020-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-05-01 00:23:51" itemprop="dateModified" datetime="2026-05-01T00:23:51+00:00">2026-05-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">Go</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>翻译自：Go Concurrency Patterns: Context<br>地址：<a href="https://blog.golang.org/context">https://blog.golang.org/context</a></p>
+</blockquote>
+<span id="more"></span>
+
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>在Go server端，每个请求都是通过新起goroutine来处理。请求处理程序通常会启动其他goroutine来访问后端，例如数据库和RPC服务。处理该请求的goroutine集合通常需要访问特定于请求的值，例如最终用户的身份，授权令牌和请求的时限。当一个请求被取消或超时时，处理该请求的所有goroutine应该迅速退出，以便系统可以回收他们正在使用的资源。</p>
+<p>在Google，我们开发了一个Context包，可以轻松地跨API边界将请求范围（request-scoped）的值，取消信号和截止日期（deadlines）传递给处理请求的所有goroutine。该软件包可作为Context公开使用。本文将介绍如何使用该package。</p>
+<h1 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h1><p>Context包的核心是Context类型:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">// Context跨API边界携带期限(deadline)、取消信号和请求范围(request-scoped)的值。Context的方法是协程安全的。</span><br><span class="line">type Context interface &#123;</span><br><span class="line">    // Done返回一个channel，该channel在Context被取消或超时时关闭。</span><br><span class="line">    Done() &lt;-chan struct&#123;&#125;</span><br><span class="line"></span><br><span class="line">    // Err表示在Done channel关闭后取消此Context的原因。</span><br><span class="line">    Err() error</span><br><span class="line"></span><br><span class="line">    // Deadline返回Context将被取消的时间(如果有的话)。</span><br><span class="line">    Deadline() (deadline time.Time, ok bool)</span><br><span class="line"></span><br><span class="line">    // Value返回与key关联的值(如果没有，返回nil)。</span><br><span class="line">    Value(key interface&#123;&#125;) interface&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>更详细的介绍，参见godoc：<a href="https://golang.org/pkg/context/">https://golang.org/pkg/context/</a></p>
+<p>Done方法返回一个channel，作为代表Context运行的函数的取消信号:当channel关闭时，函数应该放弃它们的工作并返回。Err方法返回一个错误，指示Context被取消的原因。</p>
+<p>因为Done channel只用于接收的原因，Context没有取消方法：接收取消信号的方法与发送信号方法往往不是同一个。特别是，当父操作（parent operation）为子操作（sub-operations）启动goroutines时，这些子操作应该不能取消父操作。相反，WithCancel函数（如下所述）提供了一种取消新的上下文值的方法。</p>
+<p>Context是协程安全的。代码中可以将单个Context传递给任意数量的goroutine，并在取消该Context时可以将信号传递给所有的goroutine。</p>
+<p>最后期限（Deadline）方法允许函数决定他们是否应该开始工作;如果剩下的时间太少，可能就不值得了。代码也可以使用期限（Deadline）来设置I&#x2F;O操作的超时。</p>
+<p>值（Value）允许Context携带请求范围(request-scoped)的数据。 该数据必须是协程安全的，以便多个goroutine可以同时使用。</p>
+<h1 id="Derived-contexts"><a href="#Derived-contexts" class="headerlink" title="Derived contexts"></a>Derived contexts</h1><p><font color=DeepPink><strong>Context包提供了从现有Context值派生新Context值的函数。这些值形成一个树:当一个Context被取消时，从它派生的所有Context也被取消。</strong></font></p>
+<p>Background是所有Context树的根;它永远不会被取消:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// Background返回一个空Context。它永远不会被取消，没有截止日期，也没有值。</span><br><span class="line">// 后台通常用于main、init和测试，并作为传入请求的顶级上下文。</span><br><span class="line">func Background() Context</span><br></pre></td></tr></table></figure>
+
+<p>WithCancel和WithTimeout返回派生的Context值，该值可以比父Context早被取消。请求处理程序返回时，通常会取消与传入请求关联的Context。 使用多个副本时，WithCancel对于取消冗余请求也很有用。WithTimeout对于设置对后端服务器的请求的最后期限很有用：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// WithCancel返回parent的副本，该副本的parent channel在parent结束后立即关闭。done关闭或调用cancel。</span><br><span class="line">func WithCancel(parent Context) (ctx Context, cancel CancelFunc)</span><br><span class="line"></span><br><span class="line">// CancelFunc取消Context。</span><br><span class="line">type CancelFunc func()</span><br><span class="line"></span><br><span class="line">// WithTimeout返回父对象的副本，该父对象的Done channel会在父对象关闭后立即关闭。</span><br><span class="line">// 调用cancel或超时,关闭Done。 </span><br><span class="line">// 新的上下文截止日期是now + timeout和父级截止日期（如果有）中的较早者。 </span><br><span class="line">// 如果计时器仍在运行，则取消功能将释放其资源。</span><br><span class="line">func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)</span><br></pre></td></tr></table></figure>
+
+<p>WithValue提供了一种将请求范围的值与Context关联的方法:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// WithValue returns a copy of parent whose Value method returns val for key.</span><br><span class="line">func WithValue(parent Context, key interface&#123;&#125;, val interface&#123;&#125;) Context</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8E%9F%E5%88%9B/" rel="tag"># 原创</a>
+              <a href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag"># 翻译</a>
+              <a href="/tags/go/" rel="tag"># Go</a>
+              <a href="/tags/concurrency/" rel="tag"># Concurrency</a>
+              <a href="/tags/context/" rel="tag"># Context</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/how-to-start-learning-open-source-code.html" rel="prev" title="学习开源代码该如何入手？">
+                  <i class="fa fa-angle-left"></i> 学习开源代码该如何入手？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/go-select.html" rel="next" title="[转]Go Select 实现分析">
+                  [转]Go Select 实现分析 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">1.4m</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

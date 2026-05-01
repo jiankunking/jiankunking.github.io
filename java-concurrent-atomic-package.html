@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.1">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Muse","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="翻译自：Package java.util.concurrent.atomic">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译]Java Concurrent Atomic Package详解">
+<meta property="og:url" content="https://jiankunking.com/java-concurrent-atomic-package.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="翻译自：Package java.util.concurrent.atomic">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-08-04T16:51:43.000Z">
+<meta property="article:modified_time" content="2026-05-01T00:23:51.691Z">
+<meta property="article:author" content="jiankunking">
+<meta property="article:tag" content="Atomic">
+<meta property="article:tag" content="Concurrent">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="原创">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jiankunking.com/java-concurrent-atomic-package.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/java-concurrent-atomic-package.html","path":"java-concurrent-atomic-package.html","title":"[译]Java Concurrent Atomic Package详解"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>[译]Java Concurrent Atomic Package详解 | 衣舞晨风</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">衣舞晨风</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">168</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">240</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/java-concurrent-atomic-package.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="jiankunking">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="[译]Java Concurrent Atomic Package详解 | 衣舞晨风">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          [译]Java Concurrent Atomic Package详解
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-08-04 16:51:43" itemprop="dateCreated datePublished" datetime="2019-08-04T16:51:43+00:00">2019-08-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-05-01 00:23:51" itemprop="dateModified" datetime="2026-05-01T00:23:51+00:00">2026-05-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>4 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>翻译自：Package java.util.concurrent.atomic</p>
+</blockquote>
+<span id="more"></span>
+
+<blockquote>
+<p>地址：<br><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/package-summary.html#package.description">https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/package-summary.html#package.description</a><br>翻译JDK8而不是12的原因是JDK8对与内存语义部分讲解更加详细。</p>
+</blockquote>
+<p><strong>Package java.util.concurrent.atomic 对于单个变量支持无锁、线程安全操作的工具类。</strong></p>
+<p>类摘要：</p>
+<table>
+<thead>
+<tr>
+<th>类名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AtomicBoolean</td>
+<td>可以原子性更新的boolean值。</td>
+</tr>
+<tr>
+<td>AtomicInteger</td>
+<td>可以原子性更新的int值。</td>
+</tr>
+<tr>
+<td>AtomicIntegerArray</td>
+<td>一个int数组，其中的元素可以原子性更新。</td>
+</tr>
+<tr>
+<td>AtomicIntegerFieldUpdater<T></td>
+<td>基于反射，可以对指定类的指定 volatile int 字段进行原子更新。</td>
+</tr>
+<tr>
+<td>AtomicLong</td>
+<td>可以原子性更新的long值。</td>
+</tr>
+<tr>
+<td>AtomicLongArray</td>
+<td>一个long数组，其中的元素可以原子性更新。</td>
+</tr>
+<tr>
+<td>AtomicLongFieldUpdater<T></td>
+<td>基于反射，可以对指定类的指定 volatile long 字段进行原子更新。</td>
+</tr>
+<tr>
+<td>AtomicMarkableReference<V></td>
+<td>维护带有标记位的对象引用，可以原子方式对其进行更新。</td>
+</tr>
+<tr>
+<td>AtomicReference<V></td>
+<td>可以原子性更新的对象引用</td>
+</tr>
+<tr>
+<td>AtomicReferenceArray<E></td>
+<td>一个对象引用数组，其中的元素可以原子性更新。</td>
+</tr>
+<tr>
+<td>AtomicReferenceFieldUpdater&lt;T,V&gt;</td>
+<td>基于反射，可以对指定类的指定 volatile reference 字段进行原子更新。</td>
+</tr>
+<tr>
+<td>AtomicStampedReference<V></td>
+<td>维护带有整数版本标志的对象引用，可以原子方式对其进行更新。</td>
+</tr>
+<tr>
+<td>DoubleAccumulator</td>
+<td>One or more variables that together maintain a running double value updated using a supplied function.</td>
+</tr>
+<tr>
+<td>DoubleAdder</td>
+<td>One or more variables that together maintain an initially zero double sum.</td>
+</tr>
+<tr>
+<td>LongAccumulator</td>
+<td>One or more variables that together maintain a running long value updated using a supplied function.</td>
+</tr>
+<tr>
+<td>LongAdder</td>
+<td>One or more variables that together maintain an initially zero long sum.</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>DoubleAccumulator、DoubleAdder、LongAccumulator、LongAdder 均是Striped64的子类，内部维护的是一个数组，当并发更新时，每个线程操作的是数组中的元素，从而降低锁的粒度。</p>
+</blockquote>
+<p>本质上，该package下的类扩展了volatile值、字段、数组元素的概念，提供以下形式的原子更新操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">boolean compareAndSet(expectedValue, updateValue);</span><br></pre></td></tr></table></figure>
+<p>该方法（在不同类中的参数类型不同）原子地将变量设置为updateValue，如果它当前持有expectedValue，更新成功返回true。该包中的类还包含获取和无条件设置（set）值的方法。</p>
+<p>这些方法的规范使实现能够采用当代处理器上可用的高效机器级原子指令。然而，<font color=DeepPink><strong>在某些平台上，支持可能需要某种形式的内部锁定。因此，这些方法不是严格保证是非阻塞的（线程可能在执行操作之前暂时阻塞）。</strong></font></p>
+<p>AtomicBoolean、AtomicInteger、AtomicLong和AtomicReference类的实例都提供对对应类型的单个变量的访问和更新。每个类还提供了适用于该类型的实用方法。例如，类AtomicLong和AtomicInteger提供原子增量方法。 一个应用是生成序列号，如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">class Sequencer &#123;</span><br><span class="line">  private final AtomicLong sequenceNumber = new AtomicLong(0);</span><br><span class="line">  public long next() &#123;</span><br><span class="line">    return sequenceNumber.getAndIncrement();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>原子性访问和更新内存效果，与volatiles遵循同样的规则，如<a href="https://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.4">The Java Language Specification (17.4 Memory Model)</a>所述：</p>
+<ul>
+<li>get与volatile读效果一样</li>
+<li>set与volatile写效果一样</li>
+<li>lazySet与写入(分配)volatile变量的效果一样【写操作不会与之前的任何写操作重新排序】，但它可能被后续操作重排【也就是，<font color=DeepPink><strong>在volatile写或者同步操作之前，可能对于其它线程不可见</strong></font>】。</li>
+<li>compareAndSet和所有其他读取和更新操作(如getAndIncrement)一样，与volatile变量读取和写入具有相同的内存效果。</li>
+</ul>
+<blockquote>
+<p>lazySet是使用Unsafe.putOrderedObject方法，这个方法在对低延迟代码是很有用的，它能够实现非阻塞的写入，这些写入不会被Java的JIT重新排序指令(instruction reordering)，这样它使用快速的存储-存储(store-store) barrier, 而不是较慢的存储-加载(store-load) barrier, 后者总是用在volatile的写操作上，这种性能提升是有代价的，虽然便宜，也就是写后结果并不会被其他线程看到，甚至是自己的线程，通常是几纳秒后被其他线程看到，这个时间比较短，所以代价可以忍受。<br>设想如下场景: 设置一个 volatile 变量为 null，让这个对象被 GC 掉，volatile write 是消耗比较大（store-load 屏障）的，但是 putOrderedInt 只会加 store-store 屏障，损耗会小一些。</p>
+</blockquote>
+<p>添加lazySet方法的原因:<a href="https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6275329">https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6275329</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">As probably the last little JSR166 follow-up for Mustang,</span><br><span class="line">we added a &quot;lazySet&quot; method to the Atomic classes</span><br><span class="line">(AtomicInteger, AtomicReference, etc). This is a niche</span><br><span class="line">method that is sometimes useful when fine-tuning code using</span><br><span class="line">non-blocking data structures. The semantics are</span><br><span class="line">that the write is guaranteed not to be re-ordered with any</span><br><span class="line">previous write, but may be reordered with subsequent operations</span><br><span class="line">(or equivalently, might not be visible to other threads) until</span><br><span class="line">some other volatile write or synchronizing action occurs).</span><br><span class="line"></span><br><span class="line">The main use case is for nulling out fields of nodes in</span><br><span class="line">non-blocking data structures solely for the sake of avoiding</span><br><span class="line">long-term garbage retention; it applies when it is harmless</span><br><span class="line">if other threads see non-null values for a while, but you&#x27;d</span><br><span class="line">like to ensure that structures are eventually GCable. In such</span><br><span class="line">cases, you can get better performance by avoiding</span><br><span class="line">the costs of the null volatile-write. There are a few</span><br><span class="line">other use cases along these lines for non-reference-based</span><br><span class="line">atomics as well, so the method is supported across all of the</span><br><span class="line">AtomicX classes.</span><br><span class="line"></span><br><span class="line">For people who like to think of these operations in terms of</span><br><span class="line">machine-level barriers on common multiprocessors, lazySet</span><br><span class="line">provides a preceeding store-store barrier (which is either</span><br><span class="line">a no-op or very cheap on current platforms), but no</span><br><span class="line">store-load barrier (which is usually the expensive part</span><br><span class="line">of a volatile-write).</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>weakCompareAndSet JDK 9之后Deprecated，本文已跳过。</p>
+</blockquote>
+<p>除了表示单个值的类之外，package中还包含Updater类，可用于在类的volatile字段上执行compareAndSet操作。 AtomicReferenceFieldUpdater、AtomicIntegerFieldUpdater和AtomicLongFieldUpdater是基于反射的，可提供对相关字段类型的访问。这些主要用于原子数据结构，同一节点的几个volatile字段（例如，树节点的链接）独立地原子更新。<strong>这些类在如何以及何时使用原子更新方面提供了更大的灵活性，但代价是更加笨拙的基于反射的设置、更不方便的使用和更弱的保证。</strong></p>
+<p>AtomicIntegerArray、AtomicLongArray和AtomicReferenceArray类进一步将原子操作支持扩展到这些类型的数组。这些类还<strong>提供了数组元素的volatile访问语义，这是普通数组不支持的。</strong></p>
+<p>AtomicMarkableReference类将单个布尔值与引用相关联。 例如，该位可能在数据结构中使用，表示被引用的对象在逻辑上已被删除。 AtomicStampedReference类将整数值与引用相关联。 例如，这可以用于表示与一系列更新相对应的版本号。</p>
+<p>原子类主要设计为用于实现非阻塞数据结构和相关基础结构类的构建。 compareAndSet方法不是锁定的一般替代方法。 仅当对象的关键更新仅限于单个变量时，它才适用。</p>
+<p>原子类不是java.lang.Integer和相关类的通用替换。它们没有定义equals，hashCode和compareTo等方法（由于原子变量预期会发生变化，所以它们不适合作为哈希表键）。</p>
+<blockquote>
+<p>后续会出文章解析：AtomicLong、Striped64、LongAdder<br>本文的目的主要是从大体上了解atomic及其内存语义</p>
+</blockquote>
+<blockquote>
+<p>JDK 12<br><a href="https://docs.oracle.com/en/java/javase/12/docs/api/java.base/java/util/concurrent/atomic/package-summary.html">https://docs.oracle.com/en/java/javase/12/docs/api/java.base/java/util/concurrent/atomic/package-summary.html</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8E%9F%E5%88%9B/" rel="tag"># 原创</a>
+              <a href="/tags/java/" rel="tag"># Java</a>
+              <a href="/tags/concurrent/" rel="tag"># Concurrent</a>
+              <a href="/tags/atomic/" rel="tag"># Atomic</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/java-juc-atomic-atomiclong.html" rel="prev" title="Java JUC Atomic AtomicLong">
+                  <i class="fa fa-angle-left"></i> Java JUC Atomic AtomicLong
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/java-threadlocal.html" rel="next" title="Java ThreadLocal">
+                  Java ThreadLocal <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">1.4m</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

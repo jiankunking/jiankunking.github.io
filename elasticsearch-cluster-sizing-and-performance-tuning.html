@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.1">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Muse","darkmode":true,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="翻译自：Elasticsearch Cluster Sizing and Performance Tuning地址：https:&#x2F;&#x2F;www.elastic.co&#x2F;cn&#x2F;blog&#x2F;found-sizing-elasticsearch">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译]Elasticsearch集群规模和性能调优">
+<meta property="og:url" content="https://jiankunking.com/elasticsearch-cluster-sizing-and-performance-tuning.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="翻译自：Elasticsearch Cluster Sizing and Performance Tuning地址：https:&#x2F;&#x2F;www.elastic.co&#x2F;cn&#x2F;blog&#x2F;found-sizing-elasticsearch">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://jiankunking.com/images/elasticsearch-cluster-sizing-and-performance-tuning/shard-lucene-index-segment.jpeg">
+<meta property="og:image" content="https://jiankunking.com/images/elasticsearch-cluster-sizing-and-performance-tuning/Scheme-2.png">
+<meta property="article:published_time" content="2020-04-07T16:22:48.000Z">
+<meta property="article:modified_time" content="2026-05-01T00:23:51.685Z">
+<meta property="article:author" content="jiankunking">
+<meta property="article:tag" content="Cluster">
+<meta property="article:tag" content="Elasticsearch">
+<meta property="article:tag" content="Performance">
+<meta property="article:tag" content="Size">
+<meta property="article:tag" content="Tuning">
+<meta property="article:tag" content="原创">
+<meta property="article:tag" content="翻译">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jiankunking.com/images/elasticsearch-cluster-sizing-and-performance-tuning/shard-lucene-index-segment.jpeg">
+
+
+<link rel="canonical" href="https://jiankunking.com/elasticsearch-cluster-sizing-and-performance-tuning.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/elasticsearch-cluster-sizing-and-performance-tuning.html","path":"elasticsearch-cluster-sizing-and-performance-tuning.html","title":"[译]Elasticsearch集群规模和性能调优"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>[译]Elasticsearch集群规模和性能调优 | 衣舞晨风</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">衣舞晨风</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%9A%84%E5%A4%A7%E5%B0%8F"><span class="nav-number">1.</span> <span class="nav-text">数据的大小</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E7%89%87%E7%9A%84%E6%9C%80%E4%BD%B3%E6%95%B0%E9%87%8F%E6%98%AF%E5%A4%9A%E5%B0%91"><span class="nav-number">1.1.</span> <span class="nav-text">分片的最佳数量是多少?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E7%89%87%E7%9A%84%E6%9C%80%E4%BD%B3%E5%B9%B3%E5%9D%87%E5%A4%A7%E5%B0%8F%E6%98%AF%E5%A4%9A%E5%B0%91"><span class="nav-number">1.2.</span> <span class="nav-text">分片的最佳平均大小是多少?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%AF%E6%9C%AC%E7%9A%84%E6%9C%80%E4%BD%B3%E6%95%B0%E9%87%8F%E6%98%AF%E5%A4%9A%E5%B0%91"><span class="nav-number">1.3.</span> <span class="nav-text">副本的最佳数量是多少?</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%A9%E8%B4%9F%E8%BD%BD%E6%9B%B4%E5%8A%A0%E5%9D%87%E8%A1%A1"><span class="nav-number">2.</span> <span class="nav-text">让负载更加均衡</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A1%AE%E5%AE%9A%E7%B4%A2%E5%BC%95%E7%9A%84%E8%A1%8C%E4%B8%BA"><span class="nav-number">3.</span> <span class="nav-text">确定索引的行为</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E5%AF%86%E9%9B%86%E5%9E%8B%E7%B4%A2%E5%BC%95"><span class="nav-number">3.1.</span> <span class="nav-text">读密集型索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%AF%86%E9%9B%86%E5%9E%8B%E7%B4%A2%E5%BC%95"><span class="nav-number">3.2.</span> <span class="nav-text">写密集型索引</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%AA%E8%A6%81%E8%8E%B7%E5%8F%96%E4%BD%A0%E9%9C%80%E8%A6%81%E7%9A%84%E6%95%B0%E6%8D%AE"><span class="nav-number">4.</span> <span class="nav-text">只要获取你需要的数据</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%9B%91%E6%8E%A7%E7%B4%A2%E5%BC%95%E5%A4%A7%E5%B0%8F"><span class="nav-number">5.</span> <span class="nav-text">监控索引大小</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E6%9C%9FReindex%E7%B4%A2%E5%BC%95"><span class="nav-number">5.1.</span> <span class="nav-text">定期Reindex索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%BA%E5%88%B6%E5%90%88%E5%B9%B6"><span class="nav-number">5.2.</span> <span class="nav-text">强制合并</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%B7%E6%96%B0%E9%97%B4%E9%9A%94"><span class="nav-number">6.</span> <span class="nav-text">刷新间隔</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BC%98%E5%85%88%E8%BF%87%E6%BB%A4%E4%B8%8A%E4%B8%8B%E6%96%87%E8%80%8C%E4%B8%8D%E6%98%AF%E6%9F%A5%E8%AF%A2"><span class="nav-number">7.</span> <span class="nav-text">优先过滤上下文而不是查询</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E7%B4%A2%E5%BC%95%E6%97%B6%E7%A6%81%E7%94%A8%E5%89%AF%E6%9C%AC"><span class="nav-number">8.</span> <span class="nav-text">初始索引时禁用副本</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%89%B9%E9%87%8F%E8%AF%B7%E6%B1%82"><span class="nav-number">9.</span> <span class="nav-text">使用批量请求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%9B%91%E6%8E%A7%E6%82%A8%E7%9A%84%E9%9B%86%E7%BE%A4%E5%92%8C%E6%9F%A5%E8%AF%A2"><span class="nav-number">10.</span> <span class="nav-text">监控您的集群和查询</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B0%86ElasticClient%E5%AF%B9%E8%B1%A1%E7%94%A8%E4%BD%9CSingleton"><span class="nav-number">11.</span> <span class="nav-text">将ElasticClient对象用作Singleton</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%A6%96%E9%80%89%E5%8E%BB%E8%8C%83%E5%BC%8F%E5%8C%96%E8%80%8C%E4%B8%8D%E6%98%AF%E5%B5%8C%E5%A5%97%E7%B1%BB%E5%9E%8B%EF%BC%88Nested-Type%EF%BC%89"><span class="nav-number">12.</span> <span class="nav-text">首选去范式化而不是嵌套类型（Nested Type）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">13.</span> <span class="nav-text">结论</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">168</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">240</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/elasticsearch-cluster-sizing-and-performance-tuning.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="jiankunking">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="[译]Elasticsearch集群规模和性能调优 | 衣舞晨风">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          [译]Elasticsearch集群规模和性能调优
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-04-07 16:22:48" itemprop="dateCreated datePublished" datetime="2020-04-07T16:22:48+00:00">2020-04-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-05-01 00:23:51" itemprop="dateModified" datetime="2026-05-01T00:23:51+00:00">2026-05-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.2k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>4 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>翻译自：Elasticsearch Cluster Sizing and Performance Tuning<br>地址：<a href="https://www.elastic.co/cn/blog/found-sizing-elasticsearch">https://www.elastic.co/cn/blog/found-sizing-elasticsearch</a></p>
+</blockquote>
+<span id="more"></span>
+
+<p>集群应该有多少个节点?应该创建多少个副本?为了获得最佳的搜索性能，分片(Shard)的最佳平均大小是多少？诸如此类的问题只有你自己知道答案。</p>
+<p>没有人知道你的数据和查询结构，你使用的硬件，你的吞吐量。没有数学公式，也没有理论计算方法。如果你带着这样的期望而来，我很抱歉让你失望。但是别担心，你可以自己回答。</p>
+<h1 id="数据的大小"><a href="#数据的大小" class="headerlink" title="数据的大小"></a>数据的大小</h1><p>如您所知，由于分布式体系结构中的硬件限制，数据被划分为更小的块，并分布在不同的节点上。这些小片段称为分片。实际上，当其中一个节点发生故障时，与原始节点完全相同的分片仍保留在备用中。这些分片称为副本。</p>
+<h2 id="分片的最佳数量是多少"><a href="#分片的最佳数量是多少" class="headerlink" title="分片的最佳数量是多少?"></a>分片的最佳数量是多少?</h2><p><font color=DeepPink><strong>每个请求在每个分片的单个线程中处理。如果您有多个分片，则可以并行处理查询。</strong></font>将分片数量增加到一定程度可能会对性能产生积极影响，但这并不完全正确。如果您有很多小分片，则过一会儿，将有大量并行任务需要在队列中等待。当同时接收到多个请求时，这将降低性能。</p>
+<p>分片是Lucene索引，它通过一个或多个段来将数据存储在磁盘上。较大的段能更有效地存储数据。因此，增加分片的数量可能并不总是一个好主意。</p>
+<p><img src="/images/elasticsearch-cluster-sizing-and-performance-tuning/shard-lucene-index-segment.jpeg"></p>
+<p>您可以通过在单节点群集中创建分片来进行测试。考虑一下索引的大小和我在下一节中提到的平均分片大小，一次增加一个分片。您可以自己找到理想分片的数量。</p>
+<h2 id="分片的最佳平均大小是多少"><a href="#分片的最佳平均大小是多少" class="headerlink" title="分片的最佳平均大小是多少?"></a>分片的最佳平均大小是多少?</h2><p>在这个问题上没有绝对的准则。您应该为自己选择一个起点，然后尝试找到最佳尺寸。Elasticsearch官网的建议如下：</p>
+<ul>
+<li>分片的平均大小应在几GB到几十GB之间。</li>
+<li>确定用例的最佳大小的最佳方法是使用您自己的数据和查询进行测试。</li>
+</ul>
+<h2 id="副本的最佳数量是多少"><a href="#副本的最佳数量是多少" class="headerlink" title="副本的最佳数量是多少?"></a>副本的最佳数量是多少?</h2><p>考虑到硬件故障，建议至少有一个副本。副本提高了搜索性能，但并不总是如此。这取决于您的硬件和索引的行为(大量写入或大量搜索)。如果您的索引写入很多，那么增加副本的数量不是一个好主意。由于数据复制过程会导致资源使用增加，并且搜索性能会下降。</p>
+<h1 id="让负载更加均衡"><a href="#让负载更加均衡" class="headerlink" title="让负载更加均衡"></a>让负载更加均衡</h1><p>Elasticsearch自己管理负载均衡。但是，我们必须考虑要有多少个节点，有多少个分片和副本，并且必须在它们之间建立一定比例以实现均匀的负载分配。</p>
+<blockquote>
+<p>此时，我们应该确保节点的数量和分片(主分片+副本)的数量是成比例的。</p>
+</blockquote>
+<p>例如，如果集群中有5个节点，那么分片的数量应该是5的倍数。这对于Elasticsearch确保适当的负载均衡非常重要。如果节点之间存在不均衡的负载分布，那么具有更多分片的节点的资源使用率将更高，并且瞬时平均负载将高于其他节点。换句话说，其他节点上的资源将使用得更少，而具有更多分片的节点将使用得更多。</p>
+<p><font color=DeepPink><strong>具有更多分片的节点会收到更多请求。</strong></font>一段时间后，这些节点将无法及时处理请求，传入的请求将在队列中等待。在这种情况下，这些节点成为系统的瓶颈，增加了所有请求的响应时间。<font color=DeepPink><strong>因为传入的请求必须通过所有分片才能完成。</strong></font>例如下图，每个主碎片共有6个节点(DG_Data1…DG_Data6)、9个主分片(0…8)和2个副本，主分片共有18个副本。我们有6个节点和27个分片。27&#x2F;6 &#x3D; 4.5它不是整数。这意味着有些节点有5个分片，有些节点有4个分片。因此，与其他节点相比，节点DG_Data2、DG_Data4和DG_Data6的平均负载更高。因此，如果我们将主分片的数量增加到10个，我们将在集群中得到均匀的负载分布。</p>
+<p><img src="/images/elasticsearch-cluster-sizing-and-performance-tuning/Scheme-2.png" alt="Scheme-2"></p>
+<p>假设我们向该集群发送了一个请求。将从0到8的所有分片中搜索与该请求匹配的文档。那么将访问多少个节点？在此群集中，必须至少访问3个节点才能完成搜索请求。 Elasticsearch将确定将访问哪些节点。例如，节点将是DG_DATA1（4,7），DG_DATA2（0,1,3,5），DG_DATA5（2,6,7,8）。</p>
+<blockquote>
+<p>我们的态度和目标<font color=DeepPink><strong>应该是通过访问尽可能少的节点来完成我们的请求。</strong></font></p>
+</blockquote>
+<p>这并不意味着增加副本的数量直到访问一个节点就能完成请求，这是非常危险的。因为将数据复制到副本会浪费资源。</p>
+<h1 id="确定索引的行为"><a href="#确定索引的行为" class="headerlink" title="确定索引的行为"></a>确定索引的行为</h1><p>索引的结构及其映射(mapping)非常重要。首先，您需要确定索引是哪种索引。是大量写入还是大量读取？其次，我们应该将文档设计得尽可能平坦。数据去范式化可能是一个选择，如果我们不关心它的负面影响。如果我们无法设计平面文档，则根据索引的行为，我们可能更喜欢嵌套(nested)或子(join)文档类型。</p>
+<blockquote>
+<p>译者注：这里的平坦&#x2F;面指的是设计mapping的时候，尽量将数据打平，比如之前在关系型数据库中是关联表，在elasticsearch中应该冗余到一个文档中。</p>
+</blockquote>
+<h2 id="读密集型索引"><a href="#读密集型索引" class="headerlink" title="读密集型索引"></a>读密集型索引</h2><p>如果来自索引的大多数请求都是搜索请求，我们就可以说索引是读密集型的。换句话说，搜索操作的数量大于索引操作。比如：电商中的产品的索引。一个普通的电商应用更新的产品非常少，但是大量的用户在搜索产品。</p>
+<p><font color=DeepPink><strong>与子文档相比，嵌套文档可以提高搜索性能。但是不要忘记将数据写入嵌套文档是非常昂贵的。</strong></font></p>
+<p><font color=DeepPink><strong>增加副本的数量可以在一定程度上提高性能。</strong></font>在某些情况下，由于硬件的限制，性能会下降。您可以通过逐个增加副本的数量来找到这个断点。您可以使用诸如JMeter、Apache Bench ab之类的工具来度量搜索性能，同时增加副本的数量。</p>
+<h2 id="写密集型索引"><a href="#写密集型索引" class="headerlink" title="写密集型索引"></a>写密集型索引</h2><p>在这些索引中，索引操作的数量大于搜索操作的数量。在包含此类索引的群集中，资源通常用于写入数据。如果增加副本的数量，则写入分片的文档将被复制到副本，因此写入过程将增加。这将导致资源使用量增加。</p>
+<p>子文档读得快，写得慢。因此，这种类型的索引更受欢迎。</p>
+<h1 id="只要获取你需要的数据"><a href="#只要获取你需要的数据" class="headerlink" title="只要获取你需要的数据"></a>只要获取你需要的数据</h1><blockquote>
+<p>只需提取所需的数据即可。检索不必要的数据会增加网络和计算的成本。不要索引不需要的数据。</p>
+</blockquote>
+<p>在查询中尽可能有效地使用”from”,”size”和”source”属性。请记住，服务器在尝试写入数据时也会使用资源。</p>
+<p>使用best_compression压缩_source数据。</p>
+<h1 id="监控索引大小"><a href="#监控索引大小" class="headerlink" title="监控索引大小"></a>监控索引大小</h1><p>索引的大小可能会随时间增长，这可能要求您对集群或硬件进行一些更改。</p>
+<h2 id="定期Reindex索引"><a href="#定期Reindex索引" class="headerlink" title="定期Reindex索引"></a>定期Reindex索引</h2><p>特别是在写密集型索引中，索引大小会随着时间增加。这是由于更新的文档。<font color=DeepPink><strong>实际上，在Elasticsearch中，文档不会更新，因为它们是不可变的。因此，使用新数据创建了另一个文档，并且该文档的版本增加了一个。重新索引索引时，新索引将包含最新版本的文档。因此索引大小将减小。</strong></font></p>
+<h2 id="强制合并"><a href="#强制合并" class="headerlink" title="强制合并"></a>强制合并</h2><p>在Elasticsearch中，所有分片都是Lucene索引。Lucene索引由一个或多个文件组成。<font color=DeepPink><strong>强制合并使我们可以合并这些文件并导致形成更大的段。较大的段能更有效地存储数据。</strong></font></p>
+<h1 id="刷新间隔"><a href="#刷新间隔" class="headerlink" title="刷新间隔"></a>刷新间隔</h1><p><font color=DeepPink><strong>刷新时间是建立索引后可搜索数据所需的时间。</strong></font> 这就是为什么Elasticsearch近实时，而不是实时的原因。</p>
+<p>如果您的数据不经常更改，并且您不需要实时数据，则应增加或不使用刷新间隔。 如果您根本不希望刷新，则可以将其分配为-1。刷新是一项昂贵的任务。 较小的刷新时间可能会对搜索性能产生不利影响。</p>
+<p>初始索引时，应将刷新间隔设置为-1。</p>
+<p>作为一种选择，您可以在建立文档索引时发送刷新参数。 与刷新整个索引不同，只刷新该文档更有效。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">PUT /test/_doc/1?refresh</span><br><span class="line">&#123;</span><br><span class="line">  &quot;test&quot;: &quot;test&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>译者注：refresh_interval设置为-1，并不意味着不进行进行refresh操作。</p>
+</blockquote>
+<h1 id="优先过滤上下文而不是查询"><a href="#优先过滤上下文而不是查询" class="headerlink" title="优先过滤上下文而不是查询"></a>优先过滤上下文而不是查询</h1><p>如果您在搜索中不需要评分功能，请避免使用查询。 您应该首选过滤器上下文。 由于过滤器已缓存且不会影响得分，因此比查询要快。</p>
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.6/query-filter-context.html">https://www.elastic.co/guide/en/elasticsearch/reference/7.6/query-filter-context.html</a></p>
+<h1 id="初始索引时禁用副本"><a href="#初始索引时禁用副本" class="headerlink" title="初始索引时禁用副本"></a>初始索引时禁用副本</h1><p>索引文档时，首先将其写入主分片，然后将其复制到副本。复制到副本是一个代价高昂的操作，它限制了初始索引。因此，您应该禁用副本，直到初始索引完成。</p>
+<h1 id="使用批量请求"><a href="#使用批量请求" class="headerlink" title="使用批量请求"></a>使用批量请求</h1><p>在索引操作中发送批量请求，尤其是在初始索引中。 批量请求比单个请求具有更好的性能。 请注意，请求限制为100 MB。</p>
+<h1 id="监控您的集群和查询"><a href="#监控您的集群和查询" class="headerlink" title="监控您的集群和查询"></a>监控您的集群和查询</h1><p>您应该使用性能监视工具（例如New Relic）监视集群，该工具具有Elasticsearch插件。 您可以检查节点的异常行为，平均负载，响应时间以及更改的影响。 通过_profiling API运行已识别的搜索，以查看各个组件的耗时。</p>
+<h1 id="将ElasticClient对象用作Singleton"><a href="#将ElasticClient对象用作Singleton" class="headerlink" title="将ElasticClient对象用作Singleton"></a>将ElasticClient对象用作Singleton</h1><p>建议在应用程序的生命周期内使用单个客户端和连接设置实例。 客户端是线程安全的，因此可以跨线程共享实例。 从单例中受益的实际移动部分是ConnectionSettings，因为缓存是按ConnectionSettings进行的。</p>
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/client/net-api/current/lifetimes.html">https://www.elastic.co/guide/en/elasticsearch/client/net-api/current/lifetimes.html</a></p>
+<h1 id="首选去范式化而不是嵌套类型（Nested-Type）"><a href="#首选去范式化而不是嵌套类型（Nested-Type）" class="headerlink" title="首选去范式化而不是嵌套类型（Nested Type）"></a>首选去范式化而不是嵌套类型（Nested Type）</h1><p>如果您对查询进行概要分析，则可以确定将嵌套文档与父文档连接在一起是否需要花费大量时间。 在这种情况下，像在Vivek Mittal的情况下一样，非范式化可以提高性能。 我在下面分享了作为参考。</p>
+<p><a href="https://blog.gojekengineering.com/elasticsearch-the-trouble-with-nested-documents-e97b33b46194">https://blog.gojekengineering.com/elasticsearch-the-trouble-with-nested-documents-e97b33b46194</a></p>
+<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><p>在我看来，在elasticsearch，数据索引和搜索上创建索引非常简单。 困难的部分是性能和设计。 在本文中，我想与您分享我的经验。 尽管我不希望您回答所有问题，但这将提供一个起点。 我的建议是根据此处的信息测试所有内容，以找到适合您的最佳配置。 相信我，即使花费时间，您也会找到理想的解决方案。</p>
+<blockquote>
+<p>译者：<br>对于集群规模的确定，以写入密集型来看，应该可以通过业务量的预估确定想要的吞吐量，吞吐量&#x2F;单台机器写入速度&#x3D;》需要的节点数。<br>与kafka集群节点数量预估类似，不过kafka集群还需要考虑consumer的消费能力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/performance/" rel="tag"># Performance</a>
+              <a href="/tags/%E5%8E%9F%E5%88%9B/" rel="tag"># 原创</a>
+              <a href="/tags/elasticsearch/" rel="tag"># Elasticsearch</a>
+              <a href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag"># 翻译</a>
+              <a href="/tags/cluster/" rel="tag"># Cluster</a>
+              <a href="/tags/size/" rel="tag"># Size</a>
+              <a href="/tags/tuning/" rel="tag"># Tuning</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/three-principles-of-architecture.html" rel="prev" title="架构设计三原则">
+                  <i class="fa fa-angle-left"></i> 架构设计三原则
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/refactoring-improving-the-design-of-existing-code.html" rel="next" title="重构：改善既有代码的设计 笔记">
+                  重构：改善既有代码的设计 笔记 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">1.4m</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
