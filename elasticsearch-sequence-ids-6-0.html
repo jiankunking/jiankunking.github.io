@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":true,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文翻译自Elastic官方博客，介绍Elasticsearch 6.0中Sequence ID的实现原理，包括PrimaryTerms、Sequence Numbers、Local&#x2F;Global Checkpoint等核心概念，以及它们如何实现更快的恢复和跨数据中心复制。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译]Elasticsearch Sequence ID实现思路及用途">
+<meta property="og:url" content="https://jiankunking.com/elasticsearch-sequence-ids-6-0.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="本文翻译自Elastic官方博客，介绍Elasticsearch 6.0中Sequence ID的实现原理，包括PrimaryTerms、Sequence Numbers、Local&#x2F;Global Checkpoint等核心概念，以及它们如何实现更快的恢复和跨数据中心复制。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://jiankunking.com/images/elasticsearch-sequence-ids-6-0/seqnos_animation.gif">
+<meta property="article:published_time" content="2024-11-22T22:24:54.000Z">
+<meta property="article:modified_time" content="2026-07-07T11:11:17.429Z">
+<meta property="article:author" content="jiankunking">
+<meta property="article:tag" content="Checkpoint">
+<meta property="article:tag" content="Cluster">
+<meta property="article:tag" content="Elasticsearch">
+<meta property="article:tag" content="PrimaryTerm">
+<meta property="article:tag" content="Sequence">
+<meta property="article:tag" content="原创">
+<meta property="article:tag" content="翻译">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jiankunking.com/images/elasticsearch-sequence-ids-6-0/seqnos_animation.gif">
+
+
+<link rel="canonical" href="https://jiankunking.com/elasticsearch-sequence-ids-6-0.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/elasticsearch-sequence-ids-6-0.html","path":"elasticsearch-sequence-ids-6-0.html","title":"[译]Elasticsearch Sequence ID实现思路及用途"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>[译]Elasticsearch Sequence ID实现思路及用途 | 衣舞晨风</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-121070942-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lozad.js/1.16.0/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">衣舞晨风</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E6%9E%9C"><span class="nav-number">1.</span> <span class="nav-text">如果</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%91%E6%88%98"><span class="nav-number">2.</span> <span class="nav-text">挑战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PrimaryTerms-Sequence-Numbers"><span class="nav-number">3.</span> <span class="nav-text">PrimaryTerms &amp; Sequence Numbers</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Local-and-Global-Checkpoints"><span class="nav-number">3.1.</span> <span class="nav-text">Local and Global Checkpoints</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%A5%BD%E5%A4%84%EF%BC%9A%E6%9B%B4%E5%BF%AB%E6%81%A2%E5%A4%8D"><span class="nav-number">4.</span> <span class="nav-text">第一个好处：更快恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A1%BB%E7%9F%A5"><span class="nav-number">4.1.</span> <span class="nav-text">须知</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E4%B8%80%E4%B8%AA%E4%BC%98%E5%8A%BF%EF%BC%9A%E8%B7%A8%E6%95%B0%E6%8D%AE%E4%B8%AD%E5%BF%83%E5%A4%8D%E5%88%B6"><span class="nav-number">5.</span> <span class="nav-text">下一个优势：跨数据中心复制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%98%E6%9C%89%E6%9B%B4%E5%A4%9A%E5%B7%A5%E4%BD%9C%E8%A6%81%E5%81%9A"><span class="nav-number">5.1.</span> <span class="nav-text">还有更多工作要做</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jiankunking"
+      src="/images/avatar/avatar.png">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">170</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">287</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/elasticsearch-sequence-ids-6-0.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="jiankunking">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="[译]Elasticsearch Sequence ID实现思路及用途 | 衣舞晨风">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          [译]Elasticsearch Sequence ID实现思路及用途
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-11-23 06:24:54" itemprop="dateCreated datePublished" datetime="2024-11-23T06:24:54+08:00">2024-11-23</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-07-07 19:11:17" itemprop="dateModified" datetime="2026-07-07T19:11:17+08:00">2026-07-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/elasticsearch/" itemprop="url" rel="index"><span itemprop="name">Elasticsearch</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本文翻译自Elastic官方博客，介绍Elasticsearch 6.0中Sequence ID的实现原理，包括PrimaryTerms、Sequence Numbers、Local&#x2F;Global Checkpoint等核心概念，以及它们如何实现更快的恢复和跨数据中心复制。</p>
+<span id="more"></span>
+
+<p>原文地址:<a href="https://www.elastic.co/blog/elasticsearch-sequence-ids-6-0">https://www.elastic.co/blog/elasticsearch-sequence-ids-6-0</a></p>
+<h2 id="如果"><a href="#如果" class="headerlink" title="如果"></a>如果</h2><p>几年前，在Elastic，我们问自己一个”如果”问题，我们知道这将带来有趣的见解：</p>
+<blockquote>
+<p>“如果我们在Elasticsearch中对索引操作进行全面排序会怎样？我们可以建立什么？</p>
+</blockquote>
+<p>答案涵盖范围很广：</p>
+<ul>
+<li>我们可以构建一种称为”<a href="https://github.com/elastic/elasticsearch/issues/1242">变更API</a>“的功能，它可以接受操作ID，并为您提供自那时以来数据更改的列表。很棒！</li>
+<li>我们可以只查找发生变化的索引操作，从而<a href="https://github.com/elastic/elasticsearch/issues/20859#issuecomment-252962327">建立增量reindex</a>！</li>
+<li>我们可以使用增量reindex功能，通过过滤&#x2F;连续reindex建立<a href="https://github.com/elastic/elasticsearch/issues/17997">以实体为中心的索引</a>！</li>
+<li>我们可以建立不依赖于数据按时、按顺序和全局精确时间戳到达的数据<a href="https://discuss.elastic.co/t/re-index-aggregation-elasticsearch/75325">滚动&#x2F;汇总索引</a>！</li>
+<li>我们可以建立类似<a href="https://en.wikipedia.org/wiki/Materialized_view">物化视图</a>的东西，在新数据&#x2F;操作到达时进行更新！</li>
+<li>如果节点之间的操作因网络断开等原因而丢失，我们可以建立一种重放操作的方法，<a href="https://github.com/elastic/elasticsearch/pull/19355">这将大大加快恢复速度</a>！</li>
+<li>我们可以建立一种在集群之间重放操作的方法！<a href="https://discuss.elastic.co/t/cross-data-center-replication/11670">跨数据中心复制</a>！</li>
+</ul>
+<p>所有这些都需要打破一个小小的障碍：为索引操作添加序列号。很简单：我们只需要在主索引的每个操作中添加一个计数器！太简单了，我们看到社区成员和员工<a href="https://github.com/mikemccand/elasticsearch/commit/baf23885da83920e37bd87080bc2de5ef2d1a71e">尝试</a>了好几次。但当我们<a href="https://github.com/elastic/elasticsearch/issues/10708">层层剥开洋葱头时，我们发现它比最初看起来要复杂得多</a>。在我们开始讨论变更应用程序接口的实用性近6年后，我们仍然没有一个变更应用程序接口。原因何在？本博客的目的是分享幕后发生的事情，并就这个问题的答案提供一些见解。</p>
+<p>在过去两年中，我们几乎从头开始重写了复制逻辑。我们从已知的<a href="https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/">学术算法</a>中汲取精华，同时确保我们仍能确保并行性，这正是Elasticsearch能够如此快速的原因：这是许多甚至所有传统共识算法都无法做到的。我们与分布式系统专家合作，为我们的<a href="https://github.com/elastic/elasticsearch-formal-models">复制模型</a>建立了<a href="https://en.wikipedia.org/wiki/TLA%2B">TLA+</a>规范。我们增加了大量<a href="https://github.com/elastic/elasticsearch/pull/17038">测试</a>和<a href="https://github.com/elastic/elasticsearch/pull/18930">测试基础设施</a>。</p>
+<p>这篇博客必然是技术性的，因为我们会深入探讨Elasticsearch如何进行复制的一些核心内容。不过，我们的目的是通过解释&#x2F;定义&#x2F;链接一些术语（即使您可能已经理解了这些术语），让更多读者能够理解这些术语。首先，让我们深入了解Elasticsearch所面临的一些挑战。</p>
+<h2 id="挑战"><a href="#挑战" class="headerlink" title="挑战"></a>挑战</h2><p>在继续深入之前，我们必须先谈谈我们的复制模型以及它的重要性。在Elasticsearch数据索引中，数据被分割成所谓的”分片”，基本上就是索引的子分区。你可以有5个主分片（基本上是索引的5个子分区），每个主分片可以有任意数量的主分片副本（称为<strong>副本</strong>）。但重要的是，每个子分区只有一个”<strong>主分片</strong>“。主分片首先接受索引操作（索引操作包括”添加文档”或”删除文档”等操作），然后<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/docs-replication.html">将索引操作复制到副本</a>。因此，在将每个操作转发给副本之前，不断递增计数器并为每个操作分配一个序列号是非常简单的。只要没有人重启服务器，网络正常运行时间达到100%，硬件不出现故障，没有长时间的Java垃圾回收事件，也没有人升级软件，这种简单易行的方法就能真正奏效。</p>
+<p>但我们生活在现实世界中，当这些假设发生变化时，Elasticsearch就会进入”故障”模式和”<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/indices-recovery.html">恢复</a>“过程。如果它们影响到运行主分片的节点，可能需要主分片停机，由另一个副本取而代之。由于变化来得突然，一些正在进行的索引操作可能尚未完全复制。如果您有2个或更多副本，其中一些操作可能只到达了其中一个副本，而没有到达另一个副本。更糟糕的是，由于Elasticsearch会并发索引文档（这也是Elasticsearch速度如此之快的原因之一！），每个副本都可能有不同的操作集，而这些操作集在另一个副本中并不存在。即使只运行一个副本（Elasticsearch的默认设置），也可能会出现问题。如果旧的主副本回来并被添加为副本，它可能包含从未复制到新主副本的操作。所有这些情况都有一个共同点：主节点失效后，分片上的操作历史可能会发生偏离，我们需要一些方法来解决这个问题。</p>
+<h2 id="PrimaryTerms-Sequence-Numbers"><a href="#PrimaryTerms-Sequence-Numbers" class="headerlink" title="PrimaryTerms &amp; Sequence Numbers"></a>PrimaryTerms &amp; Sequence Numbers</h2><p>我们采取的第一步是能够区分旧的和新的主分片。我们必须有一种方法来识别来自旧主分片的操作与来自新主分片的操作。此外，整个集群需要就此达成一致，以确保在出现问题时不会发生争执。这促使我们实现了<a href="https://github.com/elastic/elasticsearch/pull/14062">主要术语</a>。这些主要术语是增量的，并在主分片被提升时更改。它们被持久化在<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/cluster-state.html">集群状态</a>中，因此代表了集群所处的主分片的”版本”或”生成”。有了主要术语，操作历史中的任何冲突都可以通过查看操作的主要术语来解决。新术语优于旧术语。我们甚至可以<a href="https://github.com/elastic/elasticsearch/pull/17044">开始拒绝那些太旧的操作</a>，避免混乱的情况发生。</p>
+<p>一旦我们设置了主要术语的保护机制，我们添加了一个简单的计数器，并开始为每个操作分配一个来自该计数器的<strong>序列号</strong>。因此，这些序列号使我们能够了解在主分片上发生的索引操作的特定顺序，我们可以将其用于接下来几节中将要讨论的各种目的。您可以在响应中看到分配的序列号和主要术语：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">$ curl -H &#x27;Content-Type: application/json&#x27; -XPOST http://127.0.0.1:9200/foo/doc?pretty -d &#x27;&#123; &quot;bar&quot;: &quot;baz&quot; &#125;&#x27;</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">	&quot;_index&quot;: &quot;foo&quot;,</span><br><span class="line">	&quot;_type&quot;: &quot;doc&quot;,</span><br><span class="line">	&quot;_id&quot;: &quot;MlDBm10BditXXu4kjj5E&quot;,</span><br><span class="line">	&quot;_version&quot;: 1,</span><br><span class="line">	&quot;result&quot;: &quot;created&quot;,</span><br><span class="line">	&quot;_shards&quot;: &#123;</span><br><span class="line">		&quot;total&quot;: 2,</span><br><span class="line">		&quot;successful&quot;: 1,</span><br><span class="line">		&quot;failed&quot;: 0</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;_seq_no&quot;: 19,</span><br><span class="line">	&quot;_primary_term&quot;: 1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意返回的响应中现在包含了_seq_no和_primary_term。</p>
+<h3 id="Local-and-Global-Checkpoints"><a href="#Local-and-Global-Checkpoints" class="headerlink" title="Local and Global Checkpoints"></a>Local and Global Checkpoints</h3><p>有了主要术语和序列号，我们理论上有了检测分片之间差异并在主分片失败时重新对齐它们的工具。拥有主要术语为x的旧主分片可以通过删除主要术语为x且不存在于新主分片历史记录中的操作来恢复，并且具有更高主要术语的缺失操作可以索引到旧主分片中。</p>
+<p>不幸的是，当您同时每秒索引数十万甚至数百万个事件时，比较数百万次操作的历史记录实际上是不切实际的。存储成本过高，直接比较所需的计算工作将耗时过长。为了解决这个问题，Elasticsearch维护了一个名为<strong>全局检查点</strong>的安全标记。全局检查点是一个序列号，我们知道所有活动分片的历史记录都至少与之对齐。换句话说，所有序列号低于全局检查点的操作都已经被所有活动分片处理，并在各自的历史记录中是相等的。这意味着在主分片失败后，我们只需要比较<a href="https://github.com/elastic/elasticsearch/pull/24841">新主分片和任何剩余副本</a>之间最后已知的全局检查点以上的操作。当旧主分片恢复时，我们取其最后知道的全局检查点，并将其以上的操作与新主分片进行比较。这样，我们只需要比较需要比较的操作，而不是整个历史记录。</p>
+<p>推进全局检查点的责任属于主分片。主分片通过跟踪副本上已完成的操作来实现这一点。一旦检测到所有副本已经超过给定的序列号，主分片将相应地更新全局检查点。分片副本不会一直跟踪所有操作，而是维护一个全局检查点的本地变体，称为<strong>本地检查点</strong>。本地检查点是一个序列号，该副本上处理了所有更低序列号的操作。每当副本确认（或ack）主节点的写操作时，它们也会向主节点提供更新的本地检查点。利用本地检查点，主节点就能更新全局检查点，然后在下一次索引操作中将全局检查点发送给所有分片副本。</p>
+<p>下面的动画展示了在面对有损网络和突发故障等并发挑战时，随着序列号和全局&#x2F;本地检查点的增加而发生的情况：</p>
+<p><img data-src="/images/elasticsearch-sequence-ids-6-0/seqnos_animation.gif"></p>
+<blockquote>
+<p>当索引操作从主分片发送到副本时，我们会跟踪每个副本确认收到的最高序列号，并将其称为全局检查点。主分片会告诉所有副本全局检查点是多少。因此，如果主分片切换，我们只需要比较和可能重新处理自上次全局检查点以来的操作，而不是磁盘上的所有文件。</p>
+</blockquote>
+<p>全局检查点还具有另一个很好的特性——它代表了那些被<strong>保证会留下的操作</strong>（它们在所有活动分片的历史记录中），以及<strong>可能</strong>会被<strong>回滚</strong>的操作所在的区域，如果主分片在它们被完全复制并向用户确认之前恰好发生故障。这是一个微妙但重要的特性，对于未来的变更API或跨数据中心复制功能将是至关重要的。</p>
+<h2 id="第一个好处：更快恢复"><a href="#第一个好处：更快恢复" class="headerlink" title="第一个好处：更快恢复"></a>第一个好处：更快恢复</h2><p>在Elasticsearch6.0之前，我们跳过了实际恢复过程的工作原理。当Elasticsearch在副本处于离线状态后恢复副本时，它必须确保该副本与活动主分片完全相同。非活动分片具有<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/indices-synced-flush.html">同步刷新标记</a>，以便快速进行验证，但具有活动索引的分片则没有任何保证。如果一个分片在仍有活动索引的情况下掉线，那么新的主分片将通过网络复制Lucene段（即磁盘上的文件）。如果这些分片很大，这可能是一个繁重且耗时的操作。这是因为在6.0之前，我们没有跟踪个别写操作（序列号），而在幕后，Lucene会将所有添加&#x2F;更新&#x2F;删除合并到更大的分段中，这样就无法恢复构成更改的单个操作……也就是说，除非你将<strong>事务日志</strong>保留一段时间。</p>
+<p>这就是我们现在所做的：我们保留事务日志，直到它变的”过大”或”过旧”，不再有必要继续保留它。如果副本需要”更新”，我们会使用该副本已知的最后一个全局检查点，仅从主事务日志中回放相关更改，而不是昂贵的大文件复制。如果主事务日志”过大”或”太旧”而无法重放到副本，那么我们将回退到旧的基于文件的恢复方式。</p>
+<p>如果您一直在运行一个大型集群，而该集群经常出现网络断开、重启、升级等情况，我们希望这将大大提高您的工作效率，因为您不必在分片恢复时长时间等待。</p>
+<h3 id="须知"><a href="#须知" class="headerlink" title="须知"></a>须知</h3><p>正如上一节中提到的，事务日志保留直到它”过大”或”过旧”而不再需要保留。我们如何确定什么是”过大”或”过旧”呢？当然是可配置的！在6.0中，我们引入了两个新的<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/index-modules-translog.html#_translog_settings">事务日志</a>设置：</p>
+<p>*<font color=DeepPink>index.translog.retention.size</font>:默认为512MB。如果事务日志超过这个大小，我们只保留这么多数据。<br>*<font color=DeepPink>index.translog.retention.age</font>:默认为12小时。超过这个时间段，我们将不再保留事务日志文件。</p>
+<p><strong>这些设置很重要</strong>，因为它们影响新的、更快的恢复工作以及磁盘使用情况。较大的事务日志保留大小或较长的保留时间意味着您有更高的机会通过新的更快恢复来进行恢复，而不是依赖于旧的基于文件的恢复。然而，它们也伴随着一定的成本：这会增加磁盘利用率，而且请记住<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/index-modules-translog.html">事务日志是按分片</a>进行的。举个实际的例子，如果您有20个索引，每个索引有5个主分片，并且在12小时内写入大量数据，那么可能会导致额外20<em>5</em>512mb&#x3D;50GB的磁盘利用率，直到那12小时窗口过期为止。如果您在不同索引上有不同的恢复和大小需求，您可以根据需要在每个索引上进行调整。例如，如果您预计进行机器或节点维护，您可能需要考虑对事务日志保留窗口进行任何调整。</p>
+<p>注意：在6.0之前，事务日志的大小在索引过程中也可以增长到512MB（默认值），根据<font color=DeepPink>index.translog.flush_threshold_size</font>设置。这意味着新的保留策略不会改变活动分片的存储需求。这一变化影响了停止索引的分片。现在，我们不清理事务日志，而是将其保留另外12小时。</p>
+<h2 id="下一个优势：跨数据中心复制"><a href="#下一个优势：跨数据中心复制" class="headerlink" title="下一个优势：跨数据中心复制"></a>下一个优势：跨数据中心复制</h2><p>正如文章开头提到的，如果我们能进行有序的索引操作，我们就能在Elasticsearch中做很多美妙的事情。虽然花了一些时间，但现在我们做到了。更快的恢复是我们决定构建的第一个用例：它允许我们测试我们添加的新功能。</p>
+<p>但我们知道跨数据中心复制也是我们企业客户常常要求的功能，所以这是我们即将添加的另一个功能。这需要构建新的API、在复制之上增加新的监控功能，以及是的，还需要进行更多的测试和文档编写。</p>
+<h3 id="还有更多工作要做"><a href="#还有更多工作要做" class="headerlink" title="还有更多工作要做"></a>还有更多工作要做</h3><p>正如您在<a href="https://github.com/elastic/elasticsearch/issues/10708">序列号GitHub问题</a>上看到的，我们在序列号功能上有了一个良好的开端，但仍有许多工作要做！我们认为迄今为止所做的工作代表了我们向前迈出的一大步，即使它还没有涵盖我们可以建立&#x2F;围绕序列号的所有功能。如果您有兴趣继续关注我们的工作，请随时关注标有:<a href="https://github.com/elastic/elasticsearch/labels/%3ASequence%20IDs">Sequence IDs</a>的ticket或PR，或直接在<a href="https://discuss.elastic.co/c/elastic-stack/elasticsearch/6">讨论区</a>与我们联系！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>请我一杯咖啡吧！</div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>jiankunking
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://jiankunking.com/elasticsearch-sequence-ids-6-0.html" title="[译]Elasticsearch Sequence ID实现思路及用途">https://jiankunking.com/elasticsearch-sequence-ids-6-0.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg">
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%8E%9F%E5%88%9B/" rel="tag"># 原创</a>
+              <a href="/tags/elasticsearch/" rel="tag"># Elasticsearch</a>
+              <a href="/tags/%E7%BF%BB%E8%AF%91/" rel="tag"># 翻译</a>
+              <a href="/tags/cluster/" rel="tag"># Cluster</a>
+              <a href="/tags/sequence/" rel="tag"># Sequence</a>
+              <a href="/tags/primaryterm/" rel="tag"># PrimaryTerm</a>
+              <a href="/tags/checkpoint/" rel="tag"># Checkpoint</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/how-to-use-mat-to-identify-the-root-cause-of-a-problem.html" rel="prev" title="工具进阶：如何利用 MAT 找到问题发生的根本原因">
+                  <i class="fa fa-angle-left"></i> 工具进阶：如何利用 MAT 找到问题发生的根本原因
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/elasticsearch-avoid-the-fetch-phase-when-retrieving-only-id.html" rel="next" title="ElasticSearch为什么不能在query阶段直接返回_id,从而避免fetch?">
+                  ElasticSearch为什么不能在query阶段直接返回_id,从而避免fetch? <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">1.4m</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"jiankunking","repo":"blog-comments","client_id":"5e2e6dc5bd7af549261d","client_secret":"f37069692932676f0ad9fbfecb5164aee191fe23","admin_user":"jiankunking","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"00c70e7e69f4a80b003e061a789cf0ef"}</script>
+<script src="/js/third-party/comments/gitalk.js" defer></script>
+
+</body>
+</html>

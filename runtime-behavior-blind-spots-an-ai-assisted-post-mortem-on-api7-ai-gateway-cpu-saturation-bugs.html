@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":true,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="如何借助AI高效复盘?">
+<meta property="og:type" content="article">
+<meta property="og:title" content="运行时行为盲区：API7 AI 网关CPU打满故障的AI辅助事后复盘">
+<meta property="og:url" content="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="如何借助AI高效复盘?">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-05-16T14:00:06.000Z">
+<meta property="article:modified_time" content="2026-07-07T11:11:17.439Z">
+<meta property="article:author" content="jiankunking">
+<meta property="article:tag" content="AI-Assisted-Debugging">
+<meta property="article:tag" content="APISIX">
+<meta property="article:tag" content="CPU-Saturation">
+<meta property="article:tag" content="Coroutine">
+<meta property="article:tag" content="Lua">
+<meta property="article:tag" content="OpenResty">
+<meta property="article:tag" content="Socket-Buffer">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html","path":"runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html","title":"运行时行为盲区：API7 AI 网关CPU打满故障的AI辅助事后复盘"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>运行时行为盲区：API7 AI 网关CPU打满故障的AI辅助事后复盘 | 衣舞晨风</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-121070942-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lozad.js/1.16.0/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">衣舞晨风</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B5%B7%E5%9B%A0"><span class="nav-number">1.</span> <span class="nav-text">起因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E9%98%85%E8%AF%BB%E4%BB%A3%E7%A0%81%E6%97%B6%E6%B2%A1%E7%9C%8B%E5%87%BA%E6%9D%A5"><span class="nav-number">2.</span> <span class="nav-text">一、为什么阅读代码时没看出来</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E9%97%AE%E9%A2%98-1%EF%BC%88%E4%B8%8B%E6%B8%B8%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%8F%96%E6%B6%88%E4%BD%86%E6%A8%A1%E5%9E%8B%E7%BB%A7%E7%BB%AD%E8%BE%93%E5%87%BA%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">1.1 问题 1（下游客户端取消但模型继续输出）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E9%97%AE%E9%A2%98-2%EF%BC%88%E4%B8%8A%E6%B8%B8%E5%BF%AB%E9%80%9F%E8%BF%94%E5%9B%9E%E6%89%93%E6%BB%A1-CPU%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">1.2 问题 2（上游快速返回打满 CPU）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-%E6%A0%B9%E6%9C%AC%E5%8E%9F%E5%9B%A0%EF%BC%9A%E4%BB%8E%E2%80%9D%E9%80%BB%E8%BE%91%E6%AD%A3%E7%A1%AE%E6%80%A7%E2%80%9D%E5%88%B0%E2%80%9D%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA%E2%80%9D%E7%9A%84%E6%80%9D%E7%BB%B4%E5%8D%87%E7%BA%A7"><span class="nav-number">2.3.</span> <span class="nav-text">1.3 根本原因：从”逻辑正确性”到”运行时行为”的思维升级</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E9%9C%80%E8%A6%81%E8%A1%A5%E5%85%85%E7%9A%84%E7%9F%A5%E8%AF%86"><span class="nav-number">3.</span> <span class="nav-text">二、需要补充的知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-OpenResty-%E5%8D%8F%E4%BD%9C%E5%BC%8F%E8%B0%83%E5%BA%A6%E6%A8%A1%E5%9E%8B%EF%BC%88%E6%9C%80%E6%A0%B8%E5%BF%83-%E2%AD%90%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">2.1 OpenResty 协作式调度模型（最核心 ⭐）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-TCP-Socket-Buffer-%E8%A1%8C%E4%B8%BA"><span class="nav-number">3.2.</span> <span class="nav-text">2.2 TCP&#x2F;Socket Buffer 行为</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E5%8D%8F%E4%BD%9C%E5%BC%8F%E8%B0%83%E5%BA%A6%E4%B8%8B%E7%9A%84%E2%80%9D%E9%A5%A5%E9%A5%BF%E2%80%9D%E9%97%AE%E9%A2%98"><span class="nav-number">3.3.</span> <span class="nav-text">2.3 协作式调度下的”饥饿”问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ngx-sleep-0-%E4%B8%BA%E4%BD%95%E5%A4%B1%E6%95%88%EF%BC%9F%E2%80%94%E2%80%94-%E6%97%B6%E5%BA%8F%E5%AF%B9%E6%AF%94"><span class="nav-number">3.3.1.</span> <span class="nav-text">ngx.sleep(0) 为何失效？—— 时序对比</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%F0%9F%94%8D-%E6%B7%B1%E5%85%A5%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E2%80%9D%E8%AE%A9%E5%BA%A7%E2%80%9D%E6%B2%A1%E7%94%A8%EF%BC%9F%E2%80%94%E2%80%94-%E5%87%BA%E5%9C%BA%E9%A2%91%E7%8E%87%E7%A2%BE%E5%8E%8B%E6%8E%92%E9%98%9F%E4%BD%8D%E7%BD%AE"><span class="nav-number">3.3.2.</span> <span class="nav-text">🔍 深入：为什么”让座”没用？—— 出场频率碾压排队位置</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%B8%8E%E7%81%AB%E7%84%B0%E5%9B%BE"><span class="nav-number">3.4.</span> <span class="nav-text">2.4 性能分析与火焰图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-lua-resty-http-%E6%BA%90%E7%A0%81%EF%BC%88%E2%AD%90-%E5%85%B3%E9%94%AE%EF%BC%9A%E7%90%86%E8%A7%A3-body-reader-%E7%9A%84-yield-%E8%A1%8C%E4%B8%BA%EF%BC%89"><span class="nav-number">3.5.</span> <span class="nav-text">2.5 lua-resty-http 源码（⭐ 关键：理解 body_reader 的 yield 行为）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%A4%E5%B1%82-Buffer-%E5%AE%8C%E6%95%B4%E7%BB%93%E6%9E%84"><span class="nav-number">3.5.1.</span> <span class="nav-text">两层 Buffer 完整结构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-6-%E8%A1%A5%E5%85%85%EF%BC%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80"><span class="nav-number">3.6.</span> <span class="nav-text">2.6 补充：操作系统 &#x2F; 网络基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8A%A2%E5%8D%A0%E5%BC%8F-vs-%E5%8D%8F%E4%BD%9C%E5%BC%8F%EF%BC%9A%E6%AD%BB%E5%BE%AA%E7%8E%AF%E7%9A%84%E4%B8%8D%E5%90%8C%E5%91%BD%E8%BF%90"><span class="nav-number">3.6.1.</span> <span class="nav-text">抢占式 vs 协作式：死循环的不同命运</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Socket-Buffer-%E6%95%B0%E6%8D%AE%E6%B5%81%E7%A4%BA%E6%84%8F"><span class="nav-number">3.6.2.</span> <span class="nav-text">Socket Buffer 数据流示意</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#IO-%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%EF%BC%88epoll-kqueue%EF%BC%89%EF%BC%9A%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8B"><span class="nav-number">3.6.3.</span> <span class="nav-text">IO 多路复用（epoll&#x2F;kqueue）：事件驱动模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TCP-%E6%96%AD%E5%BC%80%E6%A3%80%E6%B5%8B%E4%B8%BA%E4%BD%95%E5%BB%B6%E8%BF%9F%EF%BC%9F%E2%80%94%E2%80%94-%E4%BA%8B%E4%BB%B6%E9%93%BE%E8%BF%BD%E8%B8%AA"><span class="nav-number">3.6.4.</span> <span class="nav-text">TCP 断开检测为何延迟？—— 事件链追踪</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A5%E8%AF%86%E7%82%B9%E4%B8%8E-Bug-%E7%9A%84%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB"><span class="nav-number">3.7.</span> <span class="nav-text">知识点与 Bug 的对应关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BB%BA%E8%AE%AE%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F"><span class="nav-number">3.8.</span> <span class="nav-text">建议阅读顺序</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E8%AF%BB%E4%BB%A3%E7%A0%81%E7%9A%84%E6%96%B9%E6%B3%95%E8%AE%BA%E5%8D%87%E7%BA%A7"><span class="nav-number">4.</span> <span class="nav-text">三、读代码的方法论升级</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%88%B0-parse-streaming-response"><span class="nav-number">4.1.</span> <span class="nav-text">应用到 parse_streaming_response</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">四、总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E4%B8%A4%E4%B8%AA%E9%97%AE%E9%A2%98%E7%9A%84%E6%9C%AC%E8%B4%A8"><span class="nav-number">5.1.</span> <span class="nav-text">这两个问题的本质</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A1%8C%E5%8A%A8-Checklist"><span class="nav-number">5.2.</span> <span class="nav-text">行动 Checklist</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%94%B6%E5%B0%BE"><span class="nav-number">5.3.</span> <span class="nav-text">一句话收尾</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A5%E8%AF%86%E8%BF%81%E7%A7%BB%EF%BC%9A%E5%85%B6%E4%BB%96%E8%AF%AD%E8%A8%80%E7%9A%84%E5%8D%8F%E7%A8%8B%E6%9C%89%E8%BF%99%E4%B8%AA%E9%97%AE%E9%A2%98%E5%90%97%EF%BC%9F"><span class="nav-number">5.4.</span> <span class="nav-text">知识迁移：其他语言的协程有这个问题吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A5%E8%AF%86%E5%BB%B6%E4%BC%B8%EF%BC%9A%E4%B8%80%E4%B8%AA%E7%BA%BF%E7%A8%8B-%E5%8D%8F%E7%A8%8B%E8%83%BD%E7%94%A8%E5%A4%9A%E4%B8%AA-CPU-%E6%A0%B8%E5%BF%83%E5%90%97%EF%BC%9F"><span class="nav-number">5.5.</span> <span class="nav-text">知识延伸：一个线程&#x2F;协程能用多个 CPU 核心吗？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#OpenResty-%E7%9A%84-Worker-%E6%A8%A1%E5%9E%8B%E5%A6%82%E4%BD%95%E5%88%A9%E7%94%A8%E5%A4%9A%E6%A0%B8%EF%BC%9F"><span class="nav-number">5.5.1.</span> <span class="nav-text">OpenResty 的 Worker 模型如何利用多核？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%99%E8%A7%A3%E9%87%8A%E4%BA%86%E4%B8%BA%E4%BB%80%E4%B9%88%E2%80%9D%E5%8D%95-Worker-%E5%8D%95%E6%A0%B8%E5%BF%83%E2%80%9D%E6%9E%B6%E6%9E%84%E6%9C%AC%E8%BA%AB%E6%B2%A1%E9%97%AE%E9%A2%98"><span class="nav-number">5.5.2.</span> <span class="nav-text">这解释了为什么”单 Worker 单核心”架构本身没问题</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">6.</span> <span class="nav-text"></span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jiankunking"
+      src="/images/avatar/avatar.png">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">170</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">287</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="jiankunking">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="运行时行为盲区：API7 AI 网关CPU打满故障的AI辅助事后复盘 | 衣舞晨风">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          运行时行为盲区：API7 AI 网关CPU打满故障的AI辅助事后复盘
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-05-16 22:00:06" itemprop="dateCreated datePublished" datetime="2026-05-16T22:00:06+08:00">2026-05-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-07-07 19:11:17" itemprop="dateModified" datetime="2026-07-07T19:11:17+08:00">2026-07-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/debugging/" itemprop="url" rel="index"><span itemprop="name">Debugging</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>20k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>18 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>如何借助AI高效复盘?</p>
+<span id="more"></span>
+
+<h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>最近在使用 API7 的时候反复遇到 CPU 打满的问题：</p>
+<blockquote>
+<p><strong>图标说明</strong></p>
+<ul>
+<li>❌ 问题（待修复&#x2F;已知缺陷）</li>
+<li>💡 作者发现并提出修复方案的 PR</li>
+<li>🔴 根本原因</li>
+<li>⚖️ 设计取舍</li>
+</ul>
+</blockquote>
+<ol>
+<li>下游客户端取消请求，但大模型还在持续输出导致 CPU 打满<ul>
+<li><a href="https://github.com/apache/apisix/pull/13254">https://github.com/apache/apisix/pull/13254</a> ❌</li>
+<li><a href="https://github.com/apache/apisix/pull/13255">https://github.com/apache/apisix/pull/13255</a> 💡</li>
+</ul>
+</li>
+<li>表达式post_arg.*匹配多次decode<ul>
+<li><a href="https://github.com/apache/apisix/pull/13356">https://github.com/apache/apisix/pull/13356</a> 💡</li>
+</ul>
+</li>
+<li>以上问题修复后，又出现了 CPU 打满<ul>
+<li>🔴 <strong>根本原因</strong>：<a href="https://github.com/apache/apisix/pull/13377">单次 AI 请求对请求体执行了 3 次 JSON decode 和 1 次 encode，造成不必要的 CPU 开销</a> 💡</li>
+<li>⚖️ <strong>被放大的因素</strong>：当上游 LLM 快速返回大量小 chunk 时，<a href="https://github.com/apache/apisix/blob/master/apisix/plugins/ai-providers/base.lua#L423">body_reader()</a> 的高频读取与 <code>ngx.flush()</code> 策略之间存在设计取舍——<strong>客户端实时接收数据</strong> vs <strong>批量缓存&#x2F;flush 以换取更高性能</strong>。在 JSON decode 开销已经较高的基础上，这一取舍进一步加剧了 CPU 压力，导致极少数并发甚至单个请求即可将 worker 的 CPU 打满 100%。（<a href="https://github.com/apache/apisix/pull/13391">相关优化 PR #13391</a>）</li>
+</ul>
+</li>
+</ol>
+<p>除了decode问题，其他问题都是出在 <code>apisix/plugins/ai-providers/base.lua</code> 的 <code>parse_streaming_response</code> 函数。</p>
+<p>我现在想要复盘明确的是：</p>
+<ol>
+<li>为什么问题 1 的❌子项和问题 3 的⚖️子项在阅读代码的时候没有看出来？<blockquote>
+<p>我个人理解：没有第一时间（或靠直觉）看出来，根本原因是对这部分<strong>知识点不熟悉</strong></p>
+</blockquote>
+</li>
+<li>针对这两个子项需要补充哪些知识？</li>
+</ol>
+<blockquote>
+<p>🤖 <strong>借助 AI 进行系统性复盘</strong>：</p>
+<p>我将上述我要复盘的问题提交给 <strong>Claude Opus 4.6 &#x2F; 4.7</strong>，让它帮助我：</p>
+<ul>
+<li>🔍 分析”为什么阅读代码时未能发现这些问题”</li>
+<li>📚 梳理需要补充的 OpenResty &#x2F; 协作式调度知识体系</li>
+<li>✅ 提供可操作的运行时代码审查 checklist</li>
+</ul>
+<p>以下是 AI 协助完成的深度分析：</p>
+</blockquote>
+<hr>
+<h2 id="一、为什么阅读代码时没看出来"><a href="#一、为什么阅读代码时没看出来" class="headerlink" title="一、为什么阅读代码时没看出来"></a>一、为什么阅读代码时没看出来</h2><p>这两个问题有共同特征：<strong>代码逻辑是正确的，bug 藏在运行时行为中</strong>。这说明读代码时使用的是”逻辑正确性”视角，缺少”运行时行为”视角。</p>
+<h3 id="1-1-问题-1（下游客户端取消但模型继续输出）"><a href="#1-1-问题-1（下游客户端取消但模型继续输出）" class="headerlink" title="1.1 问题 1（下游客户端取消但模型继续输出）"></a>1.1 问题 1（下游客户端取消但模型继续输出）</h3><p>读代码看到的是：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">local</span> ok, flush_err = plugin.lua_response_filter(ctx, res.headers, chunk, <span class="literal">true</span>)</span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></span><br><span class="line">    abort_on_disconnect(flush_err)</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<p>逻辑没问题：flush 失败就退出循环。但心智模型默认了”客户端断开 → flush 立即失败”。实际情况是：</p>
+<ul>
+<li>客户端发送 RST 后，nginx 不会立刻知道</li>
+<li>nginx 必须等到<strong>下次 write 操作</strong>（即 <code>ngx.flush()</code> 调用时）才能感知客户端已断开</li>
+<li>在感知到之前，<code>body_reader()</code> 仍在持续读上游数据、做 CPU 密集处理</li>
+</ul>
+<blockquote>
+<p><strong>“下次 write 操作”具体指什么？</strong></p>
+<p>就是当前代码中的 <code>lua_response_filter()</code> 内部调用 <code>ngx.flush()</code> 的那一刻。完整时间线如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">T0: 客户端发送 RST (关闭浏览器/Ctrl+C/取消请求)</span><br><span class="line">    │</span><br><span class="line">    │  ⚠️ 此时 nginx worker 完全不知道客户端已断开！</span><br><span class="line">    │  （TCP RST 包还在网络传输中，或已被 OS 内核缓存）</span><br><span class="line">    │</span><br><span class="line">T1: body_reader() 从上游读取 chunk N</span><br><span class="line">    │  → 这是 read 操作，不会触发断开检测 ❌</span><br><span class="line">    │</span><br><span class="line">T2: lua_response_filter() 处理数据</span><br><span class="line">    │</span><br><span class="line">T3: ngx.flush(chunk)  ← 💡 这就是&quot;下次 write 操作&quot;！</span><br><span class="line">    │</span><br><span class="line">    ├── 如果是 ngx.flush() (异步):</span><br><span class="line">    │   → 数据写入 socket send buffer 就立即返回 ✅</span><br><span class="line">    → 但不检查客户端是否还在！❌</span><br><span class="line">    │</span><br><span class="line">    └── 如果是 ngx.flush(true) (同步):</span><br><span class="line">        → 等待数据真正发送到客户端</span><br><span class="line">        → 发送时发现客户端已断开 → 返回错误 ✅</span><br></pre></td></tr></table></figure>
+
+<p><strong>核心区别：</strong></p>
+<table>
+<thead>
+<tr>
+<th>操作类型</th>
+<th>能否检测到客户端断开</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>read</strong> (<code>body_reader()</code>)</td>
+<td>❌ 不能</td>
+<td>读 socket 只检查 recv buffer 有无数据</td>
+</tr>
+<tr>
+<td><strong>write</strong> (<code>ngx.flush()</code>) 异步</td>
+<td>❌ 不能</td>
+<td>数据丢进 send buffer 就返回，不等发送结果</td>
+</tr>
+<tr>
+<td><strong>write</strong> (<code>ngx.flush(true)</code>) 同步</td>
+<td>✅ 能</td>
+<td>等待内核确认发送，此时会收到 RST 错误</td>
+</tr>
+</tbody></table>
+<p>所以 PR #13254 的修复就是将 <code>ngx.flush()</code> 改为 <code>ngx.flush(true)</code>，让每次 flush 都能及时检测到客户端断开。</p>
+</blockquote>
+<p><strong>认知盲区</strong>：默认了”理想错误传播路径”，没考虑错误检测的延迟。</p>
+<h3 id="1-2-问题-2（上游快速返回打满-CPU）"><a href="#1-2-问题-2（上游快速返回打满-CPU）" class="headerlink" title="1.2 问题 2（上游快速返回打满 CPU）"></a>1.2 问题 2（上游快速返回打满 CPU）</h3><p>读代码看到的是：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">local</span> chunk, err = body_reader()  <span class="comment">-- 看起来是 IO，应该会 yield</span></span><br><span class="line">...</span><br><span class="line">ngx.sleep(<span class="number">0</span>)  <span class="comment">-- 让出 CPU</span></span><br></pre></td></tr></table></figure>
+
+<p>心智模型是：”cosocket 是 IO 操作，自然会 yield”。这在大多数场景下是对的，但有一个关键认知盲区：</p>
+<blockquote>
+<p><strong>当 socket 接收 buffer 里已经有数据时，<code>body_reader()</code></strong> <strong>不会 yield，行为等同于 memcpy。</strong></p>
+</blockquote>
+<p>源码注释里 APISIX 开发者已经明确指出了这一点：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">body_reader() and ngx.flush() do not yield when the upstream socket</span><br><span class="line">already has data buffered or the downstream client drains immediately,</span><br><span class="line">so under bursty SSE upstreams this loop can monopolize the worker CPU.</span><br></pre></td></tr></table></figure>
+
+<p>这不是逻辑错误，是对 OpenResty 协作式调度模型和 socket buffer 行为的认知盲区。</p>
+<p><strong>“看起来” vs “实际上”：</strong></p>
+<table>
+<thead>
+<tr>
+<th>层面</th>
+<th>心智模型（看起来）</th>
+<th>实际运行时行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>操作类型</strong></td>
+<td>IO 读取（从 socket 读数据）</td>
+<td>可能是纯内存拷贝</td>
+</tr>
+<tr>
+<td><strong>预期行为</strong></td>
+<td>没数据时阻塞等待 → yield ✅</td>
+<td>buffer 有数据时立即返回 → <strong>不 yield</strong> ❌</td>
+</tr>
+<tr>
+<td><strong>CPU 影响</strong></td>
+<td>低（大部分时间在等 IO）</td>
+<td><strong>高（持续占用 CPU）</strong></td>
+</tr>
+</tbody></table>
+<p><strong>两种场景对比：</strong></p>
+<ul>
+<li><strong>场景 A（正常情况，会 yield）✅</strong>：上游 LLM 发送慢 → socket recv buffer 为空 → <code>body_reader()</code> 向内核注册等待 → yield 让出 CPU</li>
+<li><strong>场景 B（问题场景，不 yield）❌</strong>：上游 LLM 发送快 → recv buffer 始终有数据 → <code>body_reader()</code> 直接 memcpy 返回 → 不 yield → <code>ngx.sleep(0)</code> 让出后 buffer 又满 → 立即被唤醒 → <strong>while true 循环变成 busy loop → CPU 100% 🚨</strong></li>
+</ul>
+<h3 id="1-3-根本原因：从”逻辑正确性”到”运行时行为”的思维升级"><a href="#1-3-根本原因：从”逻辑正确性”到”运行时行为”的思维升级" class="headerlink" title="1.3 根本原因：从”逻辑正确性”到”运行时行为”的思维升级"></a>1.3 根本原因：从”逻辑正确性”到”运行时行为”的思维升级</h3><p>读代码时只问了 <strong>❌ “逻辑正确性”问题</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>审查维度</th>
+<th>典型问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据流</td>
+<td>数据流对不对？</td>
+</tr>
+<tr>
+<td>错误处理</td>
+<td>错误处理覆盖全吗？</td>
+</tr>
+<tr>
+<td>边界条件</td>
+<td>边界条件处理了吗？</td>
+</tr>
+</tbody></table>
+<p>但完全忽略了 <strong>✅ “运行时行为”问题</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>审查维度</th>
+<th>典型问题</th>
+<th>对应本文 Bug</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>yield 分析</strong></td>
+<td>这个循环在最坏情况下会不会不 yield？</td>
+<td>问题 2：buffer 满时 body_reader() 不 yield</td>
+</tr>
+<tr>
+<td><strong>IO 语义</strong></td>
+<td>这个 IO 调用在什么条件下变成纯 CPU 操作？</td>
+<td>问题 2：memcpy 式读取导致 busy loop</td>
+</tr>
+<tr>
+<td><strong>协程公平性</strong></td>
+<td>这个协程会不会饿死同 worker 上的其他协程？</td>
+<td>问题 1 &amp; 2：单个请求打满 CPU</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>核心教训：在 OpenResty 等协作式调度环境中，代码审查必须从静态的”逻辑是否正确”升级为动态的”运行时行为是否安全”。<span style="color:red; font-weight:bold">任何”看起来是 IO”的操作都可能在特定条件下变成纯 CPU 操作，从而饿死整个 worker。</span></strong></p>
+</blockquote>
+<hr>
+<h2 id="二、需要补充的知识"><a href="#二、需要补充的知识" class="headerlink" title="二、需要补充的知识"></a>二、需要补充的知识</h2><h3 id="2-1-OpenResty-协作式调度模型（最核心-⭐）"><a href="#2-1-OpenResty-协作式调度模型（最核心-⭐）" class="headerlink" title="2.1 OpenResty 协作式调度模型（最核心 ⭐）"></a>2.1 OpenResty 协作式调度模型（最核心 ⭐）</h3><p><strong>核心概念速查表：</strong></p>
+<table>
+<thead>
+<tr>
+<th>知识点</th>
+<th>内容</th>
+<th>解释了哪个 Bug</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>单线程多协程</strong></td>
+<td>Nginx worker 内所有请求通过协程并发执行</td>
+<td>为什么单个请求能打满整个 worker CPU</td>
+</tr>
+<tr>
+<td><strong>协作式调度</strong></td>
+<td>协程必须主动 yield，否则其他协程饿死</td>
+<td>问题 1 &amp; 2：不 yield → 同 worker 其他请求卡死</td>
+</tr>
+<tr>
+<td><strong>yield 点</strong></td>
+<td>仅限 cosocket IO 等待、<code>ngx.sleep()</code>、<code>ngx.flush(true)</code>（buffer 满时）</td>
+<td>明确知道哪些操作是”安全”的让出点</td>
+</tr>
+<tr>
+<td><strong>buffer 就绪不 yield</strong></td>
+<td>cosocket IO 如果数据已在 buffer 中，直接 memcpy 返回</td>
+<td>问题 2：上游发送快 → buffer 始终有数据 → busy loop</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>一句话总结</strong>：协作式调度 + IO 操作在 buffer 就绪时不 yield &#x3D; 潜在的 CPU 独占风险</p>
+</blockquote>
+<p><strong>推荐资料</strong>（按阅读顺序）：</p>
+<table>
+<thead>
+<tr>
+<th>资料链接</th>
+<th>核心收获</th>
+<th>阅读时间</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://api7.ai/learning-center/openresty/the-core-of-openresty-cosocket">OpenResty 官方：cosocket 核心机制</a></td>
+<td>yield&#x2F;resume 的触发条件，什么时候会 yield、什么时候不会</td>
+<td>30 min ⭐ <strong>必读</strong></td>
+</tr>
+<tr>
+<td><a href="https://stackoverflow.com/questions/21186423/what-is-the-concurrency-model-in-openresty">Stack Overflow: OpenResty 并发模型</a></td>
+<td>协作式调度的宏观理解，与 OS 线程模型的对比</td>
+<td>10 min</td>
+</tr>
+<tr>
+<td><a href="https://blog.nginx.org/blog/the-complex-dance-of-lua-and-nginx-power-pitfalls-and-performance-challenges">NGINX 官方博客：Lua 与 NGINX 的复杂之舞</a></td>
+<td>生产环境中的真实陷阱和性能挑战案例</td>
+<td>20 min</td>
+</tr>
+</tbody></table>
+<h3 id="2-2-TCP-Socket-Buffer-行为"><a href="#2-2-TCP-Socket-Buffer-行为" class="headerlink" title="2.2 TCP&#x2F;Socket Buffer 行为"></a>2.2 TCP&#x2F;Socket Buffer 行为</h3><p><strong>核心概念速查表：</strong></p>
+<table>
+<thead>
+<tr>
+<th>知识点</th>
+<th>内容</th>
+<th>解释了哪个 Bug</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>内核 <code>SO_RCVBUF</code></strong></td>
+<td>上游发送的数据先进入 OS 内核的接收 buffer，应用层再从中读取</td>
+<td>理解”数据就绪”的物理位置</td>
+</tr>
+<tr>
+<td><strong><code>recv()</code> 非阻塞返回</strong></td>
+<td>当 buffer 中已有数据时，<code>recv()</code> 系统调用立即 memcpy 返回，不阻塞等待</td>
+<td>问题 2：body_reader() 为什么看起来像 IO 却不 yield</td>
+</tr>
+<tr>
+<td><strong>速度差导致 buffer 堆积</strong></td>
+<td>上游发送速度 &gt; 应用消费速度 → buffer 持续有数据 → 每次读取都立即返回 → <strong>busy loop</strong></td>
+<td>问题 2 的直接原因：上游 LLM 快速返回小 chunk</td>
+</tr>
+<tr>
+<td><strong>源码注释印证</strong></td>
+<td>APISIX 源码已明确标注：<em>“body_reader() and ngx.flush() do not yield when the upstream socket already has data buffered”</em></td>
+<td>官方确认了这个行为</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>一句话总结</strong>：socket buffer 是上游与应用之间的”中转站”，当中转站始终有货时，取货操作（recv）永远不会”等货”（yield）</p>
+</blockquote>
+<p><strong>推荐资料</strong>（按阅读顺序）：</p>
+<table>
+<thead>
+<tr>
+<th>资料链接</th>
+<th>核心收获</th>
+<th>阅读时间</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://beej.us/guide/bgnet/html/#sendrecv">Beej’s Guide: send() and recv()</a></td>
+<td>TCP socket 收发基础、阻塞&#x2F;非阻塞行为、buffer 机制入门</td>
+<td>30 min ⭐ <strong>必读</strong></td>
+</tr>
+<tr>
+<td><a href="https://man7.org/linux/man-pages/man7/tcp.7.html">Linux man page: tcp(7)</a></td>
+<td><code>SO_RCVBUF</code>&#x2F;<code>SO_SNDBUF</code>、<code>TCP_NODELAY</code>、<code>TCP_CORK</code> 等 socket 选项详解</td>
+<td>15 min（速查用）</td>
+</tr>
+</tbody></table>
+<h3 id="2-3-协作式调度下的”饥饿”问题"><a href="#2-3-协作式调度下的”饥饿”问题" class="headerlink" title="2.3 协作式调度下的”饥饿”问题"></a>2.3 协作式调度下的”饥饿”问题</h3><p><strong>核心概念速查表：</strong></p>
+<table>
+<thead>
+<tr>
+<th>知识点</th>
+<th>内容</th>
+<th>解释了哪个 Bug</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>协程饥饿</strong></td>
+<td>一个协程持续不 yield，同 worker 上所有其他协程无法执行</td>
+<td>为什么单个请求能让整个 worker “卡死”</td>
+</tr>
+<tr>
+<td><strong><code>ngx.sleep(0)</code> 的局限</strong></td>
+<td>只让出<strong>一次</strong>调度机会，不保证下次何时被唤醒</td>
+<td>问题 2 中加了 sleep(0) 却仍然 CPU 100% 的原因</td>
+</tr>
+<tr>
+<td><strong>“假让出”现象</strong></td>
+<td>让出后 socket buffer 又有数据 → 立即被唤醒 → 等于没让</td>
+<td>上游发送快时 sleep(0) 完全无效</td>
+</tr>
+<tr>
+<td><strong>时间片 vs 操作次数</strong></td>
+<td>公平调度需要按<strong>时间片</strong>让出（如每 10ms），而非按操作次数</td>
+<td>正确的修复方向参考</td>
+</tr>
+</tbody></table>
+<h4 id="ngx-sleep-0-为何失效？——-时序对比"><a href="#ngx-sleep-0-为何失效？——-时序对比" class="headerlink" title="ngx.sleep(0) 为何失效？—— 时序对比"></a><code>ngx.sleep(0)</code> 为何失效？—— 时序对比</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">时间 ──────────────────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">✅ 正常情况（sleep 有效）：上游发送慢，buffer 经常为空</span><br><span class="line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br><span class="line"> 协程A          body_reader()    sleep(0)    ═══════ 其他协程执行 ══════   body_reader()</span><br><span class="line"> (你的请求)     [buffer空→yield]   [让出]     ←── 真正拿到了 CPU 时间 ──→   [buffer空→yield]</span><br><span class="line">                                                                    ↑</span><br><span class="line">                                                              这段时间其他协程</span><br><span class="line">                                                              正常处理请求</span><br><span class="line"></span><br><span class="line">❌ 问题场景（sleep 失效）：上游发送快，buffer 始终有数据</span><br><span class="line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br><span class="line"> 协程A          body_reader()    sleep(0)  ║  body_reader()  sleep(0) ║  body_reader()</span><br><span class="line"> (你的请求)     [buffer满→返回]   [让出]    ║  [buffer满→返回]   [让出]   ║  [buffer满→返回]</span><br><span class="line">                                     ║  ↑                    ↑       ║</span><br><span class="line">                                     ║  └── 几乎瞬间被唤醒 ────┘       ║</span><br><span class="line">                                     ║     （buffer 又满了）           ║</span><br><span class="line">                                     ║                                ║</span><br><span class="line">                              其他协程：║═════════════════════════════════║</span><br><span class="line">                              （饿死） ║      拿不到任何 CPU 时间！     ║</span><br><span class="line">                                     ╙━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</span><br><span class="line">                                                   → CPU 100% 🚨</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>一句话总结</strong>：<code>ngx.sleep(0)</code> 是”礼貌性让座”，但如果让座后座位立刻又被自己占回（buffer 就绪唤醒），那其他协程永远坐不下。</p>
+</blockquote>
+<h4 id="🔍-深入：为什么”让座”没用？——-出场频率碾压排队位置"><a href="#🔍-深入：为什么”让座”没用？——-出场频率碾压排队位置" class="headerlink" title="🔍 深入：为什么”让座”没用？—— 出场频率碾压排队位置"></a>🔍 深入：为什么”让座”没用？—— 出场频率碾压排队位置</h4><blockquote>
+<p><strong>常见疑问</strong>：<code>ngx.sleep(0)</code> 不是应该把当前协程放到队列最后吗？为什么其他协程还是执行不到？</p>
+<p><strong>答案</strong>：<code>ngx.sleep(0)</code> <strong>确实</strong>把协程A放到了队列后面——但这不重要。真正的问题是：<strong>98% 的时间里，就绪队列里根本没别人。</strong></p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">100 轮事件循环统计：</span><br><span class="line"></span><br><span class="line">┌─────────────────────────────────────────────────────────────┐</span><br><span class="line">│  epoll_wait() 返回的就绪 fd                                  │</span><br><span class="line">│                                                             │</span><br><span class="line">│  第 1-85 轮：   [上游fd]           ← 只有 A 的 fd 就绪！     │</span><br><span class="line">│  第 86 轮：     [上游fd, B_fd]     ← B 偶尔有事件            │</span><br><span class="line">│  第 87-92 轮： [上游fd]           ← 又只有 A                │</span><br><span class="line">│  第 93 轮：     [上游fd, C_fd]     ← C 偶尔有事件            │</span><br><span class="line">│  第 94-100 轮:[上游fd]           ← 又只有 A                │</span><br><span class="line">│                                                             │</span><br><span class="line">│  执行次数统计：                                               │</span><br><span class="line">│  ├─ 协程 A：100 次（每轮都在，上游 fd 始终就绪）              │</span><br><span class="line">│  ├─ 协程 B：1 次（只有第 86 轮有机会）                        │</span><br><span class="line">│  └─ 协程 C：1 次（只有第 93 轮有机会）                        │</span><br><span class="line">│                                                             │</span><br><span class="line">│  📊 &quot;只有 A 自己就绪&quot;：98 轮 = 98%                           │</span><br><span class="line">│  📊 &quot;多人就绪，A 排后面&quot;：2 轮 = 2%                          │</span><br><span class="line">└─────────────────────────────────────────────────────────────┘</span><br><span class="line"></span><br><span class="line">关键洞察：</span><br><span class="line">├─ ❌ 不是&quot;A 插队了&quot;（sleep(0) 确实把 A 放后面了）</span><br><span class="line">├─ ❌ 不是&quot;调度器不公平&quot;（每轮都按顺序处理所有就绪协程）</span><br><span class="line">└─ ✅ 真正原因：A 每 10ms 就出场一次，B 和 C 可能几秒才出场一次</span><br><span class="line">          → 出场频率的绝对碾压，而非排队位置的问题</span><br><span class="line"></span><br><span class="line">类比：</span><br><span class="line">┌──────────────────────────────────────────────────────────────┐</span><br><span class="line">│ 电梯场景：ngx.sleep(0) = 按&quot;开门&quot;键让别人进来                │</span><br><span class="line">│                                                              │</span><br><span class="line">│ 正常情况（上游慢）：                                          │</span><br><span class="line">│   A 进电梯 → 开门 → B 进来 → C 进来 → 关门上行 ✅ 公平       │</span><br><span class="line">│                                                              │</span><br><span class="line">│ 问题场景（上游快）：                                          │</span><br><span class="line">│   A 进电梯 → 开门 → （没人要进！B/C 在楼下等 IO 呢）          │</span><br><span class="line">│   → 关门 → A 到 1 楼 → A 又进电梯 → 开门 → （还是没人）      │</span><br><span class="line">│   ...重复 100 次...                                           │</span><br><span class="line">│                                                              │</span><br><span class="line">│ 💡 问题不在 A 不让座                                         │</span><br><span class="line">│    问题在于 B 和 C 大部分时间根本不在电梯口！                  │</span><br><span class="line">└──────────────────────────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<p><strong>推荐资料</strong>（按阅读顺序）：</p>
+<table>
+<thead>
+<tr>
+<th>资料链接</th>
+<th>核心收获</th>
+<th>阅读时间</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://blog.openresty.com/en/ngx-off-cpu-lua-pipes/">OpenResty 官方博客：Lua IPC Pipes 阻塞事件循环</a></td>
+<td>经典案例：阻塞调用导致 worker CPU 利用率异常、QPS 仅 130 的排查过程</td>
+<td>20 min ⭐ <strong>必读</strong></td>
+</tr>
+<tr>
+<td><a href="https://github.com/openresty/lua-nginx-module/issues/1637">GitHub Issue: OpenResty Workers Infinite Loop (100% CPU)</a></td>
+<td>busy loop 打满 CPU 的真实 issue 讨论和解决方案</td>
+<td>10 min</td>
+</tr>
+<tr>
+<td><a href="https://moonbingbing.gitbooks.io/openresty-best-practices/ngx_lua/sleep.html">OpenResty 最佳实践：ngx.sleep</a></td>
+<td><code>ngx.sleep</code> 的正确用法、常见误区、与 <code>ngx.timer</code> 的区别</td>
+<td>15 min</td>
+</tr>
+</tbody></table>
+<h3 id="2-4-性能分析与火焰图"><a href="#2-4-性能分析与火焰图" class="headerlink" title="2.4 性能分析与火焰图"></a>2.4 性能分析与火焰图</h3><p><strong>核心工具速查表：</strong></p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>对本文 Bug 的价值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Lua-land CPU 火焰图</strong></td>
+<td>定位 CPU 热点函数，看到哪些 Lua 代码占用了最多 CPU 时间</td>
+<td>直接定位 <code>parse_streaming_response</code> &#x2F; <code>body_reader</code> 的 CPU 占比</td>
+</tr>
+<tr>
+<td><strong>Off-CPU 火焰图</strong></td>
+<td>定位阻塞调用，看到协程在哪些地方被阻塞、阻塞了多久</td>
+<td>验证 <code>body_reader()</code> 是否真的在 yield（还是伪 IO）</td>
+</tr>
+<tr>
+<td><strong>Yield latency&#x2F;count</strong></td>
+<td>统计每个协程的 yield 次数和间隔，发现调度异常</td>
+<td>发现某个请求的 yield 间隔趋近于 0（busy loop 特征）</td>
+</tr>
+<tr>
+<td><strong>Per-request CPU 分析</strong></td>
+<td>找出最耗 CPU 的单个请求，关联到具体 URL&#x2F;参数</td>
+<td>锁定触发 Bug 的具体请求模式</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>一句话总结</strong>：静态代码审查只能发现”逻辑错误”，火焰图等动态分析工具才能发现”运行时行为异常”——这正是两个 Bug 在代码审查中漏掉的原因。</p>
+</blockquote>
+<p><strong>推荐资料</strong>（按阅读顺序）：</p>
+<table>
+<thead>
+<tr>
+<th>资料链接</th>
+<th>核心收获</th>
+<th>阅读时间</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://blog.openresty.com/en/lua-cpu-flame-graph/">OpenResty: Introduction to Lua-Land CPU Flame Graphs</a></td>
+<td>火焰图入门：如何生成、如何解读、典型案例</td>
+<td>20 min ⭐ <strong>必读</strong></td>
+</tr>
+<tr>
+<td><a href="https://blog.openresty.com.cn/en/xray-lua-hot-code/">OpenResty: Pinpointing hottest Lua code paths</a></td>
+<td>用 XRay + 火焰图定位 CPU 100% 问题的完整流程</td>
+<td>15 min</td>
+</tr>
+<tr>
+<td><a href="https://blog.openresty.com/en/ngx-cpu-hottest-reqs/">OpenResty: Analyzing the Most CPU-Consuming Requests</a></td>
+<td>按 request 维度分析 CPU 开销，找到”元凶请求”</td>
+<td>15 min</td>
+</tr>
+<tr>
+<td><a href="https://www.brendangregg.com/flamegraphs.html">Brendan Gregg: Flame Graphs</a></td>
+<td>火焰图发明者的权威介绍，理解原理与最佳实践</td>
+<td>30 min（进阶）</td>
+</tr>
+</tbody></table>
+<h3 id="2-5-lua-resty-http-源码（⭐-关键：理解-body-reader-的-yield-行为）"><a href="#2-5-lua-resty-http-源码（⭐-关键：理解-body-reader-的-yield-行为）" class="headerlink" title="2.5 lua-resty-http 源码（⭐ 关键：理解 body_reader 的 yield 行为）"></a>2.5 lua-resty-http 源码（⭐ 关键：理解 body_reader 的 yield 行为）</h3><p><strong>为什么必须读源码？</strong></p>
+<p>文档只会告诉你 API 怎么用，但<strong>不会告诉你</strong>：</p>
+<ul>
+<li><code>body_reader()</code> 内部什么条件下调用 <code>socket:receive()</code> 会 yield、什么时候直接返回</li>
+<li>返回的 chunk 是从 buffer 拷贝的还是新分配的</li>
+<li>多次调用之间是否有状态依赖</li>
+</ul>
+<p><strong>核心代码路径速查：</strong></p>
+<table>
+<thead>
+<tr>
+<th>源码位置</th>
+<th>关键行为</th>
+<th>与本文 Bug 的关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>body_reader</code> 闭包实现</td>
+<td>调用 <code>self.socket:receive(*args)</code> 读取数据</td>
+<td>这是 <code>parse_streaming_response</code> 中循环调用的函数</td>
+</tr>
+<tr>
+<td><code>socket:receive()</code> (cosocket)</td>
+<td>当 recv buffer 有数据 → <code>memcpy</code> + 立即返回；buffer 空 → 注册事件 → <strong>yield</strong></td>
+<td>解释了问题 2 中”看起来是 IO 却不 yield”的根因</td>
+</tr>
+<tr>
+<td><code>request()</code> 方法</td>
+<td>发送 HTTP 请求后返回 response + body_reader</td>
+<td>理解 streaming 响应的完整生命周期</td>
+</tr>
+<tr>
+<td><code>set_keepalive()</code> &#x2F; <code>close()</code></td>
+<td>连接归还连接池或关闭</td>
+<td>问题 1 修复中 <code>abort_on_disconnect</code> 需要正确关闭上游连接</td>
+</tr>
+</tbody></table>
+<p><strong>读源码时重点关注的 yield 判断逻辑：</strong></p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- lua-resty-http 简化后的核心逻辑</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">new_response</span><span class="params">(socket)</span></span></span><br><span class="line">    <span class="keyword">local</span> <span class="built_in">self</span> = &#123;</span><br><span class="line">        socket = socket,</span><br><span class="line">        buffer = <span class="string">&quot;&quot;</span>,          <span class="comment">-- ← 这就是&quot;应用层 buffer&quot;</span></span><br><span class="line">        <span class="comment">-- ...其他字段</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">-- body_reader 是一个闭包，能访问 self.buffer</span></span><br><span class="line">    <span class="keyword">local</span> <span class="function"><span class="keyword">function</span> <span class="title">body_reader</span><span class="params">()</span></span></span><br><span class="line">        <span class="comment">-- 第1步：先检查自己的应用层 buffer</span></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">self</span>.buffer ~= <span class="string">&quot;&quot;</span> <span class="keyword">then</span></span><br><span class="line">            <span class="keyword">local</span> data = <span class="built_in">self</span>.buffer</span><br><span class="line">            <span class="built_in">self</span>.buffer = <span class="string">&quot;&quot;</span>     <span class="comment">-- 取出后清空</span></span><br><span class="line">            <span class="keyword">return</span> data, <span class="literal">nil</span>      <span class="comment">-- ← 直接返回！不调用 cosocket！</span></span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">-- 第2步：应用层 buffer 为空，才走 cosocket</span></span><br><span class="line">        <span class="keyword">local</span> data, err, part = <span class="built_in">self</span>.socket:receive(<span class="string">&quot;*a&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> data <span class="keyword">then</span></span><br><span class="line">            <span class="keyword">return</span> part, err</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">-- 如果读到的数据比需要的多，多余的存到 buffer</span></span><br><span class="line">        <span class="keyword">if</span> #data &gt; remaining <span class="keyword">then</span></span><br><span class="line">            <span class="built_in">self</span>.buffer = data:<span class="built_in">sub</span>(remaining + <span class="number">1</span>)  <span class="comment">-- ← 多余的存起来</span></span><br><span class="line">            data = data:<span class="built_in">sub</span>(<span class="number">1</span>, remaining)</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> data, <span class="literal">nil</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> &#123; body_reader = body_reader &#125;</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>关键洞察</strong>：注意第 1 步——<code>body_reader</code> 自身也有一个<strong>应用层 buffer</strong>。即使底层 cosocket yield 了回来，数据也可能先缓存在这个 buffer 里。下次调用时直接从这里返回，<strong>连 cosocket 都不会走到</strong>。</p>
+</blockquote>
+<p><strong>三次调用的执行路径演示</strong>（上游一次发了 3 个 chunk 的量）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">第 1 次 body_reader():</span><br><span class="line">  ① self.buffer = &quot;&quot;     → 跳过</span><br><span class="line">  ② socket:receive()     → 读到 [chunk1][chunk2][chunk3]</span><br><span class="line">  ③ #data &gt; remaining?   → YES! 返回 chunk1，[chunk2][chunk3] 存入 buffer</span><br><span class="line">  ──────────────────────────────────────────────────────────→ 返回 chunk1 ✅</span><br><span class="line"></span><br><span class="line">第 2 次 body_reader():</span><br><span class="line">  ① self.buffer = &quot;[chunk2][chunk3]&quot; → 不为空！</span><br><span class="line">     → 直接返回 chunk2，清空 buffer = &quot;[chunk3]&quot;</span><br><span class="line">  ──────────────────────────────────────────────────────────→ 返回 chunk2 ⚠️ 没走 cosocket！</span><br><span class="line"></span><br><span class="line">第 3 次 body_reader():</span><br><span class="line">  ① self.buffer = &quot;[chunk3]&quot; → 不为空！</span><br><span class="line">     → 直接返回 chunk3，清空 buffer = &quot;&quot;</span><br><span class="line">  ──────────────────────────────────────────────────────────→ 返回 chunk3 ⚠️ 没走 cosocket！</span><br><span class="line"></span><br><span class="line">结果：3 次调用中只有第 1 次可能走到 cosocket（还不一定 yield），</span><br><span class="line">      第 2、3 次连 cosocket 都没碰到 → 绝对不可能 yield</span><br></pre></td></tr></table></figure>
+
+<h4 id="两层-Buffer-完整结构"><a href="#两层-Buffer-完整结构" class="headerlink" title="两层 Buffer 完整结构"></a>两层 Buffer 完整结构</h4><p>“应用层 buffer”指的是 <code>lua-resty-http</code> 库内部维护的一个 <strong>Lua 字符串变量 <code>self.buffer</code></strong>，不是内核 socket buffer，也不是 nginx buffer：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────────────────────┐</span><br><span class="line">│                      APISIX Worker 进程                     │</span><br><span class="line">│                                                             │</span><br><span class="line">│  ┌─────────────────────────────────────────────────────┐   │</span><br><span class="line">│  │              Lua 代码 (你的代码)                     │   │</span><br><span class="line">│  │                                                     │   │</span><br><span class="line">│  │   while true do                                     │   │</span><br><span class="line">│  │       local chunk, err = body_reader()               │   │</span><br><span class="line">│  │       → 调用 lua-resty-http 的 body_reader 闭包      │   │</span><br><span class="line">│  │   end                                               │   │</span><br><span class="line">│  └──────────────────────┬──────────────────────────────┘   │</span><br><span class="line">│                         │                                   │</span><br><span class="line">│  ┌──────────────────────▼──────────────────────────────┐   │</span><br><span class="line">│  │           lua-resty-http (库代码)                    │   │</span><br><span class="line">│  │                                                     │   │</span><br><span class="line">│  │   body_reader():                                    │   │</span><br><span class="line">│  │                                                   │   │</span><br><span class="line">│  │   ① self.buffer 有数据？                             │   │</span><br><span class="line">│  │     ├── YES → 直接返回（纯 memcpy）                   │   │</span><br><span class="line">│  │     │         ↑                                     │   │</span><br><span class="line">│  │     │    【应用层 buffer】                            │   │</span><br><span class="line">│  │     │    (Lua 字符串变量，无系统调用)                  │   │</span><br><span class="line">│  │     │                                               │   │</span><br><span class="line">│  │     └── NO ↓                                        │   │</span><br><span class="line">│  │   ② 调用 self.socket:receive()                       │   │</span><br><span class="line">│  │      → 进入 OpenResty cosocket 层                   │   │</span><br><span class="line">│  └──────────────────────┬──────────────────────────────┘   │</span><br><span class="line">│                         │                                   │</span><br><span class="line">│  ┌──────────────────────▼──────────────────────────────┐   │</span><br><span class="line">│  │          OpenResty / Nginx (C 层)                    │   │</span><br><span class="line">│  │                                                     │   │</span><br><span class="line">│  │   socket:receive():                                 │   │</span><br><span class="line">│  │   ③ 内核 recv buffer 有数据？                        │   │</span><br><span class="line">│  │     ├── YES → memcpy 到 Lua → 返回（不 yield）        │   │</span><br><span class="line">│  │     │         ↑                                     │   │</span><br><span class="line">│  │     │    【内核 SO_RCVBUF】                           │   │</span><br><span class="line">│  │     │                                               │   │</span><br><span class="line">│  │     └── NO → 注册 epoll 事件 → yield 协程 ✅         │   │</span><br><span class="line">│  └──────────────────────┬──────────────────────────────┘   │</span><br><span class="line">│                         │                                   │</span><br><span class="line">│  ┌──────────────────────▼──────────────────────────────┐   │</span><br><span class="line">│  │              OS 内核                                  │   │</span><br><span class="line">│  │                                                     │   │</span><br><span class="line">│  │   SO_RCVBUF ← 上游 LLM 发送的数据存在这里             │   │</span><br><span class="line">│  └─────────────────────────────────────────────────────┘   │</span><br></pre></td></tr></table></figure>
+
+<p><strong>“不 yield”有两层原因：</strong></p>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>Buffer</th>
+<th>不 yield 的原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>第 1 层：应用层</strong></td>
+<td><code>self.buffer</code> (Lua 字符串)</td>
+<td>连 <code>socket:receive()</code> 都不调用，纯内存操作</td>
+</tr>
+<tr>
+<td><strong>第 2 层：Cosocket</strong></td>
+<td>内核 <code>SO_RCVBUF</code></td>
+<td>调用了 receive 但数据已就绪，不需要等</td>
+</tr>
+</tbody></table>
+<p><strong>最坏情况链路</strong>：上游一次发送多个 chunk → cosocket 一次性读到大量数据 → 多余部分存入 <code>self.buffer</code> → 后续多次 <code>body_reader()</code> 全部从<strong>应用层 buffer</strong>返回 → <strong>连 cosocket 那一层都碰不到</strong> → 绝对不可能 yield → 即使加了 <code>ngx.sleep(0)</code> 也无效</p>
+<p><strong>推荐资料</strong>（按阅读顺序）：</p>
+<table>
+<thead>
+<tr>
+<th>资料链接</th>
+<th>核心收获</th>
+<th>阅读时间</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://github.com/ledgetech/lua-resty-http">lua-resty-http 源码 (ledgetech)</a></td>
+<td>重点看 <code>body_reader</code> 闭包和 <code>socket:receive</code> 调用链</td>
+<td>30 min ⭐ <strong>必读</strong></td>
+</tr>
+<tr>
+<td><a href="https://github.com/openresty/lua-nginx-module">openresty&#x2F;lua-nginx-module 文档</a></td>
+<td>官方 cosocket API 文档，关注 <code>tcp:receive</code> 的行为说明</td>
+<td>20 min</td>
+</tr>
+<tr>
+<td><a href="https://openresty-reference.readthedocs.io/en/latest/Lua_Nginx_API/">OpenResty Reference: Lua Nginx API</a></td>
+<td>API 速查手册，快速查阅 socket 相关接口</td>
+<td>10 min（常备）</td>
+</tr>
+</tbody></table>
+<h3 id="2-6-补充：操作系统-网络基础"><a href="#2-6-补充：操作系统-网络基础" class="headerlink" title="2.6 补充：操作系统 &#x2F; 网络基础"></a>2.6 补充：操作系统 &#x2F; 网络基础</h3><p>以上所有知识的底层依赖：</p>
+<p><strong>核心概念速查表：</strong></p>
+<table>
+<thead>
+<tr>
+<th>知识点</th>
+<th>内容</th>
+<th>解释了哪个 Bug</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>抢占式 vs 协作式调度</strong></td>
+<td><strong>抢占式</strong>（OS 线程）：内核按时间片强制切换，死循环也能被抢走 CPU；<strong>协作式</strong>（协程）：必须主动 yield 才切换，不 yield 就永远占用</td>
+<td>OpenResty 单个 worker 内是纯协作式——一个 Lua 协程死循环 &#x3D; 整个 worker 卡死。如果是 OS 多线程环境，内核的抢占调度会强制切走失控线程</td>
+</tr>
+<tr>
+<td><strong>Socket Buffer 机制</strong></td>
+<td>内核为每个 TCP 连接维护 <code>SO_RCVBUF</code>（接收）和 <code>SO_SNDBUF</code>（发送），<code>recv()/send()</code> 实际操作的是这些 buffer</td>
+<td>问题 2 的最底层原因：buffer 有数据 → 不阻塞</td>
+</tr>
+<tr>
+<td><strong>IO 多路复用（epoll&#x2F;kqueue）</strong></td>
+<td>事件驱动模型：注册 fd + 关注事件 → 内核通知”就绪” → 用户处理。OpenResty 的事件循环基于此构建</td>
+<td>理解 “yield &#x3D; 把协程挂到 epoll 等待队列上”</td>
+</tr>
+<tr>
+<td><strong>TCP 断开检测</strong></td>
+<td>RST（硬断开）&#x2F; FIN（优雅关闭）通过 TCP 协议传播；<strong>read 方向感知对端写关闭（FIN），但 RST 需要下次 write&#x2F;read 时才暴露</strong></td>
+<td>问题 1：客户端发 RST 后，nginx 必须 write 才能检测到</td>
+</tr>
+</tbody></table>
+<h4 id="抢占式-vs-协作式：死循环的不同命运"><a href="#抢占式-vs-协作式：死循环的不同命运" class="headerlink" title="抢占式 vs 协作式：死循环的不同命运"></a>抢占式 vs 协作式：死循环的不同命运</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">场景：某个执行单元进入 while true 死循环</span><br><span class="line"></span><br><span class="line">═══ 抢占式调度（OS 线程 / Go goroutine / Erlang process）═══</span><br><span class="line"></span><br><span class="line">  时间 ────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">  CPU ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐</span><br><span class="line">      │T1│ │T2│ │T1│ │T3│ │T1│ │T2│ ...</span><br><span class="line">      │  │ │  │ │██│ │  │ │██│ │  │</span><br><span class="line">      └──┘ └──┘ └──┘ └──┘ └──┘ └──┘</span><br><span class="line">       ↑           ↑           ↑</span><br><span class="line">     正常运行   🔴死循环中    ⚡时间片到！内核强制打断</span><br><span class="line"></span><br><span class="line">  结果：其他线程/协程 **正常工作** ✅  死循环只浪费自己的时间片</span><br><span class="line"></span><br><span class="line">═══ 协作式调度（OpenResty Lua / Node.js / Python asyncio）═══</span><br><span class="line"></span><br><span class="line">  时间 ───────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">  CPU ┌──────────────────────────────────────────────┐</span><br><span class="line">      │  协程A: while true do                         │</span><br><span class="line">      │         body_reader()                        │</span><br><span class="line">      │         ngx.flush()                          │</span><br><span class="line">      │         ← 没有任何 yield！                    │</span><br><span class="line">      │         ← 调度器永远不会介入！                │</span><br><span class="line">      │         ← 其他协程永远等不到！               │</span><br><span class="line">      │  ████████████████████████████████████████████│</span><br><span class="line">      └──────────────────────────────────────────────┘</span><br><span class="line">      （协程B、C、D... 😵 😵 😵 全部饿死）</span><br><span class="line"></span><br><span class="line">  结果：整个 worker **完全卡死** ❌  单个请求即可打满 100% CPU</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>一句话记住</strong>：抢占式 &#x3D; “保镖”，你犯错它也把你拉开；协作式 &#x3D; “君子协定”，你不让座别人永远没机会坐。</p>
+</blockquote>
+<h4 id="Socket-Buffer-数据流示意"><a href="#Socket-Buffer-数据流示意" class="headerlink" title="Socket Buffer 数据流示意"></a>Socket Buffer 数据流示意</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">                  上游 LLM 服务端</span><br><span class="line">                 ┌─────────────────┐</span><br><span class="line">                 │                 │</span><br><span class="line">                 │  send(data)     │</span><br><span class="line">                 └────────┬────────┘</span><br><span class="line">                          │ 数据经过网络传输</span><br><span class="line">                          ▼</span><br><span class="line">┌──────────────────────────────────────────────────┐</span><br><span class="line">│                  OS 内核 (APISIX 所在机器)          │</span><br><span class="line">│                                                  │</span><br><span class="line">│   ┌─────────────────┐    ┌─────────────────┐    │</span><br><span class="line">│   │   SO_RCVBUF      │    │   SO_SNDBUF     │    │</span><br><span class="line">│   │   (接收 buffer)  │    │   (发送 buffer)  │    │</span><br><span class="line">│   │                 │    │                 │    │</span><br><span class="line">│   │  [chunk1][ch2]  │    │                 │    │</span><br><span class="line">│   │  [chunk3][...]  │    │                 │    │</span><br><span class="line">│   └────────┬────────┘    └────────┬────────┘    │</span><br><span class="line">│            │                      │              │</span><br><span class="line">│     recv() │                      │ send()       │</span><br><span class="line">│            ▼                      ▼              │</span><br><span class="line">│   ┌─────────────────────────────────────────┐    │</span><br><span class="line">│   │        用户空间 (OpenResty / Lua)        │    │</span><br><span class="line">│   │                                          │    │</span><br><span class="line">│   │   socket:receive() → memcpy ← 从 RCVBUF  │    │</span><br><span class="line">│   │   ngx.flush()      → memcpy → 到 SNDBUF  │    │</span><br><span class="line">│   └─────────────────────────────────────────┘    │</span><br><span class="line">└──────────────────────────────────────────────────┘</span><br><span class="line">                          │</span><br><span class="line">                          ▼</span><br><span class="line">                   下游客户端 (浏览器)</span><br></pre></td></tr></table></figure>
+
+<p><strong>关键行为</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>Buffer 状态</th>
+<th>行为</th>
+<th>是否阻塞&#x2F;yield</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>recv()</code></td>
+<td>SO_RCVBUF 有数据</td>
+<td>直接 memcpy 返回</td>
+<td>❌ 不阻塞</td>
+</tr>
+<tr>
+<td><code>recv()</code></td>
+<td>SO_RCVBUF 为空</td>
+<td>挂起等待数据到达</td>
+<td>✅ 阻塞（协程 yield）</td>
+</tr>
+<tr>
+<td><code>send()</code></td>
+<td>SO_SNDBUF 未满</td>
+<td>直接 memcpy 写入</td>
+<td>❌ 不阻塞</td>
+</tr>
+<tr>
+<td><code>send()</code></td>
+<td>SO_SNDBUF 已满</td>
+<td>挂起等待空间释放</td>
+<td>✅ 阻塞（协程 yield）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>本文问题 2 的触发条件</strong>：上游 LLM 发送速度快 → SO_RCVBUF 始终有数据 → 每次 recv() 都立即返回 → cosocket 层不 yield → busy loop</p>
+</blockquote>
+<h4 id="IO-多路复用（epoll-kqueue）：事件驱动模型"><a href="#IO-多路复用（epoll-kqueue）：事件驱动模型" class="headerlink" title="IO 多路复用（epoll&#x2F;kqueue）：事件驱动模型"></a>IO 多路复用（epoll&#x2F;kqueue）：事件驱动模型</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line">                  ┌──────────────────────────────┐</span><br><span class="line">                  │        OS 内核 (epoll)         │</span><br><span class="line">                  │                               │</span><br><span class="line">注册阶段           │   epoll 实例                  │</span><br><span class="line">──────────        │   ┌─────────────────────┐     │</span><br><span class="line">│ fd=3 (上游)  ──→│   │ 红黑树 (interest)   │     │</span><br><span class="line">│ fd=5 (下游)  ──→│   │ ├─ fd3: EPOLLIN     │     │</span><br><span class="line">│ fd=7 (定时器) ──│   │ ├─ fd5: EPOLLOUT    │     │</span><br><span class="line">└ epoll_ctl()    │   │ └─ fd7: EPOLLIN     │     │</span><br><span class="line">                  │   └────────┬────────────┘     │</span><br><span class="line">                  │            │                   │</span><br><span class="line">等待阶段           │            ▼                   │</span><br><span class="line">──────────        │   ┌─────────────────────┐     │</span><br><span class="line">│ epoll_wait()  ──→│   │ 就绪队列 (ready)    │     │</span><br><span class="line">│ (阻塞/超时)      │   │                     │     │</span><br><span class="line">└ 返回就绪 fd    │   │ [fd3] ← 数据到了!   │     │</span><br><span class="line">                  │   │ [fd5] ← 可写了!     │     │</span><br><span class="line">                  │   └─────────────────────┘     │</span><br><span class="line">                  └──────────────┬────────────────┘</span><br><span class="line">                                 │</span><br><span class="line">                  用户空间处理    ▼</span><br><span class="line">                  ┌──────────────────────────────────┐</span><br><span class="line">                  │       OpenResty 事件循环          │</span><br><span class="line">                  │                                  │</span><br><span class="line">                  │  while true do                    │</span><br><span class="line">                  │    ready_fds = epoll_wait()      │</span><br><span class="line">                  │    for _, fd in ipairs(ready_fds) do</span><br><span class="line">                  │      if fd == fd3 then            │</span><br><span class="line">                  │        -- 上游数据到达             │</span><br><span class="line">                  │        resume(等待fd3的协程) ✅    │</span><br><span class="line">                  │      end                           │</span><br><span class="line">                  │      if fd == fd5 then            │</span><br><span class="line">                  │        -- 下游可写                │</span><br><span class="line">                  │        resume(等待fd5的协程) ✅    │</span><br><span class="line">                  │      end                           │</span><br><span class="line">                  │    end                             │</span><br><span class="line">                  │  end                              │</span><br><span class="line">                  └──────────────────────────────────┘</span><br><span class="line"></span><br><span class="line">关键点：</span><br><span class="line">┌─────────────────────────────────────────────────────┐</span><br><span class="line">│ yield = 把当前协程从 CPU 上拿下来，挂到 epoll 等待队列  │</span><br><span class="line">│ resume = epoll 说&quot;你等的 fd 就绪了&quot;，把协程放回调度队列  │</span><br><span class="line">│                                                        │</span><br><span class="line">│ 如果 fd **始终就绪**（buffer 有数据）→ epoll_wait 立即返回 │</span><br><span class="line">│ → 协程 resume 后继续跑 → 但下次 recv 又立即返回          │</span><br><span class="line">│ → 永远不会真正&quot;等&quot; → busy loop ❌                       │</span><br><span class="line">└─────────────────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>一句话记住</strong>：epoll 是 OpenResty 调度的<strong>基础设施</strong>——协程的 yield&#x2F;resume 本质上就是”从 epoll 队列中摘除 &#x2F; 挂回”。但如果数据永远在 buffer 里，epoll 会每次都告诉你”就绪”，协程就永远不会真正休息。</p>
+</blockquote>
+<h4 id="TCP-断开检测为何延迟？——-事件链追踪"><a href="#TCP-断开检测为何延迟？——-事件链追踪" class="headerlink" title="TCP 断开检测为何延迟？—— 事件链追踪"></a>TCP 断开检测为何延迟？—— 事件链追踪</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">[客户端下游]                    [APISIX nginx worker]</span><br><span class="line">    │                                   │</span><br><span class="line">    ├── 用户关闭浏览器 / 取消请求        │</span><br><span class="line">    ▼                                   │</span><br><span class="line">    ├── 发送 TCP RST 包 ──────────────→ │ ⚠️ RST 已到达 OS 内核</span><br><span class="line">    │                              (nginx 事件循环尚未处理)</span><br><span class="line">    ✕ 客户端已断开                       │</span><br><span class="line">                                        │</span><br><span class="line">═════════════════════════════════════════╡ T2: body_reader()</span><br><span class="line">│                                       ├─ socket:receive(上游) → OK ✅</span><br><span class="line">│                                       └─ ❌ 感知不到！读的是上游连接，跟下游无关</span><br><span class="line">│                                       │</span><br><span class="line">═════════════════════════════════════════╡ T3: ngx.flush(true)</span><br><span class="line">│                                       ├─ 写数据到下游 → buffer 未满 → OK ✅</span><br><span class="line">│                                       └─ ❌ 感知不到！数据还在 nginx 内部 buffer，没真正 write</span><br><span class="line">│                                       │</span><br><span class="line">═════════════════════════════════════════╡ T4: ngx.flush(true)</span><br><span class="line">│                                       ├─ 写数据到下游 → buffer 满了 → 调用 write()</span><br><span class="line">│                                       └─ 💥 ERR! &quot;connection reset&quot; ✅ 终于检测到!</span><br><span class="line">│                                          内核在 write() 时把之前收到的 RST 抛出</span><br></pre></td></tr></table></figure>
+
+<p><strong>关键结论</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>方向</th>
+<th>能否感知 RST</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>body_reader()</code></td>
+<td><strong>读上游</strong></td>
+<td>❌ 不能</td>
+<td>读的是上游连接，跟下游无关</td>
+</tr>
+<tr>
+<td><code>ngx.flush()</code> (buffer 未满)</td>
+<td>写下游但<strong>没真正发</strong></td>
+<td>❌ 不能</td>
+<td>数据还在 nginx 内部 buffer，没调 write</td>
+</tr>
+<tr>
+<td><code>ngx.flush()</code> (buffer 满或 forced)</td>
+<td>写下游<strong>真正调用 write</strong></td>
+<td>✅ <strong>能</strong></td>
+<td>内核在 write 时检查连接状态，返回 ECONNRESET</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>一句话总结</strong>：TCP 断开检测不是实时的——RST 包到达后需要等到<strong>下一次对该连接的 I&#x2F;O 操作</strong>才会被应用层感知。这就是问题 1 中”客户端断了但代码不知道”的根本原因。</p>
+</blockquote>
+<p><strong>推荐资料</strong>（按阅读顺序）：</p>
+<table>
+<thead>
+<tr>
+<th>资料链接</th>
+<th>核心收获</th>
+<th>阅读时间</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://beej.us/guide/bgnet/html/">Beej’s Guide to Network Programming</a></td>
+<td>免费、简洁，快速理解 socket send&#x2F;recv 的阻塞&#x2F;非阻塞行为、TCP 状态机</td>
+<td>1 h ⭐ <strong>必读</strong></td>
+</tr>
+<tr>
+<td><a href="https://man7.org/linux/man-pages/man7/tcp.7.html">Linux man: tcp(7)</a></td>
+<td><code>SO_RCVBUF</code>&#x2F;<code>SO_SNDBUF</code>、<code>TCP_NODELAY</code>&#x2F;<code>TCP_CORK</code>、<code>TCP_KEEPALIVE</code> 等参数速查</td>
+<td>15 min（速查用）</td>
+</tr>
+<tr>
+<td><a href="https://www.oreilly.com/library/view/the-sockets-networking/0131411551/">《UNIX Network Programming Vol.1》Stevens</a> — 第 2 章 TCP、第 7 章 Socket Options、第 6 章 IO 多路复用</td>
+<td>网络编程”圣经”，系统性地建立完整的知识体系</td>
+<td>数周（长期参考书）</td>
+</tr>
+</tbody></table>
+<h3 id="知识点与-Bug-的对应关系"><a href="#知识点与-Bug-的对应关系" class="headerlink" title="知识点与 Bug 的对应关系"></a>知识点与 Bug 的对应关系</h3><blockquote>
+<p>先回顾本文复盘的两个核心 Bug：</p>
+<ul>
+<li><strong>问题 1（客户端取消未感知）</strong>：客户端断开连接后，<code>parse_streaming_response</code> 循环继续读上游、解析 JSON，白白消耗 CPU</li>
+<li><strong>问题 2（CPU busy loop）</strong>：上游 LLM 快速返回小 chunk 时，<code>body_reader()</code> + <code>ngx.flush()</code> 都不 yield，循环空转打满 CPU</li>
+</ul>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>知识点</th>
+<th>解释了什么</th>
+<th>对应 Bug</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>P0</strong></td>
+<td>协作式调度 + yield 语义</td>
+<td>为什么”看起来是 IO 的代码”可能不 yield → 导致整个 worker 被独占</td>
+<td>问题 1 + 问题 2</td>
+</tr>
+<tr>
+<td><strong>P0</strong></td>
+<td>cosocket &#x2F; 应用层 buffer 行为</td>
+<td><code>body_reader()</code> 在 buffer 有数据时直接返回（不经过 cosocket），连 yield 的机会都没有</td>
+<td>问题 2 的直接原因</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td>TCP 断开检测机制</td>
+<td>RST 包到达后必须等到下一次 write 才能被应用层感知 → 读操作检测不到下游断开</td>
+<td>问题 1 的直接原因</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td>Socket buffer (SO_RCVBUF)</td>
+<td>内核 buffer 有数据时 recv() 立即返回不阻塞 → cosocket 层也不会 yield</td>
+<td>问题 2 的底层原因</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>Nginx 单进程事件循环</td>
+<td>一个 worker 内所有协程共享同一个线程 → 一个协程死循环 &#x3D; 整个 worker 死锁</td>
+<td>两个 Bug 的放大器</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>Streaming backpressure</td>
+<td>正确做法是根据消费速度控制读取速度，而非无脑 while true 循环</td>
+<td>正确的修复方向</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>一句话总结</strong>：协作式调度下，<strong>IO 操作在 buffer 就绪时不 yield</strong> &#x3D; 潜在的 CPU 独占风险。这是两个 Bug 共同的根因。</p>
+</blockquote>
+<h3 id="建议阅读顺序"><a href="#建议阅读顺序" class="headerlink" title="建议阅读顺序"></a>建议阅读顺序</h3><ol>
+<li>先看 <a href="https://api7.ai/learning-center/openresty/the-core-of-openresty-cosocket">cosocket 核心机制</a>（30 分钟）— 立刻理解 yield 行为</li>
+<li>再看 <a href="https://moonbingbing.gitbooks.io/openresty-best-practices/ngx_lua/sleep.html">OpenResty 最佳实践</a> 的 sleep 和 cosocket 章节（1 小时）</li>
+<li>然后看 <a href="https://github.com/ledgetech/lua-resty-http">lua-resty-http 的 body_reader 源码</a>（30 分钟）— 对应你遇到的具体代码</li>
+<li>最后看 <a href="https://beej.us/guide/bgnet/html/">Beej’s Guide</a> 的 recv&#x2F;send 部分（1 小时）— 补 socket buffer 底层认知</li>
+</ol>
+<p>总共 3-4 小时，足够建立起识别此类问题的知识框架。</p>
+<hr>
+<h2 id="三、读代码的方法论升级"><a href="#三、读代码的方法论升级" class="headerlink" title="三、读代码的方法论升级"></a>三、读代码的方法论升级</h2><p>针对协作式调度的代码（OpenResty、Node.js event loop 等），每看到一个循环都要问：</p>
+<table>
+<thead>
+<tr>
+<th>检查点</th>
+<th>问题</th>
+<th>🚩 红旗信号（出现就要警惕）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>退出条件</strong></td>
+<td>循环什么时候结束？依赖外部事件吗？外部事件不来会怎样？</td>
+<td>退出条件依赖”对方主动断开&#x2F;发送完毕”，而你没有检测断开</td>
+</tr>
+<tr>
+<td><strong>yield 点</strong></td>
+<td>循环体里哪些调用会 yield？在什么条件下不 yield？</td>
+<td>所有”看起来像 IO”的调用都有不 yield 的分支路径</td>
+</tr>
+<tr>
+<td><strong>极端场景</strong></td>
+<td>假设所有 IO 都不阻塞（buffer 满），循环每秒能跑多少次？每次开销多少？</td>
+<td>每次循环包含 JSON decode&#x2F;encode 等纯 CPU 操作，且频率无上限</td>
+</tr>
+<tr>
+<td><strong>饿死风险</strong></td>
+<td>这个协程占用 CPU 时，同 worker 上的其他协程会怎样？</td>
+<td>没有 <code>ngx.sleep()</code> 或其他显式让出机制</td>
+</tr>
+<tr>
+<td><strong>CPU 占比</strong></td>
+<td>计算 IO 时间和 CPU 时间的比例，CPU 占比 &gt; 50% 就要警惕</td>
+<td>无法估算上界——循环速度完全取决于上游发送速度</td>
+</tr>
+</tbody></table>
+<h3 id="应用到-parse-streaming-response"><a href="#应用到-parse-streaming-response" class="headerlink" title="应用到 parse_streaming_response"></a>应用到 parse_streaming_response</h3><p>把上面的检查清单具体到这段代码：</p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>答案</th>
+<th>详见</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>body_reader()</code> 什么时候 yield？</td>
+<td>socket buffer 为空时 → 注册 epoll 事件 → 等内核通知</td>
+<td><a href="#22-tcpsocket-buffer-%E8%A1%8C%E4%B8%BA">2.2 TCP&#x2F;Socket Buffer 行为</a></td>
+</tr>
+<tr>
+<td><code>body_reader()</code> 什么时候不 yield？</td>
+<td><strong>两层都可能不 yield</strong>：① 应用层 buffer 有数据（直接返回）；② 内核 SO_RCVBUF 有数据（cosocket 不 yield）</td>
+<td><a href="#25-lua-resty-http-%E6%BA%90%E7%A0%81%E5%85%B3%E9%94%AE%E7%90%86%E8%A7%A3-body_reader-%E7%9A%84-yield-%E8%A1%8C%E4%B8%BA">2.5 lua-resty-http 源码</a></td>
+</tr>
+<tr>
+<td><code>ngx.flush(true)</code> 什么时候 yield？</td>
+<td>下游 send buffer 满时 → 调用 write → 可能阻塞 → yield</td>
+<td><a href="#21-openresty-%E5%8D%8F%E4%BD%9C%E5%BC%8F%E8%B0%83%E5%BA%A6%E6%A8%A1%E5%9E%8B">2.1 OpenResty 协作式调度模型</a></td>
+</tr>
+<tr>
+<td><code>ngx.flush(true)</code> 什么时候不 yield？</td>
+<td>buffer 未满时 → 数据存入 nginx 内部 buffer → 立即返回</td>
+<td>同上</td>
+</tr>
+<tr>
+<td><code>ngx.sleep(0)</code> 能解决问题吗？</td>
+<td>❌ 不能！让出后如果 buffer 又有数据（上游持续发送），会被<strong>立即唤醒</strong>，等于没让</td>
+<td><a href="#23-%E5%8D%8F%E4%BD%9C%E5%BC%8F%E8%B0%83%E5%BA%A6%E4%B8%8B%E7%9A%84%E9%A5%A5%E9%A5%BF%E9%97%AE%E9%A2%98">2.3 协作式调度下的”饥饿”问题</a></td>
+</tr>
+<tr>
+<td>最坏情况 CPU 占用？</td>
+<td><strong>100%，单个请求即可打满整个 worker</strong></td>
+<td>—</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>诊断结论</strong>：这段代码的 <code>while true</code> 循环中，<code>body_reader()</code> 和 <code>ngx.flush(true)</code> 在上游快速返回场景下<strong>全部退化成纯 CPU 操作</strong>，没有任何可靠的 yield 点。加上每次循环还有 JSON 解析开销，形成完美的 CPU 风暴。</p>
+</blockquote>
+<hr>
+<h2 id="四、总结"><a href="#四、总结" class="headerlink" title="四、总结"></a>四、总结</h2><h3 id="这两个问题的本质"><a href="#这两个问题的本质" class="headerlink" title="这两个问题的本质"></a>这两个问题的本质</h3><p>这两个 Bug 不是”代码没看仔细”，而是<strong>缺少一个分析维度</strong>：</p>
+<blockquote>
+<p><strong><span style="color:red; font-weight:bold">在协作式调度环境中，任何”看起来是 IO”的操作都可能在特定条件下变成纯 CPU 操作，从而饿死整个 worker。</span></strong></p>
+</blockquote>
+<p>静态代码审查只能发现逻辑错误（变量未定义、条件判断错误等），但无法发现<strong>运行时行为异常</strong>。本文的两个 Bug 都属于后者——代码逻辑正确，但在特定运行时条件下表现出灾难性的性能行为。</p>
+<h3 id="行动-Checklist"><a href="#行动-Checklist" class="headerlink" title="行动 Checklist"></a>行动 Checklist</h3><p>下次写 &#x2F; review OpenResty 协作式调度代码时，逐项确认：</p>
+<ul>
+<li><input disabled="" type="checkbox"> 每个 <code>while</code> &#x2F; <code>for</code> 循环都有明确的、<strong>可控的</strong>退出条件</li>
+<li><input disabled="" type="checkbox"> 循环体内的每个”IO 操作”都已确认：<strong>最坏情况下是否还会 yield</strong></li>
+<li><input disabled="" type="checkbox"> 如果有不 yield 的风险，是否加了<strong>时间片让出</strong>（如累计 CPU 时间超过 Nms 后强制 sleep）</li>
+<li><input disabled="" type="checkbox"> 是否处理了<strong>客户端断开</strong>场景（不能只依赖 write 报错来检测）</li>
+<li><input disabled="" type="checkbox"> 上游发送速度快于消费速度时，是否有<strong>backpressure</strong> 机制</li>
+<li><input disabled="" type="checkbox"> 用火焰图或 CPU profiling 验证过<strong>最坏情况的 CPU 占比</strong></li>
+</ul>
+<h3 id="一句话收尾"><a href="#一句话收尾" class="headerlink" title="一句话收尾"></a>一句话收尾</h3><p>读 OpenResty 代码时，每看到一个循环，都要问：<strong>“这个循环在最坏情况下会不会不 yield？”</strong> 这不是直觉，是需要刻意练习的习惯——也是本文两个 Bug 用 CPU 100% 买来的教训。</p>
+<h3 id="知识迁移：其他语言的协程有这个问题吗？"><a href="#知识迁移：其他语言的协程有这个问题吗？" class="headerlink" title="知识迁移：其他语言的协程有这个问题吗？"></a>知识迁移：其他语言的协程有这个问题吗？</h3><p><strong>有的有，有的没有。关键区别在于调度器是否支持”抢占”。</strong></p>
+<table>
+<thead>
+<tr>
+<th>语言</th>
+<th>调度模式</th>
+<th>有这个问题吗？</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>OpenResty &#x2F; Lua</strong></td>
+<td>纯协作式</td>
+<td>✅ <strong>有</strong></td>
+<td>必须显式 yield，否则永远不切换</td>
+</tr>
+<tr>
+<td><strong>Node.js</strong></td>
+<td>纯协作式（单线程事件循环）</td>
+<td>✅ <strong>有</strong></td>
+<td>同步 while 循环 &#x2F; 大量 CPU 计算会阻塞事件循环</td>
+</tr>
+<tr>
+<td><strong>Python asyncio</strong></td>
+<td>纯协作式</td>
+<td>✅ <strong>有</strong></td>
+<td>没有 <code>await</code> 的循环会卡死事件循环</td>
+</tr>
+<tr>
+<td><strong>C++20 协程</strong></td>
+<td>纯协作式</td>
+<td>✅ <strong>有</strong></td>
+<td>不 <code>co_await</code> 就永远不会让出</td>
+</tr>
+<tr>
+<td><strong>Go goroutine</strong></td>
+<td><strong>协作 + 抢占混合</strong></td>
+<td>⚠️ <strong>基本没有</strong></td>
+<td>Go 1.14+ 引入基于信号的<strong>异步抢占</strong>，长时间运行会被强制切换</td>
+</tr>
+<tr>
+<td><strong>Erlang &#x2F; Elixir</strong></td>
+<td>抢占式</td>
+<td>❌ <strong>没有</strong></td>
+<td>每次函数调用后都检查抢占，每个进程有最大执行时间限制（约 1ms）</td>
+</tr>
+<tr>
+<td><strong>Java 虚拟线程 (JDK 21+)</strong></td>
+<td>协作式 + 监控</td>
+<td>⚠️ <strong>大部分情况没有</strong></td>
+<td>JVM 监控运行时间，长时间运行的虚拟线程可被抢占（除非被 Pin 到平台线程）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>核心规律</strong>：纯协作式调度（OpenResty、Node.js、Python）为了零开销切换，牺牲了安全性——程序员必须自己保证正确性。抢占式或混合式调度（Go、Erlang）用少量性能代价换来了”单个协程失控不会拖垮整个系统”的保证。</p>
+<p><strong>但即使使用 Go&#x2F;Erlang</strong>，理解协作式调度的 yield 行为仍然有价值——它帮助你写出更高效的代码（减少不必要的上下文切换），也让你在需要极致性能时能做出正确的架构选择。</p>
+</blockquote>
+<h3 id="知识延伸：一个线程-协程能用多个-CPU-核心吗？"><a href="#知识延伸：一个线程-协程能用多个-CPU-核心吗？" class="headerlink" title="知识延伸：一个线程&#x2F;协程能用多个 CPU 核心吗？"></a>知识延伸：一个线程&#x2F;协程能用多个 CPU 核心吗？</h3><p><strong>不能。</strong> 这是理解 CPU 打满问题的关键前提。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>能否使用多核</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>操作系统线程</strong></td>
+<td>❌ <strong>同一时刻只能在一个核心上</strong></td>
+<td>OS 调度器会把线程在不同时间段分配到不同核心（时间片轮转），但任意时刻仍是单核</td>
+</tr>
+<tr>
+<td><strong>协程（Go&#x2F;Lua&#x2F;Python）</strong></td>
+<td>❌ <strong>不能</strong></td>
+<td>协程是用户态轻量级线程，最终必须绑定到 OS 线程执行</td>
+</tr>
+<tr>
+<td><strong>进程</strong></td>
+<td>✅ <strong>可以</strong></td>
+<td>多线程的进程可以利用多核并行</td>
+</tr>
+</tbody></table>
+<h4 id="OpenResty-的-Worker-模型如何利用多核？"><a href="#OpenResty-的-Worker-模型如何利用多核？" class="headerlink" title="OpenResty 的 Worker 模型如何利用多核？"></a>OpenResty 的 Worker 模型如何利用多核？</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────────────────────┐</span><br><span class="line">│                    OpenResty 进程                           │</span><br><span class="line">│                                                             │</span><br><span class="line">│  ┌─── Worker 1 ───┐  ┌─── Worker 2 ───┐  ┌─── Worker N ──┐ │</span><br><span class="line">│  │  Core 0        │  │  Core 1        │  │  Core N-1     │ │</span><br><span class="line">│  │                │  │                │  │               │ │</span><br><span class="line">│  │  [协程A]       │  │  [协程X]       │  │  [协程M]      │ │</span><br><span class="line">│  │  [协程B]       │  │  [协程Y]       │  │  [协程K]      │ │</span><br><span class="line">│  │  [协程C]       │  │  [协程Z]       │  │              │ │</span><br><span class="line">│  │    ↓           │  │    ↓           │  │              │ │</span><br><span class="line">│  │  epoll_wait()  │  │  epoll_wait()  │  │              │ │</span><br><span class="line">│  └────────────────┘  └────────────────┘  └──────────────┘ │</span><br><span class="line">└─────────────────────────────────────────────────────────────┘</span><br><span class="line">         ↑                    ↑                   ↑</span><br><span class="line">    事件驱动，非阻塞IO      各自独立             并行处理</span><br></pre></td></tr></table></figure>
+
+<p><strong>关键点：</strong></p>
+<ul>
+<li><strong>单个 Worker 内部</strong>：协程协作式调度，共享一个 CPU 核心 → 所以 <code>while</code> 死循环会打满<strong>这一个核心 100%</strong></li>
+<li><strong>多个 Worker 之间</strong>：每个 Worker 占一个核心 → 所以 CPU 饱和现象是 <strong>100% × N cores</strong></li>
+</ul>
+<h4 id="这解释了为什么”单-Worker-单核心”架构本身没问题"><a href="#这解释了为什么”单-Worker-单核心”架构本身没问题" class="headerlink" title="这解释了为什么”单 Worker 单核心”架构本身没问题"></a>这解释了为什么”单 Worker 单核心”架构本身没问题</h4><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>无锁竞争</strong></td>
+<td>每个 Worker 独立内存空间，不需要锁</td>
+</tr>
+<tr>
+<td><strong>CPU 缓存友好</strong></td>
+<td>单线程 &#x3D; L1&#x2F;L2 缓存命中率高</td>
+</tr>
+<tr>
+<td><strong>无上下文切换开销</strong></td>
+<td>协程切换 ≈ 函数调用（纳秒级）vs OS 线程切换（微秒级）</td>
+</tr>
+<tr>
+<td><strong>天然负载均衡</strong></td>
+<td>OS 调度器自动把 Worker 分配到不同核心</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>这个架构的设计假设：你的代码是 IO 密集型的（网络请求、数据库查询），而不是 CPU 密集型的。</strong> 用对地方是神器（QPS 可达 100K+），用错地方（CPU 死循环）就是自毁武器——这正是本次故障复盘的核心教训。</p>
+</blockquote>
+<blockquote>
+<p><strong>💡 一句话总结（时间视角）：CPU 100% 不代表”计算量大”，而是代表”没有一刻空闲”。本次故障的本质是——一个请求在 1 秒内做了 10 万次无意义的快速循环，每次只给其他请求留 0.001 秒的时间；相当于一个人霸占了电影院的座位，每 10 微秒站起来一次装作让座，然后立刻又坐回去。</strong></p>
+</blockquote>
+<h2 id=""><a href="#" class="headerlink" title=""></a></h2>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>请我一杯咖啡吧！</div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>jiankunking
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html" title="运行时行为盲区：API7 AI 网关CPU打满故障的AI辅助事后复盘">https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg">
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/cpu-saturation/" rel="tag"># CPU-Saturation</a>
+              <a href="/tags/apisix/" rel="tag"># APISIX</a>
+              <a href="/tags/openresty/" rel="tag"># OpenResty</a>
+              <a href="/tags/lua/" rel="tag"># Lua</a>
+              <a href="/tags/coroutine/" rel="tag"># Coroutine</a>
+              <a href="/tags/socket-buffer/" rel="tag"># Socket-Buffer</a>
+              <a href="/tags/ai-assisted-debugging/" rel="tag"># AI-Assisted-Debugging</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/efficient-design-and-development-in-the-ai-era-practice-of-plugin-development-for-converting-anthropic-requests-to-an-openai-compatible-backend.html" rel="prev" title="AI时代高效设计开发：Anthropic → OpenAI 协议转换插件实战">
+                  <i class="fa fa-angle-left"></i> AI时代高效设计开发：Anthropic → OpenAI 协议转换插件实战
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html" rel="next" title="什么样的 AI 网关算是一个好网关">
+                  什么样的 AI 网关算是一个好网关 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">1.4m</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"jiankunking","repo":"blog-comments","client_id":"5e2e6dc5bd7af549261d","client_secret":"f37069692932676f0ad9fbfecb5164aee191fe23","admin_user":"jiankunking","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"56810b5fafdd1b6d7521979258bf29da"}</script>
+<script src="/js/third-party/comments/gitalk.js" defer></script>
+
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="true">
+  <meta name="msvalidate.01" content="true">
+  <meta name="baidu-site-verification" content="true">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":true,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL InnoDB存储引擎：分区表">
+<meta property="og:url" content="https://jiankunking.com/mysql-innodb-partition-table.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版  作者：姜承尧 出版时间：2013-05">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-10-13T02:20:17.000Z">
+<meta property="article:modified_time" content="2026-07-07T11:11:17.438Z">
+<meta property="article:author" content="jiankunking">
+<meta property="article:tag" content="InnoDB">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="Reading Notes">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jiankunking.com/mysql-innodb-partition-table.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/mysql-innodb-partition-table.html","path":"mysql-innodb-partition-table.html","title":"MySQL InnoDB存储引擎：分区表"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>MySQL InnoDB存储引擎：分区表 | 衣舞晨风</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-121070942-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lozad.js/1.16.0/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">衣舞晨风</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL%E5%88%86%E5%8C%BA%E8%A1%A8%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">MySQL分区表介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL%E5%88%86%E5%8C%BA%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">MySQL分区类型</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RANGE%E5%88%86%E5%8C%BA"><span class="nav-number">2.1.</span> <span class="nav-text">RANGE分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LIST%E5%88%86%E5%8C%BA"><span class="nav-number">2.2.</span> <span class="nav-text">LIST分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HASH%E5%88%86%E5%8C%BA"><span class="nav-number">2.3.</span> <span class="nav-text">HASH分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LINER-HASH"><span class="nav-number">2.4.</span> <span class="nav-text">LINER HASH</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#KEY%E5%88%86%E5%8C%BA"><span class="nav-number">2.5.</span> <span class="nav-text">KEY分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#COLUMNS"><span class="nav-number">2.6.</span> <span class="nav-text">COLUMNS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E4%B8%AD%E7%9A%84NULL%E5%80%BC"><span class="nav-number">3.</span> <span class="nav-text">分区中的NULL值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E5%92%8C%E6%80%A7%E8%83%BD"><span class="nav-number">4.</span> <span class="nav-text">分区和性能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL-5-7%E5%AF%B9%E5%88%86%E5%8C%BA%E7%9A%84%E6%94%B9%E8%BF%9B"><span class="nav-number">5.</span> <span class="nav-text">MySQL 5.7对分区的改进</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jiankunking"
+      src="/images/avatar/avatar.png">
+  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <div class="site-description" itemprop="description">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">170</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">287</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/mysql-innodb-partition-table.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="jiankunking">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+      <meta itemprop="description" content="如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视他们很多很多日子了。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="MySQL InnoDB存储引擎：分区表 | 衣舞晨风">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL InnoDB存储引擎：分区表
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-10-13 10:20:17" itemprop="dateCreated datePublished" datetime="2018-10-13T10:20:17+08:00">2018-10-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-07-07 19:11:17" itemprop="dateModified" datetime="2026-07-07T19:11:17+08:00">2026-07-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.1k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>4 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 </p>
+<p>作者：姜承尧</p>
+<p>出版时间：2013-05</p>
+<span id="more"></span>
+
+<h1 id="MySQL分区表介绍"><a href="#MySQL分区表介绍" class="headerlink" title="MySQL分区表介绍"></a>MySQL分区表介绍</h1><p>分区是一种表的设计模式，正确的分区可以极大地提升数据库的查询效率，完成更高质量的SQL编程。但是如果错误地使用分区，那么分区可能带来毁灭性的的结果。</p>
+<p><font color=DeepPink><strong>分区功能并不是在存储引擎层完成的，因此不只有InnoDB存储引擎支持分区，常见的存储引擎MyISAM、NDB等都支持分区。</strong></font> 但是并不是所有的存储引擎都支持，如CSV、FEDORATED、MERGE等就不支持分区。在使用此分区功能前，应该对选择的存储引擎对分区的支持有所了解。</p>
+<p>MySQL数据库在5.1版本时添加了对分区的支持，<font color=DeepPink><strong>分区的过程是将一个表或索引分解为多个更小、更可管理的部分。就访问数据库的应用而言，从逻辑上讲，只有一个表或一个索引，但是在物理上这个表或索引可能由数十个物理分区组成。每个分区都是独立的对象，可以独自处理，也可以作为一个更大对象的一部分进行处理。</strong></font></p>
+<p>MySQL数据库支持的分区类型为<font color=DeepPink><strong>水平分区</strong></font>（指将同一个表中不同行的记录分配到不同的物理文件中），并不支持垂直分区（指将同一表中不同列的记录分配到不同的物理文件中）。此外，<font color=DeepPink><strong>MySQL数据库的分区是局部分区索引，一个分区中既存放了数据又存放了索引。</strong></font>而全局分区是指，数据存放在各个分区中，但是所有数据的索引放在一个对象中。目前，MySQL数据库还不支持全局分区。</p>
+<p>可以通过以下命令来查看当前数据库是否启用了分区功能：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; show global variables like &#x27;%partition%&#x27;;</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| Variable_name     | Value |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">| have_partitioning | YES   |</span><br><span class="line">+-------------------+-------+</span><br><span class="line">1 row in set (0.04 sec)</span><br><span class="line"> </span><br><span class="line">MySQL&gt; show plugins</span><br><span class="line">*************************** 43. row ***************************</span><br><span class="line">   Name: partition</span><br><span class="line"> Status: ACTIVE</span><br><span class="line">   Type: STORAGE ENGINE</span><br><span class="line">Library: NULL</span><br><span class="line">License: GPL</span><br></pre></td></tr></table></figure>
+<p>有时候可能会有这么一种误区，只要启用了分区，数据库就会运行的更快。这个结论结论是存在很多问题的，就经验来看，分区可能会给某些SQL语句性能带来提高，但是分区主要用于数据库高可用性的管理。在OLTP应用中，对于分区的使用应该非常小心，总之，如果只是一味地使用分区，而不理解分区是如何工作的，也不清楚你的应用如何使用分区，那么分区极有可能会对性能产生负面的影响。</p>
+<h1 id="MySQL分区类型"><a href="#MySQL分区类型" class="headerlink" title="MySQL分区类型"></a>MySQL分区类型</h1><h2 id="RANGE分区"><a href="#RANGE分区" class="headerlink" title="RANGE分区"></a>RANGE分区</h2><p>RANGE分区，是最常用的一种分区类型，基于属于一个给定连续区间的列值，把多行分配给分区。这些区间要连续且不能相互重叠，使用VALUES LESS THAN操作符来进行定义。</p>
+<h2 id="LIST分区"><a href="#LIST分区" class="headerlink" title="LIST分区"></a>LIST分区</h2><p>LIST分区和RANGE分区类似，区别在于LIST分区是基于列值匹配一个离散值集合中的某个值来进行选择，而非连续的。</p>
+<p>LIST分区通过使用“PARTITION BY LIST(expr)”来实现，其中“expr” 是某列值或一个基于某个列值、并返回一个整数值的表达式，然后通过“VALUES IN (value_list)”的方式来定义每个分区，其中“value_list”是一个通过逗号分隔的整数列表。</p>
+<h2 id="HASH分区"><a href="#HASH分区" class="headerlink" title="HASH分区"></a>HASH分区</h2><p>HASH分区的目的是将数据均匀地分布到预先定义的各个分区中，保证各分区的数据量大致都是一样的。在RANGE和LIST分区中，必须明确指定一个给定的列值或列值集合应该保存在哪个分区中；而在HASH分区中，MySQL自动完成这些工作，用户所要做的只是基于将要进行哈希分区的列值指定一个列值或表达式，以及指定被分区的表将要被分隔成的分区数量。</p>
+<p>要使用HASH分区来分割一个表，要在CREATE TABLE 语句上添加一个“PARTITION BY HASH (expr)”子句，其中“expr”是一个返回一个整数的表达式。它可以仅仅是字段类型为MySQL 整型的一列的名字。此外，你很可能需要在后面再添加一个“PARTITIONS num”子句，其中num是一个非负的整数，它表示表将要被分割成分区的数量，如果没有包括一个PARTITIONS子句，那么分区的数量将默认为1。</p>
+<h2 id="LINER-HASH"><a href="#LINER-HASH" class="headerlink" title="LINER HASH"></a>LINER HASH</h2><p>MySQL还支持线性哈希功能，它与常规哈希的区别在于，线性哈希功能使用的一个线性的2的幂（powers-of-two）运算法则，而常规哈希使用的是求哈希函数值的模数。<br>线性哈希分区和常规哈希分区在语法上的唯一区别在于，在“PARTITION BY” 子句中添加“LINEAR”关键字。</p>
+<h2 id="KEY分区"><a href="#KEY分区" class="headerlink" title="KEY分区"></a>KEY分区</h2><p>KEY分区和HASH分区相似，不同之处在于HASH分区使用用户定义的函数进行分区，支持字符串HASH分区，KEY分区使用MySQL数据库提供的函数进行分区，这些函数基于与PASSWORD()一样的运算法则。</p>
+<h2 id="COLUMNS"><a href="#COLUMNS" class="headerlink" title="COLUMNS"></a>COLUMNS</h2><p>在前面说了RANGE、LIST、HASH和KEY这四种分区中，分区的条件是：数据必须为整形（interger），如果不是整形，那应该需要通过函数将其转化为整形，如YEAR()，TO_DAYS()，MONTH()等函数。MySQL5.5版本开始支持COLUMNS分区，可视为RANGE分区和LIST分区的一种进化。COLUMNS分区可以直接使用非整形的数据进行分区，分区根据类型直接比较而得，不需要转化为整形。此外，RANGE COLUMNS分区可以对多个列的值进行分区。</p>
+<p>COLUMNS分区支持以下的数据类型：</p>
+<ul>
+<li>所有的整形类型，如INT、SMALLINT、TINYINT和BIGINT。而FLOAT和DECIMAL则不予支持。</li>
+<li>日期类型，如DATE何DATETIME。其余的日期类型不予支持。</li>
+<li>字符串类型，如CHAR、VARCHAR、BINARY和VARBINARY。而BLOB和TEXT类型不予支持。</li>
+</ul>
+<h1 id="分区中的NULL值"><a href="#分区中的NULL值" class="headerlink" title="分区中的NULL值"></a>分区中的NULL值</h1><p>MySQL数据库允许对NULL值做分区，但是处理的方法与其他数据库可能完全不同。MySQL数据库的分区总是视NULL值小于任何的一个非NULL值，这和MySQL数据库中处理NULL值的ORDER BY操作是一样的。 因此对于不同的分区类型，MySQL数据库对于NULL值的处理也是各不相同。</p>
+<ul>
+<li>对于RANGE分区，如果向分区列插入了NULL值，则MySQL数据库会将该值放入最左边的分区。</li>
+<li>对于LIST分区，如果向分区列插入了NULL值，则必须显示地指出哪个分区放入NULL值，否则会报错。对于LIST分区，如果向分区列插入了NULL值，则必须显示地指出哪个分区放入NULL值，否则会报错。</li>
+<li>对于HASH和KEY分区，对于NULL值的处理方法和RANGE分区、LIST分区不一样。任何分区函数都会将含有NULL值的记录返回为0。</li>
+</ul>
+<h1 id="分区和性能"><a href="#分区和性能" class="headerlink" title="分区和性能"></a>分区和性能</h1><p>分区真的会加快数据库的查询吗？实际上可能根本感觉不到查询速度的提升，甚至会发现查询速度急剧下降，因此在合理使用分区之前，必须了解分区的使用环境。</p>
+<p>数据库的应用分为两类：一类是OLTP（在线事务处理），如Blog、电子商务、网络游戏等；另一类是OLAP（在线分析处理），如数据仓库、数据集市。对于OLAP的应用，分区的确是可以很好地提高查询的性能，因为OLAP应用大多数查询需要频繁地扫描一张很大的表。假设有一张1亿行的表，其中有一个时间戳属性列。用户的查询需要从这张表中获取一年的数据。如果按时间戳进行分区，则只需要扫描相应的分区即可。这就是前面介绍的分区修剪技术。</p>
+<p><font color=DeepPink><strong>对于OLTP的应用，分区应该非常小心。在这种应用下，通常不可能会获取一张大表10%的数据，大部分都是通过索引返回几条记录即可。而根据B+树索引的原理可知，对于一张大表，一般的B+树需要2~3次的磁盘IO。因此B+树可以很好地完成操作，不需要分区的帮助，并且设计不好的分区会带来严重的性能问题。</strong></font></p>
+<p>如很多开发团队会认为含有1000w行的表是一张非常巨大的表，所以他们往往会选择采用分区，如对主键做10个HASH的分区，这样每个分区就只有100w的数据了，因此查询应该变得更快了。如select * from table where pk&#x3D;@pk。但是有没有考虑过这样一种情况：100w和1000w行的数据本身构成的B+树的层次都是一样的，可能都是2~3层。那么上述走主键分区的索引并不会带来性能的提高。好的，如果1000w的B+树高度是3,100w的B+树高度是2，那么上述按主键分区的索引可以避免1次IO，从而提高查询的效率。这没问题，但是这张表只有主键索引，没有任何其他的列需要查询的。如果还有类似如下的SQL：select * from table where key&#x3D;@key，这时对于key的查询需要扫描所有的10个分区，即使每个分区的查询开销为2次IO，则一共需要20次IO。而对于原来单表的设计，对于KEY的查询只需要2~3次IO。</p>
+<p>由以上结论可以看出，对于在OLTP场景中使用分区一定要特别小心了。</p>
+<h1 id="MySQL-5-7对分区的改进"><a href="#MySQL-5-7对分区的改进" class="headerlink" title="MySQL 5.7对分区的改进"></a>MySQL 5.7对分区的改进</h1><p>在MySQL 5.6里面，分区的信息是在MySQL Server层维护的（在.par文件里面），InnoDB引擎层是不知道有分区这个概念的，InnoDB引擎层把每一个分区都当成一张普通的InnoDB表。在打开一个分区表时，会打开很多个分区，打开这些分区表就相当于打开了同等数量的InnoDB表，这需要更多内存存放InnoDB表的元数据和各种与ibd文件打开相关的各种cache与handler的信息。在MySQL 5.7里面，InnoDB引入了Native Partitioning，它把分区的信息从Server层移到了InnoDB层，打开一个分区表和打开一个InnoDB表的内存开销基本是一样的。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>请我一杯咖啡吧！</div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>jiankunking
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://jiankunking.com/mysql-innodb-partition-table.html" title="MySQL InnoDB存储引擎：分区表">https://jiankunking.com/mysql-innodb-partition-table.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg">
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/reading-notes/" rel="tag"># Reading Notes</a>
+              <a href="/tags/mysql/" rel="tag"># MySQL</a>
+              <a href="/tags/innodb/" rel="tag"># InnoDB</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/mysql-innodb-consistent-locking-read.html" rel="prev" title="MySQL InnoDB存储引擎：一致性锁定读">
+                  <i class="fa fa-angle-left"></i> MySQL InnoDB存储引擎：一致性锁定读
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/mysql-innodb-row-lock-algorithm.html" rel="next" title="MySQL InnoDB存储引擎：行锁的3种算法">
+                  MySQL InnoDB存储引擎：行锁的3种算法 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">1.4m</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"jiankunking","repo":"blog-comments","client_id":"5e2e6dc5bd7af549261d","client_secret":"f37069692932676f0ad9fbfecb5164aee191fe23","admin_user":"jiankunking","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"d9a7ec4a5f692d7bf0777a6bf66aaf34"}</script>
+<script src="/js/third-party/comments/gitalk.js" defer></script>
+
+</body>
+</html>
