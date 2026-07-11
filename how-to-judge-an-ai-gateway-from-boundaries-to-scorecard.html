@@ -30,7 +30,7 @@
 <meta property="og:description" content="这篇不做具体产品排名，只回答一个问题：怎么判断一个 AI 网关好不好。内容来自对主流网关源码、文档、配置能力的核验，也来自实际落地里踩过的坑。 先给结论：好的 AI 网关至少要同时满足三点：  是一个合格的 L7 流量网关； 真正理解 LLM &#x2F; Agent 流量； 成熟到敢放上生产核心链路。  没有绝对最好的 AI 网关，只有最适合当前团队边界的网关。大公司用“薄而快”，小团队用“厚而">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-07-11T12:45:36.000Z">
-<meta property="article:modified_time" content="2026-07-11T03:31:07.497Z">
+<meta property="article:modified_time" content="2026-07-11T04:10:14.088Z">
 <meta property="article:author" content="jiankunking">
 <meta property="article:tag" content="AI">
 <meta property="article:tag" content="Gateway">
@@ -177,7 +177,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%A8%E6%99%AF%E5%9B%BE"><span class="nav-number">1.</span> <span class="nav-text">全景图</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%83%BD%E5%8A%9B%E4%B8%89%E5%B1%82%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.1.</span> <span class="nav-text">能力三层模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%81%8C%E8%B4%A3%E8%BE%B9%E7%95%8C"><span class="nav-number">1.2.</span> <span class="nav-text">职责边界</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%89%E5%9E%8B%E4%B8%89%E6%AD%A5%E6%B3%95"><span class="nav-number">1.3.</span> <span class="nav-text">选型三步法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%88%E7%9C%8B-AI-%E6%B5%81%E9%87%8F%E7%89%B9%E6%AE%8A%E5%9C%A8%E5%93%AA"><span class="nav-number">2.</span> <span class="nav-text">1. 先看 AI 流量特殊在哪</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%81%8C%E8%B4%A3%E8%BE%B9%E7%95%8C%E6%80%8E%E4%B9%88%E5%88%92"><span class="nav-number">2.1.</span> <span class="nav-text">职责边界怎么划</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-AI-%E7%BD%91%E5%85%B3%E8%83%BD%E5%8A%9B%E5%9B%BE%E8%B0%B1"><span class="nav-number">3.</span> <span class="nav-text">2. AI 网关能力图谱</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E8%83%BD%E5%8A%9B%E5%9F%9F%EF%BC%9A%E5%90%88%E6%A0%BC%E7%BA%BF-%E4%BC%98%E7%A7%80%E7%BA%BF"><span class="nav-number">4.</span> <span class="nav-text">3. 核心能力域：合格线 &#x2F; 优秀线</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E8%B7%AF%E7%94%B1%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 路由与负载均衡</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E8%AF%B7%E6%B1%82-%E5%93%8D%E5%BA%94%E6%94%B9%E5%86%99"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 请求 &#x2F; 响应改写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%B5%81%E9%87%8F%E6%B2%BB%E7%90%86%E4%B8%8E%E6%88%90%E6%9C%AC"><span class="nav-number">4.3.</span> <span class="nav-text">3.3 流量治理与成本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7"><span class="nav-number">4.4.</span> <span class="nav-text">3.4 可观测性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5%E4%B8%8E%E9%AB%98%E5%8F%AF%E7%94%A8"><span class="nav-number">4.5.</span> <span class="nav-text">3.5 健康检查与高可用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E5%AE%89%E5%85%A8%EF%BC%9A%E8%AE%A4%E8%AF%81%E6%8E%88%E6%9D%83%E5%92%8C%E5%86%85%E5%AE%B9%E5%AE%A1%E6%A0%B8"><span class="nav-number">4.6.</span> <span class="nav-text">3.6 安全：认证授权和内容审核</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-7-Agent-Tool-Call-%E6%B5%81%E9%87%8F"><span class="nav-number">4.7.</span> <span class="nav-text">3.7 Agent &#x2F; Tool Call 流量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-8-%E6%89%A9%E5%B1%95%E6%80%A7%E4%B8%8E%E5%8F%AF%E8%BF%90%E7%BB%B4%E6%80%A7"><span class="nav-number">4.8.</span> <span class="nav-text">3.8 扩展性与可运维性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%9B%9B%E6%9D%A1%E4%B8%80%E7%A5%A8%E5%90%A6%E5%86%B3%E7%BA%BF"><span class="nav-number">5.</span> <span class="nav-text">4. 四条一票否决线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%A5%BD%E5%9D%8F%E5%AF%B9%E7%85%A7%E9%80%9F%E6%9F%A5"><span class="nav-number">6.</span> <span class="nav-text">5. 好坏对照速查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%89%93%E5%88%86%E6%B8%85%E5%8D%95%EF%BC%88%E6%9D%83%E9%87%8D%E5%90%88%E8%AE%A1-100-%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">6. 打分清单（权重合计 100%）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%9C%80%E5%90%8E"><span class="nav-number">8.</span> <span class="nav-text">7. 最后</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%BC%E8%AF%BB%EF%BC%9A%E5%85%88%E7%BB%99%E7%BB%93%E8%AE%BA"><span class="nav-number">1.</span> <span class="nav-text">导读：先给结论</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%83%BD%E5%8A%9B%E4%B8%89%E5%B1%82%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.1.</span> <span class="nav-text">能力三层模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%81%8C%E8%B4%A3%E8%BE%B9%E7%95%8C"><span class="nav-number">1.2.</span> <span class="nav-text">职责边界</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%89%E5%9E%8B%E4%B8%89%E6%AD%A5%E6%B3%95"><span class="nav-number">1.3.</span> <span class="nav-text">选型三步法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%88%E7%9C%8B-AI-%E6%B5%81%E9%87%8F%E7%89%B9%E6%AE%8A%E5%9C%A8%E5%93%AA"><span class="nav-number">2.</span> <span class="nav-text">1. 先看 AI 流量特殊在哪</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%83%BD%E5%8A%9B%E8%AF%A5%E6%94%BE%E7%BD%91%E5%85%B3%EF%BC%8C%E8%BF%98%E6%98%AF%E6%94%BE%E6%97%81%E8%B7%AF"><span class="nav-number">2.1.</span> <span class="nav-text">能力该放网关，还是放旁路</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-AI-%E7%BD%91%E5%85%B3%E8%83%BD%E5%8A%9B%E5%9B%BE%E8%B0%B1"><span class="nav-number">3.</span> <span class="nav-text">2. AI 网关能力图谱</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E8%83%BD%E5%8A%9B%E5%9F%9F%EF%BC%9A%E5%90%88%E6%A0%BC%E7%BA%BF-%E4%BC%98%E7%A7%80%E7%BA%BF"><span class="nav-number">4.</span> <span class="nav-text">3. 核心能力域：合格线 &#x2F; 优秀线</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E8%B7%AF%E7%94%B1%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 路由与负载均衡</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E8%AF%B7%E6%B1%82-%E5%93%8D%E5%BA%94%E6%94%B9%E5%86%99"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 请求 &#x2F; 响应改写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%B5%81%E9%87%8F%E6%B2%BB%E7%90%86%E4%B8%8E%E6%88%90%E6%9C%AC"><span class="nav-number">4.3.</span> <span class="nav-text">3.3 流量治理与成本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7"><span class="nav-number">4.4.</span> <span class="nav-text">3.4 可观测性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5%E4%B8%8E%E9%AB%98%E5%8F%AF%E7%94%A8"><span class="nav-number">4.5.</span> <span class="nav-text">3.5 健康检查与高可用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E5%AE%89%E5%85%A8%EF%BC%9A%E8%AE%A4%E8%AF%81%E6%8E%88%E6%9D%83%E5%92%8C%E5%86%85%E5%AE%B9%E5%AE%A1%E6%A0%B8"><span class="nav-number">4.6.</span> <span class="nav-text">3.6 安全：认证授权和内容审核</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-7-Agent-Tool-Call-%E6%B5%81%E9%87%8F"><span class="nav-number">4.7.</span> <span class="nav-text">3.7 Agent &#x2F; Tool Call 流量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-8-%E6%89%A9%E5%B1%95%E6%80%A7%E4%B8%8E%E5%8F%AF%E8%BF%90%E7%BB%B4%E6%80%A7"><span class="nav-number">4.8.</span> <span class="nav-text">3.8 扩展性与可运维性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%9B%9B%E6%9D%A1%E4%B8%80%E7%A5%A8%E5%90%A6%E5%86%B3%E7%BA%BF"><span class="nav-number">5.</span> <span class="nav-text">4. 四条一票否决线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%A5%BD%E5%9D%8F%E5%AF%B9%E7%85%A7%E9%80%9F%E6%9F%A5"><span class="nav-number">6.</span> <span class="nav-text">5. 好坏对照速查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%89%93%E5%88%86%E6%B8%85%E5%8D%95%EF%BC%88%E6%9D%83%E9%87%8D%E5%90%88%E8%AE%A1-100-%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">6. 打分清单（权重合计 100%）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-%E5%9F%BA%E7%A1%80%E7%BD%91%E5%85%B3%E8%83%BD%E5%8A%9B%EF%BC%8810-%EF%BC%89"><span class="nav-number">7.1.</span> <span class="nav-text">A. 基础网关能力（10%）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#B-%E8%B7%AF%E7%94%B1%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%EF%BC%8815-%EF%BC%89"><span class="nav-number">7.2.</span> <span class="nav-text">B. 路由与负载均衡（15%）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E8%AF%B7%E6%B1%82-%E5%93%8D%E5%BA%94%E6%94%B9%E5%86%99%E4%B8%8E%E5%8D%8F%E8%AE%AE%E9%80%82%E9%85%8D%EF%BC%8815-%EF%BC%89"><span class="nav-number">7.3.</span> <span class="nav-text">C. 请求 &#x2F; 响应改写与协议适配（15%）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#D-%E6%B5%81%E9%87%8F%E6%B2%BB%E7%90%86%E4%B8%8E%E6%88%90%E6%9C%AC%EF%BC%8815-%EF%BC%89"><span class="nav-number">7.4.</span> <span class="nav-text">D. 流量治理与成本（15%）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#E-%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7%EF%BC%8815-%EF%BC%89"><span class="nav-number">7.5.</span> <span class="nav-text">E. 可观测性（15%）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#F-%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5%E4%B8%8E%E9%AB%98%E5%8F%AF%E7%94%A8%EF%BC%8815-%EF%BC%89"><span class="nav-number">7.6.</span> <span class="nav-text">F. 健康检查与高可用（15%）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G-%E5%AE%89%E5%85%A8%E4%B8%8E%E5%90%88%E8%A7%84%EF%BC%8810-%EF%BC%89"><span class="nav-number">7.7.</span> <span class="nav-text">G. 安全与合规（10%）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#H-%E6%89%A9%E5%B1%95%E6%80%A7%E4%B8%8E%E5%8F%AF%E8%BF%90%E7%BB%B4%E6%80%A7%EF%BC%885-%EF%BC%89"><span class="nav-number">7.8.</span> <span class="nav-text">H. 扩展性与可运维性（5%）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%95%E7%BA%BF%E9%A1%B9%EF%BC%9A%E4%B8%80%E7%A5%A8%E5%90%A6%E5%86%B3%EF%BC%8C%E4%B8%8D%E7%AE%97%E5%88%86%E4%BD%86%E5%BF%85%E9%A1%BB%E8%BF%87"><span class="nav-number">7.9.</span> <span class="nav-text">底线项：一票否决，不算分但必须过</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%9C%80%E5%90%8E"><span class="nav-number">8.</span> <span class="nav-text">7. 最后</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -283,7 +283,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2026-07-11 20:45:36 / 修改时间：11:31:07" itemprop="dateCreated datePublished" datetime="2026-07-11T20:45:36+08:00">2026-07-11</time>
+      <time title="创建时间：2026-07-11 20:45:36 / 修改时间：12:10:14" itemprop="dateCreated datePublished" datetime="2026-07-11T20:45:36+08:00">2026-07-11</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -338,7 +338,7 @@
 
 <p>本文适合用来做 AI 网关选型、现有网关评估，或者自研网关能力拆解；不适合当某个产品的安装教程，也不讨论个人转发代理。</p>
 <hr>
-<h2 id="全景图"><a href="#全景图" class="headerlink" title="全景图"></a>全景图</h2><h3 id="能力三层模型"><a href="#能力三层模型" class="headerlink" title="能力三层模型"></a>能力三层模型</h3><table>
+<h2 id="导读：先给结论"><a href="#导读：先给结论" class="headerlink" title="导读：先给结论"></a>导读：先给结论</h2><h3 id="能力三层模型"><a href="#能力三层模型" class="headerlink" title="能力三层模型"></a>能力三层模型</h3><table>
 <thead>
 <tr>
 <th>层级</th>
@@ -437,7 +437,7 @@
 </tr>
 </tbody></table>
 <p>只会改 URL 和 header、把 body 当黑盒透传的，本质上还是普通网关。</p>
-<h3 id="职责边界怎么划"><a href="#职责边界怎么划" class="headerlink" title="职责边界怎么划"></a>职责边界怎么划</h3><p>同一个能力可以放网关，也可以放模型侧或旁路系统。比如日志富化、内容审查、可用性兜底，不一定都要压到网关里。</p>
+<h3 id="能力该放网关，还是放旁路"><a href="#能力该放网关，还是放旁路" class="headerlink" title="能力该放网关，还是放旁路"></a>能力该放网关，还是放旁路</h3><p>同一个能力可以放网关，也可以放模型侧或旁路系统。比如日志富化、内容审查、可用性兜底，不一定都要压到网关里。</p>
 <table>
 <thead>
 <tr>
@@ -613,56 +613,47 @@
 </tbody></table>
 <hr>
 <h2 id="6-打分清单（权重合计-100-）"><a href="#6-打分清单（权重合计-100-）" class="headerlink" title="6. 打分清单（权重合计 100%）"></a>6. 打分清单（权重合计 100%）</h2><p>下面是通用权重，实际用时按团队 P0 &#x2F; P1 调整。</p>
-<p>A. 基础网关能力（10%）</p>
-<ul>
+<h3 id="A-基础网关能力（10-）"><a href="#A-基础网关能力（10-）" class="headerlink" title="A. 基础网关能力（10%）"></a>A. 基础网关能力（10%）</h3><ul>
 <li><input disabled="" type="checkbox"> 普通 HTTP 代理 &#x2F; 路由也能用，不是只能绑 AI provider</li>
 <li><input disabled="" type="checkbox"> 路径重写、header 注入、后端鉴权注入</li>
 <li><input disabled="" type="checkbox"> 连接复用、路由级超时、SSL 校验可控</li>
 </ul>
-<p>B. 路由与负载均衡（15%）</p>
-<ul>
+<h3 id="B-路由与负载均衡（15-）"><a href="#B-路由与负载均衡（15-）" class="headerlink" title="B. 路由与负载均衡（15%）"></a>B. 路由与负载均衡（15%）</h3><ul>
 <li><input disabled="" type="checkbox"> <code>model</code> 字段路由，权重 + 优先级负载均衡</li>
 <li><input disabled="" type="checkbox"> 能基于 body 内容做条件路由</li>
 <li><input disabled="" type="checkbox"> fallback 能分异常类型，并处理流式阶段和会话亲和</li>
 </ul>
-<p>C. 请求 &#x2F; 响应改写与协议适配（15%）</p>
-<ul>
+<h3 id="C-请求-响应改写与协议适配（15-）"><a href="#C-请求-响应改写与协议适配（15-）" class="headerlink" title="C. 请求 &#x2F; 响应改写与协议适配（15%）"></a>C. 请求 &#x2F; 响应改写与协议适配（15%）</h3><ul>
 <li><input disabled="" type="checkbox"> 字段注入分得清兜底和覆盖</li>
 <li><input disabled="" type="checkbox"> 字段顺序尽量保持，模型名映射和多 Provider 协议适配可用</li>
 <li><input disabled="" type="checkbox"> 错误码、流式格式、tool call 字段能正确转换</li>
 </ul>
-<p>D. 流量治理与成本（15%）</p>
-<ul>
+<h3 id="D-流量治理与成本（15-）"><a href="#D-流量治理与成本（15-）" class="headerlink" title="D. 流量治理与成本（15%）"></a>D. 流量治理与成本（15%）</h3><ul>
 <li><input disabled="" type="checkbox"> TPM 限流，支持任意维度组合</li>
 <li><input disabled="" type="checkbox"> 成本归因和预算配额，超限可告警 &#x2F; 熔断</li>
 <li><input disabled="" type="checkbox"> SSE 全链路支持，语义缓存有权限隔离和审计边界</li>
 </ul>
-<p>E. 可观测性（15%）</p>
-<ul>
+<h3 id="E-可观测性（15-）"><a href="#E-可观测性（15-）" class="headerlink" title="E. 可观测性（15%）"></a>E. 可观测性（15%）</h3><ul>
 <li><input disabled="" type="checkbox"> TTFT &#x2F; TPOT 用 histogram，token 可按维度归因</li>
 <li><input disabled="" type="checkbox"> 结构化日志字段足够全，能推多种 sink</li>
 <li><input disabled="" type="checkbox"> body 日志支持脱敏、采样、按租户 &#x2F; 路由开关</li>
 </ul>
-<p>F. 健康检查与高可用（15%）</p>
-<ul>
+<h3 id="F-健康检查与高可用（15-）"><a href="#F-健康检查与高可用（15-）" class="headerlink" title="F. 健康检查与高可用（15%）"></a>F. 健康检查与高可用（15%）</h3><ul>
 <li><input disabled="" type="checkbox"> 被动 outlier detection 和主动健康检查都支持</li>
 <li><input disabled="" type="checkbox"> 主动探测能 POST 真实推理请求</li>
 <li><input disabled="" type="checkbox"> 告警集成，实例能联动降权和恢复</li>
 </ul>
-<p>G. 安全与合规（10%）</p>
-<ul>
+<h3 id="G-安全与合规（10-）"><a href="#G-安全与合规（10-）" class="headerlink" title="G. 安全与合规（10%）"></a>G. 安全与合规（10%）</h3><ul>
 <li><input disabled="" type="checkbox"> API Key &#x2F; JWT &#x2F; OAuth &#x2F; RBAC，后端凭证托管</li>
 <li><input disabled="" type="checkbox"> 请求和响应双向内容审查，含流式</li>
 <li><input disabled="" type="checkbox"> PII、prompt 注入、多模态审查能接外部服务</li>
 </ul>
-<p>H. 扩展性与可运维性（5%）</p>
-<ul>
+<h3 id="H-扩展性与可运维性（5-）"><a href="#H-扩展性与可运维性（5-）" class="headerlink" title="H. 扩展性与可运维性（5%）"></a>H. 扩展性与可运维性（5%）</h3><ul>
 <li><input disabled="" type="checkbox"> 插件机制、扩展点顺序、策略热加载可控</li>
 <li><input disabled="" type="checkbox"> REST API &#x2F; CRD &#x2F; GitOps 至少一种管理方式顺手</li>
 <li><input disabled="" type="checkbox"> 证书、配置、密钥生命周期可自动化</li>
 </ul>
-<p>底线项（一票否决，不算分但得过）：</p>
-<ul>
+<h3 id="底线项：一票否决，不算分但必须过"><a href="#底线项：一票否决，不算分但必须过" class="headerlink" title="底线项：一票否决，不算分但必须过"></a>底线项：一票否决，不算分但必须过</h3><ul>
 <li><input disabled="" type="checkbox"> 数据面性能可证</li>
 <li><input disabled="" type="checkbox"> 成熟度够：GA、有生产案例、社区活跃</li>
 <li><input disabled="" type="checkbox"> 核心能力可用，或已接受买企业版</li>
