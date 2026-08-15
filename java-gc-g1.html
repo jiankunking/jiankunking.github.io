@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
-
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":true,"height":500},"language":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="G1垃圾收集器详解：分区回收算法、Region划分、Mixed GC、调优参数等核心内容，附带官方文档和推荐阅读资料。">
 <meta property="og:type" content="article">
@@ -68,15 +68,12 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lozad.js/1.16.0/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
 <script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
 <script src="/js/third-party/search/local-search.js" defer></script>
 
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
-  <script src="/js/third-party/tags/mermaid.js" defer></script>
 
 
   <script src="/js/third-party/fancybox.js" defer></script>
@@ -89,7 +86,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-gc-g1.html"},"headline":"Java 垃圾回收算法之G1","description":"G1垃圾收集器详解：分区回收算法、Region划分、Mixed GC、调优参数等核心内容，附带官方文档和推荐阅读资料。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2019-01-02T10:09:50.000Z","dateModified":"2026-07-07T11:11:17.435Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"原创, G1, JVM, GC","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-gc-g1.html"},"headline":"Java 垃圾回收算法之G1","description":"G1垃圾收集器详解：分区回收算法、Region划分、Mixed GC、调优参数等核心内容，附带官方文档和推荐阅读资料。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2019-01-02T10:09:50.000Z","dateModified":"2026-07-07T11:11:17.435Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"原创, JVM, G1, GC","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -188,7 +185,7 @@
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="jiankunking"
-      src="/images/avatar/avatar.png">
+      src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
   <p class="site-author-name" itemprop="name">jiankunking</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
@@ -221,7 +218,7 @@
       </span>
   </div>
   <div class="cc-license animated" itemprop="license">
-    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons"></a>
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
   </div>
 
         </div>
@@ -342,10 +339,10 @@
 <blockquote>
 <p>有可能是全网最全的G1总结</p>
 </blockquote>
-<p>推荐阅读文章：<br><a href="/attachments/java-gc-g1/22G1GC：分区回收算法说的是什么？.pdf" target="_blank">G1GC：分区回收算法说的是什么？</a></p>
+<p>推荐阅读文章：<br><a href="/attachments/java-gc-g1/22G1GC：分区回收算法说的是什么？.pdf" target="_blank" rel="noopener noreferrer">G1GC：分区回收算法说的是什么？</a></p>
 <p>推荐阅读官方文档:<br><a href="https://docs.oracle.com/en/java/javase/20/gctuning/garbage-first-g1-garbage-collector1.html#GUID-3A99AE6C-F80A-4565-A27C-B4AEDF5CDF71">https://docs.oracle.com/en/java/javase/20/gctuning/garbage-first-g1-garbage-collector1.html#GUID-3A99AE6C-F80A-4565-A27C-B4AEDF5CDF71</a></p>
 <p>调优:<br><a href="https://docs.oracle.com/en/java/javase/20/gctuning/garbage-first-garbage-collector-tuning.html#GUID-4914A8D4-DE41-4250-B68E-816B58D4E278">https://docs.oracle.com/en/java/javase/20/gctuning/garbage-first-garbage-collector-tuning.html#GUID-4914A8D4-DE41-4250-B68E-816B58D4E278</a></p>
-<p>PDF版文档：<br><a href="/attachments/hotspot-virtual-machine-garbage-collection-tuning-guide-20.pdf" target="_blank">Hotspot Virtual Machine Garbage Collection Tuning Guide</a></p>
+<p>PDF版文档：<br><a href="/attachments/hotspot-virtual-machine-garbage-collection-tuning-guide-20.pdf" target="_blank" rel="noopener noreferrer">Hotspot Virtual Machine Garbage Collection Tuning Guide</a></p>
 <p>G1(Garbage-First)回收器是在JDK1.7中正式使用的全新垃圾回收器，G1拥有独特的垃圾回收策略，从分代上看，G1依然属于分代垃圾回收器，它会区分年代和老年代，依然有eden和survivor区，但从堆的结构上看，它并不要求整个eden区、年清代或者老年代都连续。它使用了全新的分区算法。</p>
 <p>其特点如下：</p>
 <ul>
@@ -374,13 +371,13 @@
 </ul>
 <h1 id="二、G1的新生代GC"><a href="#二、G1的新生代GC" class="headerlink" title="二、G1的新生代GC"></a>二、G1的新生代GC</h1><p>新生代GC的主要工作是回收eden区和survivor区。</p>
 <p>一旦eden区被占满，新生代GC就会启动。新生代GC收集前后的堆数据如下图所示，其中E表示eden区，S表示survivor区，O表示老年代。</p>
-<p><img data-src="/images/java-gc-g1/%E6%96%B0%E7%94%9F%E4%BB%A3.png"></p>
+<p><img src="/images/java-gc-g1/%E6%96%B0%E7%94%9F%E4%BB%A3.png" alt="新生代" loading="lazy" decoding="async" width="419" height="429"></p>
 <p>可以看到，新生代GC只处理eden和survivor区，回收后，所有的eden区都应该被清空，而survivor区会被收集一部分数据，但是应该至少仍然存在一个survivor区，类比其他的新生代收集器，这一点似乎并没有太大变化。另一个重要的变化是老年代的区域增多，因为部分survivor区或者eden区的对象可能会晋升到老年代。</p>
 <h1 id="三、G1并发标记周期"><a href="#三、G1并发标记周期" class="headerlink" title="三、G1并发标记周期"></a>三、G1并发标记周期</h1><p>G1的并发阶段和CMS有些类似，它们都是为了降低一次停顿时间，而将可以和应用程序并发执行的部分单独提取出来执行。</p>
 <blockquote>
 <p>并发标记周期针对老年代</p>
 </blockquote>
-<p><img data-src="/images/java-gc-g1/20220803-concurrent-mark-cycle-states.png"></p>
+<p><img src="/images/java-gc-g1/20220803-concurrent-mark-cycle-states.png" alt="20220803 concurrent mark cycle states" loading="lazy" decoding="async" width="492" height="954"></p>
 <p><a href="https://tschatzl.github.io/2022/08/04/concurrent-marking.html">图片来源</a></p>
 <p>并发标记周期可分为以下几步：</p>
 <ul>
@@ -406,17 +403,17 @@
 <h1 id="四、混合回收"><a href="#四、混合回收" class="headerlink" title="四、混合回收"></a>四、混合回收</h1><p><strong>在并发标记周期中，虽有部分对象被回收，但是回收的比例是非常低的。但是在并发标记周期后，G1已经明确知道哪些区域含有比较多的垃圾对象，在混合回收阶段，就可以专门针对这些区域进行回收。当然G1会优先回收垃圾比例较高的区域（回收这些区域的性价比高），这正是G1名字的由来（Garbage First Garbage Collector：译为垃圾优先的垃圾回收器），这里的垃圾优先（Garbage First）指的是回收时优先选取垃圾比例最高的区域。</strong></p>
 <p>这个阶段叫做混合回收，是因为在这个阶段，即会执行正常的年轻代GC,又会选取一些被标记的老年代区域进行回收，同时处理了新生代和老年代。</p>
 <p><font color=DeepPink><strong>混合回收会被执行多次，直到回收了足够多的内存空间</strong></font>，然后，它会触发一次新生代GC。新生代GC后，又可能会发生一次并发标记周期的处理，最后又会引起混合回收，因此整个过程可能是如下图：</p>
-<p><img data-src="/images/java-gc-g1/%E5%9B%9E%E6%94%B6%E5%BE%AA%E7%8E%AF.png"></p>
+<p><img src="/images/java-gc-g1/%E5%9B%9E%E6%94%B6%E5%BE%AA%E7%8E%AF.png" alt="回收循环" loading="lazy" decoding="async" width="201" height="268"></p>
 <h1 id="五、必要时的Full-GC"><a href="#五、必要时的Full-GC" class="headerlink" title="五、必要时的Full GC"></a>五、必要时的Full GC</h1><p>和CMS类似，并发收集让应用程序和GC线程交替工作，因此在特别繁忙的情况下无可避免的会发生回收过程中内存不足的情况，当遇到这种情况，G1会转入一个Full GC 进行回收。</p>
 <p>以下4种情况会触发这类的Full GC：</p>
 <h2 id="1、并发模式失效"><a href="#1、并发模式失效" class="headerlink" title="1、并发模式失效"></a>1、并发模式失效</h2><p>G1启动标记周期，但在Mix GC之前，老年代就被填满，这时候G1会放弃标记周期。这种情形下，需要增加堆大小，或者调整周期（例如增加线程数-XX:ConcGCThreads等）。</p>
 <p>GC日志如下的示例：</p>
-<p><img data-src="/images/java-gc-g1/%E5%B9%B6%E5%8F%91%E6%A8%A1%E5%BC%8F%E5%A4%B1%E6%95%88.png"></p>
+<p><img src="/images/java-gc-g1/%E5%B9%B6%E5%8F%91%E6%A8%A1%E5%BC%8F%E5%A4%B1%E6%95%88.png" alt="并发模式失效" loading="lazy" decoding="async" width="400" height="71"></p>
 <p>解决办法：发生这种失败意味着堆的大小应该增加了，或者G1收集器的后台处理应该更早开始，或者需要调整周期，让它运行得更快（如，增加后台处理的线程数）。</p>
 <h2 id="2、晋升失败"><a href="#2、晋升失败" class="headerlink" title="2、晋升失败"></a>2、晋升失败</h2><p>（to-space exhausted或者to-space overflow）</p>
 <p>G1收集器完成了标记阶段，开始启动混合式垃圾回收，清理老年代的分区，不过，老年代空间在垃圾回收释放出足够内存之前就会被耗尽。（G1在进行GC的时候没有足够的内存供存活对象或晋升对象使用），由此触发了Full GC。</p>
 <p>下面日志中（可以在日志中看到(to-space exhausted)或者（to-space overflow）），反应的现象是混合式GC之后紧接着一次Full GC。</p>
-<p><img data-src="/images/java-gc-g1/%E6%99%8B%E5%8D%87%E5%A4%B1%E8%B4%A5.png"></p>
+<p><img src="/images/java-gc-g1/%E6%99%8B%E5%8D%87%E5%A4%B1%E8%B4%A5.png" alt="晋升失败" loading="lazy" decoding="async" width="507" height="299"></p>
 <p>这种失败通常意味着混合式收集需要更迅速的完成垃圾收集：每次新生代垃圾收集需要处理更多老年代的分区。</p>
 <p>解决这种问题的方式是：</p>
 <ul>
@@ -429,7 +426,7 @@
 </ul>
 <h2 id="3、疏散失败"><a href="#3、疏散失败" class="headerlink" title="3、疏散失败"></a>3、疏散失败</h2><p>（to-space exhausted或者to-space overflow）</p>
 <p>进行新生代垃圾收集是，Survivor空间和老年代中没有足够的空间容纳所有的幸存对象。这种情形在GC日志中通常是：</p>
-<p><img data-src="/images/java-gc-g1/%E7%96%8F%E6%95%A3%E5%A4%B1%E8%B4%A5.png"></p>
+<p><img src="/images/java-gc-g1/%E7%96%8F%E6%95%A3%E5%A4%B1%E8%B4%A5.png" alt="疏散失败" loading="lazy" decoding="async" width="504" height="26"></p>
 <p>这条日志表明堆已经几乎完全用尽或者碎片化了。G1收集器会尝试修复这一失败，但可以预期，结果会更加恶化：G1收集器会转而使用Full GC。</p>
 <p>解决这种问题的方式是：</p>
 <ul>
@@ -522,7 +519,7 @@
 </ul>
 <p>会在文章结束，补充上JEP官网地址跟我收集的一些GC资料（包含部分paper）github地址。</p>
 <p>补一个我自己归纳的GC图：</p>
-<p><img data-src="/images/java-gc-g1/GC%E8%84%89%E7%BB%9C.png"></p>
+<p><img src="/images/java-gc-g1/GC%E8%84%89%E7%BB%9C.png" alt="GC脉络" loading="lazy" decoding="async" width="1103" height="363"></p>
 <p>各种GC算法都是围绕着，图中内容展开的，只是各自的处理方式不同而已。</p>
 <p>资料推荐：</p>
 <p>1、GC算法及paper</p>
@@ -550,11 +547,11 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
       <div>
-        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
         <span>支付宝</span>
       </div>
 
@@ -584,7 +581,7 @@
   <div class="social-list">
 
       <div class="social-item">
-          <a target="_blank" class="social-link" href="/atom.xml">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
             <span class="icon">
               <i class="fa fa-rss"></i>
             </span>
@@ -602,15 +599,15 @@
             <span class="label">WeChat</span>
           </span>
 
-          <img class="social-item-img" src="/images/wechat/wechat.jpg">
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
       </div>
   </div>
 </div>
 
           <div class="post-tags">
               <a href="/tags/%E5%8E%9F%E5%88%9B/" rel="tag"># 原创</a>
-              <a href="/tags/g1/" rel="tag"># G1</a>
               <a href="/tags/jvm/" rel="tag"># JVM</a>
+              <a href="/tags/g1/" rel="tag"># G1</a>
               <a href="/tags/gc/" rel="tag"># GC</a>
           </div>
 
@@ -659,7 +656,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">1.4m</span>
+    <span title="站点总字数">773k</span>
   </span>
 </div>
 <div class="busuanzi-count">

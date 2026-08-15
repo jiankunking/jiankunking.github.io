@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
-
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":true,"height":500},"language":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="本文介绍腾讯ES团队如何通过FST OffHeap优化，将堆内存使用率降低80%，单节点存储量从5TB提升至50TB。重点分析FST内存占用问题及零拷贝内存OffHeap的实现方案。">
 <meta property="og:type" content="article">
@@ -73,15 +73,12 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lozad.js/1.16.0/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
 <script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
 <script src="/js/third-party/search/local-search.js" defer></script>
 
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
-  <script src="/js/third-party/tags/mermaid.js" defer></script>
 
 
   <script src="/js/third-party/fancybox.js" defer></script>
@@ -94,7 +91,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption.html"},"headline":"[转]腾讯万亿级 Elasticsearch 内存效率提升解密","description":"本文介绍腾讯ES团队如何通过FST OffHeap优化，将堆内存使用率降低80%，单节点存储量从5TB提升至50TB。重点分析FST内存占用问题及零拷贝内存OffHeap的实现方案。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2023-06-03T01:17:25.000Z","dateModified":"2026-07-07T11:11:17.441Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Elasticsearch","keywords":"Performance, Java, 转载, Elasticsearch, 源码","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption.html"},"headline":"[转]腾讯万亿级 Elasticsearch 内存效率提升解密","description":"本文介绍腾讯ES团队如何通过FST OffHeap优化，将堆内存使用率降低80%，单节点存储量从5TB提升至50TB。重点分析FST内存占用问题及零拷贝内存OffHeap的实现方案。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2023-06-03T01:17:25.000Z","dateModified":"2026-07-07T11:11:17.441Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Elasticsearch","keywords":"Performance, Java, Elasticsearch, 转载, 源码","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -193,7 +190,7 @@
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="jiankunking"
-      src="/images/avatar/avatar.png">
+      src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
   <p class="site-author-name" itemprop="name">jiankunking</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
@@ -226,7 +223,7 @@
       </span>
   </div>
   <div class="cc-license animated" itemprop="license">
-    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons"></a>
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
   </div>
 
         </div>
@@ -346,7 +343,7 @@
 
 <p><strong>大家可以着重看下 FST 部分</strong></p>
 <p><font color=DeepPink> <strong>FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。</strong> </font></p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/1.png"></p>
+<p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/1.png" alt="1" loading="lazy" decoding="async" width="1200" height="591"></p>
 <p>Elasticsearch( ES）是一款功能强大的开源分布式实时搜索引擎，在日志分析(主要应用场景）、企业级搜索、时序分析等领域有广泛应用，几乎是各大公司搜索分析引擎的开源首选方案。</p>
 <p>Tencent ES 是内核级深度优化的 ES 分支，持续地进行高可用、高性能、低成本等全方位优化，已支撑的单集群规模达到千级节点、万亿级吞吐。Tencent ES 已在公司内部开源，同时也积极贡献开源社区，截止目前已向社区提交 PR 25+。</p>
 <p>腾讯联合 Elastic 官方在腾讯云上提供了内核增强版 ES 云服务，支撑公司内部云、外部云、专有云达 60PB+ 的数据存储，服务 蘑菇街、知乎、B 站、凤凰网等业内头部客户。</p>
@@ -356,15 +353,15 @@
 <li>数据量大，成本是主要诉求：我们大批线上大客户，数据量在几百 TB 甚至 PB 级，单集群占用几百台机器。如此规模的数据量，带来了较高的成本，甚至有些客户吐槽，日志的存储成本已超越产品自身的成本。</li>
 <li>数据访问冷热特性明显：如下图所示，日志访问近多远少，历史极少访问却占用大量成本。</li>
 </ul>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/2.png"></p>
-<h2 id="分析：成本瓶颈在哪里：堆内存使用率过高"><a href="#分析：成本瓶颈在哪里：堆内存使用率过高" class="headerlink" title="分析：成本瓶颈在哪里：堆内存使用率过高"></a>分析：成本瓶颈在哪里：堆内存使用率过高</h2><p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/3.png"></p>
+<p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/2.png" alt="2" loading="lazy" decoding="async" width="658" height="450"></p>
+<h2 id="分析：成本瓶颈在哪里：堆内存使用率过高"><a href="#分析：成本瓶颈在哪里：堆内存使用率过高" class="headerlink" title="分析：成本瓶颈在哪里：堆内存使用率过高"></a>分析：成本瓶颈在哪里：堆内存使用率过高</h2><p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/3.png" alt="3" loading="lazy" decoding="async" width="1200" height="286"></p>
 <p>我们对线上售卖的集群做硬件成本分析后，发现成本主要在磁盘和内存。</p>
 <p>为了降低磁盘成本，我们采取冷热分离、Rollup、备份归档、数据裁剪等多种方式降成本。在冷热分离的集群，我们通过大容量的冷存储机型，来存储历史数据，使得磁盘成本下降 60% 左右。</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/4.png"></p>
+<p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/4.png" alt="4" loading="lazy" decoding="async" width="1200" height="207"></p>
 <p>问题也随之而来：如上图所示，大容量的冷机型，存在磁盘使用率过低的问题( 40 % 以下），原因是堆内存使用率过高了( 70 % 左右），制约磁盘使用率无法提升。(其中单节点磁盘使用率 40%，约 13TB 左右，这已经是 Tencent ES 优化后的效果，源生只能支持到5 TB 左右）</p>
 <p>所以，为了提升低成本的冷机型磁盘使用率，同时也为了降低内存成本，我们需要降低 ES 的堆内存使用率。</p>
 <h2 id="堆内存使用率为什么会高？"><a href="#堆内存使用率为什么会高？" class="headerlink" title="堆内存使用率为什么会高？"></a>堆内存使用率为什么会高？</h2><p>ES 是通过 JAVA 语言编写的，在介绍如何降低堆内存使用率之前，先了解下 JAVA 的堆内存：</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/5.png"></p>
+<p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/5.png" alt="5" loading="lazy" decoding="async" width="1200" height="104"></p>
 <ul>
 <li>堆内存就是由 JVM (JAVA虚拟机）管理的内存。建立在堆内存中的对象有生命周期管理机制，由垃圾回收机时自动回收过期对象占用的内存。</li>
 <li>堆外内存是由用户程序管理的内存，堆外内存中的对象过期时，需要由用户代码显示释放。1.运营侧调整装箱策略能否解决问题？了解了 JAVA 堆内存后，我们看，能否通过调整运营策略来提升堆内存容量呢？</li>
@@ -375,7 +372,7 @@
 <h3 id="堆内存被什么数据占用了？"><a href="#堆内存被什么数据占用了？" class="headerlink" title="堆内存被什么数据占用了？"></a>堆内存被什么数据占用了？</h3><p>我们对线上集群的堆内存分布情况做统计分析后，发现绝大部分堆内存主要被 FST（ Finite State Transducer ）占用了：</p>
 <p>FST 内存占用量占分堆内存总量的 50% ~ 70%<br>FST 与 磁盘数据量成正比： 10TB 磁盘数据量，其对应的 FST 内存占用量在 10GB ~ 15GB 左右。<br>因此，我们的目标就是就是通过内核层的优化，降低 FST 的堆内存占用量。</p>
 <h1 id="方案：降低-FST-堆内存占用量"><a href="#方案：降低-FST-堆内存占用量" class="headerlink" title="方案：降低 FST 堆内存占用量"></a>方案：降低 FST 堆内存占用量</h1><h2 id="什么是-FST-？"><a href="#什么是-FST-？" class="headerlink" title="什么是 FST ？"></a>什么是 FST ？</h2><p>在介绍具体的方案前，先来了解下 FST 到底是什么。</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/6.png"></p>
+<p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/6.png" alt="6" loading="lazy" decoding="async" width="1200" height="402"></p>
 <p>如上图所示，ES 底层存储采用 Lucene（搜索引擎），写入时会根据原始数据的内容，分词，然后生成倒排索引。</p>
 <p>查询时，先通过查询倒排索引找到数据地址（DocID）），再读取原始数据（行存数据、列存数据）。</p>
 <p>但由于 Lucene 会为原始数据中的每个词都生成倒排索引，数据量较大。所以倒排索引对应的倒排表被存放在磁盘上。这样如果每次查询都直接读取磁盘上的倒排表，再查询目标关键词，会有很多次磁盘 IO，严重影响查询性能。</p>
@@ -405,7 +402,7 @@
 </li>
 </ul>
 <p>由此我们可以看出，简单的降低 FST 的堆内存使用量，并不是一个普适性的方案，需要更为通用、彻底限制住 FST 总大小的方案。</p>
-<h3 id="解决方案二：-将-FST-从堆内存（OnHeap）移到堆外内存（OffHeap）"><a href="#解决方案二：-将-FST-从堆内存（OnHeap）移到堆外内存（OffHeap）" class="headerlink" title="解决方案二： 将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap）"></a>解决方案二： 将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap）</h3><p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/7.png"></p>
+<h3 id="解决方案二：-将-FST-从堆内存（OnHeap）移到堆外内存（OffHeap）"><a href="#解决方案二：-将-FST-从堆内存（OnHeap）移到堆外内存（OffHeap）" class="headerlink" title="解决方案二： 将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap）"></a>解决方案二： 将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap）</h3><p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/7.png" alt="7" loading="lazy" decoding="async" width="1200" height="554"></p>
 <p>将 FST 从堆内存（OnHeap）移到堆外内存（OffHeap），几乎可以完全释放 FST 在堆内存占据的使用空间，这也是 JAVA 实践方向上一个普遍使用的方案。对于 JAVA 的堆内存不足，将部分内存移到堆外内存（OffHeap）的问题，ES 社区 和 其他 JAVA 系产品都有相应的解决方案。</p>
 <h4 id="1-ES-社区方案："><a href="#1-ES-社区方案：" class="headerlink" title="1.ES 社区方案："></a>1.<a href="https://jiankunking.com/significantly-decrease-your-elasticsearch-heap-memory-usage.html">ES 社区方案</a>：</h4><p>该方案是将 FST 从堆内存中剔除， 直接交由 MMAP 管理。FST 在磁盘上也是有对应的持久化文件的，Lucene 的 .tip 文件，该方案每次查询时直接通过 MMap 读取 .tip 文件，通过文件系统缓存 FST 数据。</p>
 <p>优点：这种方实现简单，代码改动量小<br>缺点：<br>我们早期也试用过这种方式实现，但是由于 MMAP 属于 page cache 可能被系统回收掉。而且 ES 的大查询也会使用大量的系统缓存导致 FST 占用的内存被冲掉，瞬间产生较多的读盘操作，从而带来性能的 N 倍损耗，容易产生查询毛刺。特别是在 SATA 盘上，严重时查询时延有 10 倍的毛刺。<br><a href="https://jiankunking.com/significantly-decrease-your-elasticsearch-heap-memory-usage.html">Lucene 8.x 、ES 7.x 后才支持该功能，存量的 6.x 用户无法使用</a>。</p>
@@ -415,7 +412,7 @@
 <p>优点：<br>相比于 ES 社区方案，我们堆外的 Cache 保证 FST 的内存空间不受系统影响。<br>相比于 HBase 方案，我们实现了更精准的数据淘汰策略，提高了内存使用率。也通过多级 Cache 解决性能问题，所以我们敢于把索引放置在堆外。</p>
 <h2 id="实现：全链路-0-拷贝-FST-OffHeap-Cache"><a href="#实现：全链路-0-拷贝-FST-OffHeap-Cache" class="headerlink" title="实现：全链路 0 拷贝 FST OffHeap Cache"></a>实现：全链路 0 拷贝 FST OffHeap Cache</h2><p>下面通过将由浅入深地向大家介绍我们实现 FST OffHeap 的过程，及其中碰见的问题和解决方案。</p>
 <p>总体架构</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/8.png"></p>
+<p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/8.png" alt="8" loading="lazy" decoding="async" width="1200" height="871"></p>
 <p>在实现 OffHeap 方案的初期，我们的架构如上图所示。</p>
 <p>先来看下源生逻辑是怎样访问 FST 的：</p>
 <ul>
@@ -425,7 +422,7 @@
 </li>
 </ul>
 <p>将两种方案做个对比，如下表所示：</p>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/9.png"></p>
+<p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/9.png" alt="9" loading="lazy" decoding="async" width="1200" height="408"></p>
 <p>那么可以总结出 Tencent ES 优化后的 FST 访问逻辑的优势和劣势：</p>
 <ul>
 <li>优势：在 OnHeap 我们用 100B 左右的 Key 置换 MB 级别的 FST，大大降低的内存占用量，使得单节点最大支持的磁盘数据量有了 5 倍以上的提升。</li>
@@ -434,14 +431,14 @@
 <p>所以，我们要对 OffHeap LRU Cache 的读写路径做优化，减少 Copy 次数，提升读写性能。</p>
 <p>具体的实现方案是全链路零拷贝 OffHeap FST 访问逻辑。</p>
 <h3 id="全链路零拷贝-OffHeap-FST-访问逻辑"><a href="#全链路零拷贝-OffHeap-FST-访问逻辑" class="headerlink" title="全链路零拷贝 OffHeap FST 访问逻辑"></a>全链路零拷贝 OffHeap FST 访问逻辑</h3><p>ES 源生逻辑访问 FST 只支持堆内的操作，怎样做到让它能直接访问堆外的数据呢？</p>
-<p>为此，我们做了两方面优化：<br><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/10.png"></p>
+<p>为此，我们做了两方面优化：<br><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/10.png" alt="10" loading="lazy" decoding="async" width="1200" height="781"></p>
 <ul>
 <li>OffHeap LRU Cache： 改造读数据逻辑，Cache 只返回数据地址，封装为一个 Buffer，堆内只存数据地址，这样就把 FST 的访问从先拷贝至 OnHeap 再访问优化为直读 OffHeap 内存。</li>
 <li>ES：重构 FST 读写逻辑，实现 FST 访问直读 OffHeap 内存：</li>
 <li>FST 抽象为一个 FST Buffer，对外提供 FST 形式的各种访问接口。内部实现按 FST 的数据结构读取 OffHeap Buffer的逻辑，作为访问 OffHeap FST 的代理。</li>
 <li>将 ES 访问 FST 的所有链路全部改造为 FST Buffer 接口的形式，优化 FST 的读写路径如下所示：</li>
 </ul>
-<p><img data-src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/11.png"></p>
+<p><img src="/images/tencent-trillion-level-elasticsearch-memory-efficiency-improves-decryption/11.png" alt="11" loading="lazy" decoding="async" width="1200" height="630"></p>
 <p>剩余部分略</p>
 <h1 id="原文地址"><a href="#原文地址" class="headerlink" title="原文地址"></a>原文地址</h1><p><a href="https://cloud.tencent.com/developer/article/1636527">https://cloud.tencent.com/developer/article/1636527</a></p>
 
@@ -459,11 +456,11 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
       <div>
-        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
         <span>支付宝</span>
       </div>
 
@@ -493,7 +490,7 @@
   <div class="social-list">
 
       <div class="social-item">
-          <a target="_blank" class="social-link" href="/atom.xml">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
             <span class="icon">
               <i class="fa fa-rss"></i>
             </span>
@@ -511,7 +508,7 @@
             <span class="label">WeChat</span>
           </span>
 
-          <img class="social-item-img" src="/images/wechat/wechat.jpg">
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
       </div>
   </div>
 </div>
@@ -519,8 +516,8 @@
           <div class="post-tags">
               <a href="/tags/performance/" rel="tag"># Performance</a>
               <a href="/tags/java/" rel="tag"># Java</a>
-              <a href="/tags/%E8%BD%AC%E8%BD%BD/" rel="tag"># 转载</a>
               <a href="/tags/elasticsearch/" rel="tag"># Elasticsearch</a>
+              <a href="/tags/%E8%BD%AC%E8%BD%BD/" rel="tag"># 转载</a>
               <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
           </div>
 
@@ -569,7 +566,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">1.4m</span>
+    <span title="站点总字数">773k</span>
   </span>
 </div>
 <div class="busuanzi-count">

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
-
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":true,"height":500},"language":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="注意:原文发表时间是14年,所以实现有可能与新版不一致.原文地址:https:&#x2F;&#x2F;www.elastic.co&#x2F;cn&#x2F;blog&#x2F;found-elasticsearch-top-down">
 <meta property="og:type" content="article">
@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/elasticsearch-top-down/index-buffer.svg">
 <meta property="og:image" content="https://jiankunking.com/images/elasticsearch-top-down/lucene-search-tree.svg">
 <meta property="article:published_time" content="2023-03-19T08:17:28.000Z">
-<meta property="article:modified_time" content="2026-07-07T11:11:17.428Z">
+<meta property="article:modified_time" content="2026-08-15T03:54:46.763Z">
 <meta property="article:author" content="jiankunking">
 <meta property="article:tag" content="Architecture">
 <meta property="article:tag" content="Elasticsearch">
@@ -67,15 +67,12 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lozad.js/1.16.0/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
 <script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
 <script src="/js/third-party/search/local-search.js" defer></script>
 
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
-  <script src="/js/third-party/tags/mermaid.js" defer></script>
 
 
   <script src="/js/third-party/fancybox.js" defer></script>
@@ -88,7 +85,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/elasticsearch-from-the-top-down.html"},"headline":"[译]自上而下认识Elasticsearch","description":"注意:原文发表时间是14年,所以实现有可能与新版不一致.原文地址:https://www.elastic.co/cn/blog/found-elasticsearch-top-down","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2023-03-19T08:17:28.000Z","dateModified":"2026-07-07T11:11:17.428Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Elasticsearch","keywords":"原创, Elasticsearch, Lucene, Architecture","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/elasticsearch-from-the-top-down.html"},"headline":"[译]自上而下认识Elasticsearch","description":"注意:原文发表时间是14年,所以实现有可能与新版不一致.原文地址:https://www.elastic.co/cn/blog/found-elasticsearch-top-down","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2023-03-19T08:17:28.000Z","dateModified":"2026-08-15T03:54:46.763Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Elasticsearch","keywords":"原创, Elasticsearch, Lucene, Architecture","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -187,7 +184,7 @@
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="jiankunking"
-      src="/images/avatar/avatar.png">
+      src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
   <p class="site-author-name" itemprop="name">jiankunking</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
@@ -220,7 +217,7 @@
       </span>
   </div>
   <div class="cc-license animated" itemprop="license">
-    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons"></a>
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
   </div>
 
         </div>
@@ -292,7 +289,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-07-07 19:11:17" itemprop="dateModified" datetime="2026-07-07T19:11:17+08:00">2026-07-07</time>
+      <time title="修改时间：2026-08-15 11:54:46" itemprop="dateModified" datetime="2026-08-15T11:54:46+08:00">2026-08-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -318,14 +315,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>8k</span>
+      <span>6.8k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>7 分钟</span>
+      <span>6 分钟</span>
     </span>
 </div>
 
@@ -344,7 +341,7 @@
 <p>要查看所有这些如何在分布式环境中组合在一起,从另一端开始更容易:从用户的角度观察,从”顶部”开始.</p>
 <p>我们将看看当用户向Elasticsearch发送索引和搜索请求时会发生什么,以及这些请求如何在网络中波动,直到我们到达前面介绍的较低级别的结构.首先,我们将查看接受请求的节点及其作为协调器的角色.我们将看看它如何将请求路由到分片的主索引请求,以及如何在副本之间平衡搜索请求的负载.</p>
 <p>在被路由到正确的分片之后,我们将看看在分片级别发生了什么——例如什么构成了”成功”的索引操作,以及将文档和搜索转换为它们的Lucene等价物所需的转换.对于搜索请求,我们还将查看分散&#x2F;聚集过程,这可能发生在多轮中.</p>
-<h1 id="A-Cluster-of-Nodes"><a href="#A-Cluster-of-Nodes" class="headerlink" title="A Cluster of Nodes"></a>A Cluster of Nodes</h1><p>为了描述Elasticsearch的工作原理,我们需要某种集群拓扑.图中的集群描述了我们假设的集群类型.我们有一个带有两个分片的Elasticsearch索引,为了可用性在两个不同”区域”的节点之间进行复制——只有主节点在三个区域中运行.此外,我们有两个客户端节点,我们将通过它们发送请求.<br><img data-src="/images/elasticsearch-top-down/cluster-topology.svg" alt="Sample Cluster Topology"></p>
+<h1 id="A-Cluster-of-Nodes"><a href="#A-Cluster-of-Nodes" class="headerlink" title="A Cluster of Nodes"></a>A Cluster of Nodes</h1><p>为了描述Elasticsearch的工作原理,我们需要某种集群拓扑.图中的集群描述了我们假设的集群类型.我们有一个带有两个分片的Elasticsearch索引,为了可用性在两个不同”区域”的节点之间进行复制——只有主节点在三个区域中运行.此外,我们有两个客户端节点,我们将通过它们发送请求.<br><img src="/images/elasticsearch-top-down/cluster-topology.svg" alt="Sample Cluster Topology" loading="lazy" decoding="async"></p>
 <p>集群中的不同节点可以具有不同的角色(data and&#x2F;or master – or none as a client)以及属性(例如区域&#x2F;zone).我们有数据节点、主节点和客户端节点——在不同的区域,即具有不同的 node.zone 属性.本文中我们关注数据节点.</p>
 <h1 id="Request-Coordinators"><a href="#Request-Coordinators" class="headerlink" title="Request Coordinators"></a>Request Coordinators</h1><p>当您向Elasticsearch中的节点发送请求时,该节点将成为该请求的协调器.它将决定将请求路由到哪些节点和分片,如何合并不同节点的响应,以及决定请求何时”完成”.虽然Elasticsearch会为您透明地处理这个问题,但高级分区方案需要有关内部处理和路由的知识.上述给定集群,客户端节点将充当协调器.</p>
 <p><font color=DeepPink><strong>为了能够充当协调器,节点需要知道集群的状态.集群状态被复制到集群中的每个节点.它具有分片路由表(哪些节点托管哪些索引和分片)、关于每个节点的元数据(例如它运行的位置和节点具有的属性)以及索引映射(其中可以包含重要的路由配置)和模板.集群状态被复制到所有节点是映射需要合理大小的一个重要原因.</strong></font></p>
@@ -365,10 +362,10 @@
 <li>什么时候可以整体完成批量请求？</li>
 </ul>
 <h1 id="Routing"><a href="#Routing" class="headerlink" title="Routing"></a>Routing</h1><p>路由指定哪些文档去哪里,因此是请求如何在Elasticsearch内部流动的重要部分,包括搜索和索引请求.它是设计适当的数据流和索引分区不可或缺的一部分.在这里,我们专注于机制,因为索引和分片设计是一个大话题.</p>
-<p><img data-src="/images/elasticsearch-top-down/routing.png" alt="routers"></p>
+<p><img src="/images/elasticsearch-top-down/routing.png" alt="routers" loading="lazy" decoding="async" width="1390" height="457"></p>
 <h1 id="Primary-Concerns"><a href="#Primary-Concerns" class="headerlink" title="Primary Concerns"></a>Primary Concerns</h1><p>当索引操作被路由时,它被转发到该分片的”主”.一个分片只有一个”主”,以及零个或多个副本.在这方面,primary可以被认为是分片的”master”,而replicas可以被认为是”slaves”.</p>
 <p>主节点将充当该特定分片的索引操作的协调器.它会将索引操作发送到相关的副本,并等待所需的数量在指示成功之前得到确认.</p>
-<p><img data-src="/images/elasticsearch-top-down/index-sequence.svg" alt="Sequence of an Index Operation"></p>
+<p><img src="/images/elasticsearch-top-down/index-sequence.svg" alt="Sequence of an Index Operation" loading="lazy" decoding="async"></p>
 <p>当足够数量的副本已确认时,主副本将成功报告回原始请求协调器,在我们的例子中是客户端节点.对于”quorum”默认的写一致性,三个操作中的两个就足够了,所以不需要等到第三个操作才传递成功.</p>
 <p>协调器&#x2F;客户端节点并行地向分片的主节点发送操作.当所有操作都返回后,最终返回发起的批量请求.</p>
 <p>“成功”操作的定义值得研究.</p>
@@ -377,7 +374,7 @@
 <p><font color=DeepPink><strong>在正常操作期间,Elasticsearch不会复制已经构建的索引片段(即段),而是重新应用相同更改所需的操作.(另一方面,在恢复或分片迁移期间,段是被复制的.)因此,所有副本本质上都在以相同的CPU成本执行相同数量的工作.副本不能”重用”主副本已经完成的工作.这是添加副本会降低整体索引吞吐量的一个重要原因——您需要等待更多节点确认操作.此外,您不能期望拥有”只写”节点和”只读”节点.</strong></font></p>
 <h1 id="All-in-a-Shard"><a href="#All-in-a-Shard" class="headerlink" title="All in a Shard"></a>All in a Shard</h1><p>虽然在分片的事务日志中放置一个操作是一个很好的开始,但最终操作的效果应该在索引结构中结束.在上一篇文章中,我们介绍了倒排索引的工作原理及其构建方式.我们没有谈及映射,而是着重于分片是Lucene索引这一事实.</p>
 <p><font color=DeepPink><strong>Lucene没有映射(mapping)的概念,Lucene索引或文档也没有类型.在Lucene中,文档是无类型的并且具有任意数量的字段.这些字段具有特定类型(string&#x2F;numeric)和属性(stored&#x2F;indexed&#x2F;…).映射是一个很好的抽象,用于表达如何将源文档转换为具有一堆字段的Lucene文档.映射具有类型、动态属性、多字段、脚本转换等概念.然而,Lucene对这些一无所知.只要Elasticsearch以Lucene期望的方式生成文档,Lucene就会很高兴.就Lucene而言,_all、_source 甚至 _type 等字段没有什么特别之处.</strong></font></p>
-<p><img data-src="/images/elasticsearch-top-down/mapping-transform.svg" alt="Elasticsearchtransforms a source document to aLucenedocument"></p>
+<p><img src="/images/elasticsearch-top-down/mapping-transform.svg" alt="Elasticsearchtransforms a source document to aLucenedocument" loading="lazy" decoding="async"></p>
 <p>许多人将Elasticsearch索引比作数据库,将类型比作表.就我个人而言,我认为这种比较会导致更多的混乱而不是清晰.对于两个不同的表,您可以合理地假设这些表在存储方式或存储位置方面没有任何共同之处.相反,您可以构建映射,使Elasticsearch生成名称相同但类型不同的字段.由于一切都是同一个倒排索引中的一堆术语,这可能会导致问题.如果您的过滤器对于某些文档是数字的,而对于其他文档是字符串的,您最终会得到错误或可能是意外的结果.对于具有相同类型(例如字符串)但具有不同分析器的字段也是如此.动态映射非常适合快速启动开发,但您可能不想完全依赖它.</p>
 <h1 id="Index-Request-Summary"><a href="#Index-Request-Summary" class="headerlink" title="Index Request Summary"></a>Index Request Summary</h1><p>总结索引请求的流程,会发生以下情况:</p>
 <ol>
@@ -388,7 +385,7 @@
 <li>当所有子操作(例如批量请求)都成功时,协调器返回成功.</li>
 </ol>
 <p>发生这种情况时,每个分片将持续处理其文档队列,将输入文档转换为Lucene文档.然后将它们添加到索引缓冲区,最终刷新到一个新段中,甚至稍后完全提交.何时发生取决于托管分片的节点.刷新在节点之间不同步,因此搜索者可以在刷新传播时短暂地看到单独的”时间线”.</p>
-<p><img data-src="/images/elasticsearch-top-down/index-buffer.svg" alt="Elasticsearchtransforms a source document to aLucenedocument"></p>
+<p><img src="/images/elasticsearch-top-down/index-buffer.svg" alt="Elasticsearchtransforms a source document to aLucenedocument" loading="lazy" decoding="async"></p>
 <h1 id="Search-Requests"><a href="#Search-Requests" class="headerlink" title="Search Requests"></a>Search Requests</h1><p>我们已经看到将具有索引操作的请求转换为实际索引更改所需的来回次数.搜索请求的过程在某些方面相似,但在许多其他方面有所不同.</p>
 <p><font color=DeepPink><strong>与索引请求一样,必须路由搜索请求.如果没有指定路由,搜索将命中所有不同的分片——如果指定了路由,则搜索将命中特定的分片.</strong></font></p>
 <p>识别出相关分片后,协调器将在该分片的可用副本中进行选择,以尝试平衡负载.</p>
@@ -405,13 +402,13 @@
 <blockquote>
 <p>For example, the match family of queries have no Lucene counterpart. They will process the query text according to the fields’ mappings, and compose a Lucene query.</p>
 </blockquote>
-<p><img data-src="/images/elasticsearch-top-down/lucene-search-tree.svg"></p>
+<p><img src="/images/elasticsearch-top-down/lucene-search-tree.svg" alt="lucene search tree" loading="lazy" decoding="async"></p>
 <p>请注意,根据为各个字段配置的分析器,查询文本”Holy Grail”已被标记化和小写.当没有得到你想要的结果时,一个常见的原因是索引和查询时间文本处理不兼容.例如,术语查询不会将Holy Grail 转换为holy, grail,因此不会匹配.</p>
 <h1 id="Searching-a-Shard"><a href="#Searching-a-Shard" class="headerlink" title="Searching a Shard"></a>Searching a Shard</h1><p>此时,我们已经准备好在每个分片上执行的Lucene查询运算符.我们处于搜索阶段的第一阶段——即”查询”,然后是”获取”——所以我们需要以下内容:</p>
 <ul>
 <li>前十位文档ID的列表.(不是整个文档)这些将由协调器合并,协调器将执行第二个”获取”阶段以获取实际文档.</li>
 <li>所有命中的迭代器(尽管我们不需要所有命中的分数),用于聚合目的.</li>
-<li>一种在给定文档ID的情况下快速查找书籍的<font color=DeepPink><strong>author_id</strong></font>的方法:<a href="elastic.co/cn/blog/found-sizing-elasticsearch#field-data-and-document-values">a field cache or document values</a>.</li>
+<li>一种在给定文档ID的情况下快速查找书籍的<font color=DeepPink><strong>author_id</strong></font>的方法:<a href="https://www.elastic.co/cn/blog/found-sizing-elasticsearch#field-data-and-document-values">a field cache or document values</a>.</li>
 <li>前100名作者.(注意<font color=DeepPink><strong>shard_size</strong></font>为100)</li>
 </ul>
 <table>
@@ -479,11 +476,11 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信">
+        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
       <div>
-        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝">
+        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
         <span>支付宝</span>
       </div>
 
@@ -513,7 +510,7 @@
   <div class="social-list">
 
       <div class="social-item">
-          <a target="_blank" class="social-link" href="/atom.xml">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
             <span class="icon">
               <i class="fa fa-rss"></i>
             </span>
@@ -531,7 +528,7 @@
             <span class="label">WeChat</span>
           </span>
 
-          <img class="social-item-img" src="/images/wechat/wechat.jpg">
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
       </div>
   </div>
 </div>
@@ -588,7 +585,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">1.4m</span>
+    <span title="站点总字数">773k</span>
   </span>
 </div>
 <div class="busuanzi-count">
