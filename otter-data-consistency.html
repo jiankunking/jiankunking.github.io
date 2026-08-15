@@ -30,7 +30,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/otter-data-consistency/%E5%88%86%E5%B8%83%E5%BC%8FPermit.png">
 <meta property="og:image" content="https://jiankunking.com/images/otter-data-consistency/%E6%97%B6%E9%97%B4%E4%BA%A4%E9%9B%86%E8%A1%A5%E6%95%91.jpg">
 <meta property="article:published_time" content="2019-02-05T13:24:20.000Z">
-<meta property="article:modified_time" content="2026-07-07T11:11:17.438Z">
+<meta property="article:modified_time" content="2026-08-15T23:16:20.024Z">
 <meta property="article:author" content="jiankunking">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="Otter">
@@ -80,7 +80,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/otter-data-consistency.html"},"headline":"[转]Otter数据一致性","description":"Otter数据一致性实现思路分析，包括多地修改、同时变更场景下的事前控制与事后处理方案。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2019-02-05T13:24:20.000Z","dateModified":"2026-07-07T11:11:17.438Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"MySQL","keywords":"MySQL, Otter","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/otter-data-consistency.html"},"headline":"[转]Otter数据一致性","description":"Otter数据一致性实现思路分析，包括多地修改、同时变更场景下的事前控制与事后处理方案。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2019-02-05T13:24:20.000Z","dateModified":"2026-08-15T23:16:20.024Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"MySQL","keywords":"MySQL, Otter","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -172,7 +172,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E9%80%89%E5%9E%8B%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">技术选型分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8B%E5%89%8D%E6%8E%A7%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">事前控制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%88%E7%9C%8B%EF%BC%9A-A%E5%9C%B0%E9%83%A8%E7%BD%B2leader-follower%E9%9B%86%E7%BE%A4%EF%BC%8CB%E5%9C%B0%E9%83%A8%E7%BD%B2observer"><span class="nav-number">2.1.</span> <span class="nav-text">1. 先看： A地部署leader&#x2F;follower集群，B地部署observer.</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%86%8D%E7%9C%8B%EF%BC%9AA%E5%9C%B0%E5%92%8CB%E5%9C%B0%E7%BB%84%E6%88%90leader-follower"><span class="nav-number">2.2.</span> <span class="nav-text">2. 再看：A地和B地组成leader&#x2F;follower</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8B%E5%90%8E%E5%A4%84%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">事后处理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF%E8%A1%A5%E6%95%91-%E5%9F%BA%E4%BA%8Etrusted-source%E7%9A%84%E6%94%B9%E8%BF%9B%E7%89%88"><span class="nav-number">4.</span> <span class="nav-text">单向回环补救 (基于trusted source的改进版)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E4%BA%A4%E9%9B%86%E8%A1%A5%E6%95%91"><span class="nav-number">5.</span> <span class="nav-text">时间交集补救</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E9%80%89%E5%9E%8B%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">技术选型分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E5%89%8D%E6%8E%A7%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">事前控制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%85%88%E7%9C%8B%EF%BC%9A-A%E5%9C%B0%E9%83%A8%E7%BD%B2leader-follower%E9%9B%86%E7%BE%A4%EF%BC%8CB%E5%9C%B0%E9%83%A8%E7%BD%B2observer"><span class="nav-number">2.1.</span> <span class="nav-text">1. 先看： A地部署leader&#x2F;follower集群，B地部署observer.</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%86%8D%E7%9C%8B%EF%BC%9AA%E5%9C%B0%E5%92%8CB%E5%9C%B0%E7%BB%84%E6%88%90leader-follower"><span class="nav-number">2.2.</span> <span class="nav-text">2. 再看：A地和B地组成leader&#x2F;follower</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E5%90%8E%E5%A4%84%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">事后处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF%E8%A1%A5%E6%95%91-%E5%9F%BA%E4%BA%8Etrusted-source%E7%9A%84%E6%94%B9%E8%BF%9B%E7%89%88"><span class="nav-number">4.</span> <span class="nav-text">单向回环补救 (基于trusted source的改进版)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E4%BA%A4%E9%9B%86%E8%A1%A5%E6%95%91"><span class="nav-number">5.</span> <span class="nav-text">时间交集补救</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -284,7 +284,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-07-07 19:11:17" itemprop="dateModified" datetime="2026-07-07T19:11:17+08:00">2026-07-07</time>
+      <time title="修改时间：2026-08-16 07:16:20" itemprop="dateModified" datetime="2026-08-16T07:16:20+08:00">2026-08-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -333,7 +333,7 @@
 <blockquote>
 <p>Otter数据一致性实现思路分析</p>
 </blockquote>
-<h1 id="技术选型分析"><a href="#技术选型分析" class="headerlink" title="技术选型分析"></a>技术选型分析</h1><p>需要处理一致性的业务场景：</p>
+<h2 id="技术选型分析"><a href="#技术选型分析" class="headerlink" title="技术选型分析"></a>技术选型分析</h2><p>需要处理一致性的业务场景：</p>
 <ul>
 <li>多地修改 (双A机房)</li>
 <li>同一记录，同时变更</li>
@@ -345,9 +345,9 @@
 <li>事前控制：比如paoxs协议，在多地数据写入各自数据存储之前，就已经决定好最后保留哪条记录</li>
 <li>事后处理：指A&#x2F;B两地修改的数据，已经保存到数据库之后，通过数据同步后保证两数据的一致性</li>
 </ul>
-<h1 id="事前控制"><a href="#事前控制" class="headerlink" title="事前控制"></a>事前控制</h1><p>paxos协议，相信大家研究的人也比较多，但是它有一些局限性，就拿zookeeper来说，它使用了paxos的一个变种，但基本原理还是相似的。</p>
+<h2 id="事前控制"><a href="#事前控制" class="headerlink" title="事前控制"></a>事前控制</h2><p>paxos协议，相信大家研究的人也比较多，但是它有一些局限性，就拿zookeeper来说，它使用了paxos的一个变种，但基本原理还是相似的。</p>
 <p>我们拿zookeeper的几种部署模式来看：</p>
-<h2 id="1-先看：-A地部署leader-follower集群，B地部署observer"><a href="#1-先看：-A地部署leader-follower集群，B地部署observer" class="headerlink" title="1. 先看： A地部署leader&#x2F;follower集群，B地部署observer."></a>1. 先看： A地部署leader&#x2F;follower集群，B地部署observer.</h2><p>此时A地收到数据后，需要的网络操作基本为同机房的leader&#x2F;follower的paxos协议，耗时基本可控</p>
+<h3 id="1-先看：-A地部署leader-follower集群，B地部署observer"><a href="#1-先看：-A地部署leader-follower集群，B地部署observer" class="headerlink" title="1. 先看： A地部署leader&#x2F;follower集群，B地部署observer."></a>1. 先看： A地部署leader&#x2F;follower集群，B地部署observer.</h3><p>此时A地收到数据后，需要的网络操作基本为同机房的leader&#x2F;follower的paxos协议，耗时基本可控</p>
 <p>此时B地收到数据后，需要的网络操作为：</p>
 <ul>
 <li>B地接收到请求，转发给A地，一次机房网络</li>
@@ -355,7 +355,7 @@
 <li>A地leader将投票的结构，反馈给B地，一次机房网络.</li>
 </ul>
 <p>这样一来，也就是说，事务时间 &#x3D; 一次异地机房RTT + 同机房paxos算法耗时. 比如中美网络延迟200ms，那事务时间基本就是200ms+ 。 但此时，B地机房基本是一个只读镜像，读数据也有延迟，其系统写扩展性全在A机房，某一天当A机房不够用时，A机房进行拆分，就会遇到下一个问题。</p>
-<h2 id="2-再看：A地和B地组成leader-follower"><a href="#2-再看：A地和B地组成leader-follower" class="headerlink" title="2. 再看：A地和B地组成leader&#x2F;follower"></a>2. 再看：A地和B地组成leader&#x2F;follower</h2><p>此时A地收到数据后，需要的网络操作为：(假如A不是leader，B是leader)</p>
+<h3 id="2-再看：A地和B地组成leader-follower"><a href="#2-再看：A地和B地组成leader-follower" class="headerlink" title="2. 再看：A地和B地组成leader&#x2F;follower"></a>2. 再看：A地和B地组成leader&#x2F;follower</h3><p>此时A地收到数据后，需要的网络操作为：(假如A不是leader，B是leader)</p>
 <ul>
 <li>首先需要发送数据到B，一次机房网络</li>
 <li>B收到A的提议数据后，发起一个投票到A，一次机房网络</li>
@@ -364,7 +364,7 @@
 </ul>
 <p>这种理想无冲突的情况，总共会有2次RTT，如果优化A发起的提议自己默认投票，不返回给A进行投票，可以优化为1次RTT. 针对中美网络延迟200ms，那事务时间基本是200ms+. 如果A地和B地同时写入，那事务时间可能会翻倍。</p>
 <p>总结：如果你能接受事务时间的影响(比如你A地和B地的网络延迟只有10ms)，那是可以考虑选择paxos协议. 但目前otter所要解决的需求为中美200ms的RTT，暂时无法接收paxos协议来解决一致性问题.</p>
-<h1 id="事后处理"><a href="#事后处理" class="headerlink" title="事后处理"></a>事后处理</h1><p><font color=DeepPink><strong>针对事后处理，不管哪种方案，一定会是一个最终一致性，因为在你做处理前，A地和B地的数据内容已经不一致了，你不论选择任何一个版本，对另一边来说都是一个数据版本丢失，最终一致性。</strong></font></p>
+<h2 id="事后处理"><a href="#事后处理" class="headerlink" title="事后处理"></a>事后处理</h2><p><font color=DeepPink><strong>针对事后处理，不管哪种方案，一定会是一个最终一致性，因为在你做处理前，A地和B地的数据内容已经不一致了，你不论选择任何一个版本，对另一边来说都是一个数据版本丢失，最终一致性。</strong></font></p>
 <p>针对数据最终一致性处理，GoldenGate文档中提到了几种case :</p>
 <ul>
 <li>trusted source. 信任站点，数据出现冲突时，永远以某一边为准覆盖另一边</li>
@@ -374,7 +374,7 @@
 <p>针对trusted source&#x2F;timestamp模型，一定需要建立一个冲突数据kv表，(比如trusted source场景，如果B地修改了记录，而A地没修改此记录，那B地可以覆盖A地，即使A地是trusted source) ，对应冲突数据KV表的插入和删除，如果插入和删除不及时，就会有各种各样的误判，导致数据不一致。</p>
 <p>举个插入不及时的case: 比如A地和B地进行双向同步，同时修改了同一记录，但A地的binlog解析器因为异常挂起了，导致构建冲突数据KV表数据延迟了，而此时B地的数据就会认为无冲突，直接覆盖了A，即使A地是trusted source，然后A地数据解析恢复后，同步到B地时，因为A是trusted source，就会覆盖B地的数据，最后就是A和B两地各为两边之前的版本，导致数据不一致。</p>
 <p>因为GoldenGate外部文档针对双A机房同步，数据一致性处理描述的比较少，我只能推测到这，基本结论是风险太大，所以otter需要有一种完全可靠的数据一致性方案，这也是本文讨论的重点。</p>
-<h1 id="单向回环补救-基于trusted-source的改进版"><a href="#单向回环补救-基于trusted-source的改进版" class="headerlink" title="单向回环补救 (基于trusted source的改进版)"></a>单向回环补救 (基于trusted source的改进版)</h1><p><img src="/images/otter-data-consistency/%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF.png" alt="单向回环" loading="lazy" decoding="async" width="589" height="239"></p>
+<h2 id="单向回环补救-基于trusted-source的改进版"><a href="#单向回环补救-基于trusted-source的改进版" class="headerlink" title="单向回环补救 (基于trusted source的改进版)"></a>单向回环补救 (基于trusted source的改进版)</h2><p><img src="/images/otter-data-consistency/%E5%8D%95%E5%90%91%E5%9B%9E%E7%8E%AF.png" alt="单向回环" loading="lazy" decoding="async" width="589" height="239"></p>
 <p>思路：最终一致性</p>
 <p>适用场景： A地和B地数据不对等，比如A地为主，写入量比较高，B地有少量的数据写入</p>
 <p>单向回环流程：(比如图中以HZ为trusted source站点)</p>
@@ -397,7 +397,7 @@
 <p>同步全局控制方案：(分布式Permit)</p>
 <p><img src="/images/otter-data-consistency/%E5%88%86%E5%B8%83%E5%BC%8FPermit.png" alt="分布式Permit" loading="lazy" decoding="async" width="567" height="271"></p>
 <p>注意：A,B,C三点状态都正常才允许进行同步(解决数据单向覆盖)。 任何一边的canal不正常工作，都应该停掉整个双向同步，及时性越高越好。</p>
-<h1 id="时间交集补救"><a href="#时间交集补救" class="headerlink" title="时间交集补救"></a>时间交集补救</h1><p><img src="/images/otter-data-consistency/%E6%97%B6%E9%97%B4%E4%BA%A4%E9%9B%86%E8%A1%A5%E6%95%91.jpg" alt="时间交集补救" loading="lazy" decoding="async" width="608" height="440"></p>
+<h2 id="时间交集补救"><a href="#时间交集补救" class="headerlink" title="时间交集补救"></a>时间交集补救</h2><p><img src="/images/otter-data-consistency/%E6%97%B6%E9%97%B4%E4%BA%A4%E9%9B%86%E8%A1%A5%E6%95%91.jpg" alt="时间交集补救" loading="lazy" decoding="async" width="608" height="440"></p>
 <p>算法描述：</p>
 <ol>
 <li>首先定义两个时间概念</li>

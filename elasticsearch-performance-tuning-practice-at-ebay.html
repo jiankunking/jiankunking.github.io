@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://jiankunking.com/images/elasticsearch-performance-tuning-practice-at-ebay/Picture28.png">
 <meta property="og:image" content="https://jiankunking.com/images/elasticsearch-performance-tuning-practice-at-ebay/Picture29.png">
 <meta property="article:published_time" content="2021-02-21T08:03:39.000Z">
-<meta property="article:modified_time" content="2026-07-07T11:11:17.429Z">
+<meta property="article:modified_time" content="2026-08-15T23:16:19.999Z">
 <meta property="article:author" content="jiankunking">
 <meta property="article:tag" content="Cluster">
 <meta property="article:tag" content="Elasticsearch">
@@ -89,7 +89,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/elasticsearch-performance-tuning-practice-at-ebay.html"},"headline":"[译]eBay Elasticsearch性能调优实践","description":"翻译自：Elasticsearch Performance Tuning Practice at eBay地址：https://tech.ebayinc.com/engineering/elasticsearch-performance-tuning-practice-at-ebay","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2021-02-21T08:03:39.000Z","dateModified":"2026-07-07T11:11:17.429Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Elasticsearch","keywords":"Performance, 原创, Elasticsearch, 翻译, Cluster, Tuning","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/elasticsearch-performance-tuning-practice-at-ebay.html"},"headline":"[译]eBay Elasticsearch性能调优实践","description":"翻译自：Elasticsearch Performance Tuning Practice at eBay地址：https://tech.ebayinc.com/engineering/elasticsearch-performance-tuning-practice-at-ebay","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2021-02-21T08:03:39.000Z","dateModified":"2026-08-15T23:16:19.999Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Elasticsearch","keywords":"Performance, 原创, Elasticsearch, 翻译, Cluster, Tuning","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -181,7 +181,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8C%91%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">挑战</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">2.</span> <span class="nav-text">解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%A7%E5%B0%8F"><span class="nav-number">2.1.</span> <span class="nav-text">大小</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E7%B4%A2%E5%BC%95%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.2.</span> <span class="nav-text">优化索引设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E4%BC%98%E7%B4%A2%E5%BC%95%E6%80%A7%E8%83%BD"><span class="nav-number">2.3.</span> <span class="nav-text">调优索引性能</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E4%BC%98%E6%90%9C%E7%B4%A2%E6%80%A7%E8%83%BD"><span class="nav-number">2.4.</span> <span class="nav-text">调优搜索性能</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="nav-number">3.</span> <span class="nav-text">性能测试</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%91%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">挑战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">2.</span> <span class="nav-text">解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%A7%E5%B0%8F"><span class="nav-number">2.1.</span> <span class="nav-text">大小</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E7%B4%A2%E5%BC%95%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.2.</span> <span class="nav-text">优化索引设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E4%BC%98%E7%B4%A2%E5%BC%95%E6%80%A7%E8%83%BD"><span class="nav-number">2.3.</span> <span class="nav-text">调优索引性能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E4%BC%98%E6%90%9C%E7%B4%A2%E6%80%A7%E8%83%BD"><span class="nav-number">2.4.</span> <span class="nav-text">调优搜索性能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="nav-number">3.</span> <span class="nav-text">性能测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -293,7 +293,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-07-07 19:11:17" itemprop="dateModified" datetime="2026-07-07T19:11:17+08:00">2026-07-07</time>
+      <time title="修改时间：2026-08-16 07:16:19" itemprop="dateModified" datetime="2026-08-16T07:16:19+08:00">2026-08-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -343,13 +343,13 @@
 
 <p>Elasticsearch是一个基于Apache Lucene的开源搜索和分析引擎，允许用户近实时地存储、搜索和分析数据。在eBay上承载Elasticsearch集群的平台Pronto，使eBay内部客户可以轻松地部署、操作和扩展Elasticsearch，以实现全文搜索、实时分析和日志&#x2F;事件监控。现在有60多个Elasticsearch集群和2000多个节点由Pronto管理。每天提取的文档达到180亿，每天的搜索请求达到35亿次。该平台提供了从供应、补救、安全性到监控、警报和诊断的全方位服务。</p>
 <p>虽然Elasticsearch是为快速查询而设计的，但性能很大程度上取决于应用于应用程序的场景、要索引的数据量以及应用程序和用户查询数据的频率。本文总结了这些挑战，以及Pronto团队为解决这些挑战而构建的过程和工具。本文还展示了对各种配置进行基准测试的某些结果，以作说明。</p>
-<h1 id="挑战"><a href="#挑战" class="headerlink" title="挑战"></a>挑战</h1><p>迄今为止观察到的Pronto&#x2F;Elasticsearch面临的挑战包括:</p>
+<h2 id="挑战"><a href="#挑战" class="headerlink" title="挑战"></a>挑战</h2><p>迄今为止观察到的Pronto&#x2F;Elasticsearch面临的挑战包括:</p>
 <ul>
 <li>高吞吐量:某些集群每天最多提取5TB数据，而某些集群每天要接收超过4亿个搜索请求。如果Elasticsearch无法及时处理请求，则请求将在上游累积。</li>
 <li>低搜索等待时间:对于性能至关重要的群集，尤其是对于面向站点(site-facing)的系统，低搜索等待时间是强制性的，否则会影响用户体验。</li>
 <li>由于数据或查询是可变的，因此最佳设置始终会更改。没有适用于所有方案的最佳设置。例如，将索引拆分为更多的分片将有助于耗时的查询，但它可能会损害其他查询的性能。</li>
 </ul>
-<h1 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h1><p>为了帮助我们的客户应对这些挑战，Pronto团队建立了性能测试、调优和监控的方式，从用户案例入手开始，一直持续到整个集群生命周期。</p>
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>为了帮助我们的客户应对这些挑战，Pronto团队建立了性能测试、调优和监控的方式，从用户案例入手开始，一直持续到整个集群生命周期。</p>
 <ul>
 <li>大小调整:在开始使用新用例之前，先收集客户提供的信息，例如吞吐量，文档大小，文档数和搜索类型，以估计Elasticsearch集群的初始大小。</li>
 <li>优化索引设计:与客户一起审查索引设计。</li>
@@ -357,7 +357,7 @@
 <li>调整搜索性能:使用用户实际数据&#x2F;查询运行性能测试，并结合使用Elasticsearch配置参数来比较和分析测试结果。</li>
 <li>运行性能测试:案例启动后，将监控群集，并且只要数据更改，查询更改或流量增加，用户就可以自由地重新运行性能测试。</li>
 </ul>
-<h2 id="大小"><a href="#大小" class="headerlink" title="大小"></a>大小</h2><p>Pronto团队针对每种机器和每种受支持的Elasticsearch版本运行基准测试以收集性能数据，然后将其与客户提供的信息一起用于估计集群的初始大小，包括:</p>
+<h3 id="大小"><a href="#大小" class="headerlink" title="大小"></a>大小</h3><p>Pronto团队针对每种机器和每种受支持的Elasticsearch版本运行基准测试以收集性能数据，然后将其与客户提供的信息一起用于估计集群的初始大小，包括:</p>
 <ul>
 <li>索引吞吐量</li>
 <li>文档大小</li>
@@ -368,7 +368,7 @@
 <li>响应时间要求</li>
 <li>SLA级别</li>
 </ul>
-<h2 id="优化索引设计"><a href="#优化索引设计" class="headerlink" title="优化索引设计"></a>优化索引设计</h2><p>在开始提取数据并运行查询之前，请三思而后行。索引代表什么？ Elastic官方的回答是”具有一些相似特征的文档集合。” 因此，下一个问题是”我应该使用哪些特征对数据进行分组？ 我应该将所有文档放入一个索引还是多个索引？” 答案是，这取决于您使用的查询。以下是有关如何根据最常用的查询来组织索引的一些建议。</p>
+<h3 id="优化索引设计"><a href="#优化索引设计" class="headerlink" title="优化索引设计"></a>优化索引设计</h3><p>在开始提取数据并运行查询之前，请三思而后行。索引代表什么？ Elastic官方的回答是”具有一些相似特征的文档集合。” 因此，下一个问题是”我应该使用哪些特征对数据进行分组？ 我应该将所有文档放入一个索引还是多个索引？” 答案是，这取决于您使用的查询。以下是有关如何根据最常用的查询来组织索引的一些建议。</p>
 <ul>
 <li><p>例如，Elasticsearch接收了大量全局产品信息，大多数查询都有一个过滤子句”region”，并且很少有机会运行跨区域的查询。可以优化查询主体:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;query&quot;: &#123;</span><br><span class="line">        &quot;bool&quot;: &#123;</span><br><span class="line">            &quot;must&quot;: &#123;</span><br><span class="line">                &quot;match&quot;: &#123;</span><br><span class="line">                    &quot;title&quot;: &quot;$&#123;title&#125;&quot;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;,</span><br><span class="line">            &quot;filter&quot;: &#123;</span><br><span class="line">                &quot;term&quot;: &#123;</span><br><span class="line">                    &quot;region&quot;: &quot;US&quot;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -391,7 +391,7 @@
 <li><p>使分片均匀分布在节点上。如果一个节点的分片比其他节点多，那么它将比其他节点承担更多的负载，可能成为整个系统的瓶颈。</p>
 </li>
 </ul>
-<h2 id="调优索引性能"><a href="#调优索引性能" class="headerlink" title="调优索引性能"></a>调优索引性能</h2><p>对于日志和监控等需要大量索引的场景，索引性能是关键指标。以下是一些建议。</p>
+<h3 id="调优索引性能"><a href="#调优索引性能" class="headerlink" title="调优索引性能"></a>调优索引性能</h3><p>对于日志和监控等需要大量索引的场景，索引性能是关键指标。以下是一些建议。</p>
 <ul>
 <li><p>使用批量(bulk)请求。</p>
 </li>
@@ -405,7 +405,7 @@
 <li><p>尽可能使用自动生成的ID。Elasticsearch可以确保自动生成的ID是唯一的，以避免版本查找。如果客户确实需要使用自定义ID，我们的建议是选择一个对Lucene友好的ID，例如零填充顺序ID，UUID-1或Nano time。这些ID具有一致的顺序模式，可以很好地压缩。相比之下，诸如UUID-4之类的ID本质上是随机的，这提供了较差的压缩并降低了Lucene的运行速度。</p>
 </li>
 </ul>
-<h2 id="调优搜索性能"><a href="#调优搜索性能" class="headerlink" title="调优搜索性能"></a>调优搜索性能</h2><p>使用Elasticsearch的主要原因是为了支持对数据的搜索。用户应该能够快速找到所需的信息。搜索性能取决于很多因素。</p>
+<h3 id="调优搜索性能"><a href="#调优搜索性能" class="headerlink" title="调优搜索性能"></a>调优搜索性能</h3><p>使用Elasticsearch的主要原因是为了支持对数据的搜索。用户应该能够快速找到所需的信息。搜索性能取决于很多因素。</p>
 <ul>
 <li>如果可能，请使用过滤(filter)器上下文而不是查询(query)上下文。query子句用于回答”此文档与该子句的匹配程度如何？”filter子句用于回答”此文档是否与此子句匹配？” Elasticsearch只需回答”是”或”否”。它不需要为过滤器子句计算相关性得分，并且可以缓存过滤器结果。有关详细信息，请参见<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-filter-context.html">查询和过滤上下文</a>。</li>
 </ul>
@@ -452,7 +452,7 @@
 </ul>
 </li>
 </ul>
-<h1 id="性能测试"><a href="#性能测试" class="headerlink" title="性能测试"></a>性能测试</h1><p>对于每项更改，都必须运行性能测试以验证更改是否合适。由于Elasticsearch是restful的服务，因此您可以使用Rally，Apache Jmeter和Gatling等工具来运行性能测试。因为Pronto团队需要在每种类型的机器和Elasticsearch版本上运行大量基准测试，并且我们需要在许多Elasticsearch集群上针对Elasticsearch配置参数组合运行性能测试，所以这些工具无法满足我们的要求。</p>
+<h2 id="性能测试"><a href="#性能测试" class="headerlink" title="性能测试"></a>性能测试</h2><p>对于每项更改，都必须运行性能测试以验证更改是否合适。由于Elasticsearch是restful的服务，因此您可以使用Rally，Apache Jmeter和Gatling等工具来运行性能测试。因为Pronto团队需要在每种类型的机器和Elasticsearch版本上运行大量基准测试，并且我们需要在许多Elasticsearch集群上针对Elasticsearch配置参数组合运行性能测试，所以这些工具无法满足我们的要求。</p>
 <p>Pronto团队基于Gatling构建了在线绩效分析服务，以帮助客户和我们进行绩效测试并进行回归分析。服务提供的功能使我们能够:</p>
 <ul>
 <li>轻松添加&#x2F;编辑测试。用户可以根据自己输入的查询或文档结构生成测试，而无需Gatling或Scala知识。</li>
@@ -465,7 +465,7 @@
 <p>用户可以查看每项测试的Gatling报告，并查看Kibana预定义的可视化效果，以进行进一步的分析和比较，如下所示。</p>
 <p><img src="/images/elasticsearch-performance-tuning-practice-at-ebay/Picture28.png" alt="Gatling report" loading="lazy" decoding="async" width="800" height="800"></p>
 <p><img src="/images/elasticsearch-performance-tuning-practice-at-ebay/Picture29.png" alt="Gatling report" loading="lazy" decoding="async" width="800" height="198"></p>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文总结了索引&#x2F;分片&#x2F;副本设计以及在设计Elasticsearch集群时应考虑的其他一些配置，以满足对提取和搜索性能的高期望。它还说明了Pronto如何帮助客户进行索引初始大小确定，索引设计和调优以及性能测试。截至目前，Pronto团队已帮助包括订单管理系统（OMS）和搜索引擎优化（SEO）在内的许多客户实现了苛刻的性能目标，从而为eBay的关键业务做出了贡献。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文总结了索引&#x2F;分片&#x2F;副本设计以及在设计Elasticsearch集群时应考虑的其他一些配置，以满足对提取和搜索性能的高期望。它还说明了Pronto如何帮助客户进行索引初始大小确定，索引设计和调优以及性能测试。截至目前，Pronto团队已帮助包括订单管理系统（OMS）和搜索引擎优化（SEO）在内的许多客户实现了苛刻的性能目标，从而为eBay的关键业务做出了贡献。</p>
 <p>Elasticsearch的性能取决于许多因素，包括文档结构，文档大小，索引设置&#x2F;映射，请求率，数据集大小，查询命中数等。针对一种情况的建议不一定适用于另一种情况。全面测试性能，收集遥测数据，根据您的工作负载调整配置并优化群集以满足性能要求非常重要。</p>
 
     </div>

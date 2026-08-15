@@ -27,7 +27,7 @@
 <meta property="og:description" content="翻译自：Go Concurrency Patterns: Context地址：https:&#x2F;&#x2F;blog.golang.org&#x2F;context">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-13T02:01:33.000Z">
-<meta property="article:modified_time" content="2026-07-07T11:11:17.430Z">
+<meta property="article:modified_time" content="2026-08-15T23:16:20.005Z">
 <meta property="article:author" content="jiankunking">
 <meta property="article:tag" content="Concurrency">
 <meta property="article:tag" content="Context">
@@ -79,7 +79,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/go-concurrency-patterns-context.html"},"headline":"[译]Go 并发 : Context","description":"翻译自：Go Concurrency Patterns: Context地址：https://blog.golang.org/context","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2020-06-13T02:01:33.000Z","dateModified":"2026-07-07T11:11:17.430Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Go","keywords":"原创, 翻译, Go, Concurrency, Context","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/go-concurrency-patterns-context.html"},"headline":"[译]Go 并发 : Context","description":"翻译自：Go Concurrency Patterns: Context地址：https://blog.golang.org/context","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2020-06-13T02:01:33.000Z","dateModified":"2026-08-15T23:16:20.005Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Go","keywords":"原创, 翻译, Go, Concurrency, Context","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -173,7 +173,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Context"><span class="nav-number">2.</span> <span class="nav-text">Context</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Derived-contexts"><span class="nav-number">3.</span> <span class="nav-text">Derived contexts</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Context"><span class="nav-number">2.</span> <span class="nav-text">Context</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Derived-contexts"><span class="nav-number">3.</span> <span class="nav-text">Derived contexts</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -285,7 +285,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-07-07 19:11:17" itemprop="dateModified" datetime="2026-07-07T19:11:17+08:00">2026-07-07</time>
+      <time title="修改时间：2026-08-16 07:16:20" itemprop="dateModified" datetime="2026-08-16T07:16:20+08:00">2026-08-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -333,9 +333,9 @@
 </blockquote>
 <span id="more"></span>
 
-<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>在Go server端，每个请求都是通过新起goroutine来处理。请求处理程序通常会启动其他goroutine来访问后端，例如数据库和RPC服务。处理该请求的goroutine集合通常需要访问特定于请求的值，例如最终用户的身份，授权令牌和请求的时限。当一个请求被取消或超时时，处理该请求的所有goroutine应该迅速退出，以便系统可以回收他们正在使用的资源。</p>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>在Go server端，每个请求都是通过新起goroutine来处理。请求处理程序通常会启动其他goroutine来访问后端，例如数据库和RPC服务。处理该请求的goroutine集合通常需要访问特定于请求的值，例如最终用户的身份，授权令牌和请求的时限。当一个请求被取消或超时时，处理该请求的所有goroutine应该迅速退出，以便系统可以回收他们正在使用的资源。</p>
 <p>在Google，我们开发了一个Context包，可以轻松地跨API边界将请求范围（request-scoped）的值，取消信号和截止日期（deadlines）传递给处理请求的所有goroutine。该软件包可作为Context公开使用。本文将介绍如何使用该package。</p>
-<h1 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h1><p>Context包的核心是Context类型:</p>
+<h2 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h2><p>Context包的核心是Context类型:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">// Context跨API边界携带期限(deadline)、取消信号和请求范围(request-scoped)的值。Context的方法是协程安全的。</span><br><span class="line">type Context interface &#123;</span><br><span class="line">    // Done返回一个channel，该channel在Context被取消或超时时关闭。</span><br><span class="line">    Done() &lt;-chan struct&#123;&#125;</span><br><span class="line"></span><br><span class="line">    // Err表示在Done channel关闭后取消此Context的原因。</span><br><span class="line">    Err() error</span><br><span class="line"></span><br><span class="line">    // Deadline返回Context将被取消的时间(如果有的话)。</span><br><span class="line">    Deadline() (deadline time.Time, ok bool)</span><br><span class="line"></span><br><span class="line">    // Value返回与key关联的值(如果没有，返回nil)。</span><br><span class="line">    Value(key interface&#123;&#125;) interface&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>更详细的介绍，参见godoc：<a href="https://golang.org/pkg/context/">https://golang.org/pkg/context/</a></p>
@@ -344,7 +344,7 @@
 <p>Context是协程安全的。代码中可以将单个Context传递给任意数量的goroutine，并在取消该Context时可以将信号传递给所有的goroutine。</p>
 <p>最后期限（Deadline）方法允许函数决定他们是否应该开始工作;如果剩下的时间太少，可能就不值得了。代码也可以使用期限（Deadline）来设置I&#x2F;O操作的超时。</p>
 <p>值（Value）允许Context携带请求范围(request-scoped)的数据。 该数据必须是协程安全的，以便多个goroutine可以同时使用。</p>
-<h1 id="Derived-contexts"><a href="#Derived-contexts" class="headerlink" title="Derived contexts"></a>Derived contexts</h1><p><font color=DeepPink><strong>Context包提供了从现有Context值派生新Context值的函数。这些值形成一个树:当一个Context被取消时，从它派生的所有Context也被取消。</strong></font></p>
+<h2 id="Derived-contexts"><a href="#Derived-contexts" class="headerlink" title="Derived contexts"></a>Derived contexts</h2><p><font color=DeepPink><strong>Context包提供了从现有Context值派生新Context值的函数。这些值形成一个树:当一个Context被取消时，从它派生的所有Context也被取消。</strong></font></p>
 <p>Background是所有Context树的根;它永远不会被取消:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// Background返回一个空Context。它永远不会被取消，没有截止日期，也没有值。</span><br><span class="line">// 后台通常用于main、init和测试，并作为传入请求的顶级上下文。</span><br><span class="line">func Background() Context</span><br></pre></td></tr></table></figure>
 
