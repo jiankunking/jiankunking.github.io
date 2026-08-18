@@ -44,8 +44,8 @@
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>ReentrantLock 重入与重试 | 衣舞晨风</title>
   
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-121070942-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
   <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
   <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
@@ -78,7 +78,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-reentrantlock-reentrant-and-retryry.html"},"headline":"ReentrantLock 重入与重试","description":"ReentrantLock获取锁时会自旋吗？可重入次数有上限吗？本文基于JDK 12源码分析ReentrantLock的重入机制和自旋策略。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2020-08-12T01:12:40.000Z","dateModified":"2020-08-12T01:12:40.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"原创, Java, AQS, ReentrantLock","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-reentrantlock-reentrant-and-retryry.html"},"headline":"ReentrantLock 重入与重试","description":"ReentrantLock获取锁时会自旋吗？可重入次数有上限吗？本文基于JDK 12源码分析ReentrantLock的重入机制和自旋策略。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2020-08-12T01:12:40.000Z","dateModified":"2020-08-12T01:12:40.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"Java, 原创, AQS, ReentrantLock","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -321,19 +321,17 @@
     
     <div class="post-body" itemprop="articleBody"><p>ReentrantLock获取锁时会自旋吗？可重入次数有上限吗？本文基于JDK 12源码分析ReentrantLock的重入机制和自旋策略。</p>
 <span id="more"></span>
-
-<p>今天突然想起了个问题：<br>1、ReentrantLock在获取锁的时候，会不会自旋？如果自旋的话，会自旋多少次？<br>2、ReentrantLock可重入次数会有上限控制吗？</p>
+<p>今天突然想起了个问题：<br>
+1、ReentrantLock在获取锁的时候，会不会自旋？如果自旋的话，会自旋多少次？<br>
+2、ReentrantLock可重入次数会有上限控制吗？</p>
 <p>1、看一下ReentrantLock中锁的实现：</p>
 <p>非公平锁：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"> /**</span><br><span class="line"> * Performs non-fair tryLock.  tryAcquire is implemented in</span><br><span class="line"> * subclasses, but both need nonfair try for trylock method.</span><br><span class="line"> */</span><br><span class="line">@ReservedStackAccess</span><br><span class="line">final boolean nonfairTryAcquire(int acquires) &#123;</span><br><span class="line">    final Thread current = Thread.currentThread();</span><br><span class="line">    int c = getState();</span><br><span class="line">    if (c == 0) &#123;</span><br><span class="line">        if (compareAndSetState(0, acquires)) &#123;</span><br><span class="line">            setExclusiveOwnerThread(current);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    else if (current == getExclusiveOwnerThread()) &#123;</span><br><span class="line">        int nextc = c + acquires;</span><br><span class="line">        if (nextc &lt; 0) // overflow</span><br><span class="line">            throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">        setState(nextc);</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>公平锁：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">     /**</span><br><span class="line">     * Fair version of tryAcquire.  Don&#x27;t grant access unless</span><br><span class="line">     * recursive call or no waiters or is first.</span><br><span class="line">     */</span><br><span class="line">    @ReservedStackAccess</span><br><span class="line">    protected final boolean tryAcquire(int acquires) &#123;</span><br><span class="line">        final Thread current = Thread.currentThread();</span><br><span class="line">        int c = getState();</span><br><span class="line">        if (c == 0) &#123;</span><br><span class="line">            if (!hasQueuedPredecessors() &amp;&amp;</span><br><span class="line">                compareAndSetState(0, acquires)) &#123;</span><br><span class="line">                setExclusiveOwnerThread(current);</span><br><span class="line">                return true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        else if (current == getExclusiveOwnerThread()) &#123;</span><br><span class="line">            int nextc = c + acquires;</span><br><span class="line">            if (nextc &lt; 0)</span><br><span class="line">                throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">            setState(nextc);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>从代码中可以看到不管是公平锁还是非公平锁再获取不到锁的时候，都没有自旋。区别在于非公平锁在获取锁的时候，会先获取一下锁，而公平锁会先判断队列中有没有。</p>
 <p>同时在代码中也没有看到获取不到锁就入队，难道会在外面自旋重试？看下AbstractQueuedSynchronizer中代码：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"> /**</span><br><span class="line"> * Acquires in exclusive mode, ignoring interrupts.  Implemented</span><br><span class="line"> * by invoking at least once &#123;@link #tryAcquire&#125;,</span><br><span class="line"> * returning on success.  Otherwise the thread is queued, possibly</span><br><span class="line"> * repeatedly blocking and unblocking, invoking &#123;@link</span><br><span class="line"> * #tryAcquire&#125; until success.  This method can be used</span><br><span class="line"> * to implement method &#123;@link Lock#lock&#125;.</span><br><span class="line"> *</span><br><span class="line"> * @param arg the acquire argument.  This value is conveyed to</span><br><span class="line"> *        &#123;@link #tryAcquire&#125; but is otherwise uninterpreted and</span><br><span class="line"> *        can represent anything you like.</span><br><span class="line"> */</span><br><span class="line">public final void acquire(int arg) &#123;</span><br><span class="line">    if (!tryAcquire(arg) &amp;&amp;</span><br><span class="line">        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))</span><br><span class="line">        selfInterrupt();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>从这里可以看到获取不到锁，就直接入队了。</p>
 <p>2、因为AQS中的state使用int类型存储，最大到2^31-1。</p>
 
@@ -409,8 +407,8 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/%E5%8E%9F%E5%88%9B/" rel="tag"># 原创</a>
               <a href="/tags/java/" rel="tag"># Java</a>
+              <a href="/tags/%E5%8E%9F%E5%88%9B/" rel="tag"># 原创</a>
               <a href="/tags/aqs/" rel="tag"># AQS</a>
               <a href="/tags/reentrantlock/" rel="tag"># ReentrantLock</a>
           </div>
@@ -460,7 +458,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">769k</span>
+    <span title="站点总字数">771k</span>
   </span>
 </div>
 <div class="busuanzi-count">
