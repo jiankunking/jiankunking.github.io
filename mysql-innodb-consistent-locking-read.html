@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
   <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
@@ -27,7 +27,7 @@
 <meta property="og:description" content="介绍 InnoDB 一致性锁定读的两种方式：SELECT FOR UPDATE 与 LOCK IN SHARE MODE，以及共享锁、排他锁的使用场景。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2018-10-11T13:22:47.000Z">
-<meta property="article:modified_time" content="2026-08-15T04:00:15.363Z">
+<meta property="article:modified_time" content="2018-10-11T13:22:47.000Z">
 <meta property="article:author" content="jiankunking">
 <meta property="article:tag" content="InnoDB">
 <meta property="article:tag" content="MySQL">
@@ -43,9 +43,6 @@
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>MySQL InnoDB存储引擎：一致性锁定读 | 衣舞晨风</title>
   
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-121070942-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
-  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
   <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
@@ -77,7 +74,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/mysql-innodb-consistent-locking-read.html"},"headline":"MySQL InnoDB存储引擎：一致性锁定读","description":"介绍 InnoDB 一致性锁定读的两种方式：SELECT FOR UPDATE 与 LOCK IN SHARE MODE，以及共享锁、排他锁的使用场景。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-10-11T13:22:47.000Z","dateModified":"2026-08-15T04:00:15.363Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"MySQL","keywords":"Reading Notes, MySQL, InnoDB","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/mysql-innodb-consistent-locking-read.html"},"headline":"MySQL InnoDB存储引擎：一致性锁定读","description":"介绍 InnoDB 一致性锁定读的两种方式：SELECT FOR UPDATE 与 LOCK IN SHARE MODE，以及共享锁、排他锁的使用场景。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-10-11T13:22:47.000Z","dateModified":"2018-10-11T13:22:47.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"MySQL","keywords":"Reading Notes, MySQL, InnoDB","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -279,13 +276,6 @@
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-08-15 12:00:15" itemprop="dateModified" datetime="2026-08-15T12:00:15+08:00">2026-08-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
       <span class="post-meta-item-text">分类于</span>
@@ -308,7 +298,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>546</span>
+      <span>541</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -326,15 +316,15 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 </p>
+    <div class="post-body" itemprop="articleBody"><p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版</p>
 <p>作者：姜承尧</p>
 <p>出版时间：2013-05</p>
 <span id="more"></span>
-
 <p>在<a href="https://jiankunking.com/MySQL-innodb-consistent-nonlocking-read.html">前一小节</a>中讲到，在默认配置下，即事务的隔离级别为 REPEATABLE READ 模式下， InnoDB 存储引擎的 SELECT 操作使用一致性非锁定读。但是在某些情况下，用户需要显式地对数据库读取操作进行加锁以保证数据逻辑的一致性。而这要求数据库支持加锁语句，即使是对于SELECT的只读操作。InnoDB存储引擎对于SELECT语句支持两种一致性的锁定读（locking read)操作：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SELECT......FOR UPDATE</span><br><span class="line">SELECT......LOCK IN SHARE MODE</span><br></pre></td></tr></table></figure>
-<p><font color=DeepPink><strong>SELECT…FOR UPDATE对读取的行记录加一个X锁，其他事务不能对已锁定的行加上任何锁。</strong></font><br><font color=DeepPink><strong>SELECT…LOCK IN SHARE MODE对读取的行记录加一个S锁，其他事务可以向被锁定的行加S锁，但是如果加X锁，则会被阻塞。</strong></font></p>
-<p>对于一致性非锁定读，即使读取的行已被执行了 SELECT…FOR UPDATE,也是可以进行读取的，这和之前讨论的情况一样。此外，SELECT…FOR UPDATE, SELECT…LOCK IN SHARE MODE必须在一个事务中，当事务提交了，锁也就释放了。因此在使用上述两句SELECT锁定语句时，务必加上BEGIN,START TRANSACTION 或者SET AUTOCOMMIT &#x3D;0 。</p>
+<p><font color=DeepPink><strong>SELECT…FOR UPDATE对读取的行记录加一个X锁，其他事务不能对已锁定的行加上任何锁。</strong></font><br>
+<font color=DeepPink><strong>SELECT…LOCK IN SHARE MODE对读取的行记录加一个S锁，其他事务可以向被锁定的行加S锁，但是如果加X锁，则会被阻塞。</strong></font></p>
+<p>对于一致性非锁定读，即使读取的行已被执行了 SELECT…FOR UPDATE,也是可以进行读取的，这和之前讨论的情况一样。此外，SELECT…FOR UPDATE, SELECT…LOCK IN SHARE MODE必须在一个事务中，当事务提交了，锁也就释放了。因此在使用上述两句SELECT锁定语句时，务必加上BEGIN,START TRANSACTION 或者SET AUTOCOMMIT =0 。</p>
 
     </div>
 
@@ -436,7 +426,6 @@
 
 
 
-    <div class="comments gitalk-container"></div>
 </div>
   </main>
 
@@ -458,7 +447,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">769k</span>
+    <span title="站点总字数">771k</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -501,10 +490,6 @@
 <noscript>
   <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
 </noscript>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"jiankunking","repo":"blog-comments","client_id":"5e2e6dc5bd7af549261d","client_secret":"f37069692932676f0ad9fbfecb5164aee191fe23","admin_user":"jiankunking","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"e8b6c42fa1cbf16f8a8c813f46c4c100"}</script>
-<script src="/js/third-party/comments/gitalk.js" defer></script>
 
 </body>
 </html>

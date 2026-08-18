@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
   <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
@@ -19,15 +19,15 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":true,"height":500},"language":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="翻译自：Go Concurrency Patterns: Context地址：https:&#x2F;&#x2F;blog.golang.org&#x2F;context">
+    <meta name="description" content="翻译自：Go Concurrency Patterns: Context 地址：https:&#x2F;&#x2F;blog.golang.org&#x2F;context">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[译]Go 并发 : Context">
 <meta property="og:url" content="https://jiankunking.com/go-concurrency-patterns-context.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="翻译自：Go Concurrency Patterns: Context地址：https:&#x2F;&#x2F;blog.golang.org&#x2F;context">
+<meta property="og:description" content="翻译自：Go Concurrency Patterns: Context 地址：https:&#x2F;&#x2F;blog.golang.org&#x2F;context">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-13T02:01:33.000Z">
-<meta property="article:modified_time" content="2026-08-15T23:16:20.005Z">
+<meta property="article:modified_time" content="2020-06-13T02:01:33.000Z">
 <meta property="article:author" content="jiankunking">
 <meta property="article:tag" content="Concurrency">
 <meta property="article:tag" content="Context">
@@ -45,9 +45,6 @@
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>[译]Go 并发 : Context | 衣舞晨风</title>
   
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-121070942-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
-  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
   <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
@@ -79,7 +76,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/go-concurrency-patterns-context.html"},"headline":"[译]Go 并发 : Context","description":"翻译自：Go Concurrency Patterns: Context地址：https://blog.golang.org/context","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2020-06-13T02:01:33.000Z","dateModified":"2026-08-15T23:16:20.005Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Go","keywords":"原创, 翻译, Go, Concurrency, Context","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/go-concurrency-patterns-context.html"},"headline":"[译]Go 并发 : Context","description":"翻译自：Go Concurrency Patterns: Context 地址：https://blog.golang.org/context","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2020-06-13T02:01:33.000Z","dateModified":"2020-06-13T02:01:33.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Go","keywords":"原创, 翻译, Go, Concurrency, Context","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -282,13 +279,6 @@
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-08-16 07:16:20" itemprop="dateModified" datetime="2026-08-16T07:16:20+08:00">2026-08-16</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
       <span class="post-meta-item-text">分类于</span>
@@ -329,28 +319,28 @@
     
     
     <div class="post-body" itemprop="articleBody"><blockquote>
-<p>翻译自：Go Concurrency Patterns: Context<br>地址：<a href="https://blog.golang.org/context">https://blog.golang.org/context</a></p>
+<p>翻译自：Go Concurrency Patterns: Context<br>
+地址：<a href="https://blog.golang.org/context">https://blog.golang.org/context</a></p>
 </blockquote>
 <span id="more"></span>
-
-<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>在Go server端，每个请求都是通过新起goroutine来处理。请求处理程序通常会启动其他goroutine来访问后端，例如数据库和RPC服务。处理该请求的goroutine集合通常需要访问特定于请求的值，例如最终用户的身份，授权令牌和请求的时限。当一个请求被取消或超时时，处理该请求的所有goroutine应该迅速退出，以便系统可以回收他们正在使用的资源。</p>
+<h2 id="简介">简介</h2>
+<p>在Go server端，每个请求都是通过新起goroutine来处理。请求处理程序通常会启动其他goroutine来访问后端，例如数据库和RPC服务。处理该请求的goroutine集合通常需要访问特定于请求的值，例如最终用户的身份，授权令牌和请求的时限。当一个请求被取消或超时时，处理该请求的所有goroutine应该迅速退出，以便系统可以回收他们正在使用的资源。</p>
 <p>在Google，我们开发了一个Context包，可以轻松地跨API边界将请求范围（request-scoped）的值，取消信号和截止日期（deadlines）传递给处理请求的所有goroutine。该软件包可作为Context公开使用。本文将介绍如何使用该package。</p>
-<h2 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h2><p>Context包的核心是Context类型:</p>
+<h2 id="Context">Context</h2>
+<p>Context包的核心是Context类型:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">// Context跨API边界携带期限(deadline)、取消信号和请求范围(request-scoped)的值。Context的方法是协程安全的。</span><br><span class="line">type Context interface &#123;</span><br><span class="line">    // Done返回一个channel，该channel在Context被取消或超时时关闭。</span><br><span class="line">    Done() &lt;-chan struct&#123;&#125;</span><br><span class="line"></span><br><span class="line">    // Err表示在Done channel关闭后取消此Context的原因。</span><br><span class="line">    Err() error</span><br><span class="line"></span><br><span class="line">    // Deadline返回Context将被取消的时间(如果有的话)。</span><br><span class="line">    Deadline() (deadline time.Time, ok bool)</span><br><span class="line"></span><br><span class="line">    // Value返回与key关联的值(如果没有，返回nil)。</span><br><span class="line">    Value(key interface&#123;&#125;) interface&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>更详细的介绍，参见godoc：<a href="https://golang.org/pkg/context/">https://golang.org/pkg/context/</a></p>
 <p>Done方法返回一个channel，作为代表Context运行的函数的取消信号:当channel关闭时，函数应该放弃它们的工作并返回。Err方法返回一个错误，指示Context被取消的原因。</p>
 <p>因为Done channel只用于接收的原因，Context没有取消方法：接收取消信号的方法与发送信号方法往往不是同一个。特别是，当父操作（parent operation）为子操作（sub-operations）启动goroutines时，这些子操作应该不能取消父操作。相反，WithCancel函数（如下所述）提供了一种取消新的上下文值的方法。</p>
 <p>Context是协程安全的。代码中可以将单个Context传递给任意数量的goroutine，并在取消该Context时可以将信号传递给所有的goroutine。</p>
-<p>最后期限（Deadline）方法允许函数决定他们是否应该开始工作;如果剩下的时间太少，可能就不值得了。代码也可以使用期限（Deadline）来设置I&#x2F;O操作的超时。</p>
+<p>最后期限（Deadline）方法允许函数决定他们是否应该开始工作;如果剩下的时间太少，可能就不值得了。代码也可以使用期限（Deadline）来设置I/O操作的超时。</p>
 <p>值（Value）允许Context携带请求范围(request-scoped)的数据。 该数据必须是协程安全的，以便多个goroutine可以同时使用。</p>
-<h2 id="Derived-contexts"><a href="#Derived-contexts" class="headerlink" title="Derived contexts"></a>Derived contexts</h2><p><font color=DeepPink><strong>Context包提供了从现有Context值派生新Context值的函数。这些值形成一个树:当一个Context被取消时，从它派生的所有Context也被取消。</strong></font></p>
+<h2 id="Derived-contexts">Derived contexts</h2>
+<p><font color=DeepPink><strong>Context包提供了从现有Context值派生新Context值的函数。这些值形成一个树:当一个Context被取消时，从它派生的所有Context也被取消。</strong></font></p>
 <p>Background是所有Context树的根;它永远不会被取消:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// Background返回一个空Context。它永远不会被取消，没有截止日期，也没有值。</span><br><span class="line">// 后台通常用于main、init和测试，并作为传入请求的顶级上下文。</span><br><span class="line">func Background() Context</span><br></pre></td></tr></table></figure>
-
 <p>WithCancel和WithTimeout返回派生的Context值，该值可以比父Context早被取消。请求处理程序返回时，通常会取消与传入请求关联的Context。 使用多个副本时，WithCancel对于取消冗余请求也很有用。WithTimeout对于设置对后端服务器的请求的最后期限很有用：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// WithCancel返回parent的副本，该副本的parent channel在parent结束后立即关闭。done关闭或调用cancel。</span><br><span class="line">func WithCancel(parent Context) (ctx Context, cancel CancelFunc)</span><br><span class="line"></span><br><span class="line">// CancelFunc取消Context。</span><br><span class="line">type CancelFunc func()</span><br><span class="line"></span><br><span class="line">// WithTimeout返回父对象的副本，该父对象的Done channel会在父对象关闭后立即关闭。</span><br><span class="line">// 调用cancel或超时,关闭Done。 </span><br><span class="line">// 新的上下文截止日期是now + timeout和父级截止日期（如果有）中的较早者。 </span><br><span class="line">// 如果计时器仍在运行，则取消功能将释放其资源。</span><br><span class="line">func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)</span><br></pre></td></tr></table></figure>
-
 <p>WithValue提供了一种将请求范围的值与Context关联的方法:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// WithValue returns a copy of parent whose Value method returns val for key.</span><br><span class="line">func WithValue(parent Context, key interface&#123;&#125;, val interface&#123;&#125;) Context</span><br></pre></td></tr></table></figure>
     </div>
@@ -455,7 +445,6 @@
 
 
 
-    <div class="comments gitalk-container"></div>
 </div>
   </main>
 
@@ -477,7 +466,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">769k</span>
+    <span title="站点总字数">771k</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -520,10 +509,6 @@
 <noscript>
   <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
 </noscript>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"jiankunking","repo":"blog-comments","client_id":"5e2e6dc5bd7af549261d","client_secret":"f37069692932676f0ad9fbfecb5164aee191fe23","admin_user":"jiankunking","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"8ee374eb009faf47600c9df027a990d5"}</script>
-<script src="/js/third-party/comments/gitalk.js" defer></script>
 
 </body>
 </html>

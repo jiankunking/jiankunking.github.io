@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x16-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
   <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
@@ -26,16 +26,16 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="解析 InnoDB 一致性非锁定读、MVCC 快照读取机制，以及不同事务隔离级别下快照数据的差异。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://jiankunking.com/images/MySQL-innodb-consistent-nonlocking-read/%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E9%9D%9E%E9%94%81%E5%AE%9A%E8%A1%8C%E8%AF%BB.png">
-<meta property="og:image" content="https://jiankunking.com/images/MySQL-innodb-consistent-nonlocking-read/%E8%A1%A868.png">
+<meta property="og:image" content="https://jiankunking.com/images/mysql-innodb-consistent-nonlocking-read/%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E9%9D%9E%E9%94%81%E5%AE%9A%E8%A1%8C%E8%AF%BB.png">
+<meta property="og:image" content="https://jiankunking.com/images/mysql-innodb-consistent-nonlocking-read/%E8%A1%A868.png">
 <meta property="article:published_time" content="2018-10-11T13:13:47.000Z">
-<meta property="article:modified_time" content="2026-08-15T04:00:15.363Z">
+<meta property="article:modified_time" content="2018-10-11T13:13:47.000Z">
 <meta property="article:author" content="jiankunking">
 <meta property="article:tag" content="InnoDB">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="Reading Notes">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://jiankunking.com/images/MySQL-innodb-consistent-nonlocking-read/%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E9%9D%9E%E9%94%81%E5%AE%9A%E8%A1%8C%E8%AF%BB.png">
+<meta name="twitter:image" content="https://jiankunking.com/images/mysql-innodb-consistent-nonlocking-read/%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E9%9D%9E%E9%94%81%E5%AE%9A%E8%A1%8C%E8%AF%BB.png">
 
 
 <link rel="canonical" href="https://jiankunking.com/mysql-innodb-consistent-nonlocking-read.html">
@@ -46,9 +46,6 @@
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>MySQL InnoDB存储引擎：一致性非锁定读 | 衣舞晨风</title>
   
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-121070942-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-121070942-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
-  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
   <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
@@ -80,7 +77,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/mysql-innodb-consistent-nonlocking-read.html"},"headline":"MySQL InnoDB存储引擎：一致性非锁定读","description":"解析 InnoDB 一致性非锁定读、MVCC 快照读取机制，以及不同事务隔离级别下快照数据的差异。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-10-11T13:13:47.000Z","dateModified":"2026-08-15T04:00:15.363Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"MySQL","keywords":"Reading Notes, MySQL, InnoDB","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/mysql-innodb-consistent-nonlocking-read.html"},"headline":"MySQL InnoDB存储引擎：一致性非锁定读","description":"解析 InnoDB 一致性非锁定读、MVCC 快照读取机制，以及不同事务隔离级别下快照数据的差异。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-10-11T13:13:47.000Z","dateModified":"2018-10-11T13:13:47.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"MySQL","keywords":"Reading Notes, MySQL, InnoDB","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -280,13 +277,6 @@
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-08-15 12:00:15" itemprop="dateModified" datetime="2026-08-15T12:00:15+08:00">2026-08-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
       <span class="post-meta-item-text">分类于</span>
@@ -327,13 +317,13 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版 </p>
+    <div class="post-body" itemprop="articleBody"><p>本文整理自：《MySQL技术内幕:InnoDB存储引擎》 第二版</p>
 <p>作者：姜承尧</p>
 <p>出版时间：2013-05</p>
 <span id="more"></span>
-
 <p><strong>一致性的非锁定行读（consistent nonlocking read）是指InnoDB存储引擎通过行多版本控制（multi versioning）的方式来读取当前执行时间数据库中行的数据。如果读取的行正在执行DELETE、UPDATE操作，这是读取操作不会因此而会等待行上锁的释放，相反，InnoDB会去读取行的一个快照数据。</strong></p>
-<p>下图直观展示了一致性的非锁定行读：<br><img src="/images/MySQL-innodb-consistent-nonlocking-read/%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E9%9D%9E%E9%94%81%E5%AE%9A%E8%A1%8C%E8%AF%BB.png" alt="一致性的非锁定行读" loading="lazy" decoding="async" width="461" height="410"></p>
+<p>下图直观展示了一致性的非锁定行读：<br>
+<img src="/images/mysql-innodb-consistent-nonlocking-read/%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E9%9D%9E%E9%94%81%E5%AE%9A%E8%A1%8C%E8%AF%BB.png" alt="一致性的非锁定行读" loading="eager" fetchpriority="high" decoding="async" width="461" height="410"></p>
 <p><strong>之所以称其为非锁定读，因为不需要等待访问的行上X锁的释放。快照数据是指该行的之前版本的数据，该实现是通过undo段来完成。而undo段用来在此事务中回滚数据，因此快照数据本身是没有额外的开销。此外，读取快照数据是不需要上锁的，因为没有事务需要对历史的数据进行修改操作。</strong></p>
 <p>可以看到，非锁定读机制极大地提髙了数据库的并发性。<strong>在InnoDB存储引擎的默认设置下，这是默认的读取方式，即读取不会占用和等待表上的锁。但是在不同事务隔离级别下，读取的方式不同，并不是在每个事务隔离级别下都是采用非锁定的一致性读。此外，即使都是使用非锁定的一致性读，但是对于快照数据的定义也各不相同。</strong></p>
 <p>通过图6-4可以知道，快照数据其实就是当前行数据之前的历史版本，每行记录可能有多个版本。就图6-4所显示的，<strong>一个行记录可能有不止一个快照数据，一般称这种技术为行多版本技术。由此带来的并发控制，称之为多版本并发控制（MultiVersionConcurrencyControl MVCC）。</strong></p>
@@ -341,15 +331,16 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># Session A</span><br><span class="line">MySQL&gt; BEGIN;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">Sql&gt; SELECT * FROM parent WHERE id =1;</span><br><span class="line">+----+</span><br><span class="line">| id |</span><br><span class="line">+----+</span><br><span class="line">| 1 |</span><br><span class="line">+----+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
 <p>会话A中已通过显式地执行命令BEGIN开启了一个事务，并读取了表parent中id为1的数据，但是事务并没有结束。与此同时，用户再开启另一个会话B，这样可以模拟并发的情况，然后对会话B做如下的操作：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; BEGIN;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">MySQL&gt; UPDATE parent SET id=3 WHERE id=l;</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line">Rows matched: 1 Changed: 1 warnings: 0</span><br></pre></td></tr></table></figure>
-<p>在会话B中将事务表parent中id为1的记录修改为id&#x3D;3，但是事务同样没有提交，这样id&#x3D;1的行其实加了一个X锁。这时如果在会话A中再次读取id为1的记录，根据InnoDB存储引擎的特性，即在READ COMMITTED和REPEATETABLE READ的事务隔离级别下会使用非锁定的一致性读。回到之前的会话A,接着上次未提交的事务，执行SQL语句SELECT * FROM parent WHERE id&#x3D;1的操作，这时不管使用READ COMMITTED还是REPEATABLE READ的事务隔离级别，显示的数据应该都是：</p>
+<p>在会话B中将事务表parent中id为1的记录修改为id=3，但是事务同样没有提交，这样id=1的行其实加了一个X锁。这时如果在会话A中再次读取id为1的记录，根据InnoDB存储引擎的特性，即在READ COMMITTED和REPEATETABLE READ的事务隔离级别下会使用非锁定的一致性读。回到之前的会话A,接着上次未提交的事务，执行SQL语句SELECT * FROM parent WHERE id=1的操作，这时不管使用READ COMMITTED还是REPEATABLE READ的事务隔离级别，显示的数据应该都是：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; SELECT FROM parent WHERE id =l;</span><br><span class="line">+----+</span><br><span class="line">| id |</span><br><span class="line">+----+</span><br><span class="line">| 1  |</span><br><span class="line">+----+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-<p>由于当前id&#x3D;1的数据被修改了1次，因此只有一个行版本的记录。接着，在会话B中提交上次的事务。</p>
+<p>由于当前id=1的数据被修改了1次，因此只有一个行版本的记录。接着，在会话B中提交上次的事务。</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># Session B</span><br><span class="line">MySQL&gt; commit</span><br><span class="line">Query OK, 0 rows affected (0.01 sec)</span><br></pre></td></tr></table></figure>
-<p>在会话B提交事务后，这时在会话A中再运行SELECT * FROM parent WHERE id&#x3D;1的SQL语句，在READ COMMITTED和REPEATABLE事务隔离级别下得到结果 就不一样了。对于READ COMMITTED的事务隔离级别，它总是读取行的最新版本，如果行被锁定了，则读取该行版本的最新一个快照（fresh snapshot）。在上述例子中，因为会话B已经提交了事务，所以READ COMMITTED事务隔离级别下会得到如下结果：</p>
+<p>在会话B提交事务后，这时在会话A中再运行SELECT * FROM parent WHERE id=1的SQL语句，在READ COMMITTED和REPEATABLE事务隔离级别下得到结果 就不一样了。对于READ COMMITTED的事务隔离级别，它总是读取行的最新版本，如果行被锁定了，则读取该行版本的最新一个快照（fresh snapshot）。在上述例子中，因为会话B已经提交了事务，所以READ COMMITTED事务隔离级别下会得到如下结果：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt;SELECT @@tx_isolation\G;</span><br><span class="line">**************************** 1.row ****************************</span><br><span class="line">@@tx_isolation: READ-COMMITTED</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">MySQL&gt; SELECT FROM parent WHERE id=1:</span><br><span class="line">Empty set (0.00 sec)</span><br></pre></td></tr></table></figure>
 <p>而对于REPEATETABLE 的事务隔离级别，总是读取事务开始时的行数据。因此对于REPEATETABLE READ事务隔离级别,其得到的结果如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; SELECT @@tx_isolation\G;</span><br><span class="line">**************************** 1.row ****************************</span><br><span class="line">@@tx_isolation: REPEATABLE-READ</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">MySQL&gt; SELECT FROM parent WHERE id=1;</span><br><span class="line">+----+</span><br><span class="line">| id |</span><br><span class="line">+----+</span><br><span class="line">| 1  |</span><br><span class="line">+----+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-<p>下面将从时间的角度展现上述演示的示例过程，如表6-8所示。需要特别注意的是，对于READ COMMITTED 的事务隔离级别而言，从数据库理论的角度来看，其违反了事务ACID中的I的特性，即隔离性。<br><img src="/images/MySQL-innodb-consistent-nonlocking-read/%E8%A1%A868.png" alt="表68" loading="lazy" decoding="async" width="818" height="374"></p>
+<p>下面将从时间的角度展现上述演示的示例过程，如表6-8所示。需要特别注意的是，对于READ COMMITTED 的事务隔离级别而言，从数据库理论的角度来看，其违反了事务ACID中的I的特性，即隔离性。<br>
+<img src="/images/mysql-innodb-consistent-nonlocking-read/%E8%A1%A868.png" alt="表68" loading="lazy" decoding="async" width="818" height="374"></p>
 
     </div>
 
@@ -451,7 +442,6 @@
 
 
 
-    <div class="comments gitalk-container"></div>
 </div>
   </main>
 
@@ -473,7 +463,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">769k</span>
+    <span title="站点总字数">771k</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -516,10 +506,6 @@
 <noscript>
   <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
 </noscript>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"jiankunking","repo":"blog-comments","client_id":"5e2e6dc5bd7af549261d","client_secret":"f37069692932676f0ad9fbfecb5164aee191fe23","admin_user":"jiankunking","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"08f8116ca758ea5b9549d238d102194a"}</script>
-<script src="/js/third-party/comments/gitalk.js" defer></script>
 
 </body>
 </html>
