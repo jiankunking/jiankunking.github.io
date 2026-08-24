@@ -340,8 +340,8 @@
 <p>为了把这些问题串起来，我写了一个 <a href="https://github.com/jiankunking/agentmesh-demo">AgentMesh Demo</a>。业务场景很简单，就是查食堂菜单、价格和库存，再加一个模拟订餐能力。场景虽然小，但刚好可以把 AG-UI、AgentScope、MCP 和 A2A 都接进来。</p>
 <p>这篇文章不准备逐个介绍协议，而是沿着一次请求看一遍这个项目。它不覆盖模型训练、微调、RAG 等内容，主要讨论的是：拿到一个大模型接口之后，怎样把它做成一个能交互、会调用工具、能委派任务的应用。</p>
 <span id="more"></span>
-<h2 id="为什么是一个点餐-Demo">为什么是一个点餐 Demo</h2>
-<p>一开始最容易做的是聊天页面：输入一句话，请求模型，然后把结果显示出来。</p>
+
+<h2 id="为什么是一个点餐-Demo"><a href="#为什么是一个点餐-Demo" class="headerlink" title="为什么是一个点餐 Demo"></a>为什么是一个点餐 Demo</h2><p>一开始最容易做的是聊天页面：输入一句话，请求模型，然后把结果显示出来。</p>
 <p>但这种形式很难把 Agent 和普通聊天的区别表现出来。为了让系统里真的出现工具调用和任务委派，场景至少需要两类能力：</p>
 <ul>
 <li>一类是确定性的，比如查价格、查库存；</li>
@@ -351,32 +351,36 @@
 <p>菜品价格和库存存在 SQLite 里，查出来是多少就是多少，不应该让模型猜。菜单推荐和订餐则可以交给一个独立的 Food Agent。这样一来，MCP 和 A2A 在同一个请求里的分工就比较清楚了。</p>
 <p>项目最后拆成了五个进程：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Web Frontend        负责输入、流式输出和工具状态展示</span><br><span class="line">Orchestrator        负责会话、模型调用和工具编排</span><br><span class="line">MCP Server          负责菜品目录查询</span><br><span class="line">A2A Gateway         负责 Agent 路由和请求转发</span><br><span class="line">Food Agent          负责菜单、推荐和模拟订餐</span><br></pre></td></tr></table></figure>
+
 <p>大致链路如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    U[&quot;用户&quot;] --&gt; UI[&quot;AG-UI Frontend&quot;]</span><br><span class="line">    UI --&gt;|&quot;SSE&quot;| O[&quot;AgentScope Orchestrator&quot;]</span><br><span class="line">    O --&gt; L[&quot;LLM&quot;]</span><br><span class="line">    O --&gt;|&quot;MCP&quot;| M[&quot;MCP Server&quot;]</span><br><span class="line">    M --&gt; D[&quot;Food Catalog SQLite&quot;]</span><br><span class="line">    O --&gt;|&quot;A2A&quot;| G[&quot;A2A Gateway&quot;]</span><br><span class="line">    G --&gt; F[&quot;Food Agent&quot;]</span><br><span class="line">    O --&gt; S[&quot;Run / Message SQLite&quot;]</span><br></pre></td></tr></table></figure>
+
 <p>这里没有使用消息队列、注册中心或者复杂的基础设施。这个项目的目的不是展示一套生产架构，而是尽量少引入别的东西，把 Agent 调用链本身暴露出来。</p>
-<h2 id="先把项目跑起来">先把项目跑起来</h2>
-<p>项目需要 Python 3.11、Node.js 20.19+ 和 npm。</p>
+<h2 id="先把项目跑起来"><a href="#先把项目跑起来" class="headerlink" title="先把项目跑起来"></a>先把项目跑起来</h2><p>项目需要 Python 3.11、Node.js 20.19+ 和 npm。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/jiankunking/agentmesh-demo.git</span><br><span class="line"><span class="built_in">cd</span> agentmesh-demo</span><br><span class="line"><span class="built_in">cp</span> .env.example .<span class="built_in">env</span></span><br></pre></td></tr></table></figure>
+
 <p>在 <code>.env</code> 中配置模型：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LLM_API_KEY=your-api-key</span><br><span class="line">LLM_BASE_URL=https://api.openai.com/v1</span><br><span class="line">LLM_MODEL=gpt-4o-mini</span><br></pre></td></tr></table></figure>
+
 <p>然后执行：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./scripts/start.sh</span><br></pre></td></tr></table></figure>
+
 <p>脚本会安装依赖、构建前端，并启动五个组件。浏览器访问 <code>http://127.0.0.1:3000</code> 就可以开始测试，Orchestrator 的 Swagger 地址是 <code>http://127.0.0.1:8000/docs</code>。</p>
 <p>停止服务使用：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./scripts/stop.sh</span><br></pre></td></tr></table></figure>
+
 <p>第一次打开页面后，我建议不要马上去翻所有代码，可以先试几类问题：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">你是谁？</span><br><span class="line">现在几点？</span><br><span class="line">今天食堂有什么菜？</span><br><span class="line">水煮牛肉多少钱，还有库存吗？</span><br><span class="line">帮我推荐一道菜。</span><br></pre></td></tr></table></figure>
+
 <p>这几个问题看起来差不多，后台经过的路径其实不同。</p>
 <p>“你是谁”通常由模型直接回答；“现在几点”会调用本地函数；查询价格和库存会走 MCP；菜单和推荐则可能通过 A2A 调用 Food Agent。</p>
 <p>先把这些路径跑一遍，再去看代码，会比从 <code>main.py</code> 第一行一路往下读容易得多。</p>
-<h2 id="一次请求是怎么跑完的">一次请求是怎么跑完的</h2>
-<p>以这个问题为例：</p>
+<h2 id="一次请求是怎么跑完的"><a href="#一次请求是怎么跑完的" class="headerlink" title="一次请求是怎么跑完的"></a>一次请求是怎么跑完的</h2><p>以这个问题为例：</p>
 <blockquote>
 <p>今天有什么推荐？水煮牛肉还有库存吗？</p>
 </blockquote>
 <p>它同时包含了推荐和库存查询。前者适合交给 Food Agent，后者适合查询菜品目录。</p>
-<h3 id="前端发起一次-Run">前端发起一次 Run</h3>
-<p>普通聊天接口经常是一问一答：前端提交文本，后端返回文本。</p>
+<h3 id="前端发起一次-Run"><a href="#前端发起一次-Run" class="headerlink" title="前端发起一次 Run"></a>前端发起一次 Run</h3><p>普通聊天接口经常是一问一答：前端提交文本，后端返回文本。</p>
 <p>Agent 应用不太一样。模型可能先输出几句话，然后调用工具；工具执行完成以后，模型继续输出；中间还可能失败或者被用户取消。因此，前端面对的是一次持续变化的运行，而不只是一个字符串响应。</p>
 <p>项目中的前端使用 AG-UI 客户端发送 <code>RunAgentInput</code>，Orchestrator 通过 SSE 返回事件。前端主要处理几类内容：</p>
 <ul>
@@ -388,9 +392,9 @@
 <p>这也是我接入 AG-UI 后比较明显的一个认识：流式交互不只是把模型 token 一个个推到页面上。工具调用同样有开始和结束，整个任务也有自己的状态。如果前端只处理文本流，模型一旦开始调用工具，用户看到的往往就是页面突然停住。</p>
 <p>前端入口比较集中，主要代码在：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">frontend/src/main.ts</span><br><span class="line">frontend/src/styles.css</span><br></pre></td></tr></table></figure>
+
 <p>想知道请求发了什么、事件回来后如何更新页面，从这两个文件开始就够了。</p>
-<h3 id="Orchestrator-不只是转发模型请求">Orchestrator 不只是转发模型请求</h3>
-<p>请求进入 Orchestrator 后，需要先建立这次运行的上下文。</p>
+<h3 id="Orchestrator-不只是转发模型请求"><a href="#Orchestrator-不只是转发模型请求" class="headerlink" title="Orchestrator 不只是转发模型请求"></a>Orchestrator 不只是转发模型请求</h3><p>请求进入 Orchestrator 后，需要先建立这次运行的上下文。</p>
 <p>项目里把 Conversation、Message 和 Run 分开保存：</p>
 <ul>
 <li>Conversation 对应一个持续存在的会话；</li>
@@ -399,6 +403,7 @@
 </ul>
 <p>一个会话中会有多次 Run。每次 Run 都有独立状态：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">PENDING → RUNNING → SUCCEEDED</span><br><span class="line">                  → FAILED</span><br><span class="line">                  → CANCELLED</span><br></pre></td></tr></table></figure>
+
 <p>这种拆分在刚做聊天 Demo 时可能显得有些多余，但加入取消和失败处理以后就很有用。</p>
 <p>例如，用户发了一条消息，模型已经输出一部分内容，随后 MCP 调用超时。这时对话还在，但本次 Run 失败了。那段没有完成的 assistant 内容可以保留在执行记录里，却不应该当作一条成功消息加入下一轮模型上下文。</p>
 <p>Orchestrator 收到请求后，大概会做这些事：</p>
@@ -414,27 +419,31 @@
 </ol>
 <p>这一段代码主要分布在：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">services/orchestrator/routes.py</span><br><span class="line">services/orchestrator/run_service.py</span><br><span class="line">services/orchestrator/persistence.py</span><br><span class="line">services/orchestrator/session.py</span><br></pre></td></tr></table></figure>
+
 <p><code>routes.py</code> 是 HTTP 入口，真正的运行逻辑更多在 <code>run_service.py</code>。如果只看路由，很容易误以为 Orchestrator 就做了一层协议转换。</p>
-<h3 id="模型选择要不要调用工具">模型选择要不要调用工具</h3>
-<p>AgentScope 会把系统提示、历史消息、当前用户消息和工具 Schema 一起发给模型。</p>
+<h3 id="模型选择要不要调用工具"><a href="#模型选择要不要调用工具" class="headerlink" title="模型选择要不要调用工具"></a>模型选择要不要调用工具</h3><p>AgentScope 会把系统提示、历史消息、当前用户消息和工具 Schema 一起发给模型。</p>
 <p>模型当前可以看到四个真实工具：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">get_current_time       查询服务器当前时间</span><br><span class="line">search_food_catalog    搜索菜品目录</span><br><span class="line">get_food_item          查询某个菜品的价格和库存</span><br><span class="line">call_food              调用 Food Agent</span><br></pre></td></tr></table></figure>
+
 <p>此外还保留了模拟搜索和模拟 Python 工具，但默认不会暴露给模型，需要显式打开 <code>DEMO_TOOLS_ENABLED</code>。</p>
 <p>模型拿到工具描述后，会决定直接回答，或者返回 <code>tool_calls</code>。工具结果再进入下一轮模型请求，直到生成最终答案。AgentScope 在这里负责 ReAct 循环和流式事件。</p>
 <p>代码中设置了最大迭代次数，避免模型不断调用工具却无法结束。不过限制迭代次数只是最后一道保护，更关键的还是工具描述要写清楚。如果两个工具的职责重叠，模型很容易在它们之间选错。</p>
 <p>我在这个项目里刻意把能力分成 Local、MCP 和 A2A 三类，并通过 <code>CapabilityRegistry</code> 统一注册。对应代码在：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">services/orchestrator/capabilities.py</span><br><span class="line">services/orchestrator/tool_registry.py</span><br><span class="line">services/orchestrator/tool_impls.py</span><br></pre></td></tr></table></figure>
+
 <p>注册信息除了函数名和参数，还包含：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">type</span><br><span class="line"> enabled</span><br><span class="line"> readOnly</span><br><span class="line"> requiresConfirmation</span><br><span class="line"> timeoutSeconds</span><br></pre></td></tr></table></figure>
+
 <p>其中 <code>requiresConfirmation</code> 目前只是预留字段，项目还没有做完整的用户确认流程。这一点后面还会提到。</p>
-<h2 id="MCP-在这里负责什么">MCP 在这里负责什么</h2>
-<p>“水煮牛肉还有几份”是一个确定性问题。</p>
+<h2 id="MCP-在这里负责什么"><a href="#MCP-在这里负责什么" class="headerlink" title="MCP 在这里负责什么"></a>MCP 在这里负责什么</h2><p>“水煮牛肉还有几份”是一个确定性问题。</p>
 <p>库存存放在 SQLite 里，模型不应该凭训练数据或者对话上下文回答。Orchestrator 会调用 MCP 工具，MCP Server 再查询菜品目录数据库。</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Orchestrator</span><br><span class="line">    ↓ search_food_catalog / get_food_item</span><br><span class="line">MCP Server</span><br><span class="line">    ↓ SQL</span><br><span class="line">Food Catalog SQLite</span><br></pre></td></tr></table></figure>
+
 <p>这个调用完全可以直接写成一个 HTTP API。之所以使用 MCP，是为了看清楚工具能力如何被声明、发现和调用，以及同一套工具接口如何被不同的 AI Host 使用。</p>
 <p>在这个 Demo 里，MCP 并没有承担推理工作。它接收明确参数，执行查询，然后返回结构化结果。模型负责判断什么时候查，MCP Server 负责返回数据库中的真实数据。</p>
 <p>相关代码不多：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">services/orchestrator/mcp_client.py</span><br><span class="line">services/mcp_server/main.py</span><br><span class="line">services/mcp_server/catalog.py</span><br></pre></td></tr></table></figure>
+
 <p>如果之前只看过 MCP 的概念说明，可以在这里重点观察三个地方：</p>
 <ul>
 <li>Orchestrator 如何连接 MCP Server；</li>
@@ -442,20 +451,20 @@
 <li>Trace 信息如何跟随调用传到 MCP 请求中。</li>
 </ul>
 <p>第一次启动 MCP Server 时，会根据配置创建菜品目录 SQLite。可以直接调用工具查询 <code>food-001</code>，验证返回的价格和库存，而不必每次都经过模型。</p>
-<h2 id="A2A-在这里负责什么">A2A 在这里负责什么</h2>
-<p>“帮我推荐一道菜”不是简单的数据库查询。</p>
+<h2 id="A2A-在这里负责什么"><a href="#A2A-在这里负责什么" class="headerlink" title="A2A 在这里负责什么"></a>A2A 在这里负责什么</h2><p>“帮我推荐一道菜”不是简单的数据库查询。</p>
 <p>它需要先理解用户想要什么，再结合菜单组织回答。后续如果加入忌口、预算、历史订单等信息，这部分逻辑还会继续增长。因此项目没有把它做成一个普通查询函数，而是拆成了独立的 Food Agent。</p>
 <p>Orchestrator 调用 <code>call_food</code> 时，会构造 A2A JSON-RPC 请求，经 A2A Gateway 转发给 Food Agent。</p>
 <p>请求里除了用户文本，还会携带：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">messageId</span><br><span class="line">contextId</span><br><span class="line">traceId</span><br><span class="line">runId</span><br><span class="line">threadId</span><br><span class="line">toolInvocationId</span><br></pre></td></tr></table></figure>
+
 <p><code>contextId</code> 用来保持 A2A 侧的上下文，其余标识主要用于关联一次请求在多个服务中的日志。</p>
 <p>A2A Gateway 当前做的事情比较直接：校验请求、检查 API Key、从注册表找到 Agent 地址，然后根据 <code>message/send</code> 或 <code>message/stream</code> 转发请求。</p>
 <p>相关代码在：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">services/a2a_gateway/main.py</span><br><span class="line">services/food_agent/main.py</span><br></pre></td></tr></table></figure>
+
 <p>这个 Gateway 目前还是轻量实现。Agent Registry 是代码配置，不支持后台动态上架、版本管理或者租户隔离。不过即使只是这样，也能把 Orchestrator 和 Food Agent 的地址、鉴权及转发逻辑分开。</p>
 <p>如果以后 Agent 数量变多，Gateway 才有可能继续承担限流、熔断、路由和统一观测。Demo 阶段没有必要提前把这些全部做完。</p>
-<h2 id="MCP-和-A2A，我是怎么区分的">MCP 和 A2A，我是怎么区分的</h2>
-<p>刚开始把两者放到一起时，最容易产生的问题是：Food Agent 能不能也做成 MCP 工具？菜品查询能不能也包成一个 Agent？</p>
+<h2 id="MCP-和-A2A，我是怎么区分的"><a href="#MCP-和-A2A，我是怎么区分的" class="headerlink" title="MCP 和 A2A，我是怎么区分的"></a>MCP 和 A2A，我是怎么区分的</h2><p>刚开始把两者放到一起时，最容易产生的问题是：Food Agent 能不能也做成 MCP 工具？菜品查询能不能也包成一个 Agent？</p>
 <p>技术上当然都能做，但边界会变得模糊。</p>
 <p>我现在主要看两点。</p>
 <p>第一，被调用方是否需要独立推理。</p>
@@ -471,8 +480,7 @@
 <th>A2A</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>调用对象</td>
 <td>工具或数据源</td>
 <td>另一个 Agent</td>
@@ -492,37 +500,30 @@
 <td>查价格、查库存</td>
 <td>菜单推荐、模拟订餐</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>可以把 MCP 理解成“使用工具”，A2A 理解成“找另一个人协作”。这个类比不够严谨，但在做架构选择时比较直观。</p>
-<h2 id="真正花时间的不是把协议接通">真正花时间的不是把协议接通</h2>
-<p>AG-UI、MCP 和 A2A 的基本链路跑通以后，项目其实还不能算完整。后面花时间更多的是一些看起来不太“Agent”的问题。</p>
-<h3 id="同一个会话不能随便并发">同一个会话不能随便并发</h3>
-<p>如果用户在上一条消息还没有处理完时又发了一条，两次推理可能同时读写上下文。</p>
+<h2 id="真正花时间的不是把协议接通"><a href="#真正花时间的不是把协议接通" class="headerlink" title="真正花时间的不是把协议接通"></a>真正花时间的不是把协议接通</h2><p>AG-UI、MCP 和 A2A 的基本链路跑通以后，项目其实还不能算完整。后面花时间更多的是一些看起来不太“Agent”的问题。</p>
+<h3 id="同一个会话不能随便并发"><a href="#同一个会话不能随便并发" class="headerlink" title="同一个会话不能随便并发"></a>同一个会话不能随便并发</h3><p>如果用户在上一条消息还没有处理完时又发了一条，两次推理可能同时读写上下文。</p>
 <p>项目按 <code>(userId, threadId)</code> 创建 Agent 和 <code>asyncio.Lock</code>。同一个会话串行执行，不同会话可以并发。</p>
 <p>这不是唯一方案，但实现和行为都比较清楚。至少不会出现后一条消息先完成，然后上下文顺序混乱的问题。</p>
 <p>AG-UI 中间件的流式状态则使用 <code>contextvars</code> 隔离，避免多个并发 SSE 请求共享中间变量。</p>
-<h3 id="失败内容不能直接进入下一轮对话">失败内容不能直接进入下一轮对话</h3>
-<p>假设模型已经输出一半，工具调用突然失败。如果把这段不完整的文本加入历史，下一轮模型可能会把它当成已经完成的回答。</p>
+<h3 id="失败内容不能直接进入下一轮对话"><a href="#失败内容不能直接进入下一轮对话" class="headerlink" title="失败内容不能直接进入下一轮对话"></a>失败内容不能直接进入下一轮对话</h3><p>假设模型已经输出一半，工具调用突然失败。如果把这段不完整的文本加入历史，下一轮模型可能会把它当成已经完成的回答。</p>
 <p>项目只会把成功完成的消息恢复到 AgentScope 上下文。失败和取消的 Run 仍然有记录，但不会污染后续推理。</p>
 <p>这里需要区分“为了排查而保存”和“适合作为模型上下文”是两件事。</p>
-<h3 id="用户离开以后，任务也应该停下来">用户离开以后，任务也应该停下来</h3>
-<p>流式请求中，用户可能点击取消，也可能直接关闭页面。</p>
+<h3 id="用户离开以后，任务也应该停下来"><a href="#用户离开以后，任务也应该停下来" class="headerlink" title="用户离开以后，任务也应该停下来"></a>用户离开以后，任务也应该停下来</h3><p>流式请求中，用户可能点击取消，也可能直接关闭页面。</p>
 <p>如果 Orchestrator 不处理这个情况，后台可能继续等待模型、MCP 或 Food Agent，最后生成一份已经没有人接收的结果。</p>
 <p>项目通过 <code>ActiveRunRegistry</code> 保存 <code>runId</code> 到 <code>asyncio.Task</code> 的关系。收到取消请求后，会记录取消时间并调用 <code>Task.cancel()</code>，让取消沿当前 <code>await</code> 链传播。</p>
 <p>这个实现目前只适用于单进程。多实例部署以后，任务可能运行在另一个实例，需要共享任务系统或者单独的取消通道，不能继续依赖内存映射。</p>
-<h3 id="服务重启后，RUNNING-不应该一直存在">服务重启后，RUNNING 不应该一直存在</h3>
-<p>Orchestrator 重启以后，内存任务已经消失，但 SQLite 里可能还留着 <code>PENDING</code> 或 <code>RUNNING</code>。</p>
+<h3 id="服务重启后，RUNNING-不应该一直存在"><a href="#服务重启后，RUNNING-不应该一直存在" class="headerlink" title="服务重启后，RUNNING 不应该一直存在"></a>服务重启后，RUNNING 不应该一直存在</h3><p>Orchestrator 重启以后，内存任务已经消失，但 SQLite 里可能还留着 <code>PENDING</code> 或 <code>RUNNING</code>。</p>
 <p>项目启动时会把这些 Run 标记成 <code>FAILED</code>，并记录 <code>orchestrator_restarted</code>。它不会自动恢复中断的模型和工具调用。</p>
 <p>自动续跑当然更理想，但需要可持久化的工作流、幂等工具和更完整的恢复机制。对这个 Demo 来说，先保证状态不撒谎更重要。</p>
-<h3 id="日志需要能串起来">日志需要能串起来</h3>
-<p>一次用户请求可能调用两次模型、三个工具，还可能经过 A2A Gateway 和 Food Agent。只有一个 <code>traceId</code> 还不够，因为它无法区分同一次 Run 中的多轮操作。</p>
+<h3 id="日志需要能串起来"><a href="#日志需要能串起来" class="headerlink" title="日志需要能串起来"></a>日志需要能串起来</h3><p>一次用户请求可能调用两次模型、三个工具，还可能经过 A2A Gateway 和 Food Agent。只有一个 <code>traceId</code> 还不够，因为它无法区分同一次 Run 中的多轮操作。</p>
 <p>项目里使用了几类标识：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">traceId             整条调用链</span><br><span class="line">runId               一次 Agent 运行</span><br><span class="line">threadId            一个会话</span><br><span class="line">llmCallId            某一轮模型请求</span><br><span class="line">toolInvocationId    某一次工具调用</span><br><span class="line">rpcId               一次 A2A JSON-RPC 请求</span><br><span class="line">contextId           A2A 会话上下文</span><br></pre></td></tr></table></figure>
+
 <p>日志统一使用 <code>[FLOW]</code> 摘要，相关 Header 会从 Orchestrator 传到 A2A Gateway 和 Food Agent。MCP 客户端也会带上调用上下文。</p>
 <p>有了这些标识，才比较容易回答：到底是模型慢、MCP 慢，还是 Food Agent 根本没有收到请求。</p>
-<h2 id="有副作用的工具还差一步">有副作用的工具还差一步</h2>
-<p>当前 <code>call_food</code> 被标记为非只读能力，但 Demo 中的订餐只是模拟操作，调用前也没有用户确认。</p>
+<h2 id="有副作用的工具还差一步"><a href="#有副作用的工具还差一步" class="headerlink" title="有副作用的工具还差一步"></a>有副作用的工具还差一步</h2><p>当前 <code>call_food</code> 被标记为非只读能力，但 Demo 中的订餐只是模拟操作，调用前也没有用户确认。</p>
 <p>如果接入真实下单接口，不能让模型选中工具后直接执行。至少需要增加一个确认过程：把菜品、数量、价格等参数展示给用户，用户明确同意后再继续。</p>
 <p>此外还要考虑：</p>
 <ul>
@@ -534,35 +535,32 @@
 </ul>
 <p>这些问题不是 MCP 或 A2A 自动解决的。协议把调用链连接起来，权限、幂等和确认仍然属于应用本身。</p>
 <p>项目的能力注册表预留了 <code>readOnly</code> 和 <code>requiresConfirmation</code>，但 HITL 闭环还没有实现。这也是后续比较值得补的一块。</p>
-<h2 id="如果从头读代码，我会按这个顺序">如果从头读代码，我会按这个顺序</h2>
-<p>第一步先看前端和路由：</p>
+<h2 id="如果从头读代码，我会按这个顺序"><a href="#如果从头读代码，我会按这个顺序" class="headerlink" title="如果从头读代码，我会按这个顺序"></a>如果从头读代码，我会按这个顺序</h2><p>第一步先看前端和路由：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">frontend/src/main.ts</span><br><span class="line">services/orchestrator/routes.py</span><br></pre></td></tr></table></figure>
+
 <p>先确认请求格式、SSE 响应和取消接口，不要急着钻进模型细节。</p>
 <p>第二步看 Run 怎么执行：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">services/orchestrator/run_service.py</span><br><span class="line">services/orchestrator/run_control.py</span><br><span class="line">services/orchestrator/session.py</span><br><span class="line">services/orchestrator/persistence.py</span><br></pre></td></tr></table></figure>
+
 <p>这一部分可以看到会话锁、历史恢复、状态迁移和取消处理。</p>
 <p>第三步看工具注册和实现：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">services/orchestrator/capabilities.py</span><br><span class="line">services/orchestrator/tool_registry.py</span><br><span class="line">services/orchestrator/tool_impls.py</span><br><span class="line">services/orchestrator/mcp_client.py</span><br></pre></td></tr></table></figure>
+
 <p>这里重点对比 <code>search_food_catalog</code> 和 <code>call_food</code>：一个走 MCP，一个走 A2A，但最终都会作为工具暴露给 Orchestrator Agent。</p>
 <p>最后再看下游服务：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">services/mcp_server/main.py</span><br><span class="line">services/mcp_server/catalog.py</span><br><span class="line">services/a2a_gateway/main.py</span><br><span class="line">services/food_agent/main.py</span><br></pre></td></tr></table></figure>
+
 <p>如果想确认自己对代码的理解是否正确，可以直接看测试。项目中对 Capability Registry、MCP、Food Agent、Gateway、Orchestrator、会话和持久化都做了测试。测试用例通常比实现代码更容易看出一段逻辑原本想保证什么。</p>
-<h2 id="可以继续做的几个实验">可以继续做的几个实验</h2>
-<p>把项目跑起来只是第一步。如果想用它熟悉 Agent 开发，我觉得下面几个改动比继续看概念文章更有用。</p>
-<h3 id="新增一个-MCP-工具">新增一个 MCP 工具</h3>
-<p>可以接天气、汇率或者自己的业务查询接口。重点不是工具本身，而是完整走一遍：</p>
+<h2 id="可以继续做的几个实验"><a href="#可以继续做的几个实验" class="headerlink" title="可以继续做的几个实验"></a>可以继续做的几个实验</h2><p>把项目跑起来只是第一步。如果想用它熟悉 Agent 开发，我觉得下面几个改动比继续看概念文章更有用。</p>
+<h3 id="新增一个-MCP-工具"><a href="#新增一个-MCP-工具" class="headerlink" title="新增一个 MCP 工具"></a>新增一个 MCP 工具</h3><p>可以接天气、汇率或者自己的业务查询接口。重点不是工具本身，而是完整走一遍：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">定义工具 → 注册能力 → 暴露给模型 → 执行调用 → 返回 AG-UI 事件</span><br></pre></td></tr></table></figure>
-<h3 id="新增一个独立-Agent">新增一个独立 Agent</h3>
-<p>例如 Travel Agent 或售后 Agent，然后把它注册到 A2A Gateway。过程中会遇到 Agent Card、上下文 ID、鉴权和错误转发等问题。</p>
-<h3 id="人为制造失败">人为制造失败</h3>
-<p>把 MCP 地址改错、让 Food Agent 超时，或者在请求过程中停止 Gateway。观察 Run 最终状态、前端提示和日志是否一致。</p>
+
+<h3 id="新增一个独立-Agent"><a href="#新增一个独立-Agent" class="headerlink" title="新增一个独立 Agent"></a>新增一个独立 Agent</h3><p>例如 Travel Agent 或售后 Agent，然后把它注册到 A2A Gateway。过程中会遇到 Agent Card、上下文 ID、鉴权和错误转发等问题。</p>
+<h3 id="人为制造失败"><a href="#人为制造失败" class="headerlink" title="人为制造失败"></a>人为制造失败</h3><p>把 MCP 地址改错、让 Food Agent 超时，或者在请求过程中停止 Gateway。观察 Run 最终状态、前端提示和日志是否一致。</p>
 <p>正常路径只能证明功能能跑，失败路径更容易暴露状态设计的问题。</p>
-<h3 id="给订餐加确认">给订餐加确认</h3>
-<p>让模型先生成待执行的订餐参数，前端显示确认卡片，用户同意后再继续执行。这个改动会同时涉及工具状态、Run 暂停和恢复、幂等及审计，能把项目从“工具调用 Demo”往真实业务推进一步。</p>
-<h3 id="尝试多实例">尝试多实例</h3>
-<p>当前取消、会话锁和部分运行状态依赖单进程。把 Orchestrator 启动成多个实例，很快就能看到哪些假设需要改成分布式实现。</p>
-<h2 id="目前没有做的事情">目前没有做的事情</h2>
-<p>这个项目主要用来观察协议怎么配合，因此有不少地方有意保持简单：</p>
+<h3 id="给订餐加确认"><a href="#给订餐加确认" class="headerlink" title="给订餐加确认"></a>给订餐加确认</h3><p>让模型先生成待执行的订餐参数，前端显示确认卡片，用户同意后再继续执行。这个改动会同时涉及工具状态、Run 暂停和恢复、幂等及审计，能把项目从“工具调用 Demo”往真实业务推进一步。</p>
+<h3 id="尝试多实例"><a href="#尝试多实例" class="headerlink" title="尝试多实例"></a>尝试多实例</h3><p>当前取消、会话锁和部分运行状态依赖单进程。把 Orchestrator 启动成多个实例，很快就能看到哪些假设需要改成分布式实现。</p>
+<h2 id="目前没有做的事情"><a href="#目前没有做的事情" class="headerlink" title="目前没有做的事情"></a>目前没有做的事情</h2><p>这个项目主要用来观察协议怎么配合，因此有不少地方有意保持简单：</p>
 <ul>
 <li>菜品目录和 Run 使用 SQLite；</li>
 <li>订单没有做真实持久化；</li>
@@ -575,8 +573,7 @@
 </ul>
 <p>它也没有覆盖 RAG、模型训练、微调、评测和推理优化。把这些内容都塞进一个 Demo，项目反而会失去重点。</p>
 <p>如果准备对外部署，API Key、CORS、HTTPS、限流、密钥管理和工具权限都需要重新检查。README 中的默认配置主要面向本机实验。</p>
-<h2 id="最后">最后</h2>
-<p>做完这个 Demo 后，我对 Agent 应用的理解反而没有以前那么“模型中心”了。</p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>做完这个 Demo 后，我对 Agent 应用的理解反而没有以前那么“模型中心”了。</p>
 <p>模型仍然是最重要的决策节点，但一个请求能否可靠完成，还取决于前端事件、工具边界、会话状态、取消传播、下游超时和日志关联。模型只负责其中一段，剩下的大部分仍然是熟悉的软件工程问题，只是调用链里多了不确定的模型输出。</p>
 <p>如果刚开始接触 AgentScope、MCP 或 A2A，我不建议先把每份协议文档从头背一遍。可以先找一条具体请求，把它从页面一路跟到模型、工具和数据库，再跟着结果返回。链路跑明白以后，再去看协议细节，会更容易知道每个字段为什么存在。</p>
 <p>AgentMesh Demo 只是我用来串这条链路的一个小项目。它离生产系统还有不少距离，但用来回答“一个 Agent 应用到底由哪些部分组成”，已经够用了。</p>
@@ -704,7 +701,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">774k</span>
+    <span title="站点总字数">772k</span>
   </span>
 </div>
 <div class="busuanzi-count">

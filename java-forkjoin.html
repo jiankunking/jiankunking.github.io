@@ -331,12 +331,11 @@
     
     
     <div class="post-body" itemprop="articleBody"><blockquote>
-<p>本文主要想了解两个地方：如何窃取任务、task如何等待（join）<br>
-代码基于 OpenJDK 12</p>
+<p>本文主要想了解两个地方：如何窃取任务、task如何等待（join）<br>代码基于 OpenJDK 12</p>
 </blockquote>
 <span id="more"></span>
-<h2 id="窃取算法（work-stealing）">窃取算法（work-stealing）</h2>
-<p>从<a href="/attachments/ForkJoin-Paper-DougLea.pdf" target="_blank" rel="noopener noreferrer">ForkJoin-Paper-DougLea</a>中可以看出:</p>
+
+<h2 id="窃取算法（work-stealing）"><a href="#窃取算法（work-stealing）" class="headerlink" title="窃取算法（work-stealing）"></a>窃取算法（work-stealing）</h2><p>从<a href="/attachments/ForkJoin-Paper-DougLea.pdf" target="_blank" rel="noopener noreferrer">ForkJoin-Paper-DougLea</a>中可以看出:</p>
 <ul>
 <li>每个队列创建一个单独的线程来执行队列里的任务，线程和队列一一对应。</li>
 <li>队列使用的是双端队列，支持LIFO、FIFO。</li>
@@ -346,11 +345,8 @@
 </ul>
 <p><img src="/images/java-forkjoin/steal.png" alt="steal" loading="eager" fetchpriority="high" decoding="async" width="289" height="396"></p>
 <p>到了这里就可以知道，窃取任务从其他线程队列的尾部窃取的了。</p>
-<h3 id="窃取算法优缺点">窃取算法优缺点</h3>
-<p>工作窃取算法的优点：<font color=DeepPink><strong>充分利用线程进行并行计算，减少了线程间的竞争。</strong></font><br>
-工作窃取算法的缺点：<font color=DeepPink><strong>在某些情况下还是存在竞争，比如双端队列里只有一个任务时。并且该算法会消耗了更多的系统资源，比如创建多个线程和多个双端队列。</strong></font></p>
-<h2 id="Task-等待（join）">Task 等待（join）</h2>
-<p>Join方法的主要作用是阻塞当前线程并等待获取结果。具体代码如下：</p>
+<h3 id="窃取算法优缺点"><a href="#窃取算法优缺点" class="headerlink" title="窃取算法优缺点"></a>窃取算法优缺点</h3><p>工作窃取算法的优点：<font color=DeepPink><strong>充分利用线程进行并行计算，减少了线程间的竞争。</strong></font><br>工作窃取算法的缺点：<font color=DeepPink><strong>在某些情况下还是存在竞争，比如双端队列里只有一个任务时。并且该算法会消耗了更多的系统资源，比如创建多个线程和多个双端队列。</strong></font></p>
+<h2 id="Task-等待（join）"><a href="#Task-等待（join）" class="headerlink" title="Task 等待（join）"></a>Task 等待（join）</h2><p>Join方法的主要作用是阻塞当前线程并等待获取结果。具体代码如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public final V join() &#123;</span><br><span class="line">    int s;</span><br><span class="line">    if (((s = doJoin()) &amp; ABNORMAL) != 0)</span><br><span class="line">        reportException(s);</span><br><span class="line">    return getRawResult();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>首先，它调用了doJoin()方法，通过doJoin()方法得到当前任务的状态来判断返回什么结果，任务状态有4种：已完成（NORMAL）、被取消（CANCELLED）、信号（SIGNAL）和出现异常（EXCEPTIONAL）。</p>
 <ul>
@@ -483,7 +479,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">774k</span>
+    <span title="站点总字数">772k</span>
   </span>
 </div>
 <div class="busuanzi-count">
