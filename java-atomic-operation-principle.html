@@ -26,15 +26,15 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="介绍 Java 原子操作的实现原理，分析处理器缓存、总线锁、缓存锁和 CAS 等底层机制。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://jiankunking.com/images/java-atomic-operation-principle/%E5%9B%BE23.png">
+
 <meta property="article:published_time" content="2019-03-27T12:07:35.000Z">
 <meta property="article:modified_time" content="2019-03-27T12:07:35.000Z">
-<meta property="article:author" content="jiankunking">
+<meta property="article:author" content="衣舞晨风 (jiankunking)">
 <meta property="article:tag" content="Atomic">
 <meta property="article:tag" content="Concurrent">
 <meta property="article:tag" content="Java">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://jiankunking.com/images/java-atomic-operation-principle/%E5%9B%BE23.png">
+
 
 
 <link rel="canonical" href="https://jiankunking.com/java-atomic-operation-principle.html">
@@ -79,11 +79,16 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-atomic-operation-principle.html"},"headline":"Java 原子操作的实现原理","description":"介绍 Java 原子操作的实现原理，分析处理器缓存、总线锁、缓存锁和 CAS 等底层机制。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2019-03-27T12:07:35.000Z","dateModified":"2019-03-27T12:07:35.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"Java, Atomic, Concurrent","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/java-atomic-operation-principle.html#article","url":"https://jiankunking.com/java-atomic-operation-principle.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-atomic-operation-principle.html"},"headline":"Java 原子操作的实现原理","description":"介绍 Java 原子操作的实现原理，分析处理器缓存、总线锁、缓存锁和 CAS 等底层机制。","abstract":"介绍 Java 原子操作的实现原理，分析处理器缓存、总线锁、缓存锁和 CAS 等底层机制。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2019-03-27T12:07:35.000Z","dateModified":"2019-03-27T12:07:35.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"Java, Atomic, Concurrent","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/java-atomic-operation-principle.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/java-atomic-operation-principle.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Java","item":"https://jiankunking.com/categories/java/"},{"@type":"ListItem","position":3,"name":"Java 原子操作的实现原理","item":"https://jiankunking.com/java-atomic-operation-principle.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/og-default.png">
+<meta property="og:image:alt" content="Java 原子操作的实现原理">
+<meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
+<meta name="twitter:image:alt" content="Java 原子操作的实现原理">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -172,15 +177,15 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AF%E8%AF%AD%E5%AE%9A%E4%B9%89"><span class="nav-number">1.</span> <span class="nav-text">术语定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E5%99%A8%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">处理器如何实现原子操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%80%BB%E7%BA%BF%E9%94%81%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="nav-number">2.1.</span> <span class="nav-text">使用总线锁保证原子性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E7%BC%93%E5%AD%98%E9%94%81%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="nav-number">2.2.</span> <span class="nav-text">使用缓存锁保证原子性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">3.</span> <span class="nav-text">Java如何实现原子操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%BE%AA%E7%8E%AFCAS%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">3.1.</span> <span class="nav-text">使用循环CAS实现原子操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CAS%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C%E7%9A%84%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98"><span class="nav-number">3.2.</span> <span class="nav-text">CAS实现原子操作的三大问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E9%94%81%E6%9C%BA%E5%88%B6%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">3.3.</span> <span class="nav-text">使用锁机制实现原子操作</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A8%E8%8D%90%E9%98%85%E8%AF%BB"><span class="nav-number">4.</span> <span class="nav-text">推荐阅读</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#post-overview-title"><span class="nav-number">1.</span> <span class="nav-text">文章速览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AF%E8%AF%AD%E5%AE%9A%E4%B9%89"><span class="nav-number">2.</span> <span class="nav-text">术语定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E5%99%A8%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">3.</span> <span class="nav-text">处理器如何实现原子操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%80%BB%E7%BA%BF%E9%94%81%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="nav-number">3.1.</span> <span class="nav-text">使用总线锁保证原子性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E7%BC%93%E5%AD%98%E9%94%81%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="nav-number">3.2.</span> <span class="nav-text">使用缓存锁保证原子性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">4.</span> <span class="nav-text">Java如何实现原子操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%BE%AA%E7%8E%AFCAS%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">4.1.</span> <span class="nav-text">使用循环CAS实现原子操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CAS%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C%E7%9A%84%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98"><span class="nav-number">4.2.</span> <span class="nav-text">CAS实现原子操作的三大问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E9%94%81%E6%9C%BA%E5%88%B6%E5%AE%9E%E7%8E%B0%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="nav-number">4.3.</span> <span class="nav-text">使用锁机制实现原子操作</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A8%E8%8D%90%E9%98%85%E8%AF%BB"><span class="nav-number">5.</span> <span class="nav-text">推荐阅读</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="jiankunking"
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
       src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
-  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
 <div class="site-state-wrap animated">
@@ -252,7 +257,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar/avatar.png">
-      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="name" content="衣舞晨风 (jiankunking)">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -331,7 +336,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
+    <div class="post-body" itemprop="articleBody"><aside class="post-overview" aria-labelledby="post-overview-title"><h2 id="post-overview-title">文章速览</h2><p>介绍 Java 原子操作的实现原理，分析处理器缓存、总线锁、缓存锁和 CAS 等底层机制。</p><div class="post-overview__meta"><span><strong>作者：</strong><a href="/about/#person" rel="author">衣舞晨风 (jiankunking)</a></span><span><strong>内容类型：</strong>原创</span><span><strong>主题：</strong>Java</span></div></aside><blockquote>
 <p>本文整理自《Java并发编程的艺术》第二章 作者：方腾飞　魏鹏　程晓明</p>
 </blockquote>
 <span id="more"></span>
@@ -430,11 +435,11 @@ table th:nth-of-type(2) {
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风 (jiankunking) 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
       <div>
-        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
+        <img src="/images/reward/alipay.jpg" alt="衣舞晨风 (jiankunking) 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
         <span>支付宝</span>
       </div>
 
@@ -446,7 +451,7 @@ table th:nth-of-type(2) {
 <div class="post-copyright">
 <ul>
   <li class="post-copyright-author">
-      <strong>本文作者： </strong>jiankunking
+      <strong>本文作者： </strong>衣舞晨风 (jiankunking)
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
@@ -531,7 +536,7 @@ table th:nth-of-type(2) {
     <span class="with-love">
       <i class="fa-solid fa-heart"></i>
     </span>
-    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风 (jiankunking)</span>
   </div>
 <div class="wordcount">
   <span class="post-meta-item">

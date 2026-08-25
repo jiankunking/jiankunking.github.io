@@ -26,17 +26,17 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="基于JDK 9分析Lambda表达式的实现原理，包括函数式接口、invokedynamic指令、LambdaMetafactory等核心机制。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javap.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javac-FunctionTest.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/javac-LambdaTest.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-lambda/dumpProxyClasses.png">
+
+
+
+
 <meta property="article:published_time" content="2018-04-05T23:39:14.000Z">
 <meta property="article:modified_time" content="2018-04-05T23:39:14.000Z">
-<meta property="article:author" content="jiankunking">
+<meta property="article:author" content="衣舞晨风 (jiankunking)">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="Lambda">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://jiankunking.com/images/java-lambda/javap.png">
+
 
 
 <link rel="canonical" href="https://jiankunking.com/java-lambda.html">
@@ -81,11 +81,16 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-lambda.html"},"headline":"Java Lambda表达式 实现原理分析","description":"基于JDK 9分析Lambda表达式的实现原理，包括函数式接口、invokedynamic指令、LambdaMetafactory等核心机制。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-04-05T23:39:14.000Z","dateModified":"2018-04-05T23:39:14.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"Java, Lambda","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/java-lambda.html#article","url":"https://jiankunking.com/java-lambda.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-lambda.html"},"headline":"Java Lambda表达式 实现原理分析","description":"基于JDK 9分析Lambda表达式的实现原理，包括函数式接口、invokedynamic指令、LambdaMetafactory等核心机制。","abstract":"基于JDK 9分析Lambda表达式的实现原理，包括函数式接口、invokedynamic指令、LambdaMetafactory等核心机制。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-04-05T23:39:14.000Z","dateModified":"2018-04-05T23:39:14.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"Java, Lambda","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/java-lambda.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/java-lambda.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Java","item":"https://jiankunking.com/categories/java/"},{"@type":"ListItem","position":3,"name":"Java Lambda表达式 实现原理分析","item":"https://jiankunking.com/java-lambda.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/og-default.png">
+<meta property="og:image:alt" content="Java Lambda表达式 实现原理分析">
+<meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
+<meta name="twitter:image:alt" content="Java Lambda表达式 实现原理分析">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -174,15 +179,15 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%9B%AE%E6%A0%87"><span class="nav-number">1.</span> <span class="nav-text">一、目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3"><span class="nav-number">2.</span> <span class="nav-text">二、函数式接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81Lambda"><span class="nav-number">3.</span> <span class="nav-text">三、Lambda</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 示例代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%AF%B9%E4%BA%8Elambda%E5%AE%9E%E7%8E%B0%E7%9A%84%E7%8C%9C%E6%B5%8B"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 对于lambda实现的猜测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%8F%8D%E7%BC%96%E8%AF%91%E4%BB%A3%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 反编译代码详解</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-1-%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5"><span class="nav-number">3.3.1.</span> <span class="nav-text">3.3.1 动态链接</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-2-%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="nav-number">3.3.2.</span> <span class="nav-text">3.3.2 常量池</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-3-%E6%96%B9%E6%B3%95"><span class="nav-number">3.3.3.</span> <span class="nav-text">3.3.3 方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-4-%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">3.3.4.</span> <span class="nav-text">3.3.4 代码分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-5-%E4%BB%A3%E7%A0%81%E8%BF%98%E5%8E%9F"><span class="nav-number">3.3.5.</span> <span class="nav-text">3.3.5 代码还原</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">四、总结</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#post-overview-title"><span class="nav-number">1.</span> <span class="nav-text">文章速览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%9B%AE%E6%A0%87"><span class="nav-number">2.</span> <span class="nav-text">一、目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3"><span class="nav-number">3.</span> <span class="nav-text">二、函数式接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81Lambda"><span class="nav-number">4.</span> <span class="nav-text">三、Lambda</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 示例代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%AF%B9%E4%BA%8Elambda%E5%AE%9E%E7%8E%B0%E7%9A%84%E7%8C%9C%E6%B5%8B"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 对于lambda实现的猜测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%8F%8D%E7%BC%96%E8%AF%91%E4%BB%A3%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="nav-number">4.3.</span> <span class="nav-text">3.3 反编译代码详解</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-1-%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5"><span class="nav-number">4.3.1.</span> <span class="nav-text">3.3.1 动态链接</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-2-%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="nav-number">4.3.2.</span> <span class="nav-text">3.3.2 常量池</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-3-%E6%96%B9%E6%B3%95"><span class="nav-number">4.3.3.</span> <span class="nav-text">3.3.3 方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-4-%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">4.3.4.</span> <span class="nav-text">3.3.4 代码分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-5-%E4%BB%A3%E7%A0%81%E8%BF%98%E5%8E%9F"><span class="nav-number">4.3.5.</span> <span class="nav-text">3.3.5 代码还原</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">四、总结</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="jiankunking"
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
       src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
-  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
 <div class="site-state-wrap animated">
@@ -254,7 +259,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar/avatar.png">
-      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="name" content="衣舞晨风 (jiankunking)">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -333,7 +338,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>基于JDK 9分析Lambda表达式的实现原理，包括函数式接口、invokedynamic指令、LambdaMetafactory等核心机制。</p>
+    <div class="post-body" itemprop="articleBody"><aside class="post-overview" aria-labelledby="post-overview-title"><h2 id="post-overview-title">文章速览</h2><p>基于JDK 9分析Lambda表达式的实现原理，包括函数式接口、invokedynamic指令、LambdaMetafactory等核心机制。</p><div class="post-overview__meta"><span><strong>作者：</strong><a href="/about/#person" rel="author">衣舞晨风 (jiankunking)</a></span><span><strong>内容类型：</strong>原创</span><span><strong>主题：</strong>Java</span></div></aside><p>基于JDK 9分析Lambda表达式的实现原理，包括函数式接口、invokedynamic指令、LambdaMetafactory等核心机制。</p>
 <span id="more"></span>
 
 <blockquote>
@@ -484,11 +489,11 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风 (jiankunking) 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
       <div>
-        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
+        <img src="/images/reward/alipay.jpg" alt="衣舞晨风 (jiankunking) 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
         <span>支付宝</span>
       </div>
 
@@ -500,7 +505,7 @@
 <div class="post-copyright">
 <ul>
   <li class="post-copyright-author">
-      <strong>本文作者： </strong>jiankunking
+      <strong>本文作者： </strong>衣舞晨风 (jiankunking)
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
@@ -584,7 +589,7 @@
     <span class="with-love">
       <i class="fa-solid fa-heart"></i>
     </span>
-    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风 (jiankunking)</span>
   </div>
 <div class="wordcount">
   <span class="post-meta-item">

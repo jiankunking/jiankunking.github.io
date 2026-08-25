@@ -26,18 +26,18 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析分片恢复流程，包括 Segment 传输、引擎打开和 Translog 重放。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://jiankunking.com/images/elasticsearch-shard-recovery-source-code-analysis/%E5%88%86%E7%89%87%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B.png">
-<meta property="og:image" content="https://jiankunking.com/images/elasticsearch-shard-recovery-source-code-analysis/%E4%BB%8E%E5%88%86%E7%89%87%E6%81%A2%E5%A4%8D%E6%97%B6%E5%BA%8F%E5%9B%BE.png">
-<meta property="og:image" content="https://jiankunking.com/images/elasticsearch-shard-recovery-source-code-analysis/01.png">
+
+
+
 <meta property="article:published_time" content="2023-12-23T12:19:55.000Z">
 <meta property="article:modified_time" content="2023-12-23T12:19:55.000Z">
-<meta property="article:author" content="jiankunking">
+<meta property="article:author" content="衣舞晨风 (jiankunking)">
 <meta property="article:tag" content="Elasticsearch">
 <meta property="article:tag" content="Recovery">
 <meta property="article:tag" content="Shard">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://jiankunking.com/images/elasticsearch-shard-recovery-source-code-analysis/%E5%88%86%E7%89%87%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B.png">
+
 
 
 <link rel="canonical" href="https://jiankunking.com/elasticsearch-shard-recovery-source-code-analysis.html">
@@ -82,11 +82,16 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/elasticsearch-shard-recovery-source-code-analysis.html"},"headline":"【Elasticsearch源码】 分片恢复分析","description":"基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析分片恢复流程，包括 Segment 传输、引擎打开和 Translog 重放。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2023-12-23T12:19:55.000Z","dateModified":"2023-12-23T12:19:55.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Elasticsearch","keywords":"Elasticsearch, Shard, 源码, Recovery","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/elasticsearch-shard-recovery-source-code-analysis.html#article","url":"https://jiankunking.com/elasticsearch-shard-recovery-source-code-analysis.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/elasticsearch-shard-recovery-source-code-analysis.html"},"headline":"【Elasticsearch源码】 分片恢复分析","description":"基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析分片恢复流程，包括 Segment 传输、引擎打开和 Translog 重放。","abstract":"基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析分片恢复流程，包括 Segment 传输、引擎打开和 Translog 重放。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2023-12-23T12:19:55.000Z","dateModified":"2023-12-23T12:19:55.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Elasticsearch","keywords":"Elasticsearch, Shard, 源码, Recovery","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/elasticsearch-shard-recovery-source-code-analysis.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/elasticsearch-shard-recovery-source-code-analysis.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Elasticsearch","item":"https://jiankunking.com/categories/elasticsearch/"},{"@type":"ListItem","position":3,"name":"【Elasticsearch源码】 分片恢复分析","item":"https://jiankunking.com/elasticsearch-shard-recovery-source-code-analysis.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/og-default.png">
+<meta property="og:image:alt" content="【Elasticsearch源码】 分片恢复分析">
+<meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
+<meta name="twitter:image:alt" content="【Elasticsearch源码】 分片恢复分析">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -175,15 +180,15 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E7%9A%84"><span class="nav-number">1.</span> <span class="nav-text">目的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87%E8%8A%82%E7%82%B9%E8%AF%B7%E6%B1%82%E6%81%A2%E5%A4%8D"><span class="nav-number">2.1.</span> <span class="nav-text">目标节点请求恢复</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BA%90%E8%8A%82%E7%82%B9%E5%A4%84%E7%90%86%E6%81%A2%E5%A4%8D%E8%AF%B7%E6%B1%82"><span class="nav-number">2.2.</span> <span class="nav-text">源节点处理恢复请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87%E8%8A%82%E7%82%B9%E5%BC%80%E5%A7%8B%E6%81%A2%E5%A4%8D"><span class="nav-number">2.3.</span> <span class="nav-text">目标节点开始恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6segment"><span class="nav-number">2.3.1.</span> <span class="nav-text">接收segment</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%89%93%E5%BC%80%E5%BC%95%E6%93%8E"><span class="nav-number">2.3.2.</span> <span class="nav-text">打开引擎</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6%E5%B9%B6%E9%87%8D%E6%94%BEtranslog"><span class="nav-number">2.3.3.</span> <span class="nav-text">接收并重放translog</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">小结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%96%91%E9%97%AE%E7%82%B91%EF%BC%9A%E7%BD%91%E4%B8%8A%E8%AF%B4%E7%9A%84%E5%AF%B9%E4%B8%8D%E5%AF%B9%EF%BC%9F%E6%96%B0%E7%89%88%E6%9C%AC%E4%B8%AD%E6%9C%89%E6%B2%A1%E6%9C%89%E6%9B%B4%E6%96%B0%EF%BC%9F"><span class="nav-number">3.1.</span> <span class="nav-text">疑问点1：网上说的对不对？新版本中有没有更新？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%96%91%E9%97%AE%E7%82%B92%EF%BC%9A%E5%9C%A8%E5%88%86%E7%89%87%E6%81%A2%E5%A4%8D%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E5%A6%82%E6%9E%9C%E6%94%B6%E5%88%B0Api-forcemerge%E8%AF%B7%E6%B1%82%EF%BC%8C%E8%BF%99%E6%97%B6%E5%80%99%EF%BC%8C%E4%BC%9A%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86"><span class="nav-number">3.2.</span> <span class="nav-text">疑问点2：在分片恢复的时候，如果收到Api _forcemerge请求，这时候，会如何处理?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%96%91%E9%97%AE%E7%82%B93%EF%BC%9A%E7%89%87%E6%81%A2%E5%A4%8D%E7%9A%84%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%98%AF%E5%90%8C%E6%AD%A5translog-%E8%BF%99%E4%B8%80%E6%AD%A5%E4%BC%9A%E4%B8%8D%E4%BC%9A%E5%8A%A0%E9%94%81%EF%BC%9F%E4%B8%8D%E5%8A%A0%E9%94%81%E7%9A%84%E8%AF%9D%EF%BC%8C%E5%A6%82%E4%BD%95%E7%A1%AE%E4%BF%9D%E6%98%AF%E5%90%8C%E6%AD%A5%E5%AE%8C%E6%88%90%E4%BA%86%EF%BC%9F"><span class="nav-number">3.3.</span> <span class="nav-text">疑问点3：片恢复的第二阶段是同步translog,这一步会不会加锁？不加锁的话，如何确保是同步完成了？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4%E6%80%A7"><span class="nav-number">3.3.1.</span> <span class="nav-text">完整性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">3.3.2.</span> <span class="nav-text">一致性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8B%93%E5%B1%95-%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%89%AF%E5%88%86%E7%89%87%E5%92%8C%E4%B8%BB%E5%88%86%E7%89%87%E4%B8%80%E8%87%B4"><span class="nav-number">4.</span> <span class="nav-text">拓展:如何保证副分片和主分片一致</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%EF%BC%8E%E7%B4%A2%E5%BC%95%E6%96%B0%E6%96%87%E6%A1%A3"><span class="nav-number">4.1.</span> <span class="nav-text">1．索引新文档</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%EF%BC%8E%E6%9B%B4%E6%96%B0"><span class="nav-number">4.2.</span> <span class="nav-text">2．更新</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%EF%BC%8E-%E5%88%A0%E9%99%A4"><span class="nav-number">4.3.</span> <span class="nav-text">3． 删除</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#post-overview-title"><span class="nav-number">1.</span> <span class="nav-text">文章速览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E7%9A%84"><span class="nav-number">2.</span> <span class="nav-text">目的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87%E8%8A%82%E7%82%B9%E8%AF%B7%E6%B1%82%E6%81%A2%E5%A4%8D"><span class="nav-number">3.1.</span> <span class="nav-text">目标节点请求恢复</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BA%90%E8%8A%82%E7%82%B9%E5%A4%84%E7%90%86%E6%81%A2%E5%A4%8D%E8%AF%B7%E6%B1%82"><span class="nav-number">3.2.</span> <span class="nav-text">源节点处理恢复请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87%E8%8A%82%E7%82%B9%E5%BC%80%E5%A7%8B%E6%81%A2%E5%A4%8D"><span class="nav-number">3.3.</span> <span class="nav-text">目标节点开始恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6segment"><span class="nav-number">3.3.1.</span> <span class="nav-text">接收segment</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%89%93%E5%BC%80%E5%BC%95%E6%93%8E"><span class="nav-number">3.3.2.</span> <span class="nav-text">打开引擎</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6%E5%B9%B6%E9%87%8D%E6%94%BEtranslog"><span class="nav-number">3.3.3.</span> <span class="nav-text">接收并重放translog</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%96%91%E9%97%AE%E7%82%B91%EF%BC%9A%E7%BD%91%E4%B8%8A%E8%AF%B4%E7%9A%84%E5%AF%B9%E4%B8%8D%E5%AF%B9%EF%BC%9F%E6%96%B0%E7%89%88%E6%9C%AC%E4%B8%AD%E6%9C%89%E6%B2%A1%E6%9C%89%E6%9B%B4%E6%96%B0%EF%BC%9F"><span class="nav-number">4.1.</span> <span class="nav-text">疑问点1：网上说的对不对？新版本中有没有更新？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%96%91%E9%97%AE%E7%82%B92%EF%BC%9A%E5%9C%A8%E5%88%86%E7%89%87%E6%81%A2%E5%A4%8D%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E5%A6%82%E6%9E%9C%E6%94%B6%E5%88%B0Api-forcemerge%E8%AF%B7%E6%B1%82%EF%BC%8C%E8%BF%99%E6%97%B6%E5%80%99%EF%BC%8C%E4%BC%9A%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86"><span class="nav-number">4.2.</span> <span class="nav-text">疑问点2：在分片恢复的时候，如果收到Api _forcemerge请求，这时候，会如何处理?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%96%91%E9%97%AE%E7%82%B93%EF%BC%9A%E7%89%87%E6%81%A2%E5%A4%8D%E7%9A%84%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%98%AF%E5%90%8C%E6%AD%A5translog-%E8%BF%99%E4%B8%80%E6%AD%A5%E4%BC%9A%E4%B8%8D%E4%BC%9A%E5%8A%A0%E9%94%81%EF%BC%9F%E4%B8%8D%E5%8A%A0%E9%94%81%E7%9A%84%E8%AF%9D%EF%BC%8C%E5%A6%82%E4%BD%95%E7%A1%AE%E4%BF%9D%E6%98%AF%E5%90%8C%E6%AD%A5%E5%AE%8C%E6%88%90%E4%BA%86%EF%BC%9F"><span class="nav-number">4.3.</span> <span class="nav-text">疑问点3：片恢复的第二阶段是同步translog,这一步会不会加锁？不加锁的话，如何确保是同步完成了？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4%E6%80%A7"><span class="nav-number">4.3.1.</span> <span class="nav-text">完整性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">4.3.2.</span> <span class="nav-text">一致性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8B%93%E5%B1%95-%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%89%AF%E5%88%86%E7%89%87%E5%92%8C%E4%B8%BB%E5%88%86%E7%89%87%E4%B8%80%E8%87%B4"><span class="nav-number">5.</span> <span class="nav-text">拓展:如何保证副分片和主分片一致</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%EF%BC%8E%E7%B4%A2%E5%BC%95%E6%96%B0%E6%96%87%E6%A1%A3"><span class="nav-number">5.1.</span> <span class="nav-text">1．索引新文档</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%EF%BC%8E%E6%9B%B4%E6%96%B0"><span class="nav-number">5.2.</span> <span class="nav-text">2．更新</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%EF%BC%8E-%E5%88%A0%E9%99%A4"><span class="nav-number">5.3.</span> <span class="nav-text">3． 删除</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="jiankunking"
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
       src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
-  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
 <div class="site-state-wrap animated">
@@ -255,7 +260,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar/avatar.png">
-      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="name" content="衣舞晨风 (jiankunking)">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -334,7 +339,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
+    <div class="post-body" itemprop="articleBody"><aside class="post-overview" aria-labelledby="post-overview-title"><h2 id="post-overview-title">文章速览</h2><p>基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析分片恢复流程，包括 Segment 传输、引擎打开和 Translog 重放。</p><div class="post-overview__meta"><span><strong>作者：</strong><a href="/about/#person" rel="author">衣舞晨风 (jiankunking)</a></span><span><strong>内容类型：</strong>原创</span><span><strong>主题：</strong>Elasticsearch</span></div></aside><blockquote>
 <p>带着疑问学源码，第七篇：Elasticsearch 分片恢复分析<br>代码分析基于：<a href="https://github.com/jiankunking/elasticsearch">https://github.com/jiankunking/elasticsearch</a><br>Elasticsearch 8.0.0-SNAPSHOT</p>
 </blockquote>
 <span id="more"></span>
@@ -466,11 +471,11 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风 (jiankunking) 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
       <div>
-        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
+        <img src="/images/reward/alipay.jpg" alt="衣舞晨风 (jiankunking) 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
         <span>支付宝</span>
       </div>
 
@@ -482,7 +487,7 @@
 <div class="post-copyright">
 <ul>
   <li class="post-copyright-author">
-      <strong>本文作者： </strong>jiankunking
+      <strong>本文作者： </strong>衣舞晨风 (jiankunking)
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
@@ -568,7 +573,7 @@
     <span class="with-love">
       <i class="fa-solid fa-heart"></i>
     </span>
-    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风 (jiankunking)</span>
   </div>
 <div class="wordcount">
   <span class="post-meta-item">

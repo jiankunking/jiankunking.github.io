@@ -26,18 +26,18 @@
 <meta property="og:site_name" content="衣舞晨风">
 <meta property="og:description" content="基于 JDK 11 源码分析 ReentrantReadWriteLock 的读写状态、锁降级、公平策略和线程竞争机制。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84.png">
-<meta property="og:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/32%E4%BD%8D%E8%AF%BB%E5%86%99%E6%A0%87%E8%AF%86.png">
+
+
+
+
 <meta property="article:published_time" content="2018-11-11T12:39:01.000Z">
 <meta property="article:modified_time" content="2018-11-11T12:39:01.000Z">
-<meta property="article:author" content="jiankunking">
+<meta property="article:author" content="衣舞晨风 (jiankunking)">
 <meta property="article:tag" content="AQS">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="ReentrantReadWriteLock">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://jiankunking.com/images/java-reentrantreadwritelock/ReadWriteLock%E6%8E%A5%E5%8F%A3.png">
+
 
 
 <link rel="canonical" href="https://jiankunking.com/java-reentrantreadwritelock.html">
@@ -82,11 +82,16 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-reentrantreadwritelock.html"},"headline":"ReentrantReadWriteLock原理解析","description":"基于 JDK 11 源码分析 ReentrantReadWriteLock 的读写状态、锁降级、公平策略和线程竞争机制。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-11-11T12:39:01.000Z","dateModified":"2018-11-11T12:39:01.000Z","author":{"@type":"Person","name":"jiankunking","url":"https://jiankunking.com/about/"},"publisher":{"@type":"Organization","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"Java, AQS, ReentrantReadWriteLock","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/java-reentrantreadwritelock.html#article","url":"https://jiankunking.com/java-reentrantreadwritelock.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-reentrantreadwritelock.html"},"headline":"ReentrantReadWriteLock原理解析","description":"基于 JDK 11 源码分析 ReentrantReadWriteLock 的读写状态、锁降级、公平策略和线程竞争机制。","abstract":"基于 JDK 11 源码分析 ReentrantReadWriteLock 的读写状态、锁降级、公平策略和线程竞争机制。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-11-11T12:39:01.000Z","dateModified":"2018-11-11T12:39:01.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"Java, AQS, ReentrantReadWriteLock","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/java-reentrantreadwritelock.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/java-reentrantreadwritelock.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Java","item":"https://jiankunking.com/categories/java/"},{"@type":"ListItem","position":3,"name":"ReentrantReadWriteLock原理解析","item":"https://jiankunking.com/java-reentrantreadwritelock.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/og-default.png">
+<meta property="og:image:alt" content="ReentrantReadWriteLock原理解析">
+<meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
+<meta name="twitter:image:alt" content="ReentrantReadWriteLock原理解析">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -175,15 +180,15 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E3%80%81%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1、前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E3%80%81%E8%AF%BB%E5%86%99%E9%94%81%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">2.</span> <span class="nav-text">2、读写锁使用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E3%80%81%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%EF%BC%9AReadWriteLock"><span class="nav-number">3.</span> <span class="nav-text">3、读写锁接口：ReadWriteLock</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5%E3%80%81ReentrantReadWriteLock%E8%84%89%E7%BB%9C%E6%A2%B3%E7%90%86"><span class="nav-number">4.</span> <span class="nav-text">5、ReentrantReadWriteLock脉络梳理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E8%AF%BB%E5%86%99%E7%8A%B6%E6%80%81%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">4.1.</span> <span class="nav-text">5.1 读写状态的设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%86%99%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E4%B8%8E%E9%87%8A%E6%94%BE"><span class="nav-number">4.2.</span> <span class="nav-text">5.2 写锁的获取与释放</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E8%AF%BB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E4%B8%8E%E9%87%8A%E6%94%BE"><span class="nav-number">4.3.</span> <span class="nav-text">5.3 读锁的获取与释放</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E9%94%81%E9%99%8D%E7%BA%A7"><span class="nav-number">4.4.</span> <span class="nav-text">5.4 锁降级</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">6、小结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E8%AF%BB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E3%80%81%E9%87%8A%E6%94%BE"><span class="nav-number">5.1.</span> <span class="nav-text">6.1 读锁的获取、释放</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7%E3%80%81%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">6.</span> <span class="nav-text">7、参考资料</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#post-overview-title"><span class="nav-number">1.</span> <span class="nav-text">文章速览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E3%80%81%E5%89%8D%E8%A8%80"><span class="nav-number">2.</span> <span class="nav-text">1、前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E3%80%81%E8%AF%BB%E5%86%99%E9%94%81%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">3.</span> <span class="nav-text">2、读写锁使用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E3%80%81%E8%AF%BB%E5%86%99%E9%94%81%E6%8E%A5%E5%8F%A3%EF%BC%9AReadWriteLock"><span class="nav-number">4.</span> <span class="nav-text">3、读写锁接口：ReadWriteLock</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5%E3%80%81ReentrantReadWriteLock%E8%84%89%E7%BB%9C%E6%A2%B3%E7%90%86"><span class="nav-number">5.</span> <span class="nav-text">5、ReentrantReadWriteLock脉络梳理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E8%AF%BB%E5%86%99%E7%8A%B6%E6%80%81%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 读写状态的设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%86%99%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E4%B8%8E%E9%87%8A%E6%94%BE"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 写锁的获取与释放</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E8%AF%BB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E4%B8%8E%E9%87%8A%E6%94%BE"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 读锁的获取与释放</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E9%94%81%E9%99%8D%E7%BA%A7"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 锁降级</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6%E3%80%81%E5%B0%8F%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">6、小结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E8%AF%BB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E3%80%81%E9%87%8A%E6%94%BE"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 读锁的获取、释放</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7%E3%80%81%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">7.</span> <span class="nav-text">7、参考资料</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="jiankunking"
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
       src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
-  <p class="site-author-name" itemprop="name">jiankunking</p>
+  <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
 <div class="site-state-wrap animated">
@@ -255,7 +260,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar/avatar.png">
-      <meta itemprop="name" content="jiankunking">
+      <meta itemprop="name" content="衣舞晨风 (jiankunking)">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -334,7 +339,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
+    <div class="post-body" itemprop="articleBody"><aside class="post-overview" aria-labelledby="post-overview-title"><h2 id="post-overview-title">文章速览</h2><p>基于 JDK 11 源码分析 ReentrantReadWriteLock 的读写状态、锁降级、公平策略和线程竞争机制。</p><div class="post-overview__meta"><span><strong>作者：</strong><a href="/about/#person" rel="author">衣舞晨风 (jiankunking)</a></span><span><strong>内容类型：</strong>原创</span><span><strong>主题：</strong>Java</span></div></aside><blockquote>
 <p>Java JDK 11 ReentrantReadWriteLock 原理分析</p>
 </blockquote>
 <span id="more"></span>
@@ -438,11 +443,11 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="jiankunking 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风 (jiankunking) 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
       <div>
-        <img src="/images/reward/alipay.jpg" alt="jiankunking 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
+        <img src="/images/reward/alipay.jpg" alt="衣舞晨风 (jiankunking) 支付宝" loading="lazy" decoding="async" width="1080" height="1680">
         <span>支付宝</span>
       </div>
 
@@ -454,7 +459,7 @@
 <div class="post-copyright">
 <ul>
   <li class="post-copyright-author">
-      <strong>本文作者： </strong>jiankunking
+      <strong>本文作者： </strong>衣舞晨风 (jiankunking)
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
@@ -539,7 +544,7 @@
     <span class="with-love">
       <i class="fa-solid fa-heart"></i>
     </span>
-    <span class="author" itemprop="copyrightHolder">jiankunking</span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风 (jiankunking)</span>
   </div>
 <div class="wordcount">
   <span class="post-meta-item">
