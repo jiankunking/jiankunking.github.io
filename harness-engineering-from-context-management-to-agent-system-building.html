@@ -183,7 +183,7 @@
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
-      src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
   <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
@@ -327,14 +327,14 @@
     
     <div class="post-body" itemprop="articleBody"><p>《Harness工程：从上下文管理到Agent系统构建》读书笔记。本书从上下文工程出发，依次讨论意图识别、规划、执行、反思、记忆、Skills、多 Agent 协作，以及 Claude Code、Claw 类产品背后的 Harness 设计思想。</p>
 <span id="more"></span>
-
 <blockquote>
 <p>但我始终坚信，无论模型如何迭代，Harness 工程作为连接模型与真实世界的桥梁，都将是未来 AI 应用工程师的核心竞争力。</p>
 </blockquote>
-<h2 id="一、核心观点：Agent-LLM-Harness"><a href="#一、核心观点：Agent-LLM-Harness" class="headerlink" title="一、核心观点：Agent &#x3D; LLM + Harness"></a>一、核心观点：Agent &#x3D; LLM + Harness</h2><p>大语言模型提供推理与生成能力，但仅有模型并不足以构成一个能够稳定完成真实任务的 Agent。模型之外还需要一套工程系统，为它提供上下文、工具、记忆、权限、状态管理、任务调度和运行环境，这套系统就是 Harness。</p>
+<h2 id="一、核心观点：Agent-LLM-Harness">一、核心观点：Agent = LLM + Harness</h2>
+<p>大语言模型提供推理与生成能力，但仅有模型并不足以构成一个能够稳定完成真实任务的 Agent。模型之外还需要一套工程系统，为它提供上下文、工具、记忆、权限、状态管理、任务调度和运行环境，这套系统就是 Harness。</p>
 <p>可以用一个简单的公式概括三者之间的关系：</p>
 <blockquote>
-<p><strong>Agent &#x3D; LLM + Harness</strong></p>
+<p><strong>Agent = LLM + Harness</strong></p>
 </blockquote>
 <p>Harness 工程不直接干预模型内部如何思考，而是围绕模型构建一套可靠的外部支撑环境，使模型能够：</p>
 <ul>
@@ -347,7 +347,8 @@
 <li>控制上下文规模，减少噪声和 Token 消耗。</li>
 </ul>
 <p>因此，构建 Agent 的重点正在从“如何写出一个更复杂的 Prompt”，逐渐转向“如何为模型设计一个更好的工作环境”。</p>
-<h2 id="二、从提示词工程到上下文工程"><a href="#二、从提示词工程到上下文工程" class="headerlink" title="二、从提示词工程到上下文工程"></a>二、从提示词工程到上下文工程</h2><p>传统的“提示—响应”模式在简单任务中已经足够，但进入复杂业务场景后会逐渐暴露问题：</p>
+<h2 id="二、从提示词工程到上下文工程">二、从提示词工程到上下文工程</h2>
+<p>传统的“提示—响应”模式在简单任务中已经足够，但进入复杂业务场景后会逐渐暴露问题：</p>
 <ul>
 <li><strong>意图偏移</strong>：单条指令很难完整表达复杂业务背后的真实目标；</li>
 <li><strong>长程记忆缺失</strong>：多轮交互后，模型容易遗忘最初的任务目标；</li>
@@ -365,7 +366,8 @@
 <li>反思、审核与纠错信息。</li>
 </ul>
 <p>目标不是把尽可能多的信息交给模型，而是确保进入上下文的信息<strong>准确、相关、结构清晰且足以支撑当前决策</strong>。</p>
-<h3 id="2-1-ReAct-本质上是动态构建上下文"><a href="#2-1-ReAct-本质上是动态构建上下文" class="headerlink" title="2.1 ReAct 本质上是动态构建上下文"></a>2.1 ReAct 本质上是动态构建上下文</h3><p>ReAct（Reasoning and Acting）通过“推理—行动—观察”循环驱动任务执行：</p>
+<h3 id="2-1-ReAct-本质上是动态构建上下文">2.1 ReAct 本质上是动态构建上下文</h3>
+<p>ReAct（Reasoning and Acting）通过“推理—行动—观察”循环驱动任务执行：</p>
 <ol>
 <li>理解问题并进行推理；</li>
 <li>判断是否需要调用外部工具；</li>
@@ -375,18 +377,24 @@
 <li>基于更新后的上下文继续推理，或者输出最终答案。</li>
 </ol>
 <p>从上下文工程的视角看，ReAct 的每一次行动都在产生新的观察，每一次观察又会成为下一轮决策的依据。Agent 的运行过程，本质上就是上下文不断构建、更新和收敛的过程。</p>
-<h3 id="2-2-Agent-的四个核心模块"><a href="#2-2-Agent-的四个核心模块" class="headerlink" title="2.2 Agent 的四个核心模块"></a>2.2 Agent 的四个核心模块</h3><p>无论 Agent 产品形态如何变化，其核心逻辑通常都可以归纳为四个模块。</p>
-<h4 id="感知：识别用户意图"><a href="#感知：识别用户意图" class="headerlink" title="感知：识别用户意图"></a>感知：识别用户意图</h4><p>感知模块是系统入口，负责把非结构化的自然语言转换为结构化任务，并将请求路由到合适的模型、工具或工作流。</p>
-<h4 id="规划：构建执行骨架"><a href="#规划：构建执行骨架" class="headerlink" title="规划：构建执行骨架"></a>规划：构建执行骨架</h4><p>规划模块决定任务应当如何推进，常见模式包括：</p>
+<h3 id="2-2-Agent-的四个核心模块">2.2 Agent 的四个核心模块</h3>
+<p>无论 Agent 产品形态如何变化，其核心逻辑通常都可以归纳为四个模块。</p>
+<h4 id="感知：识别用户意图">感知：识别用户意图</h4>
+<p>感知模块是系统入口，负责把非结构化的自然语言转换为结构化任务，并将请求路由到合适的模型、工具或工作流。</p>
+<h4 id="规划：构建执行骨架">规划：构建执行骨架</h4>
+<p>规划模块决定任务应当如何推进，常见模式包括：</p>
 <ul>
 <li><strong>ReAct</strong>：在推理、行动和观察之间循环，边执行边规划；</li>
 <li><strong>Plan-Act</strong>：先生成完整计划，或由人工注入 SOP，再按步骤执行；</li>
 <li><strong>Sequential Thinking</strong>：通过多轮思考、调整与反思处理复杂任务。</li>
 </ul>
-<h4 id="执行：获取实时信息"><a href="#执行：获取实时信息" class="headerlink" title="执行：获取实时信息"></a>执行：获取实时信息</h4><p>执行模块通过 API、代码执行器、文件系统或其他工具与外部世界交互。工具调用的结果会形成新的上下文片段，推动下一轮推理。</p>
-<h4 id="反思：检查并修正结果"><a href="#反思：检查并修正结果" class="headerlink" title="反思：检查并修正结果"></a>反思：检查并修正结果</h4><p>反思模块检查规划和执行中是否存在逻辑错误、信息遗漏、工具误用或结果不完整，并在必要时触发重新规划和执行。</p>
+<h4 id="执行：获取实时信息">执行：获取实时信息</h4>
+<p>执行模块通过 API、代码执行器、文件系统或其他工具与外部世界交互。工具调用的结果会形成新的上下文片段，推动下一轮推理。</p>
+<h4 id="反思：检查并修正结果">反思：检查并修正结果</h4>
+<p>反思模块检查规划和执行中是否存在逻辑错误、信息遗漏、工具误用或结果不完整，并在必要时触发重新规划和执行。</p>
 <p>除上述四个模块外，一个完整的 Agent 系统还需要记忆管理，以维持多轮对话和长周期任务的连续性。</p>
-<h3 id="2-3-上下文不是越多越好"><a href="#2-3-上下文不是越多越好" class="headerlink" title="2.3 上下文不是越多越好"></a>2.3 上下文不是越多越好</h3><p>过多信息会带来上下文污染：工具描述、中间日志、历史对话、失败尝试和不同子任务的推理轨迹混在一起，模型反而难以抓住当前重点。</p>
+<h3 id="2-3-上下文不是越多越好">2.3 上下文不是越多越好</h3>
+<p>过多信息会带来上下文污染：工具描述、中间日志、历史对话、失败尝试和不同子任务的推理轨迹混在一起，模型反而难以抓住当前重点。</p>
 <p>上下文管理的关键是<strong>卸载与按需加载</strong>：</p>
 <ul>
 <li>详细分析写入外部 Markdown 文件，主上下文只保留摘要和文件路径；</li>
@@ -396,7 +404,9 @@
 <li>子任务放入独立上下文执行，只将最终结论返回主 Agent。</li>
 </ul>
 <p>这是一种“引用而非堆砌”的设计思路。</p>
-<h2 id="三、Agent-设计模式的演进"><a href="#三、Agent-设计模式的演进" class="headerlink" title="三、Agent 设计模式的演进"></a>三、Agent 设计模式的演进</h2><h3 id="3-1-Function-Calling：让模型学会调用工具"><a href="#3-1-Function-Calling：让模型学会调用工具" class="headerlink" title="3.1 Function Calling：让模型学会调用工具"></a>3.1 Function Calling：让模型学会调用工具</h3><p>Function Calling 通过结构化的工具交互数据，让模型学会：</p>
+<h2 id="三、Agent-设计模式的演进">三、Agent 设计模式的演进</h2>
+<h3 id="3-1-Function-Calling：让模型学会调用工具">3.1 Function Calling：让模型学会调用工具</h3>
+<p>Function Calling 通过结构化的工具交互数据，让模型学会：</p>
 <ul>
 <li>识别调用工具的时机；</li>
 <li>选择正确的工具；</li>
@@ -404,7 +414,8 @@
 <li>根据工具结果继续完成任务。</li>
 </ul>
 <p>它让 LLM 从纯文本生成器迈向了可以采取行动的 Agent。不过，Function Calling 往往依赖模型训练、工具协议和推理引擎的协同，并非所有模型都原生支持。</p>
-<h3 id="3-2-ReAct：用提示词构造行动循环"><a href="#3-2-ReAct：用提示词构造行动循环" class="headerlink" title="3.2 ReAct：用提示词构造行动循环"></a>3.2 ReAct：用提示词构造行动循环</h3><p>ReAct 不依赖专门训练，只需要通过提示词描述任务目标、工具列表和交互格式，就可以让模型交替进行推理和行动。</p>
+<h3 id="3-2-ReAct：用提示词构造行动循环">3.2 ReAct：用提示词构造行动循环</h3>
+<p>ReAct 不依赖专门训练，只需要通过提示词描述任务目标、工具列表和交互格式，就可以让模型交替进行推理和行动。</p>
 <p>它的优点是简单、灵活和容易实现，但也有明显局限：</p>
 <ul>
 <li>执行效果高度依赖模型的推理和指令遵循能力；</li>
@@ -412,7 +423,8 @@
 <li>对提示词格式较为敏感；</li>
 <li>缺少全局视角时，容易陷入局部最优或重复循环。</li>
 </ul>
-<h3 id="3-3-CodeAct：代码即工具"><a href="#3-3-CodeAct：代码即工具" class="headerlink" title="3.3 CodeAct：代码即工具"></a>3.3 CodeAct：代码即工具</h3><p>CodeAct 是 ReAct 的重要衍生模式。它不再把工具限制为预先注册的业务 API，而是把 Python、Shell 等编程语言作为通用工具空间。</p>
+<h3 id="3-3-CodeAct：代码即工具">3.3 CodeAct：代码即工具</h3>
+<p>CodeAct 是 ReAct 的重要衍生模式。它不再把工具限制为预先注册的业务 API，而是把 Python、Shell 等编程语言作为通用工具空间。</p>
 <p>模型可以根据当前任务临时生成代码，再交给代码执行器运行。这样一来，工具不再是固定的黑盒函数，而是可以即时构造的行动。该模式适合：</p>
 <ul>
 <li>运维自动化；</li>
@@ -422,7 +434,8 @@
 <li>软件工程任务。</li>
 </ul>
 <p>CodeAct 的核心思想可以概括为：<strong>将代码视为动作，而不是上下文中的普通文本。</strong></p>
-<h3 id="3-4-Plan-Act：先谋而后动"><a href="#3-4-Plan-Act：先谋而后动" class="headerlink" title="3.4 Plan-Act：先谋而后动"></a>3.4 Plan-Act：先谋而后动</h3><p>Plan-Act 将规划和执行拆为两个阶段：规划 Agent 先对复杂目标进行全局拆解，执行 Agent 再严格按照计划推进。</p>
+<h3 id="3-4-Plan-Act：先谋而后动">3.4 Plan-Act：先谋而后动</h3>
+<p>Plan-Act 将规划和执行拆为两个阶段：规划 Agent 先对复杂目标进行全局拆解，执行 Agent 再严格按照计划推进。</p>
 <p>真正的工程难点不只是生成计划，而是保证模型能够：</p>
 <ul>
 <li>知道当前执行到了哪一步；</li>
@@ -432,12 +445,11 @@
 </ul>
 <p>可以在每轮执行时注入结构化的历史步骤，例如 <code>past_steps</code>，并使用严格的结构化输出区分状态：</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;steps&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;下一步操作&quot;</span><span class="punctuation">]</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
 <p>或者：</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;response&quot;</span><span class="punctuation">:</span> <span class="string">&quot;最终结果&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
 <p>结构化输出使下游系统不必猜测模型意图，是工作流稳定运行的重要基础。</p>
-<h3 id="3-5-Reflection：让-Agent-检查自己的结果"><a href="#3-5-Reflection：让-Agent-检查自己的结果" class="headerlink" title="3.5 Reflection：让 Agent 检查自己的结果"></a>3.5 Reflection：让 Agent 检查自己的结果</h3><p>反思模式通常由两个角色组成：</p>
+<h3 id="3-5-Reflection：让-Agent-检查自己的结果">3.5 Reflection：让 Agent 检查自己的结果</h3>
+<p>反思模式通常由两个角色组成：</p>
 <ul>
 <li><strong>执行器 LLM</strong>：生成初步结果；</li>
 <li><strong>评判器 LLM</strong>：检查正确性、完整性、安全性和合理性。</li>
@@ -450,7 +462,8 @@
 <li>达到质量要求或迭代上限后结束。</li>
 </ol>
 <p>反思不应是无限循环，工程实现中需要明确终止条件、重试次数和评价标准。</p>
-<h3 id="3-6-Human-in-the-loop：在关键节点保留人工控制"><a href="#3-6-Human-in-the-loop：在关键节点保留人工控制" class="headerlink" title="3.6 Human-in-the-loop：在关键节点保留人工控制"></a>3.6 Human-in-the-loop：在关键节点保留人工控制</h3><p>资金操作、生产变更、信息发布等高风险任务不适合完全自动执行。Human-in-the-loop 模式允许工作流在关键节点暂停，等待人工确认后继续。</p>
+<h3 id="3-6-Human-in-the-loop：在关键节点保留人工控制">3.6 Human-in-the-loop：在关键节点保留人工控制</h3>
+<p>资金操作、生产变更、信息发布等高风险任务不适合完全自动执行。Human-in-the-loop 模式允许工作流在关键节点暂停，等待人工确认后继续。</p>
 <p>以 LangGraph 为例，暂停与恢复依赖四个核心要素：</p>
 <ul>
 <li><code>interrupt</code>：主动挂起工作流；</li>
@@ -459,16 +472,19 @@
 <li><code>thread_id</code>：标识并隔离不同会话或任务。</li>
 </ul>
 <p>人机协作的关键不是简单地“弹出确认框”，而是保证暂停前的状态能够持久化，并在确认后从准确位置恢复。</p>
-<h3 id="3-7-多-Agent：分工背后是上下文隔离"><a href="#3-7-多-Agent：分工背后是上下文隔离" class="headerlink" title="3.7 多 Agent：分工背后是上下文隔离"></a>3.7 多 Agent：分工背后是上下文隔离</h3><p>多 Agent 系统通常由一个协调者 Agent 和多个专家 Agent 组成：</p>
+<h3 id="3-7-多-Agent：分工背后是上下文隔离">3.7 多 Agent：分工背后是上下文隔离</h3>
+<p>多 Agent 系统通常由一个协调者 Agent 和多个专家 Agent 组成：</p>
 <ul>
 <li>协调者负责任务分解、调度、冲突处理和结果整合；</li>
 <li>专家 Agent 专注于某个领域或子任务。</li>
 </ul>
 <p>多 Agent 的表面价值是专业分工和工具分类，更深层的价值则是<strong>隔离上下文窗口</strong>。子任务中的多轮试错、工具日志和中间推理都留在子 Agent 内部，主 Agent 只接收最终结果，从而减少上下文污染。</p>
 <p>因此，多 Agent 系统不只是组织架构的变化，也是复杂任务下上下文工程的自然延伸。</p>
-<h2 id="四、意图识别与任务路由"><a href="#四、意图识别与任务路由" class="headerlink" title="四、意图识别与任务路由"></a>四、意图识别与任务路由</h2><p>成熟的 Agent 不能只理解用户字面上的问题，还需要结合当前对话、历史交互、用户画像和系统状态，推断背后的真实需求。</p>
+<h2 id="四、意图识别与任务路由">四、意图识别与任务路由</h2>
+<p>成熟的 Agent 不能只理解用户字面上的问题，还需要结合当前对话、历史交互、用户画像和系统状态，推断背后的真实需求。</p>
 <p>从工程角度看，意图识别通常是一个分类与路由问题：判断请求属于哪个领域、需要执行哪类操作，以及应该交给哪个模型、工具或流程。</p>
-<h3 id="4-1-领域与操作"><a href="#4-1-领域与操作" class="headerlink" title="4.1 领域与操作"></a>4.1 领域与操作</h3><p>路由系统可以将请求拆分为两个维度：</p>
+<h3 id="4-1-领域与操作">4.1 领域与操作</h3>
+<p>路由系统可以将请求拆分为两个维度：</p>
 <ul>
 <li><strong>领域（Domain）</strong>：法律、医疗、编程、旅游等高层主题；</li>
 <li><strong>操作（Operation）</strong>：摘要、翻译、代码编写、图片编辑、预约等任务类型。</li>
@@ -482,8 +498,8 @@
 </ol>
 <p>例如：</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;route&quot;</span><span class="punctuation">:</span> <span class="string">&quot;other&quot;</span><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="4-2-小模型分类，大模型兜底"><a href="#4-2-小模型分类，大模型兜底" class="headerlink" title="4.2 小模型分类，大模型兜底"></a>4.2 小模型分类，大模型兜底</h3><p>通用路由模型面对金融、医疗、工业运维等垂直领域时，可能无法准确识别业务边界。书中给出了一种小模型与大模型并行的思路：</p>
+<h3 id="4-2-小模型分类，大模型兜底">4.2 小模型分类，大模型兜底</h3>
+<p>通用路由模型面对金融、医疗、工业运维等垂直领域时，可能无法准确识别业务边界。书中给出了一种小模型与大模型并行的思路：</p>
 <ul>
 <li>使用企业自有标注数据微调小模型，处理高频、明确的业务意图；</li>
 <li>对低置信度、长尾或未覆盖请求，使用大模型通过零样本或少样本提示进行二次判断。</li>
@@ -496,22 +512,26 @@
 <li>长尾意图样本。</li>
 </ul>
 <p>训练方式可根据数据和算力条件选择全量微调或 LoRA。相比全量训练，LoRA 冻结原模型参数，仅训练额外的低秩模块，更适合资源有限和需要快速迭代的场景。</p>
-<h2 id="五、Deep-Research：主动构建研究上下文"><a href="#五、Deep-Research：主动构建研究上下文" class="headerlink" title="五、Deep Research：主动构建研究上下文"></a>五、Deep Research：主动构建研究上下文</h2><p>检索增强能力经历了从静态到动态、从被动到主动的演进：</p>
+<h2 id="五、Deep-Research：主动构建研究上下文">五、Deep Research：主动构建研究上下文</h2>
+<p>检索增强能力经历了从静态到动态、从被动到主动的演进：</p>
 <ol>
 <li><strong>RAG</strong>：从静态知识库检索资料并生成答案；</li>
 <li><strong>WAG</strong>：通过搜索引擎获取动态网络信息；</li>
 <li><strong>Deep Research Agent</strong>：主动规划研究路径，执行多轮搜索、交叉验证和迭代总结。</li>
 </ol>
 <p>Deep Research 的关键不是“搜索一次然后总结”，而是让 Agent 根据当前证据判断信息缺口，再决定下一轮应搜索什么。研究过程本身就是一个持续构建和修正上下文的过程。</p>
-<h2 id="六、Agent-的长期记忆"><a href="#六、Agent-的长期记忆" class="headerlink" title="六、Agent 的长期记忆"></a>六、Agent 的长期记忆</h2><p>上下文窗口中的历史信息属于短期记忆，但随着对话增长，不可能把全部历史永久保留在窗口中。</p>
+<h2 id="六、Agent-的长期记忆">六、Agent 的长期记忆</h2>
+<p>上下文窗口中的历史信息属于短期记忆，但随着对话增长，不可能把全部历史永久保留在窗口中。</p>
 <p>常见的记忆管理方式包括：</p>
 <ul>
 <li><strong>滑动窗口</strong>：只保留最近若干轮对话；</li>
 <li><strong>上下文压缩</strong>：将较早内容总结后继续保留；</li>
 <li><strong>RAG 长期记忆</strong>：将历史对话和用户画像向量化，存入外部数据库，需要时按语义召回。</li>
 </ul>
-<h3 id="6-1-Mem0-的记忆生命周期"><a href="#6-1-Mem0-的记忆生命周期" class="headerlink" title="6.1 Mem0 的记忆生命周期"></a>6.1 Mem0 的记忆生命周期</h3><p>Mem0 并非简单保存全部对话，而是通过提取、仲裁和持久化管理记忆。</p>
-<h4 id="第一步：提取结构化事实"><a href="#第一步：提取结构化事实" class="headerlink" title="第一步：提取结构化事实"></a>第一步：提取结构化事实</h4><p>利用 LLM 从原始对话中剔除闲聊，重点提取：</p>
+<h3 id="6-1-Mem0-的记忆生命周期">6.1 Mem0 的记忆生命周期</h3>
+<p>Mem0 并非简单保存全部对话，而是通过提取、仲裁和持久化管理记忆。</p>
+<h4 id="第一步：提取结构化事实">第一步：提取结构化事实</h4>
+<p>利用 LLM 从原始对话中剔除闲聊，重点提取：</p>
 <ul>
 <li>个人偏好；</li>
 <li>姓名、关系、重要日期等基本信息；</li>
@@ -521,7 +541,8 @@
 <li>职业、工作习惯和专业目标；</li>
 <li>书籍、电影、品牌等其他长期偏好。</li>
 </ul>
-<h4 id="第二步：执行冲突仲裁"><a href="#第二步：执行冲突仲裁" class="headerlink" title="第二步：执行冲突仲裁"></a>第二步：执行冲突仲裁</h4><p>新事实进入记忆库前，需要和已有记忆比较，并执行四种原子操作之一：</p>
+<h4 id="第二步：执行冲突仲裁">第二步：执行冲突仲裁</h4>
+<p>新事实进入记忆库前，需要和已有记忆比较，并执行四种原子操作之一：</p>
 <ul>
 <li><code>ADD</code>：新增有效信息；</li>
 <li><code>UPDATE</code>：更新已经变化的信息；</li>
@@ -529,22 +550,24 @@
 <li><code>NONE</code>：忽略重复或无效信息。</li>
 </ul>
 <p>这一步决定了记忆系统能否长期保持一致，而不是不断积累互相冲突的数据。</p>
-<h4 id="第三步：混合存储"><a href="#第三步：混合存储" class="headerlink" title="第三步：混合存储"></a>第三步：混合存储</h4><ul>
+<h4 id="第三步：混合存储">第三步：混合存储</h4>
+<ul>
 <li><strong>向量数据库</strong>解决语义相似性检索，适合模糊召回；</li>
 <li><strong>图数据库</strong>保存实体关系，适合沿关系链进行逻辑推理。</li>
 </ul>
 <p>向量检索回答“哪些记忆和当前问题相似”，图检索则回答“这些事实之间有什么关系”。两者结合可以提升复杂记忆查询的质量。</p>
-<h3 id="6-2-高并发记忆服务的缓存策略"><a href="#6-2-高并发记忆服务的缓存策略" class="headerlink" title="6.2 高并发记忆服务的缓存策略"></a>6.2 高并发记忆服务的缓存策略</h3><p>在高频对话场景中，可以在 Qdrant 等向量数据库前增加 Redis 缓存热点记忆，并采用“写时失效、读时回填”的策略：</p>
+<h3 id="6-2-高并发记忆服务的缓存策略">6.2 高并发记忆服务的缓存策略</h3>
+<p>在高频对话场景中，可以在 Qdrant 等向量数据库前增加 Redis 缓存热点记忆，并采用“写时失效、读时回填”的策略：</p>
 <ul>
 <li>写入记忆后，立即清除对应用户的 Redis 缓存；</li>
 <li>查询时优先读取 Redis；</li>
 <li>缓存未命中时查询向量数据库，并把结果回填到 Redis。</li>
 </ul>
 <p>这种方式既减少热点读取压力，也避免返回已经过期的记忆。</p>
-<h2 id="七、Skills：上下文卸载的艺术"><a href="#七、Skills：上下文卸载的艺术" class="headerlink" title="七、Skills：上下文卸载的艺术"></a>七、Skills：上下文卸载的艺术</h2><p>Skill 可以理解为一个标准化的专家经验包。它将完成特定任务需要的思考路径、执行流程、工具、参考资料和输出规范封装在独立目录中。</p>
+<h2 id="七、Skills：上下文卸载的艺术">七、Skills：上下文卸载的艺术</h2>
+<p>Skill 可以理解为一个标准化的专家经验包。它将完成特定任务需要的思考路径、执行流程、工具、参考资料和输出规范封装在独立目录中。</p>
 <p>典型目录结构如下：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">skill-name/</span><br><span class="line">├── SKILL.md</span><br><span class="line">├── scripts/</span><br><span class="line">├── references/</span><br><span class="line">└── assets/</span><br></pre></td></tr></table></figure>
-
 <p>各部分职责为：</p>
 <ul>
 <li><code>SKILL.md</code>：必选，描述触发条件、目标、输入输出、执行步骤和示例；</li>
@@ -552,14 +575,16 @@
 <li><code>references/</code>：可选，保存领域资料和参考文档；</li>
 <li><code>assets/</code>：可选，保存图片、配置模板和输出样例等静态资源。</li>
 </ul>
-<h3 id="7-1-渐进式加载"><a href="#7-1-渐进式加载" class="headerlink" title="7.1 渐进式加载"></a>7.1 渐进式加载</h3><p>传统 Agent 初始化时如果加载全部工具描述，很容易浪费上下文窗口。Skills 通过三级加载降低信息噪声：</p>
+<h3 id="7-1-渐进式加载">7.1 渐进式加载</h3>
+<p>传统 Agent 初始化时如果加载全部工具描述，很容易浪费上下文窗口。Skills 通过三级加载降低信息噪声：</p>
 <ul>
 <li><strong>L1：元数据</strong>。初始阶段只加载名称和描述，让 Agent 知道有哪些 Skill；</li>
 <li><strong>L2：使用说明</strong>。确认某个 Skill 可能适用后，再读取 <code>SKILL.md</code> 正文；</li>
 <li><strong>L3：执行资源</strong>。任务真正需要时，才读取脚本、参考资料或模板。</li>
 </ul>
 <p>没有被使用的资源始终留在上下文之外。尤其是 <code>scripts/</code> 中的代码，可以由 Bash 等工具直接执行，只将执行结果返回给模型，而不必将整个脚本内容放入上下文。</p>
-<h3 id="7-2-如何写好-SKILL-md"><a href="#7-2-如何写好-SKILL-md" class="headerlink" title="7.2 如何写好 SKILL.md"></a>7.2 如何写好 SKILL.md</h3><p>高质量的 <code>SKILL.md</code> 应当回答五个问题：</p>
+<h3 id="7-2-如何写好-SKILL-md">7.2 如何写好 <a href="http://SKILL.md">SKILL.md</a></h3>
+<p>高质量的 <code>SKILL.md</code> 应当回答五个问题：</p>
 <ol>
 <li><strong>定时机</strong>：什么情况下应该触发这个 Skill？</li>
 <li><strong>立目标</strong>：它要解决的具体问题是什么？</li>
@@ -568,7 +593,8 @@
 <li><strong>划边界</strong>：哪些任务不处理，信息不足或发生异常时如何兜底？</li>
 </ol>
 <p>Skill 的质量主要不取决于目录里堆了多少材料，而取决于是否把专家经验转化成了模型能够稳定遵循的操作手册。</p>
-<h2 id="八、Claude-Code-中的-Harness-设计"><a href="#八、Claude-Code-中的-Harness-设计" class="headerlink" title="八、Claude Code 中的 Harness 设计"></a>八、Claude Code 中的 Harness 设计</h2><p>书中将 Claude Code 作为编程领域 Harness 工程的典型案例。它的核心不是不断增加专用工具和复杂工作流，而是围绕模型的需求构建一个适合持续工作的环境。</p>
+<h2 id="八、Claude-Code-中的-Harness-设计">八、Claude Code 中的 Harness 设计</h2>
+<p>书中将 Claude Code 作为编程领域 Harness 工程的典型案例。它的核心不是不断增加专用工具和复杂工作流，而是围绕模型的需求构建一个适合持续工作的环境。</p>
 <p>主要体现在四个维度：</p>
 <ul>
 <li><strong>Agent Loop</strong>：让模型能够持续执行“观察—思考—行动”循环；</li>
@@ -577,7 +603,8 @@
 <li><strong>多 Agent 系统</strong>：通过不同 Agent 实例实现协作和上下文隔离。</li>
 </ul>
 <p>在本地编程场景中，只提供 Read、Write、Bash 等少量通用能力，也可以让模型组合完成复杂任务。相比堆砌大量业务工具，这种设计降低了中间层损耗，给模型保留了更大的自主决策空间。</p>
-<h3 id="8-1-SubAgent：隔离执行细节"><a href="#8-1-SubAgent：隔离执行细节" class="headerlink" title="8.1 SubAgent：隔离执行细节"></a>8.1 SubAgent：隔离执行细节</h3><p>在 SubAgent 模式中，Agent 本身也可以被视为一种工具：</p>
+<h3 id="8-1-SubAgent：隔离执行细节">8.1 SubAgent：隔离执行细节</h3>
+<p>在 SubAgent 模式中，Agent 本身也可以被视为一种工具：</p>
 <ul>
 <li>主 Agent 通过一次工具调用唤起 SubAgent；</li>
 <li>SubAgent 在独立上下文中处理具体任务；</li>
@@ -586,14 +613,16 @@
 <li>生命周期结束后，SubAgent 的临时上下文随之销毁。</li>
 </ul>
 <p>主 Agent 因而可以专注于任务下发、全局协调和结果验收。</p>
-<h3 id="8-2-Compact：三级上下文压缩"><a href="#8-2-Compact：三级上下文压缩" class="headerlink" title="8.2 Compact：三级上下文压缩"></a>8.2 Compact：三级上下文压缩</h3><p>书中给出了一种三级压缩思路：</p>
+<h3 id="8-2-Compact：三级上下文压缩">8.2 Compact：三级上下文压缩</h3>
+<p>书中给出了一种三级压缩思路：</p>
 <ol>
 <li>每轮对话开始前，压缩较早的工具调用及返回结果；</li>
 <li>Token 超过阈值时，将完整历史保存到磁盘，再由 LLM 生成摘要替代原始历史；</li>
 <li>为 Agent 提供 Compact 工具，使模型在判断上下文过长时可以主动触发压缩。</li>
 </ol>
 <p>压缩的目标不是简单删除历史，而是在减少 Token 的同时保留继续完成任务所需的目标、约束、关键决策和当前状态。</p>
-<h3 id="8-3-从-Todo-List-到-Task-Graph"><a href="#8-3-从-Todo-List-到-Task-Graph" class="headerlink" title="8.3 从 Todo List 到 Task Graph"></a>8.3 从 Todo List 到 Task Graph</h3><p>简单的 Todo 模式可以让模型生成待办列表，并保证同一时间只执行一个步骤。但扁平列表存在两个问题：</p>
+<h3 id="8-3-从-Todo-List-到-Task-Graph">8.3 从 Todo List 到 Task Graph</h3>
+<p>简单的 Todo 模式可以让模型生成待办列表，并保证同一时间只执行一个步骤。但扁平列表存在两个问题：</p>
 <ul>
 <li>无法表达任务之间的依赖和并行关系；</li>
 <li>状态只保存在内存中，压缩上下文或进程退出后可能丢失。</li>
@@ -606,7 +635,8 @@
 <li>支持串行、并行和跨会话恢复。</li>
 </ul>
 <p>这使任务生命周期不再受限于单次上下文窗口，是 Agent 处理长周期软件工程任务的重要基础。</p>
-<h2 id="九、Claw-类产品：把-Agent-接入日常工作入口"><a href="#九、Claw-类产品：把-Agent-接入日常工作入口" class="headerlink" title="九、Claw 类产品：把 Agent 接入日常工作入口"></a>九、Claw 类产品：把 Agent 接入日常工作入口</h2><p>Claw 类产品的重要价值是进入用户最常使用的接口层。Agent 接入飞书、钉钉等即时通信软件后，便可以作为持续在线的数字员工，用户通过私聊或群聊中的 <code>@</code> 即可下达任务。</p>
+<h2 id="九、Claw-类产品：把-Agent-接入日常工作入口">九、Claw 类产品：把 Agent 接入日常工作入口</h2>
+<p>Claw 类产品的重要价值是进入用户最常使用的接口层。Agent 接入飞书、钉钉等即时通信软件后，便可以作为持续在线的数字员工，用户通过私聊或群聊中的 <code>@</code> 即可下达任务。</p>
 <p>定时任务机制进一步让 Agent 从“被动响应”走向“自主调度”：它可以记录未来计划，并在指定时间主动执行，而不必等待用户实时触发。</p>
 <p>NanoClaw 的架构可以概括为“一内一外”：</p>
 <ul>
@@ -614,7 +644,8 @@
 <li><strong>外层</strong>：运行在容器之外的通信与调度机制，负责 IM 消息接入、定时触发和生命周期管理。</li>
 </ul>
 <p>这种分层将 Agent 的推理执行环境与外部通信、调度能力解耦，既便于隔离权限，也便于独立扩展不同的用户入口。</p>
-<h2 id="十、读后总结"><a href="#十、读后总结" class="headerlink" title="十、读后总结"></a>十、读后总结</h2><p>这本书最重要的启发，是把 Agent 开发从“模型能力崇拜”拉回到了系统工程。</p>
+<h2 id="十、读后总结">十、读后总结</h2>
+<p>这本书最重要的启发，是把 Agent 开发从“模型能力崇拜”拉回到了系统工程。</p>
 <p>一个可靠的 Agent 系统至少需要处理好以下问题：</p>
 <ol>
 <li>用意图识别确定用户真正需要什么；</li>
@@ -753,7 +784,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">772k</span>
+    <span title="站点总字数">774k</span>
   </span>
 </div>
 <div class="busuanzi-count">

@@ -187,7 +187,7 @@
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
-      src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
   <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
@@ -318,7 +318,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>7.6k</span>
+      <span>7.5k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -338,8 +338,8 @@
     
     <div class="post-body" itemprop="articleBody"><p>代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。</p>
 <span id="more"></span>
-
-<h2 id="一、问题背景"><a href="#一、问题背景" class="headerlink" title="一、问题背景"></a>一、问题背景</h2><p>最近在使用 API7 AI 网关时，我反复遇到 worker CPU 打满的问题。相关修复分散在多个 APISIX PR 中：</p>
+<h2 id="一、问题背景">一、问题背景</h2>
+<p>最近在使用 API7 AI 网关时，我反复遇到 worker CPU 打满的问题。相关修复分散在多个 APISIX PR 中：</p>
 <aside class="issue-legend" aria-label="问题状态说明">
   <div class="issue-legend__title"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> 问题状态说明</div>
   <ul>
@@ -349,7 +349,6 @@
     <li><span class="status-icon status-icon--tradeoff"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span><span><strong>设计取舍</strong><small>实时性、公平性与吞吐之间的权衡</small></span></li>
   </ul>
 </aside>
-
 <table>
 <thead>
 <tr>
@@ -358,7 +357,8 @@
 <th>解决的核心问题</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>2026-04-18 ～ 2026-04-20</td>
 <td><a href="https://github.com/apache/apisix/pull/13254">PR #13254</a></td>
 <td>下游客户端断开后，通过同步 flush 的错误传播终止上游流</td>
@@ -383,7 +383,8 @@
 <td><a href="https://github.com/apache/apisix/pull/13391">PR #13391</a></td>
 <td>优化 SSE 解析和 flush 策略，并增加流式请求保护机制</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>最初我试图找到一个可以解释全部现象的“根本原因”，后来发现这种归因方式本身就是误区。这几个 PR 实际上分别处理了四类问题：</p>
 <ol>
 <li><strong>取消传播</strong>：下游已经离开，上游工作是否还在继续；</li>
@@ -395,7 +396,8 @@
 <blockquote>
 <p>本文最重要的结论：<strong>yield 解决公平性，缓存和批处理降低 CPU 成本，取消传播回收无效工作，背压约束生产者与消费者的速度差。</strong></p>
 </blockquote>
-<h2 id="二、为什么静态阅读代码时没看出来"><a href="#二、为什么静态阅读代码时没看出来" class="headerlink" title="二、为什么静态阅读代码时没看出来"></a>二、为什么静态阅读代码时没看出来</h2><p>当时阅读代码时，我主要在检查：</p>
+<h2 id="二、为什么静态阅读代码时没看出来">二、为什么静态阅读代码时没看出来</h2>
+<p>当时阅读代码时，我主要在检查：</p>
 <ul>
 <li>分支是否正确；</li>
 <li>错误是否处理；</li>
@@ -404,7 +406,6 @@
 </ul>
 <p>从这个角度看，下面的流式循环没有明显错误：</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> <span class="literal">true</span> <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> chunk, err = body_reader()</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> chunk <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">local</span> ok, flush_err = send_to_downstream(chunk)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></span><br><span class="line">        close_upstream(flush_err)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    ngx.sleep(<span class="number">0</span>)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
-
 <p>但运行时审查需要继续追问：</p>
 <ul>
 <li><code>body_reader()</code> 这一轮会等待，还是立即返回？</li>
@@ -416,10 +417,10 @@
 </ul>
 <p>因此，真正的盲区不是“没有看懂 while 循环”，而是默认了几个未经验证的运行时假设：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">调用了网络 API ≠ 本轮一定发生 I/O 等待</span><br><span class="line">调用了 flush     ≠ 客户端应用已经收到数据</span><br><span class="line">代码中有 yield   ≠ 总 CPU 消耗一定下降</span><br><span class="line">客户端已断开     ≠ 上游工作自动停止</span><br><span class="line">单轮逻辑很轻     ≠ 高频执行后的总成本很低</span><br></pre></td></tr></table></figure>
-
-<h2 id="三、问题一：下游取消后，上游为什么还在运行"><a href="#三、问题一：下游取消后，上游为什么还在运行" class="headerlink" title="三、问题一：下游取消后，上游为什么还在运行"></a>三、问题一：下游取消后，上游为什么还在运行</h2><h3 id="3-1-上游连接和下游连接是两条独立链路"><a href="#3-1-上游连接和下游连接是两条独立链路" class="headerlink" title="3.1 上游连接和下游连接是两条独立链路"></a>3.1 上游连接和下游连接是两条独立链路</h3><p>AI 网关位于客户端与大模型之间：</p>
+<h2 id="三、问题一：下游取消后，上游为什么还在运行">三、问题一：下游取消后，上游为什么还在运行</h2>
+<h3 id="3-1-上游连接和下游连接是两条独立链路">3.1 上游连接和下游连接是两条独立链路</h3>
+<p>AI 网关位于客户端与大模型之间：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">客户端  &lt;-- downstream --&gt;  API7/APISIX  &lt;-- upstream --&gt;  LLM</span><br></pre></td></tr></table></figure>
-
 <p>网关从上游读取响应，并不意味着它同时知道下游连接的最新状态。</p>
 <p>如果客户端关闭浏览器、取消请求或发送 TCP RST，网关仍可能继续：</p>
 <ol>
@@ -428,11 +429,12 @@
 <li>执行响应过滤器；</li>
 <li>尝试向下游输出。</li>
 </ol>
-<p>只有当下游关闭事件被 Nginx&#x2F;OpenResty 观察到，并传播到当前 Lua 请求处理逻辑后，代码才有机会停止上游工作。</p>
-<h3 id="3-2-ngx-flush-true-到底保证什么"><a href="#3-2-ngx-flush-true-到底保证什么" class="headerlink" title="3.2 ngx.flush(true) 到底保证什么"></a>3.2 <code>ngx.flush(true)</code> 到底保证什么</h3><p>OpenResty 对 <code>ngx.flush(wait?)</code> 的定义是：</p>
+<p>只有当下游关闭事件被 Nginx/OpenResty 观察到，并传播到当前 Lua 请求处理逻辑后，代码才有机会停止上游工作。</p>
+<h3 id="3-2-ngx-flush-true-到底保证什么">3.2 <code>ngx.flush(true)</code> 到底保证什么</h3>
+<p>OpenResty 对 <code>ngx.flush(wait?)</code> 的定义是：</p>
 <ul>
 <li><code>ngx.flush(false)</code>：发起异步 flush，不等待输出写入系统发送缓冲区；</li>
-<li><code>ngx.flush(true)</code>：等待输出写入系统发送缓冲区，或等待到 <code>send_timeout</code>&#x2F;错误发生。</li>
+<li><code>ngx.flush(true)</code>：等待输出写入系统发送缓冲区，或等待到 <code>send_timeout</code>/错误发生。</li>
 </ul>
 <p>这里必须避免一个常见误解：</p>
 <blockquote>
@@ -442,7 +444,6 @@
 <p>这也是 <a href="https://github.com/apache/apisix/pull/13254">PR #13254</a> 处理的核心问题。</p>
 <p>更准确的时序是：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">T0  客户端取消请求</span><br><span class="line">    ↓</span><br><span class="line">T1  内核/Nginx 在某个时刻观察到连接关闭</span><br><span class="line">    ↓</span><br><span class="line">T2  网关推进下游输出或收到连接关闭事件</span><br><span class="line">    ↓</span><br><span class="line">T3  flush/write 返回错误</span><br><span class="line">    ↓</span><br><span class="line">T4  APISIX 终止循环并关闭上游连接</span><br></pre></td></tr></table></figure>
-
 <p>这个过程不是“客户端一断开，Lua 代码就立即知道”，也不能理解为“每次 <code>ngx.flush(true)</code> 都能百分之百实时探测客户端存活”。</p>
 <p>OpenResty 还提供 <code>lua_check_client_abort on</code> 和 <code>ngx.on_abort</code> 用于监控下游提前关闭。该机制默认关闭，也有自己的适用条件和运行成本。工程上需要根据请求模型选择：</p>
 <ul>
@@ -450,18 +451,19 @@
 <li>显式监听 client abort；</li>
 <li>或组合使用两者。</li>
 </ul>
-<h3 id="3-3-这一问题的本质"><a href="#3-3-这一问题的本质" class="headerlink" title="3.3 这一问题的本质"></a>3.3 这一问题的本质</h3><p>这个问题首先是<strong>取消传播和资源生命周期管理</strong>问题，而不是单纯的调度问题：</p>
+<h3 id="3-3-这一问题的本质">3.3 这一问题的本质</h3>
+<p>这个问题首先是<strong>取消传播和资源生命周期管理</strong>问题，而不是单纯的调度问题：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">下游请求已经没有价值</span><br><span class="line">        ↓</span><br><span class="line">上游请求没有及时取消</span><br><span class="line">        ↓</span><br><span class="line">继续读取、解析、过滤和 flush</span><br><span class="line">        ↓</span><br><span class="line">产生无效 CPU、网络和连接消耗</span><br></pre></td></tr></table></figure>
-
 <p>代码审查时应当把双向代理看成两个生命周期不同的资源，而不是一个天然同步结束的请求。</p>
-<h2 id="四、问题二：协作式调度与-ngx-sleep-0"><a href="#四、问题二：协作式调度与-ngx-sleep-0" class="headerlink" title="四、问题二：协作式调度与 ngx.sleep(0)"></a>四、问题二：协作式调度与 <code>ngx.sleep(0)</code></h2><h3 id="4-1-cosocket-调用不一定发生-yield"><a href="#4-1-cosocket-调用不一定发生-yield" class="headerlink" title="4.1 cosocket 调用不一定发生 yield"></a>4.1 cosocket 调用不一定发生 yield</h3><p>OpenResty worker 通常以单线程事件循环运行。Lua coroutine 只有在执行到可让出的操作时，才会把控制权归还给 Nginx 调度器。</p>
+<h2 id="四、问题二：协作式调度与-ngx-sleep-0">四、问题二：协作式调度与 <code>ngx.sleep(0)</code></h2>
+<h3 id="4-1-cosocket-调用不一定发生-yield">4.1 cosocket 调用不一定发生 yield</h3>
+<p>OpenResty worker 通常以单线程事件循环运行。Lua coroutine 只有在执行到可让出的操作时，才会把控制权归还给 Nginx 调度器。</p>
 <p>cosocket API 是非阻塞的，但“调用了 cosocket”不等于“本次调用一定 yield”：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">socket 暂无数据</span><br><span class="line">  → 注册读事件</span><br><span class="line">  → 当前 coroutine yield</span><br><span class="line">  → worker 可以处理其他事件</span><br><span class="line"></span><br><span class="line">socket 缓冲区已有数据</span><br><span class="line">  → receive() 立即返回</span><br><span class="line">  → 当前 coroutine 继续执行</span><br></pre></td></tr></table></figure>
-
 <p>当上游 LLM 以突发方式返回大量小 chunk 时，连续多次 <code>body_reader()</code> 都可能立即完成。若循环中没有其他显式调度点，一个请求就可能连续占用 worker 较长时间。</p>
-<h3 id="4-2-ngx-sleep-0-是真实的调度让出"><a href="#4-2-ngx-sleep-0-是真实的调度让出" class="headerlink" title="4.2 ngx.sleep(0) 是真实的调度让出"></a>4.2 <code>ngx.sleep(0)</code> 是真实的调度让出</h3><p><a href="https://github.com/apache/apisix/pull/13255">PR #13255</a> 在每轮流式处理后加入了：</p>
+<h3 id="4-2-ngx-sleep-0-是真实的调度让出">4.2 <code>ngx.sleep(0)</code> 是真实的调度让出</h3>
+<p><a href="https://github.com/apache/apisix/pull/13255">PR #13255</a> 在每轮流式处理后加入了：</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ngx.sleep(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
-
 <p>它会通过零延时 timer 把控制权交还给 Nginx 调度器。因此它不是“形式上让出，实际上没让”，而是一个真实的调度点。</p>
 <p>它能解决的是：</p>
 <ul>
@@ -471,7 +473,7 @@
 </ul>
 <p>它不能解决的是：</p>
 <ul>
-<li>减少 JSON&#x2F;SSE 解析次数；</li>
+<li>减少 JSON/SSE 解析次数；</li>
 <li>减少每个 chunk 的字符串分配；</li>
 <li>限制单条流每秒处理多少 chunk；</li>
 <li>限制上游总响应字节数；</li>
@@ -479,9 +481,9 @@
 <li>保证 worker CPU 下降。</li>
 </ul>
 <p>因此，<a href="https://github.com/apache/apisix/issues/13256">Issue #13256</a> 和后续代码把它称为 workaround 是合理的：它防止<strong>单请求垄断 worker</strong>，但不限制<strong>单请求消耗多少 CPU</strong>。</p>
-<h3 id="4-3-为什么增加-yield-后-CPU-仍可能是-100"><a href="#4-3-为什么增加-yield-后-CPU-仍可能是-100" class="headerlink" title="4.3 为什么增加 yield 后 CPU 仍可能是 100%"></a>4.3 为什么增加 yield 后 CPU 仍可能是 100%</h3><p>假设一条流每秒产生大量小 chunk，每个 chunk 都需要解析、转换和输出：</p>
+<h3 id="4-3-为什么增加-yield-后-CPU-仍可能是-100">4.3 为什么增加 yield 后 CPU 仍可能是 100%</h3>
+<p>假设一条流每秒产生大量小 chunk，每个 chunk 都需要解析、转换和输出：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">处理 chunk A</span><br><span class="line">  → ngx.sleep(0)，归还调度权</span><br><span class="line">  → 处理其他 ready 任务</span><br><span class="line">  → 再次调度当前请求</span><br><span class="line">处理 chunk B</span><br><span class="line">  → ngx.sleep(0)</span><br><span class="line">  → ……</span><br></pre></td></tr></table></figure>
-
 <p>调度是公平的，但只要 ready task 足够多，或者当前流持续有工作，worker 仍然可以始终处于 runnable 状态，CPU 使用率自然可能接近 100%。</p>
 <p>这时需要区分两个指标：</p>
 <table>
@@ -491,7 +493,8 @@
 <th>关注的问题</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>调度公平性</td>
 <td>其他请求是否得到运行机会，尾延迟是否失控</td>
 </tr>
@@ -499,12 +502,15 @@
 <td>CPU 利用率</td>
 <td>所有请求加起来需要执行多少工作</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p><code>ngx.sleep(0)</code> 主要改善前者，不直接降低后者。</p>
 <blockquote>
 <p>如果 yield 时没有其他 ready coroutine，当前请求随后再次运行是正常现象；此时没有其他任务正在被“饿死”。当其他任务变为 ready 时，显式 yield 才为它们提供调度机会。</p>
 </blockquote>
-<h2 id="五、问题三：重复-JSON-decode-放大单请求成本"><a href="#五、问题三：重复-JSON-decode-放大单请求成本" class="headerlink" title="五、问题三：重复 JSON decode 放大单请求成本"></a>五、问题三：重复 JSON decode 放大单请求成本</h2><h3 id="5-1-post-arg-的重复解析"><a href="#5-1-post-arg-的重复解析" class="headerlink" title="5.1 post_arg.* 的重复解析"></a>5.1 <code>post_arg.*</code> 的重复解析</h3><p>表达式系统在多次访问 <code>post_arg.*</code> 时，如果每次都重新读取并解析请求体，就会重复执行相同工作。</p>
+<h2 id="五、问题三：重复-JSON-decode-放大单请求成本">五、问题三：重复 JSON decode 放大单请求成本</h2>
+<h3 id="5-1-post-arg-的重复解析">5.1 <code>post_arg.*</code> 的重复解析</h3>
+<p>表达式系统在多次访问 <code>post_arg.*</code> 时，如果每次都重新读取并解析请求体，就会重复执行相同工作。</p>
 <p><a href="https://github.com/apache/apisix/pull/13356">PR #13356</a> 通过缓存解析结果，避免同一个请求在表达式匹配过程中多次 decode。</p>
 <p>这一问题的特点是：</p>
 <ul>
@@ -513,7 +519,8 @@
 <li>请求体越大，重复解析越昂贵；</li>
 <li>它发生在请求处理阶段，与流式响应循环不是同一个问题。</li>
 </ul>
-<h3 id="5-2-AI-请求路径中的三次-decode"><a href="#5-2-AI-请求路径中的三次-decode" class="headerlink" title="5.2 AI 请求路径中的三次 decode"></a>5.2 AI 请求路径中的三次 decode</h3><p><a href="https://github.com/apache/apisix/pull/13377">PR #13377</a> 表明，APISIX AI 请求路径曾对同一个 JSON 请求体执行三次 decode。缓存解析后的 Lua 对象，可以消除其中的重复解析。</p>
+<h3 id="5-2-AI-请求路径中的三次-decode">5.2 AI 请求路径中的三次 decode</h3>
+<p><a href="https://github.com/apache/apisix/pull/13377">PR #13377</a> 表明，APISIX AI 请求路径曾对同一个 JSON 请求体执行三次 decode。缓存解析后的 Lua 对象，可以消除其中的重复解析。</p>
 <p>这里需要准确描述“无效工作”：</p>
 <ul>
 <li>在当前设计下，至少一次 JSON decode 通常是必要的；</li>
@@ -524,9 +531,9 @@
 <blockquote>
 <p>重复 JSON decode 是已经由源码和 PR 验证的 CPU 放大因素；它是否是某次生产 CPU 饱和的唯一根因，还需要结合线上 profile、请求体大小和修改前后对照数据确认。</p>
 </blockquote>
-<h3 id="5-3-为什么代码审查容易漏掉"><a href="#5-3-为什么代码审查容易漏掉" class="headerlink" title="5.3 为什么代码审查容易漏掉"></a>5.3 为什么代码审查容易漏掉</h3><p>开发者通常会在每个函数内部判断复杂度，却不容易注意同一份数据跨层重复转换：</p>
+<h3 id="5-3-为什么代码审查容易漏掉">5.3 为什么代码审查容易漏掉</h3>
+<p>开发者通常会在每个函数内部判断复杂度，却不容易注意同一份数据跨层重复转换：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">原始请求体</span><br><span class="line">  → 表达式系统 decode</span><br><span class="line">  → AI provider decode</span><br><span class="line">  → 插件再次 decode</span><br><span class="line">  → 修改对象</span><br><span class="line">  → encode 后发往上游</span><br></pre></td></tr></table></figure>
-
 <p>每一步局部上都可能是“合理的”，但组合起来就形成了重复工作。</p>
 <p>运行时审查需要追踪数据生命周期：</p>
 <ul>
@@ -536,26 +543,28 @@
 <li>哪些层只需要读取，哪些层确实会修改？</li>
 <li>encode 是否只在最终边界执行一次？</li>
 </ul>
-<h2 id="六、问题四：流式响应的每-chunk-成本"><a href="#六、问题四：流式响应的每-chunk-成本" class="headerlink" title="六、问题四：流式响应的每 chunk 成本"></a>六、问题四：流式响应的每 chunk 成本</h2><h3 id="6-1-不要把-body-reader-想象成必然阻塞"><a href="#6-1-不要把-body-reader-想象成必然阻塞" class="headerlink" title="6.1 不要把 body_reader() 想象成必然阻塞"></a>6.1 不要把 <code>body_reader()</code> 想象成必然阻塞</h3><p><code>lua-resty-http</code> 的 chunked body reader 会维护 HTTP chunk framing 状态，并调用 cosocket <code>receive()</code> 读取 chunk size 和内容。</p>
+<h2 id="六、问题四：流式响应的每-chunk-成本">六、问题四：流式响应的每 chunk 成本</h2>
+<h3 id="6-1-不要把-body-reader-想象成必然阻塞">6.1 不要把 <code>body_reader()</code> 想象成必然阻塞</h3>
+<p><code>lua-resty-http</code> 的 chunked body reader 会维护 HTTP chunk framing 状态，并调用 cosocket <code>receive()</code> 读取 chunk size 和内容。</p>
 <p>它并不是一个简单的 <code>self.buffer</code> Lua 字符串缓存器，因此不能在没有绑定准确依赖版本和源码的情况下，假设“第一次读取进入 <code>self.buffer</code>，后续读取完全不触碰 cosocket”。</p>
 <p>但核心风险仍然成立：</p>
 <blockquote>
-<p>即使代码调用了 <code>sock:receive()</code>，只要 cosocket&#x2F;Nginx 接收缓冲区里已经有足够数据，它仍可能立即返回，不发生 I&#x2F;O 等待。</p>
+<p>即使代码调用了 <code>sock:receive()</code>，只要 cosocket/Nginx 接收缓冲区里已经有足够数据，它仍可能立即返回，不发生 I/O 等待。</p>
 </blockquote>
 <p>这也是为什么评估循环时不能只数“网络 API 调用了几次”，而要判断这些调用在目标负载下是否真的等待。</p>
-<h3 id="6-2-高频小-chunk-为什么昂贵"><a href="#6-2-高频小-chunk-为什么昂贵" class="headerlink" title="6.2 高频小 chunk 为什么昂贵"></a>6.2 高频小 chunk 为什么昂贵</h3><p>当上游返回相同总字节数时，小 chunk 越多，固定成本执行次数越多：</p>
+<h3 id="6-2-高频小-chunk-为什么昂贵">6.2 高频小 chunk 为什么昂贵</h3>
+<p>当上游返回相同总字节数时，小 chunk 越多，固定成本执行次数越多：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">读取 chunk</span><br><span class="line">  → 拼接或扫描 SSE 边界</span><br><span class="line">  → JSON 解析/转换</span><br><span class="line">  → 执行响应过滤器</span><br><span class="line">  → 写入下游</span><br><span class="line">  → flush</span><br></pre></td></tr></table></figure>
-
 <p>例如，同样是 1 MiB 数据：</p>
 <ul>
 <li>1,024 个 1 KiB chunk；</li>
 <li>16,384 个 64 B chunk；</li>
 </ul>
 <p>后者会执行更多循环、函数调用、边界扫描、临时对象分配和 flush。即使每轮都很快，总成本也可能显著上升。</p>
-<h3 id="6-3-实时性与吞吐的-flush-取舍"><a href="#6-3-实时性与吞吐的-flush-取舍" class="headerlink" title="6.3 实时性与吞吐的 flush 取舍"></a>6.3 实时性与吞吐的 flush 取舍</h3><p>逐 chunk 同步 flush 的优点是首 token 和 token 间延迟低，也更容易及时暴露下游写错误；缺点是 flush 次数与 chunk 数量直接相关。</p>
+<h3 id="6-3-实时性与吞吐的-flush-取舍">6.3 实时性与吞吐的 flush 取舍</h3>
+<p>逐 chunk 同步 flush 的优点是首 token 和 token 间延迟低，也更容易及时暴露下游写错误；缺点是 flush 次数与 chunk 数量直接相关。</p>
 <p>周期 flush 会把一个短时间窗口内的多个 chunk 合并输出：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">逐 chunk flush：chunk → flush → chunk → flush → chunk → flush</span><br><span class="line">周期 flush：    chunk → chunk → chunk → 每 10ms flush</span><br></pre></td></tr></table></figure>
-
 <p>这减少了 flush 和调度次数，但会引入一个可控的额外延迟窗口。</p>
 <p><a href="https://github.com/apache/apisix/pull/13391">PR #13391</a> 的处理不是简单删除 flush，而是把几种机制拆开：</p>
 <ul>
@@ -570,9 +579,9 @@
 </ul>
 <p>这个设计恰好说明：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ngx.sleep(0)        → 调度公平性</span><br><span class="line">SSE parser 优化     → 降低单位 chunk CPU 成本</span><br><span class="line">周期 flush          → 降低高频输出成本</span><br><span class="line">duration/byte limit → 限制异常流的资源上界</span><br></pre></td></tr></table></figure>
-
 <p>四者解决的不是同一个问题。</p>
-<h3 id="6-4-周期-flush-仍不等于完整背压"><a href="#6-4-周期-flush-仍不等于完整背压" class="headerlink" title="6.4 周期 flush 仍不等于完整背压"></a>6.4 周期 flush 仍不等于完整背压</h3><p>背压的目标是：当下游消费速度赶不上上游生产速度时，让生产者减速或限制中间缓冲增长。</p>
+<h3 id="6-4-周期-flush-仍不等于完整背压">6.4 周期 flush 仍不等于完整背压</h3>
+<p>背压的目标是：当下游消费速度赶不上上游生产速度时，让生产者减速或限制中间缓冲增长。</p>
 <p>周期 flush 主要减少输出频率，并不必然让上游减速。完整的流式资源治理还需要考虑：</p>
 <ul>
 <li>最大流持续时间；</li>
@@ -583,12 +592,11 @@
 <li>超限后的取消和连接关闭策略。</li>
 </ul>
 <p>因此，不应把“增加 flush interval”直接等同为“已经实现背压”。</p>
-<h2 id="七、重新整理故障因果链"><a href="#七、重新整理故障因果链" class="headerlink" title="七、重新整理故障因果链"></a>七、重新整理故障因果链</h2><p>经过拆分后，几个问题可以放进一条更准确的资源模型：</p>
+<h2 id="七、重新整理故障因果链">七、重新整理故障因果链</h2>
+<p>经过拆分后，几个问题可以放进一条更准确的资源模型：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">请求体重复 JSON decode</span><br><span class="line">  → 增加每个请求的固定 CPU 成本</span><br><span class="line"></span><br><span class="line">上游高速产生大量小 chunk</span><br><span class="line">  → 放大 SSE 解析、字符串分配和 flush 次数</span><br><span class="line">  → 增加流式阶段 CPU 成本</span><br><span class="line"></span><br><span class="line">流式循环缺少显式调度点</span><br><span class="line">  → 单个请求可能连续占用 worker</span><br><span class="line">  → 其他请求和定时任务尾延迟恶化</span><br><span class="line"></span><br><span class="line">下游取消未及时传播</span><br><span class="line">  → 已经失去业务价值的上游流仍继续运行</span><br><span class="line">  → 前述所有 CPU 和网络成本继续发生</span><br></pre></td></tr></table></figure>
-
 <p>这四条链路会互相叠加。例如：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">下游已经取消</span><br><span class="line">  + 上游仍高速输出</span><br><span class="line">  + 每个 chunk 处理成本高</span><br><span class="line">  + 缺少资源上限</span><br><span class="line">  = 无效工作持续占用 worker</span><br></pre></td></tr></table></figure>
-
 <p>但仍然要避免一句“没有 yield 导致 CPU 打满”覆盖全部事实。</p>
 <p>更合理的故障分类是：</p>
 <table>
@@ -599,7 +607,8 @@
 <th>主要修复</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>生命周期</td>
 <td>下游取消后上游继续运行</td>
 <td>abort propagation、关闭上游</td>
@@ -617,15 +626,17 @@
 <tr>
 <td>资源上界</td>
 <td>异常长流或大响应无限消耗资源</td>
-<td>duration&#x2F;bytes&#x2F;buffer limit</td>
+<td>duration/bytes/buffer limit</td>
 </tr>
 <tr>
 <td>背压</td>
 <td>上游长期快于下游</td>
 <td>限速、暂停读取或有界缓冲策略</td>
 </tr>
-</tbody></table>
-<h2 id="八、AI-在这次复盘中应该扮演什么角色"><a href="#八、AI-在这次复盘中应该扮演什么角色" class="headerlink" title="八、AI 在这次复盘中应该扮演什么角色"></a>八、AI 在这次复盘中应该扮演什么角色</h2><p>我最初把问题提交给 Claude Opus，希望 AI 帮助分析：</p>
+</tbody>
+</table>
+<h2 id="八、AI-在这次复盘中应该扮演什么角色">八、AI 在这次复盘中应该扮演什么角色</h2>
+<p>我最初把问题提交给 Claude Opus，希望 AI 帮助分析：</p>
 <ul>
 <li>为什么阅读代码时没有发现问题；</li>
 <li>需要补充哪些 OpenResty 和协作式调度知识；</li>
@@ -633,7 +644,6 @@
 </ul>
 <p>AI 的价值首先是快速扩展假设空间：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">CPU 饱和</span><br><span class="line">  ├─ 重复 JSON 编解码？</span><br><span class="line">  ├─ 流式循环没有 yield？</span><br><span class="line">  ├─ cosocket 持续立即返回？</span><br><span class="line">  ├─ 高频 flush？</span><br><span class="line">  ├─ SSE parser 分配过多？</span><br><span class="line">  ├─ 下游取消未传播？</span><br><span class="line">  └─ 缺少流持续时间和字节数上限？</span><br></pre></td></tr></table></figure>
-
 <p>但 AI 给出的解释不能直接作为事故结论。它可能：</p>
 <ul>
 <li>根据常见库实现虚构当前版本不存在的 <code>self.buffer</code>；</li>
@@ -643,17 +653,20 @@
 <li>混淆系统发送缓冲区和客户端实际接收。</li>
 </ul>
 <p>因此，我认为更可靠的 AI 辅助复盘流程是：</p>
-<h3 id="第一步：让-AI-生成候选假设"><a href="#第一步：让-AI-生成候选假设" class="headerlink" title="第一步：让 AI 生成候选假设"></a>第一步：让 AI 生成候选假设</h3><p>要求 AI 尽量列全：调度、I&#x2F;O、缓冲、序列化、生命周期、超时、限流和可观测性。</p>
-<h3 id="第二步：固定准确版本"><a href="#第二步：固定准确版本" class="headerlink" title="第二步：固定准确版本"></a>第二步：固定准确版本</h3><p>记录并提供：</p>
+<h3 id="第一步：让-AI-生成候选假设">第一步：让 AI 生成候选假设</h3>
+<p>要求 AI 尽量列全：调度、I/O、缓冲、序列化、生命周期、超时、限流和可观测性。</p>
+<h3 id="第二步：固定准确版本">第二步：固定准确版本</h3>
+<p>记录并提供：</p>
 <ul>
-<li>API7&#x2F;APISIX commit；</li>
+<li>API7/APISIX commit；</li>
 <li>OpenResty 版本；</li>
 <li><code>lua-resty-http</code> 版本；</li>
 <li>配置文件；</li>
 <li>实际调用链。</li>
 </ul>
 <p>没有版本约束的源码分析，很容易分析到另一版实现。</p>
-<h3 id="第三步：建立证据等级"><a href="#第三步：建立证据等级" class="headerlink" title="第三步：建立证据等级"></a>第三步：建立证据等级</h3><table>
+<h3 id="第三步：建立证据等级">第三步：建立证据等级</h3>
+<table>
 <thead>
 <tr>
 <th>等级</th>
@@ -661,7 +674,8 @@
 <th>能说明什么</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>现象</td>
 <td>worker CPU 100%、延迟上升</td>
 <td>确实发生了问题</td>
@@ -686,9 +700,11 @@
 <td>发布后指标恢复且问题不再复现</td>
 <td>修复对事故有效</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>PR、源码和 benchmark 可以证明问题存在，但要把它称为某次生产事故的“根本原因”，最好仍有 profile 和对照实验。</p>
-<h3 id="第四步：主动验证-AI-最自信的结论"><a href="#第四步：主动验证-AI-最自信的结论" class="headerlink" title="第四步：主动验证 AI 最自信的结论"></a>第四步：主动验证 AI 最自信的结论</h3><p>优先检查带有以下词语的回答：</p>
+<h3 id="第四步：主动验证-AI-最自信的结论">第四步：主动验证 AI 最自信的结论</h3>
+<p>优先检查带有以下词语的回答：</p>
 <ul>
 <li>“一定”；</li>
 <li>“绝对”；</li>
@@ -697,7 +713,8 @@
 <li>“唯一根因”。</li>
 </ul>
 <p>越确定的表述，越值得回到官方文档和准确版本源码验证。</p>
-<h3 id="第五步：让实验而不是叙事完成归因"><a href="#第五步：让实验而不是叙事完成归因" class="headerlink" title="第五步：让实验而不是叙事完成归因"></a>第五步：让实验而不是叙事完成归因</h3><p>建议使用固定流量回放，分别控制变量：</p>
+<h3 id="第五步：让实验而不是叙事完成归因">第五步：让实验而不是叙事完成归因</h3>
+<p>建议使用固定流量回放，分别控制变量：</p>
 <table>
 <thead>
 <tr>
@@ -706,23 +723,24 @@
 <th>目标</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>保留&#x2F;移除 <code>ngx.sleep(0)</code></td>
+<tbody>
+<tr>
+<td>保留/移除 <code>ngx.sleep(0)</code></td>
 <td>其他请求 P99、worker event loop 延迟</td>
 <td>验证公平性</td>
 </tr>
 <tr>
-<td>缓存&#x2F;重复 JSON decode</td>
+<td>缓存/重复 JSON decode</td>
 <td>CPU profile、单请求 CPU time</td>
 <td>验证解析成本</td>
 </tr>
 <tr>
-<td>逐 chunk&#x2F;周期 flush</td>
+<td>逐 chunk/周期 flush</td>
 <td>CPU、首 token 延迟、token 间延迟</td>
 <td>量化实时性与吞吐取舍</td>
 </tr>
 <tr>
-<td>大&#x2F;小 chunk，相同总字节数</td>
+<td>大/小 chunk，相同总字节数</td>
 <td>循环次数、分配量、CPU</td>
 <td>验证 per-chunk 固定成本</td>
 </tr>
@@ -736,70 +754,85 @@
 <td>缓冲量、内存、读取速率</td>
 <td>验证背压和资源上界</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>AI 最适合帮助设计这些实验、解释结果和发现遗漏，而不是替代实验。</p>
-<h2 id="九、运行时代码审查-Checklist"><a href="#九、运行时代码审查-Checklist" class="headerlink" title="九、运行时代码审查 Checklist"></a>九、运行时代码审查 Checklist</h2><h3 id="9-1-循环与调度"><a href="#9-1-循环与调度" class="headerlink" title="9.1 循环与调度"></a>9.1 循环与调度</h3><ul>
-<li><input disabled="" type="checkbox"> 循环单轮在最坏情况下做多少 CPU 工作？</li>
-<li><input disabled="" type="checkbox"> 循环中的 I&#x2F;O 是否可能因为缓冲区已有数据而立即返回？</li>
-<li><input disabled="" type="checkbox"> 是否存在明确且可验证的 yield 点？</li>
-<li><input disabled="" type="checkbox"> yield 是为了公平性，还是错误地被当成了限流？</li>
-<li><input disabled="" type="checkbox"> 一个请求是否可能连续处理大量 ready data？</li>
-<li><input disabled="" type="checkbox"> 是否监控 worker event loop latency 和请求尾延迟？</li>
+<h2 id="九、运行时代码审查-Checklist">九、运行时代码审查 Checklist</h2>
+<h3 id="9-1-循环与调度">9.1 循环与调度</h3>
+<ul>
+<li>[ ] 循环单轮在最坏情况下做多少 CPU 工作？</li>
+<li>[ ] 循环中的 I/O 是否可能因为缓冲区已有数据而立即返回？</li>
+<li>[ ] 是否存在明确且可验证的 yield 点？</li>
+<li>[ ] yield 是为了公平性，还是错误地被当成了限流？</li>
+<li>[ ] 一个请求是否可能连续处理大量 ready data？</li>
+<li>[ ] 是否监控 worker event loop latency 和请求尾延迟？</li>
 </ul>
-<h3 id="9-2-取消与资源生命周期"><a href="#9-2-取消与资源生命周期" class="headerlink" title="9.2 取消与资源生命周期"></a>9.2 取消与资源生命周期</h3><ul>
-<li><input disabled="" type="checkbox"> 下游断开后，如何通知上游停止？</li>
-<li><input disabled="" type="checkbox"> 上游连接、light thread、timer 是否都会被清理？</li>
-<li><input disabled="" type="checkbox"> flush&#x2F;write 错误是否完整传播？</li>
-<li><input disabled="" type="checkbox"> 是否需要 <code>lua_check_client_abort</code> &#x2F; <code>ngx.on_abort</code>？</li>
-<li><input disabled="" type="checkbox"> 客户端取消后最多还会读取多少上游数据？</li>
-<li><input disabled="" type="checkbox"> 是否有取消传播耗时指标？</li>
+<h3 id="9-2-取消与资源生命周期">9.2 取消与资源生命周期</h3>
+<ul>
+<li>[ ] 下游断开后，如何通知上游停止？</li>
+<li>[ ] 上游连接、light thread、timer 是否都会被清理？</li>
+<li>[ ] flush/write 错误是否完整传播？</li>
+<li>[ ] 是否需要 <code>lua_check_client_abort</code> / <code>ngx.on_abort</code>？</li>
+<li>[ ] 客户端取消后最多还会读取多少上游数据？</li>
+<li>[ ] 是否有取消传播耗时指标？</li>
 </ul>
-<h3 id="9-3-缓冲与背压"><a href="#9-3-缓冲与背压" class="headerlink" title="9.3 缓冲与背压"></a>9.3 缓冲与背压</h3><ul>
-<li><input disabled="" type="checkbox"> 上游和下游分别有哪些缓冲层？</li>
-<li><input disabled="" type="checkbox"> 上游比下游快时，数据会积累在哪里？</li>
-<li><input disabled="" type="checkbox"> 缓冲区是否有上限？</li>
-<li><input disabled="" type="checkbox"> 是否能暂停或降低上游读取速度？</li>
-<li><input disabled="" type="checkbox"> flush 策略是逐 chunk、按字节还是按时间窗口？</li>
-<li><input disabled="" type="checkbox"> 实时性目标是否有明确数值，而不是默认“越快越好”？</li>
+<h3 id="9-3-缓冲与背压">9.3 缓冲与背压</h3>
+<ul>
+<li>[ ] 上游和下游分别有哪些缓冲层？</li>
+<li>[ ] 上游比下游快时，数据会积累在哪里？</li>
+<li>[ ] 缓冲区是否有上限？</li>
+<li>[ ] 是否能暂停或降低上游读取速度？</li>
+<li>[ ] flush 策略是逐 chunk、按字节还是按时间窗口？</li>
+<li>[ ] 实时性目标是否有明确数值，而不是默认“越快越好”？</li>
 </ul>
-<h3 id="9-4-编解码与内存分配"><a href="#9-4-编解码与内存分配" class="headerlink" title="9.4 编解码与内存分配"></a>9.4 编解码与内存分配</h3><ul>
-<li><input disabled="" type="checkbox"> 同一请求体被 decode 了几次？</li>
-<li><input disabled="" type="checkbox"> 解析结果能否在 request context 中复用？</li>
-<li><input disabled="" type="checkbox"> 是否存在 <code>..</code> 循环拼接导致大量临时字符串？</li>
-<li><input disabled="" type="checkbox"> SSE 边界扫描是否重复遍历相同数据？</li>
-<li><input disabled="" type="checkbox"> encode 是否只在最终边界发生？</li>
-<li><input disabled="" type="checkbox"> 是否按请求体大小和 chunk 数量做过 benchmark？</li>
+<h3 id="9-4-编解码与内存分配">9.4 编解码与内存分配</h3>
+<ul>
+<li>[ ] 同一请求体被 decode 了几次？</li>
+<li>[ ] 解析结果能否在 request context 中复用？</li>
+<li>[ ] 是否存在 <code>..</code> 循环拼接导致大量临时字符串？</li>
+<li>[ ] SSE 边界扫描是否重复遍历相同数据？</li>
+<li>[ ] encode 是否只在最终边界发生？</li>
+<li>[ ] 是否按请求体大小和 chunk 数量做过 benchmark？</li>
 </ul>
-<h3 id="9-5-资源上界"><a href="#9-5-资源上界" class="headerlink" title="9.5 资源上界"></a>9.5 资源上界</h3><ul>
-<li><input disabled="" type="checkbox"> 单条流是否有最大持续时间？</li>
-<li><input disabled="" type="checkbox"> 是否限制最大响应字节数？</li>
-<li><input disabled="" type="checkbox"> 是否限制最大事件数或未发送缓冲量？</li>
-<li><input disabled="" type="checkbox"> 超限后是否取消上游并记录原因？</li>
-<li><input disabled="" type="checkbox"> 超时、取消、上游错误是否可以在指标中区分？</li>
+<h3 id="9-5-资源上界">9.5 资源上界</h3>
+<ul>
+<li>[ ] 单条流是否有最大持续时间？</li>
+<li>[ ] 是否限制最大响应字节数？</li>
+<li>[ ] 是否限制最大事件数或未发送缓冲量？</li>
+<li>[ ] 超限后是否取消上游并记录原因？</li>
+<li>[ ] 超时、取消、上游错误是否可以在指标中区分？</li>
 </ul>
-<h3 id="9-6-证据与可观测性"><a href="#9-6-证据与可观测性" class="headerlink" title="9.6 证据与可观测性"></a>9.6 证据与可观测性</h3><ul>
-<li><input disabled="" type="checkbox"> 是否记录精确版本和 commit？</li>
-<li><input disabled="" type="checkbox"> 是否有 worker 维度的 CPU 和延迟指标？</li>
-<li><input disabled="" type="checkbox"> 是否采集过 flame graph &#x2F; CPU profile？</li>
-<li><input disabled="" type="checkbox"> 是否记录请求体大小、响应字节数、chunk 数和流持续时间？</li>
-<li><input disabled="" type="checkbox"> 是否有修复前后的同负载对照实验？</li>
-<li><input disabled="" type="checkbox"> 文章中的每个“根因”是否都有对应证据？</li>
+<h3 id="9-6-证据与可观测性">9.6 证据与可观测性</h3>
+<ul>
+<li>[ ] 是否记录精确版本和 commit？</li>
+<li>[ ] 是否有 worker 维度的 CPU 和延迟指标？</li>
+<li>[ ] 是否采集过 flame graph / CPU profile？</li>
+<li>[ ] 是否记录请求体大小、响应字节数、chunk 数和流持续时间？</li>
+<li>[ ] 是否有修复前后的同负载对照实验？</li>
+<li>[ ] 文章中的每个“根因”是否都有对应证据？</li>
 </ul>
-<h2 id="十、最终总结"><a href="#十、最终总结" class="headerlink" title="十、最终总结"></a>十、最终总结</h2><p>这次问题让我补上的并不只是某个 OpenResty API 的知识，而是一套运行时分析方法。</p>
-<h3 id="10-1-静态正确性只是起点"><a href="#10-1-静态正确性只是起点" class="headerlink" title="10.1 静态正确性只是起点"></a>10.1 静态正确性只是起点</h3><p>代码能够正确退出、正确转发数据，不代表它在高频、突发、取消或慢客户端场景下仍然高效。</p>
-<h3 id="10-2-不要把四类问题混成一个原因"><a href="#10-2-不要把四类问题混成一个原因" class="headerlink" title="10.2 不要把四类问题混成一个原因"></a>10.2 不要把四类问题混成一个原因</h3><ul>
+<h2 id="十、最终总结">十、最终总结</h2>
+<p>这次问题让我补上的并不只是某个 OpenResty API 的知识，而是一套运行时分析方法。</p>
+<h3 id="10-1-静态正确性只是起点">10.1 静态正确性只是起点</h3>
+<p>代码能够正确退出、正确转发数据，不代表它在高频、突发、取消或慢客户端场景下仍然高效。</p>
+<h3 id="10-2-不要把四类问题混成一个原因">10.2 不要把四类问题混成一个原因</h3>
+<ul>
 <li>取消传播决定无效工作何时停止；</li>
 <li>yield 决定调度是否公平；</li>
 <li>缓存和批处理决定单位工作成本；</li>
 <li>背压和资源上限决定异常流能消耗多少资源。</li>
 </ul>
-<h3 id="10-3-ngx-sleep-0-有效，但能力边界必须说清楚"><a href="#10-3-ngx-sleep-0-有效，但能力边界必须说清楚" class="headerlink" title="10.3 ngx.sleep(0) 有效，但能力边界必须说清楚"></a>10.3 <code>ngx.sleep(0)</code> 有效，但能力边界必须说清楚</h3><p>它确实让出调度权，可以缓解单请求垄断 worker；它不降低总解析量，不限速，也不构成背压。</p>
-<h3 id="10-4-网络-API-不一定等待"><a href="#10-4-网络-API-不一定等待" class="headerlink" title="10.4 网络 API 不一定等待"></a>10.4 网络 API 不一定等待</h3><p>cosocket <code>receive()</code>、flush 等 API 的运行时行为取决于缓冲区、socket readiness 和调用参数。看见 I&#x2F;O 调用，不能默认已经发生 yield。</p>
-<h3 id="10-5-AI-负责扩大搜索空间，证据负责收敛结论"><a href="#10-5-AI-负责扩大搜索空间，证据负责收敛结论" class="headerlink" title="10.5 AI 负责扩大搜索空间，证据负责收敛结论"></a>10.5 AI 负责扩大搜索空间，证据负责收敛结论</h3><p>AI 可以快速生成假设、解释机制和设计实验，但必须用准确版本源码、官方文档、profile 和对照实验校验。一个听起来完整的运行时故事，不一定是真实调用链。</p>
+<h3 id="10-3-ngx-sleep-0-有效，但能力边界必须说清楚">10.3 <code>ngx.sleep(0)</code> 有效，但能力边界必须说清楚</h3>
+<p>它确实让出调度权，可以缓解单请求垄断 worker；它不降低总解析量，不限速，也不构成背压。</p>
+<h3 id="10-4-网络-API-不一定等待">10.4 网络 API 不一定等待</h3>
+<p>cosocket <code>receive()</code>、flush 等 API 的运行时行为取决于缓冲区、socket readiness 和调用参数。看见 I/O 调用，不能默认已经发生 yield。</p>
+<h3 id="10-5-AI-负责扩大搜索空间，证据负责收敛结论">10.5 AI 负责扩大搜索空间，证据负责收敛结论</h3>
+<p>AI 可以快速生成假设、解释机制和设计实验，但必须用准确版本源码、官方文档、profile 和对照实验校验。一个听起来完整的运行时故事，不一定是真实调用链。</p>
 <blockquote>
 <p>真正需要培养的能力，不是背诵“哪里应该加一个 <code>ngx.sleep(0)</code>”，而是面对任何事件驱动系统时，都主动追问：<strong>执行权何时归还？数据在哪里缓冲？重复工作发生了几次？取消如何传播？资源上界在哪里？</strong></p>
 </blockquote>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
 <li><a href="https://github.com/apache/apisix/pull/13254">APISIX PR #13254：客户端断开时终止上游流</a></li>
 <li><a href="https://github.com/apache/apisix/pull/13255">APISIX PR #13255：流式循环增加调度让出</a></li>
 <li><a href="https://github.com/apache/apisix/issues/13256">APISIX Issue #13256：流式请求资源治理</a></li>
@@ -934,7 +967,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">772k</span>
+    <span title="站点总字数">774k</span>
   </span>
 </div>
 <div class="busuanzi-count">

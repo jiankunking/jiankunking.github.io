@@ -181,7 +181,7 @@
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
-      src="/images/avatar/avatar.png" decoding="async" width="359" height="342">
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
   <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
   <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
 </div>
@@ -324,15 +324,17 @@
     
     
     <div class="post-body" itemprop="articleBody"><blockquote>
-<p>基于OpenJDK 12<br>本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。</p>
+<p>基于OpenJDK 12<br>
+本文的目的是为后续文章解析LongAdder做一个引子，以便两者对比。</p>
 </blockquote>
 <span id="more"></span>
-
 <p><a href="https://jiankunking.com/java-concurrent-atomic-package.html">Atomic Package解析参考（比如lazySet原理解析）</a></p>
 <p>AtomicLong的常用方法如下：</p>
 <ul>
-<li>long addAndGet(long delta)：以原子方式将输入的数值与实例中的值（AtomicLong里的<br>value）相加，并返回结果。</li>
-<li>compareAndSet(long expectedValue, long newValue)：如果输入的数值等于预期值，则以原子方<br>式将该值设置为输入的值。</li>
+<li>long addAndGet(long delta)：以原子方式将输入的数值与实例中的值（AtomicLong里的<br>
+value）相加，并返回结果。</li>
+<li>compareAndSet(long expectedValue, long newValue)：如果输入的数值等于预期值，则以原子方<br>
+式将该值设置为输入的值。</li>
 <li>long getAndIncrement()：以原子方式将当前值加1，注意，这里返回的是自增前的值。</li>
 <li>void lazySet(long newValue)：最终会设置成newValue，<font color=DeepPink><strong>使用lazySet设置值后，可能导致其他线程在之后的一小段时间内还是可以读到旧的值</strong></font>。</li>
 <li>long getAndSet(long newValue)：以原子方式设置为newValue的值，并返回旧值。</li>
@@ -346,7 +348,10 @@
 <blockquote>
 <p>@HotSpotIntrinsicCandidate JDK的源码中，被@HotSpotIntrinsicCandidate标注的方法，在HotSpot中都有一套高效的实现，该高效实现基于CPU指令，运行时，HotSpot维护的高效实现会替代JDK的源码实现，从而获得更高的效率。</p>
 </blockquote>
-<p>源码getAndAddLong(Object o, long offset, long delta)中do while循环体是实现的关键所在，其逻辑是：<br>第一步先取得AtomicLong里存储的数值，<br>第二步对AtomicLong的当前数值进行加1操作，<br>第三步调用weakCompareAndSetLong方法来进行原子更新操作，该方法先检查当前数值是否等于v，等于意味着AtomicLong的值没有被其他线程修改过，则将weakCompareAndSetLong的当前数值更新成v+delta的值，如果不等于v，weakCompareAndSetLong方法会返回false，<font color=DeepPink><strong>程序会进入do while循环重新进行</strong></font>weakCompareAndSetLong操作。</p>
+<p>源码getAndAddLong(Object o, long offset, long delta)中do while循环体是实现的关键所在，其逻辑是：<br>
+第一步先取得AtomicLong里存储的数值，<br>
+第二步对AtomicLong的当前数值进行加1操作，<br>
+第三步调用weakCompareAndSetLong方法来进行原子更新操作，该方法先检查当前数值是否等于v，等于意味着AtomicLong的值没有被其他线程修改过，则将weakCompareAndSetLong的当前数值更新成v+delta的值，如果不等于v，weakCompareAndSetLong方法会返回false，<font color=DeepPink><strong>程序会进入do while循环重新进行</strong></font>weakCompareAndSetLong操作。</p>
 <p><font color=DeepPink><strong>这里隐含了一个问题，当对于共享变量（假设变量名字是a）的竞争非常激烈的时候，在当前线程读取a、改变a之间，a的值会被别的线程改变，从而导致当前线程一直重试（自旋），一直占用CPU。</strong></font></p>
 <p><font color=DeepPink><strong>这就引出另一个问题，对于锁抢占很激烈的时候，串行是最好的解决办法。比如使用synchronized。</strong></font></p>
 <blockquote>
@@ -476,7 +481,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">772k</span>
+    <span title="站点总字数">774k</span>
   </span>
 </div>
 <div class="busuanzi-count">
