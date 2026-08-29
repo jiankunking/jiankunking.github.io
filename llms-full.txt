@@ -9,10 +9,10 @@ Generated from 172 indexable articles. Each entry keeps its canonical URL and co
 
 ## Core topics
 
+- [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
+- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
 - [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
 - [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
-- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
-- [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
 
 ## Articles
 ### 我用一个点餐 Demo，串了一遍 Agent 应用开发
@@ -797,7 +797,7 @@ AI放大的，还是人本来的水平
 - Updated: 2026-07-22
 - Summary: 《Harness工程》读书笔记，梳理上下文管理、规划执行、反思记忆、Skills、多 Agent 协作与 Agent 产品设计。
 - Categories: AI
-- Tags: LLM, AI Agent, Harness Engineering, Context Engineering, Skills
+- Tags: AI Agent, Harness Engineering, Context Engineering, LLM, Skills
 
 Article text:
 
@@ -1397,7 +1397,7 @@ Article text:
 
 这里有一个我一开始容易忽略的点：文本处理状态和向量状态要分开。
 
-一份文档可能已经解析成功，但 Embedding 服务暂时不可用。如果只保留一个“处理成功/失败”状态，向量服务出错就会让整份文档不可用。现在的做法是分别记录正文处理和向量化状态。正文完成后，关键词检索就可以工作；向量失败时，单独重试向量任务即可，不需要重新解析或 OCR。
+一份文档可能已经解析成功，但 Embedding 服务暂时不可用。如果只保留一个“处理成功&#x2F;失败”状态，向量服务出错就会让整份文档不可用。现在的做法是分别记录正文处理和向量化状态。正文完成后，关键词检索就可以工作；向量失败时，单独重试向量任务即可，不需要重新解析或 OCR。
 
 上传接口只做接收，不做解析
 
@@ -1453,7 +1453,7 @@ document_embed
 
 拆开之后，解析成功但向量化失败不会互相影响。以后更换 Embedding 模型时，也只需要重建向量，不必再读一遍原文件。
 
-任务使用带截止时间的 context.Context。OCR、Embedding、Qdrant 请求和 Poppler 进程都会接收这个上下文，任务超时或服务停止时，下游调用也能跟着结束。
+任务使用带截止时间的 context.Context。OCR、Embedding、Qdrant 请求以及 PDF 解析时启动的外部命令都会绑定这个上下文。任务超时或服务停止后，正在执行的请求和命令也会随之结束。
 
 不同格式先统一成带页码的文本
 
@@ -1487,7 +1487,7 @@ jpg / jpeg / png / webp
 
 普通文本按一页处理。DOCX 本质上是 ZIP，代码读取 word/document.xml 中的文本节点，并在段落结束的位置补换行。
 
-PDF 先用 Poppler 按页读取文本层。如果整份文档几乎没有有效文字，再转到 OCR；图片则直接进入 OCR。没有配置 OCR 时，文档会进入 ocr_required 状态，而不是笼统地显示处理失败。当前 PDF OCR 默认最多处理 20 页，防止单个文件消耗太多外部调用。
+PDF 先用 Poppler 的 pdfinfo 获取页数，再用 pdftotext 按页提取文本层。Poppler 不是常驻服务，而是一组由 Go 通过 exec.CommandContext 临时启动的命令行工具；命令结束或上下文取消后，子进程随之退出。文本层几乎为空时，代码会用 pdftoppm 将页面转成图片，再交给 OCR。图片则直接进入 OCR；没有配置 OCR 时，文档会进入 ocr_required 状态。PDF OCR 默认最多处理 20 页，避免单个文件消耗过多外部调用。
 
 从这一层往后，切片和检索不再关心输入是 PDF、Word 还是图片，只处理“页码 + 文本”。
 
@@ -1529,6 +1529,8 @@ MySQL 优先使用带 ngram 分词器的全文索引：
 
  |
 
+这里没有另外部署 Elasticsearch，主要是因为 VPS 资源有限。现阶段先复用 MySQL 的全文索引，可以少运行一个常驻服务，也能降低内存占用和运维成本。以后数据量和检索需求增加，再考虑是否换成专门的搜索引擎。
+
 查询范围只包含当前用户、当前资料库中已经处理完成的文档。
 
 全文检索报错或没有命中时，还有一层简单回退：英文和数字按连续词拆分，中文生成 2～4 字片段，再用 LIKE 找候选并在代码里计分。这条路径适合兜底，也比较容易命中文件中的名称、编号和日期，但数据量大以后不会有太好的性能。
@@ -1539,9 +1541,13 @@ MySQL 优先使用带 ngram 分词器的全文索引：
 
 向量检索不是硬依赖。Embedding 或 Qdrant 没有启用、调用失败，或者向量结果无法从 MySQL 回查时，接口都会退回关键词结果，并记录降级原因。
 
-用 RRF 合并
+RRF：把两份排名合成一份
 
-关键词和向量路径各取最多 30 条结果，再按 RRF 合并：
+关键词检索和向量检索的分数含义不同，不能直接比较。RRF（Reciprocal Rank Fusion，倒数排名融合）的思路是忽略原始分数，只看每个切片在两路结果中的名次。
+
+例如，关键词检索将 A 排在第 1、B 排在第 2，向量检索将 B 排在第 1、A 排在第 3。RRF 会分别按照名次给 A 和 B 计分，再把两路得分相加。B 虽然在关键词结果中排第 2，但两边都比较靠前，最终可能排在 A 前面。
+
+代码中，两路各取最多 30 条，并按下面的公式累计分数：
 
 1
 
@@ -1549,9 +1555,7 @@ MySQL 优先使用带 ngram 分词器的全文索引：
 
  |
 
-RRF 只看一条结果在两组列表中的名次，不直接比较全文检索分数和向量相似度。两边都排得靠前的切片，合并后通常也会靠前。
-
-去重后取前 8 个切片进入回答阶段。30、60、8 都只是当前代码里的参数，不代表它们一定合适，后面还是要用真实问题做评测。
+rank 越小，得到的分数越高。去重后取前 8 个切片进入回答阶段。30、60、8 都是当前使用的参数，后面还需要根据实际检索效果调整。
 
 回答里的引用不能完全交给模型
 
@@ -1611,29 +1615,17 @@ risk_level 至少为 medium
 
 不过，这种校验只能说明“引用来自本次检索结果”，不能说明它真的支持回答里的每一句话。引用是否充分，仍然是当前实现没有解决好的问题。
 
-目前还欠缺什么
+后续计划
 
-这版代码已经可以走通上传、处理、检索和回答，但还有几处比较明显的缺口：
+接下来主要处理三件事：
 
-- 缺少最低相关性判断。 即使检索结果很弱，模型仍可能继续生成回答；目前也没有无答案分类和回答—引用一致性检查。
+- 先建立检索评测集。 准备一批“问题—正确引用”样本，记录正确片段能否进入 Top 3、Top 5 和 Top 8，以及无答案识别、引用正确率和检索耗时。有了这些数据，再决定是否调整切片、RRF 参数或增加 Reranker。
 
-- 关键词回退只适合小数据量。 LIKE 最多扫描 200 个候选，前导 % 也很难利用普通索引。
+- 补充拒答和引用一致性判断。 当前只能确认引用来自本次检索结果，还不能判断引用是否真的支持回答。检索结果过弱时应直接返回没有找到依据，生成回答后也需要检查回答与引用是否一致。
 
-- 删除过程仍是同步串行。 现在依次删除 Qdrant 向量、原文件和数据库记录，中间失败可能留下不一致状态。
+- 完善文件解析边界。 混合型 PDF 改为按页判断是否需要 OCR，并给 DOCX 增加解压大小和压缩比限制，避免异常文件占用过多资源。
 
-- 文件解析还有资源边界。 混合型 PDF 可能同时有文本页和扫描页，目前按整份文档判断是否 OCR；DOCX 也还需要补解压大小和压缩比限制。
-
-- 模型给出的置信度没有校准。 confidence 和 risk_level 适合做界面提示，不能拿来直接做自动决策。
-
-下一步我会先准备一批“问题—正确引用”样本，看看正确片段能不能进入 Top 3、Top 5 和 Top 8，同时记录无答案识别、引用正确率和检索耗时。有评测结果后，再决定是调整切片、增加 Reranker，还是更换关键词检索方案。
-
-最后
-
-做之前，我比较关注 Embedding 和向量数据库；真正写完一遍后，反而觉得向量检索只是中间的一环。
-
-前面要处理文件格式、OCR、任务状态和切片，后面还要限制模型能看到什么、检查引用能不能回到原文。任何一段出了问题，最后的回答都会受影响。
-
-现在我对这条流程的理解可以简单概括为：先把不同格式的文件整理成带位置的文本，再找出和问题有关的片段，最后让模型基于这些片段回答，并保留回到原文核对的入口。
+删除过程的重试和清理机制可以随后补充。LIKE 回退目前只用于小数据量下的兜底，模型置信度也不参与自动决策，这两项暂时不需要优先处理。
 
 ### 什么样的网关，才算好的 AI 网关？
 
@@ -2283,19 +2275,29 @@ end
 
 因此，真正的盲区不是“没有看懂 while 循环”，而是默认了几个未经验证的运行时假设：
 
-1
-2
-3
-4
-5
+代码表象
+关系
+实际不保证
 
- | 调用了网络 API ≠ 本轮一定发生 I/O 等待
-调用了 flush ≠ 客户端应用已经收到数据
-代码中有 yield ≠ 总 CPU 消耗一定下降
-客户端已断开 ≠ 上游工作自动停止
-单轮逻辑很轻 ≠ 高频执行后的总成本很低
+调用了网络 API |
+≠ |
+本轮一定发生 I&#x2F;O 等待 |
 
- |
+调用了 flush |
+≠ |
+客户端应用已经收到数据 |
+
+代码中有 yield |
+≠ |
+总 CPU 消耗一定下降 |
+
+客户端已断开 |
+≠ |
+上游工作自动停止 |
+
+单轮逻辑很轻 |
+≠ |
+高频执行后的总成本很低 |
 
 三、问题一：下游取消后，上游为什么还在运行
 
@@ -5706,7 +5708,7 @@ https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/convers
 - Updated: 2025-01-18
 - Summary: 记录 Go HTTP Client 产生大量 TIME_WAIT 的排查过程，分析连接复用、响应体处理和 Transport 参数调优。
 - Categories: Go
-- Tags: Go, Network, TCP, Client, HTTP, IP, Settings, TIME_WAIT
+- Tags: Network, TCP, Go, Client, HTTP, IP, Settings, TIME_WAIT
 
 Article text:
 
@@ -14518,7 +14520,7 @@ Ngram分词会消耗大量资源(尤其是磁盘),reindex有可能会超时
 - Updated: 2023-05-12
 - Summary: 基于Golang、Gin和ReverseProxy构建高效业务网关，实现路由热加载、反向代理、权限控制等功能。
 - Categories: Architecture
-- Tags: Gateway, Gin, Go, ReverseProxy
+- Tags: Gateway, Go, Gin, ReverseProxy
 
 Article text:
 
@@ -14624,7 +14626,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2023-02-24
 - Summary: 复盘 Gin 中读取和缓存 Response Body 导致的 OOM，分析内存增长原因并给出更安全的实现方式。
 - Categories: Go
-- Tags: Gin, Go, OOM, Response, Body
+- Tags: Go, Gin, OOM, Response, Body
 
 Article text:
 
@@ -23212,7 +23214,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2020-11-10
 - Summary: 将容器管理平台（Compass）的能力集成到内部控制台，实现日志、打包、权限等功能的统一管理，提升开发者体验。
 - Categories: Kubernetes
-- Tags: Kubernetes, Design, Architecture
+- Tags: Kubernetes, Architecture, Design
 
 Article text:
 

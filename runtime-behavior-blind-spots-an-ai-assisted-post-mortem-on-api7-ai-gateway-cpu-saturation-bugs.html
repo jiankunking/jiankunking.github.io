@@ -318,7 +318,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>7.6k</span>
+      <span>7.7k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -359,28 +359,28 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>2026-04-18 ～ 2026-04-20</td>
-<td><a href="https://github.com/apache/apisix/pull/13254">PR #13254</a></td>
+<td><span class="issue-timeline-date"><time datetime="2026-04-18">2026-04-18</time> ～ <time datetime="2026-04-20">2026-04-20</time></span></td>
+<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13254">PR #13254</a></span></td>
 <td>下游客户端断开后，通过同步 flush 的错误传播终止上游流</td>
 </tr>
 <tr>
-<td>2026-04-19 ～ 2026-04-20</td>
-<td><a href="https://github.com/apache/apisix/pull/13255">PR #13255</a> <span class="inline-status status-icon--reported" title="已反馈"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">已反馈</span></span></td>
+<td><span class="issue-timeline-date"><time datetime="2026-04-19">2026-04-19</time> ～ <time datetime="2026-04-20">2026-04-20</time></span></td>
+<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13255">PR #13255</a> <span class="inline-status status-icon--reported" title="已反馈"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">已反馈</span></span></span></td>
 <td>在流式循环中增加显式调度点，避免单个请求长期占用 worker</td>
 </tr>
 <tr>
-<td>2026-05-12 ～ 2026-05-13</td>
-<td><a href="https://github.com/apache/apisix/pull/13356">PR #13356</a> <span class="inline-status status-icon--reported" title="已反馈"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">已反馈</span></span></td>
+<td><span class="issue-timeline-date"><time datetime="2026-05-12">2026-05-12</time> ～ <time datetime="2026-05-13">2026-05-13</time></span></td>
+<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13356">PR #13356</a> <span class="inline-status status-icon--reported" title="已反馈"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">已反馈</span></span></span></td>
 <td>缓存 <code>post_arg.*</code> 的请求体解析结果，避免重复 decode</td>
 </tr>
 <tr>
-<td>2026-05-15 ～ 2026-05-18</td>
-<td><a href="https://github.com/apache/apisix/pull/13377">PR #13377</a> <span class="inline-status status-icon--reported" title="已反馈"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">已反馈</span></span></td>
+<td><span class="issue-timeline-date"><time datetime="2026-05-15">2026-05-15</time> ～ <time datetime="2026-05-18">2026-05-18</time></span></td>
+<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13377">PR #13377</a> <span class="inline-status status-icon--reported" title="已反馈"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">已反馈</span></span></span></td>
 <td>缓存 AI 请求体的 JSON 解析结果，消除重复 decode</td>
 </tr>
 <tr>
-<td>2026-05-19 ～ 2026-05-22</td>
-<td><a href="https://github.com/apache/apisix/pull/13391">PR #13391</a></td>
+<td><span class="issue-timeline-date"><time datetime="2026-05-19">2026-05-19</time> ～ <time datetime="2026-05-22">2026-05-22</time></span></td>
+<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13391">PR #13391</a></span></td>
 <td>优化 SSE 解析和 flush 策略，并增加流式请求保护机制</td>
 </tr>
 </tbody></table>
@@ -415,8 +415,40 @@
 <li>如果上游持续高速输出，有没有时间、字节数或速率预算？</li>
 </ul>
 <p>因此，真正的盲区不是“没有看懂 while 循环”，而是默认了几个未经验证的运行时假设：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">调用了网络 API ≠ 本轮一定发生 I/O 等待</span><br><span class="line">调用了 flush     ≠ 客户端应用已经收到数据</span><br><span class="line">代码中有 yield   ≠ 总 CPU 消耗一定下降</span><br><span class="line">客户端已断开     ≠ 上游工作自动停止</span><br><span class="line">单轮逻辑很轻     ≠ 高频执行后的总成本很低</span><br></pre></td></tr></table></figure>
-
+<table>
+<thead>
+<tr>
+<th>代码表象</th>
+<th align="center">关系</th>
+<th>实际不保证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>调用了网络 API</td>
+<td align="center">≠</td>
+<td>本轮一定发生 I&#x2F;O 等待</td>
+</tr>
+<tr>
+<td>调用了 <code>flush</code></td>
+<td align="center">≠</td>
+<td>客户端应用已经收到数据</td>
+</tr>
+<tr>
+<td>代码中有 yield</td>
+<td align="center">≠</td>
+<td>总 CPU 消耗一定下降</td>
+</tr>
+<tr>
+<td>客户端已断开</td>
+<td align="center">≠</td>
+<td>上游工作自动停止</td>
+</tr>
+<tr>
+<td>单轮逻辑很轻</td>
+<td align="center">≠</td>
+<td>高频执行后的总成本很低</td>
+</tr>
+</tbody></table>
 <h2 id="三、问题一：下游取消后，上游为什么还在运行"><a href="#三、问题一：下游取消后，上游为什么还在运行" class="headerlink" title="三、问题一：下游取消后，上游为什么还在运行"></a>三、问题一：下游取消后，上游为什么还在运行</h2><h3 id="3-1-上游连接和下游连接是两条独立链路"><a href="#3-1-上游连接和下游连接是两条独立链路" class="headerlink" title="3.1 上游连接和下游连接是两条独立链路"></a>3.1 上游连接和下游连接是两条独立链路</h3><p>AI 网关位于客户端与大模型之间：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">客户端  &lt;-- downstream --&gt;  API7/APISIX  &lt;-- upstream --&gt;  LLM</span><br></pre></td></tr></table></figure>
 
