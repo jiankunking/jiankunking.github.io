@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">庭审智辅服务架构</title>
+  <desc id="desc">展示微信小程序和管理后台通过 Go API 访问庭审智辅服务，并分为材料处理与案件问答两条 RAG 链路。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#eef2ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/>
+    </marker>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .title { font: 700 38px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; fill:#0f172a; }
+      .subtitle { font: 400 18px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; fill:#475569; }
+      .lane-title { font: 700 23px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; }
+      .box-title { font: 700 18px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; fill:#0f172a; text-anchor:middle; }
+      .box-sub { font: 400 14px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; fill:#475569; text-anchor:middle; }
+      .small { font: 500 14px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; fill:#475569; text-anchor:middle; }
+      .legend { font: 500 15px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; fill:#334155; }
+      .flow-blue { fill:none; stroke:#2563eb; stroke-width:3; marker-end:url(#arrow-blue); }
+      .flow-orange { fill:none; stroke:#ea580c; stroke-width:3; marker-end:url(#arrow-orange); }
+      .branch-orange { fill:none; stroke:#ea580c; stroke-width:3; }
+      .flow-slate { fill:none; stroke:#64748b; stroke-width:2.5; marker-end:url(#arrow-slate); }
+      .dependency { fill:none; stroke:#94a3b8; stroke-width:2; stroke-dasharray:7 7; marker-end:url(#arrow-slate); }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1120" fill="url(#bg)"/>
+  <text x="80" y="65" class="title">庭审智辅服务架构</text>
+  <text x="80" y="100" class="subtitle">两条主链路：材料处理建立可检索索引；案件问答检索相关片段并生成带引用的建议</text>
+
+  <!-- Access layer -->
+  <rect x="80" y="140" width="1440" height="155" rx="24" fill="#ffffff" stroke="#dbeafe" filter="url(#shadow)"/>
+  <text x="110" y="178" class="lane-title" fill="#334155">客户端与业务入口</text>
+
+  <g filter="url(#shadow)">
+    <rect x="175" y="192" width="220" height="40" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="175" y="242" width="220" height="40" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="600" y="190" width="280" height="84" rx="16" fill="#dbeafe" stroke="#60a5fa"/>
+    <rect x="1060" y="190" width="320" height="84" rx="16" fill="#f1f5f9" stroke="#94a3b8"/>
+  </g>
+  <text x="285" y="218" class="box-title">微信小程序</text>
+  <text x="285" y="268" class="box-title">管理后台</text>
+  <text x="740" y="225" class="box-title">Go / Gin API</text>
+  <text x="740" y="250" class="box-sub">鉴权、Handler、参数校验</text>
+  <text x="1220" y="225" class="box-title">业务服务</text>
+  <text x="1220" y="250" class="box-sub">案件、材料、任务、问答</text>
+  <path d="M395 212 H585" class="flow-slate"/>
+  <path d="M395 262 H585" class="flow-slate"/>
+  <path d="M880 232 H1045" class="flow-slate"/>
+
+  <!-- Ingestion lane -->
+  <rect x="80" y="330" width="1440" height="280" rx="24" fill="#ffffff" stroke="#bfdbfe" filter="url(#shadow)"/>
+  <rect x="80" y="330" width="18" height="280" rx="9" fill="#2563eb"/>
+  <text x="120" y="375" class="lane-title" fill="#1d4ed8">材料处理链路</text>
+  <text x="120" y="405" class="subtitle">一次处理，多次复用：解析、切片并建立关键词与向量索引</text>
+
+  <g filter="url(#shadow)">
+    <rect x="120" y="450" width="160" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="320" y="450" width="160" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="520" y="450" width="170" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="730" y="450" width="180" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="950" y="450" width="160" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="1150" y="450" width="160" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="1350" y="450" width="130" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+  </g>
+  <text x="200" y="487" class="box-title">上传材料</text>
+  <text x="200" y="513" class="box-sub">查重、落盘</text>
+  <text x="400" y="487" class="box-title">任务入队</text>
+  <text x="400" y="513" class="box-sub">事务写入</text>
+  <text x="605" y="487" class="box-title">Task Runner</text>
+  <text x="605" y="513" class="box-sub">重试、心跳、恢复</text>
+  <text x="820" y="487" class="box-title">文档解析</text>
+  <text x="820" y="513" class="box-sub">Poppler / OCR</text>
+  <text x="1030" y="487" class="box-title">文本切片</text>
+  <text x="1030" y="513" class="box-sub">页码、重叠</text>
+  <text x="1230" y="487" class="box-title">Embedding</text>
+  <text x="1230" y="513" class="box-sub">批量向量化</text>
+  <text x="1415" y="487" class="box-title">Qdrant</text>
+  <text x="1415" y="513" class="box-sub">向量索引</text>
+  <path d="M280 495 H305" class="flow-blue"/>
+  <path d="M480 495 H505" class="flow-blue"/>
+  <path d="M690 495 H715" class="flow-blue"/>
+  <path d="M910 495 H935" class="flow-blue"/>
+  <path d="M1110 495 H1135" class="flow-blue"/>
+  <path d="M1310 495 H1335" class="flow-blue"/>
+  <text x="1030" y="578" class="small">切片正文、页码和状态同时写入 MySQL，关键词检索直接使用这些数据</text>
+  <path d="M1030 540 V558" class="flow-slate"/>
+
+  <!-- Query lane -->
+  <rect x="80" y="645" width="1440" height="300" rx="24" fill="#ffffff" stroke="#fed7aa" filter="url(#shadow)"/>
+  <rect x="80" y="645" width="18" height="300" rx="9" fill="#ea580c"/>
+  <text x="120" y="690" class="lane-title" fill="#c2410c">案件问答链路</text>
+  <text x="120" y="720" class="subtitle">查询时只取相关片段：混合检索、排序、生成，再校验引用编号</text>
+
+  <g filter="url(#shadow)">
+    <rect x="120" y="770" width="160" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="335" y="748" width="185" height="70" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="335" y="835" width="185" height="70" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="575" y="770" width="150" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="780" y="770" width="180" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="1015" y="770" width="150" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="1220" y="770" width="180" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+  </g>
+  <text x="200" y="807" class="box-title">用户问题</text>
+  <text x="200" y="833" class="box-sub">限定用户与案件</text>
+  <text x="427" y="776" class="box-title">关键词检索</text>
+  <text x="427" y="801" class="box-sub">MySQL 全文 / Token</text>
+  <text x="427" y="863" class="box-title">向量检索</text>
+  <text x="427" y="888" class="box-sub">Embedding + Qdrant</text>
+  <text x="650" y="807" class="box-title">RRF 融合</text>
+  <text x="650" y="833" class="box-sub">去重、排序、Top 8</text>
+  <text x="870" y="807" class="box-title">构造上下文</text>
+  <text x="870" y="833" class="box-sub">原文、文件名、页码</text>
+  <text x="1090" y="807" class="box-title">LLM</text>
+  <text x="1090" y="833" class="box-sub">结构化 JSON</text>
+  <text x="1310" y="807" class="box-title">引用校验</text>
+  <text x="1310" y="833" class="box-sub">白名单、回查原文</text>
+  <path d="M280 815 H305" class="branch-orange"/>
+  <path d="M305 815 V783 H320" class="flow-orange"/>
+  <path d="M305 815 V870 H320" class="flow-orange"/>
+  <circle cx="305" cy="815" r="4" fill="#ea580c"/>
+  <path d="M520 783 H545 V800 H560" class="flow-orange"/>
+  <path d="M520 870 H545 V830 H560" class="flow-orange"/>
+  <path d="M725 815 H765" class="flow-orange"/>
+  <path d="M960 815 H1000" class="flow-orange"/>
+  <path d="M1165 815 H1205" class="flow-orange"/>
+  <text x="1090" y="900" class="small">无模型时可降级返回检索原文；引用校验不能替代事实核验</text>
+
+  <!-- Dependencies / legend -->
+  <rect x="80" y="980" width="1440" height="90" rx="22" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="115" y="1018" class="legend">基础存储：</text>
+  <text x="215" y="1018" class="legend">MySQL（业务数据、任务、切片、问答）</text>
+  <text x="215" y="1048" class="legend">本地文件目录（上传原文件）</text>
+  <text x="710" y="1018" class="legend">外部能力：</text>
+  <text x="815" y="1018" class="legend">腾讯云 OCR</text>
+  <text x="815" y="1048" class="legend">Embedding 服务</text>
+  <text x="1120" y="1018" class="legend">LLM 服务</text>
+  <text x="1120" y="1048" class="legend">Qdrant 向量库</text>
+
+  <!-- High-level connections -->
+  <path d="M1220 274 V315 H200 V435" class="flow-blue" opacity="0.75"/>
+  <path d="M1220 274 V630 H200 V755" class="flow-orange" opacity="0.75"/>
+</svg>
