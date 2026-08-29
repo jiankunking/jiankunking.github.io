@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="在阅读五本大模型书籍的过程中，从技术演进、分词、注意力、MoE、推理训练、RAG、微调和评估等角度，阶段性梳理大模型从 Token 到答案的完整链路。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="阅读五本大模型书的阶段性思考：一个 Token 如何变成答案">
+<meta property="og:url" content="https://jiankunking.com/how-large-language-models-generate-answers.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="在阅读五本大模型书籍的过程中，从技术演进、分词、注意力、MoE、推理训练、RAG、微调和评估等角度，阶段性梳理大模型从 Token 到答案的完整链路。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-29T10:50:00.000Z">
+<meta property="article:modified_time" content="2026-08-29T10:50:00.000Z">
+<meta property="article:author" content="衣舞晨风 (jiankunking)">
+<meta property="article:tag" content="Attention">
+<meta property="article:tag" content="DeepSeek">
+<meta property="article:tag" content="GPT">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="MoE">
+<meta property="article:tag" content="Token">
+<meta property="article:tag" content="Transformer">
+<meta name="twitter:card" content="summary_large_image">
+
+
+<link rel="canonical" href="https://jiankunking.com/how-large-language-models-generate-answers.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/how-large-language-models-generate-answers.html","path":"how-large-language-models-generate-answers.html","title":"阅读五本大模型书的阶段性思考：一个 Token 如何变成答案"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>阅读五本大模型书的阶段性思考：一个 Token 如何变成答案 | 衣舞晨风</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/how-large-language-models-generate-answers.html#article","url":"https://jiankunking.com/how-large-language-models-generate-answers.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/how-large-language-models-generate-answers.html"},"headline":"阅读五本大模型书的阶段性思考：一个 Token 如何变成答案","description":"在阅读五本大模型书籍的过程中，从技术演进、分词、注意力、MoE、推理训练、RAG、微调和评估等角度，阶段性梳理大模型从 Token 到答案的完整链路。","abstract":"在阅读五本大模型书籍的过程中，从技术演进、分词、注意力、MoE、推理训练、RAG、微调和评估等角度，阶段性梳理大模型从 Token 到答案的完整链路。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-08-29T10:50:00.000Z","dateModified":"2026-08-29T10:50:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"AI","keywords":"LLM, Transformer, Token, Attention, GPT, DeepSeek, MoE","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/how-large-language-models-generate-answers.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/how-large-language-models-generate-answers.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"AI","item":"https://jiankunking.com/categories/ai/"},{"@type":"ListItem","position":3,"name":"阅读五本大模型书的阶段性思考：一个 Token 如何变成答案","item":"https://jiankunking.com/how-large-language-models-generate-answers.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/og-default.png">
+<meta property="og:image:alt" content="阅读五本大模型书的阶段性思考：一个 Token 如何变成答案">
+<meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
+<meta name="twitter:image:alt" content="阅读五本大模型书的阶段性思考：一个 Token 如何变成答案">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">衣舞晨风</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">AI Gateway、Elasticsearch 与后端架构实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8EN-Gram%E5%88%B0Transformer%EF%BC%9A%E6%AF%8F%E4%B8%80%E4%BB%A3%E6%A8%A1%E5%9E%8B%E9%83%BD%E5%9C%A8%E4%BF%AE%E8%A1%A5%E4%B8%8A%E4%B8%80%E4%BB%A3%E7%9A%84%E7%BC%BA%E9%99%B7"><span class="nav-number">1.</span> <span class="nav-text">从N-Gram到Transformer：每一代模型都在修补上一代的缺陷</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%A8%A1%E5%9E%8B%E7%9C%8B%E5%88%B0%E7%9A%84%E4%B8%8D%E6%98%AF%E6%96%87%E5%AD%97%EF%BC%8C%E8%80%8C%E6%98%AF-Token"><span class="nav-number">2.</span> <span class="nav-text">一、模型看到的不是文字，而是 Token</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%B5%8C%E5%85%A5%EF%BC%9A%E6%8A%8A%E8%AF%AD%E8%A8%80%E6%94%BE%E8%BF%9B%E4%B8%80%E4%B8%AA%E5%8F%AF%E4%BB%A5%E8%AE%A1%E7%AE%97%E7%9A%84%E7%A9%BA%E9%97%B4"><span class="nav-number">3.</span> <span class="nav-text">二、嵌入：把语言放进一个可以计算的空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%B3%A8%E6%84%8F%E5%8A%9B%EF%BC%9A%E8%AE%A9%E6%AF%8F%E4%B8%AA-Token-%E9%87%8D%E6%96%B0%E9%98%85%E8%AF%BB%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="nav-number">4.</span> <span class="nav-text">三、注意力：让每个 Token 重新阅读上下文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%9B%A0%E6%9E%9C%E6%8E%A9%E7%A0%81%EF%BC%9A%E7%94%9F%E6%88%90%E6%97%B6%E4%B8%8D%E8%83%BD%E5%81%B7%E7%9C%8B%E6%9C%AA%E6%9D%A5"><span class="nav-number">5.</span> <span class="nav-text">四、因果掩码：生成时不能偷看未来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81Transformer%E5%9D%97%EF%BC%9A%E4%BA%A4%E6%B5%81%E3%80%81%E5%8A%A0%E5%B7%A5%EF%BC%8C%E5%86%8D%E4%BF%9D%E7%95%99%E5%8E%9F%E5%A7%8B%E4%BF%A1%E6%81%AF"><span class="nav-number">6.</span> <span class="nav-text">五、Transformer块：交流、加工，再保留原始信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E4%BB%8E%E5%90%91%E9%87%8F%E5%88%B0%E6%A6%82%E7%8E%87%EF%BC%9A%E6%A8%A1%E5%9E%8B%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E4%B8%8B%E4%B8%80%E4%B8%AA-Token"><span class="nav-number">7.</span> <span class="nav-text">六、从向量到概率：模型如何选择下一个 Token</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%8F%AA%E9%A2%84%E6%B5%8B%E4%B8%8B%E4%B8%80%E4%B8%AA-Token%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E4%BA%A7%E7%94%9F%E5%A4%8D%E6%9D%82%E8%83%BD%E5%8A%9B%EF%BC%9F"><span class="nav-number">8.</span> <span class="nav-text">七、只预测下一个 Token，为什么会产生复杂能力？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E3%80%8A%E5%9B%BE%E8%A7%A3DeepSeek%E6%8A%80%E6%9C%AF%E3%80%8B%E8%A1%A5%E4%B8%8A%E7%9A%84%E4%B8%80%E5%9D%97%EF%BC%9A%E8%A7%84%E6%A8%A1%E3%80%81%E7%A8%80%E7%96%8F%E6%BF%80%E6%B4%BB%E4%B8%8E%E6%8E%A8%E7%90%86%E5%BC%BA%E5%8C%96"><span class="nav-number">9.</span> <span class="nav-text">八、《图解DeepSeek技术》补上的一块：规模、稀疏激活与推理强化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E8%AE%AD%E7%BB%83%E6%97%B6%E8%AE%A1%E7%AE%97%EF%BC%9A%E5%8F%82%E6%95%B0%E3%80%81%E6%95%B0%E6%8D%AE%E5%92%8C%E7%AE%97%E5%8A%9B%E8%A6%81%E5%90%8C%E6%AD%A5%E8%80%83%E8%99%91"><span class="nav-number">9.1.</span> <span class="nav-text">1. 训练时计算：参数、数据和算力要同步考虑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-MoE%EF%BC%9A%E6%80%BB%E5%8F%82%E6%95%B0%E5%BE%88%E5%A4%9A%EF%BC%8C%E4%BD%86%E6%AF%8F%E4%B8%AAToken%E5%8F%AA%E4%BD%BF%E7%94%A8%E4%B8%80%E9%83%A8%E5%88%86"><span class="nav-number">9.2.</span> <span class="nav-text">2. MoE：总参数很多，但每个Token只使用一部分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-DeepSeekMoE%EF%BC%9ATop-K%E8%B7%AF%E7%94%B1%E3%80%81%E7%BB%86%E7%B2%92%E5%BA%A6%E4%B8%93%E5%AE%B6%E4%B8%8E%E5%85%B1%E4%BA%AB%E4%B8%93%E5%AE%B6"><span class="nav-number">9.3.</span> <span class="nav-text">3. DeepSeekMoE：Top-K路由、细粒度专家与共享专家</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E8%B0%83%E6%95%B4%E8%AF%8D%E5%85%83%E5%88%86%E5%B8%83%EF%BC%8C%E4%B9%9F%E6%98%AF%E5%9C%A8%E8%B0%83%E6%95%B4%E5%90%8E%E7%BB%AD%E6%8E%A8%E7%90%86%E8%B7%AF%E5%BE%84"><span class="nav-number">9.4.</span> <span class="nav-text">4. 调整词元分布，也是在调整后续推理路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-DeepSeek-R1-Zero%E4%B8%8EGRPO"><span class="nav-number">9.5.</span> <span class="nav-text">5. DeepSeek-R1-Zero与GRPO</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E9%A2%84%E8%AE%AD%E7%BB%83%E8%AE%A9%E5%AE%83%E4%BC%9A%E7%BB%AD%E5%86%99%EF%BC%8C%E5%90%8E%E8%AE%AD%E7%BB%83%E8%AE%A9%E5%AE%83%E5%83%8F%E5%8A%A9%E6%89%8B"><span class="nav-number">10.</span> <span class="nav-text">九、预训练让它会续写，后训练让它像助手</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%8C%87%E4%BB%A4%E5%BE%AE%E8%B0%83"><span class="nav-number">10.1.</span> <span class="nav-text">1. 指令微调</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%81%8F%E5%A5%BD%E5%AF%B9%E9%BD%90"><span class="nav-number">10.2.</span> <span class="nav-text">2. 偏好对齐</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E5%A4%A7%E6%A8%A1%E5%9E%8B%E4%BC%9A%E4%B8%80%E6%9C%AC%E6%AD%A3%E7%BB%8F%E5%9C%B0%E7%8A%AF%E9%94%99%EF%BC%9F"><span class="nav-number">11.</span> <span class="nav-text">十、为什么大模型会一本正经地犯错？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E4%B8%80%E3%80%81RAG%E3%80%81%E5%BE%AE%E8%B0%83%E5%92%8C%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%88%86%E5%88%AB%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="nav-number">12.</span> <span class="nav-text">十一、RAG、微调和提示词分别解决什么问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%90%E7%A4%BA%E8%AF%8D%EF%BC%9A%E5%91%8A%E8%AF%89%E6%A8%A1%E5%9E%8B%E5%BD%93%E5%89%8D%E6%80%8E%E6%A0%B7%E5%81%9A"><span class="nav-number">12.1.</span> <span class="nav-text">提示词：告诉模型当前怎样做</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RAG%EF%BC%9A%E4%B8%BA%E6%A8%A1%E5%9E%8B%E6%8F%90%E4%BE%9B%E5%BD%93%E5%89%8D%E9%9C%80%E8%A6%81%E7%9A%84%E8%B5%84%E6%96%99"><span class="nav-number">12.2.</span> <span class="nav-text">RAG：为模型提供当前需要的资料</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BE%AE%E8%B0%83%EF%BC%9A%E9%95%BF%E6%9C%9F%E6%94%B9%E5%8F%98%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%A1%8C%E4%B8%BA"><span class="nav-number">12.3.</span> <span class="nav-text">微调：长期改变模型的行为</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E4%BA%8C%E3%80%81%E5%A4%A7%E6%A8%A1%E5%9E%8B%E4%B8%8D%E6%98%AF%E4%B8%80%E4%B8%AA%E5%AD%A4%E7%AB%8B%E7%9A%84%E6%A8%A1%E5%9E%8B%EF%BC%8C%E8%80%8C%E6%98%AF%E4%B8%80%E5%A5%97%E7%B3%BB%E7%BB%9F"><span class="nav-number">13.</span> <span class="nav-text">十二、大模型不是一个孤立的模型，而是一套系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E4%B8%89%E3%80%81%E4%BA%94%E6%9C%AC%E4%B9%A6%E8%BF%98%E6%8B%BC%E5%87%BA%E4%BA%86%E4%B8%80%E5%BC%A0%E6%9B%B4%E5%A4%A7%E7%9A%84%E6%8A%80%E6%9C%AF%E5%9C%B0%E5%9B%BE"><span class="nav-number">14.</span> <span class="nav-text">十三、五本书还拼出了一张更大的技术地图</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E8%AE%AD%E7%BB%83%E5%A4%A7%E6%A8%A1%E5%9E%8B%EF%BC%8C%E9%A6%96%E5%85%88%E6%98%AF%E4%B8%80%E9%A1%B9%E6%95%B0%E6%8D%AE%E4%B8%8E%E8%AE%A1%E7%AE%97%E5%B7%A5%E7%A8%8B"><span class="nav-number">14.1.</span> <span class="nav-text">1. 训练大模型，首先是一项数据与计算工程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%9B%B4%E5%A4%A7%E7%9A%84%E6%A8%A1%E5%9E%8B%E4%B8%8D%E7%AD%89%E4%BA%8E%E7%AE%80%E5%8D%95%E5%9C%B0%E2%80%9C%E6%9B%B4%E4%B8%8D%E5%AE%B9%E6%98%93%E8%BF%87%E6%8B%9F%E5%90%88%E2%80%9D"><span class="nav-number">14.2.</span> <span class="nav-text">2. 更大的模型不等于简单地“更不容易过拟合”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%BE%AE%E8%B0%83%E7%9A%84%E5%85%B3%E9%94%AE%E4%B8%8D%E5%8F%AA%E6%98%AF%E2%80%9C%E7%BB%A7%E7%BB%AD%E8%AE%AD%E7%BB%83%E2%80%9D%EF%BC%8C%E8%80%8C%E6%98%AF%E6%8E%A7%E5%88%B6%E6%94%B9%E5%8F%98%E7%9A%84%E8%8C%83%E5%9B%B4"><span class="nav-number">14.3.</span> <span class="nav-text">3. 微调的关键不只是“继续训练”，而是控制改变的范围</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E7%94%9F%E6%88%90%E8%83%BD%E5%8A%9B%E4%B9%8B%E5%A4%96%EF%BC%8C%E8%BF%98%E6%9C%89%E8%A1%A8%E7%A4%BA%E6%A8%A1%E5%9E%8B%E3%80%81%E8%AF%AD%E4%B9%89%E6%90%9C%E7%B4%A2%E5%92%8C%E5%A4%9A%E6%A8%A1%E6%80%81"><span class="nav-number">14.4.</span> <span class="nav-text">4. 生成能力之外，还有表示模型、语义搜索和多模态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%8E%A8%E7%90%86%E9%80%9F%E5%BA%A6%E5%86%B3%E5%AE%9A%E8%83%BD%E5%8A%9B%E8%83%BD%E5%90%A6%E7%9C%9F%E6%AD%A3%E8%A2%AB%E4%BD%BF%E7%94%A8"><span class="nav-number">14.5.</span> <span class="nav-text">5. 推理速度决定能力能否真正被使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E8%AF%84%E4%BC%B0%E4%B8%8D%E6%98%AF%E8%AE%AD%E7%BB%83%E7%BB%93%E6%9D%9F%E5%90%8E%E7%9A%84%E9%99%84%E5%B1%9E%E6%AD%A5%E9%AA%A4"><span class="nav-number">14.6.</span> <span class="nav-text">6. 评估不是训练结束后的附属步骤</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E5%9B%9B%E3%80%81%E6%B2%A1%E6%9C%89%E8%BF%9B%E5%85%A5%E4%B8%BB%E7%BA%BF%E7%9A%84%E6%A6%82%E5%BF%B5%E5%A4%87%E5%BF%98%EF%BC%9A%E7%BB%99%E4%BA%94%E6%9C%AC%E4%B9%A6%E7%95%99%E4%B8%80%E4%BB%BD%E7%B4%A2%E5%BC%95"><span class="nav-number">15.</span> <span class="nav-text">十四、没有进入主线的概念备忘：给五本书留一份索引</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%95%B0%E6%8D%AE%E5%A6%82%E4%BD%95%E5%8F%98%E6%88%90%E6%A8%A1%E5%9E%8B%E8%83%BD%E5%A4%9F%E5%AD%A6%E4%B9%A0%E7%9A%84%E6%A0%B7%E6%9C%AC"><span class="nav-number">15.1.</span> <span class="nav-text">1. 数据如何变成模型能够学习的样本</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E4%B8%8E%E2%80%9C%E8%BE%93%E5%85%A5%E2%80%94%E7%9B%AE%E6%A0%87%E2%80%9D%E6%9E%84%E9%80%A0"><span class="nav-number">15.1.1.</span> <span class="nav-text">滑动窗口与“输入—目标”构造</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E8%AF%8D%E5%99%A8%E4%B8%8D%E5%8F%AA%E6%9C%89BPE%E4%B8%80%E7%A7%8D%E9%80%89%E6%8B%A9"><span class="nav-number">15.1.2.</span> <span class="nav-text">分词器不只有BPE一种选择</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8A%E4%B8%8B%E6%96%87%E9%95%BF%E5%BA%A6%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AA%97%E5%8F%A3"><span class="nav-number">15.1.3.</span> <span class="nav-text">上下文长度与上下文窗口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E5%A2%9E%E5%BC%BA"><span class="nav-number">15.1.4.</span> <span class="nav-text">文本数据增强</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%AD%E5%BF%83AI"><span class="nav-number">15.1.5.</span> <span class="nav-text">数据中心AI</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%89%E7%8A%B6%E6%80%81%E8%AE%AD%E7%BB%83%E4%B8%8E%E6%97%A0%E7%8A%B6%E6%80%81%E8%AE%AD%E7%BB%83"><span class="nav-number">15.1.6.</span> <span class="nav-text">有状态训练与无状态训练</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%A1%A8%E7%A4%BA%E3%80%81%E5%90%91%E9%87%8F%E4%B8%8E%E8%BE%93%E5%87%BA%E5%A4%B4"><span class="nav-number">15.2.</span> <span class="nav-text">2. 表示、向量与输出头</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Embedding%E3%80%81%E8%A1%A8%E7%A4%BA%E4%B8%8E%E6%BD%9C%E5%9C%A8%E5%90%91%E9%87%8F%E4%B8%8D%E6%98%AF%E5%AE%8C%E5%85%A8%E5%90%8C%E4%B8%80%E4%B8%AA%E8%AF%8D"><span class="nav-number">15.2.1.</span> <span class="nav-text">Embedding、表示与潜在向量不是完全同一个词</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%8D%E5%B5%8C%E5%85%A5%E4%B8%8E%E4%BD%8D%E7%BD%AE%E5%B5%8C%E5%85%A5%E6%89%BF%E6%8B%85%E4%B8%8D%E5%90%8C%E8%81%8C%E8%B4%A3"><span class="nav-number">15.2.2.</span> <span class="nav-text">词嵌入与位置嵌入承担不同职责</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%81%87%E8%AE%BE%E3%80%81CBOW%E4%B8%8ESkip-gram"><span class="nav-number">15.2.3.</span> <span class="nav-text">分布假设、CBOW与Skip-gram</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%99%E5%BC%A6%E7%9B%B8%E4%BC%BC%E5%BA%A6%E4%B8%8E%E6%AC%A7%E6%B0%8F%E8%B7%9D%E7%A6%BB"><span class="nav-number">15.2.4.</span> <span class="nav-text">余弦相似度与欧氏距离</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%8C%E4%B8%80%E4%B8%AA%E9%AA%A8%E5%B9%B2%E7%BD%91%E7%BB%9C%E5%8F%AF%E4%BB%A5%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E4%BB%BB%E5%8A%A1%E5%A4%B4"><span class="nav-number">15.2.5.</span> <span class="nav-text">同一个骨干网络可以连接不同任务头</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Transformer%E4%B8%BB%E7%BA%BF%E4%B9%8B%E5%A4%96%E7%9A%84%E7%BB%93%E6%9E%84%E7%BB%86%E8%8A%82"><span class="nav-number">15.3.</span> <span class="nav-text">3. Transformer主线之外的结构细节</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B3%A8%E6%84%8F%E5%8A%9B%E5%88%86%E6%95%B0%E3%80%81%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9D%83%E9%87%8D%E5%92%8C%E6%A8%A1%E5%9E%8B%E5%8F%82%E6%95%B0%E4%B8%8D%E6%98%AF%E4%B8%80%E5%9B%9E%E4%BA%8B"><span class="nav-number">15.3.1.</span> <span class="nav-text">注意力分数、注意力权重和模型参数不是一回事</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E5%A4%B4%E6%B3%A8%E6%84%8F%E5%8A%9B%E4%B9%8B%E5%90%8E%E8%BF%98%E6%9C%89%E8%BE%93%E5%87%BA%E6%8A%95%E5%BD%B1"><span class="nav-number">15.3.2.</span> <span class="nav-text">多头注意力之后还有输出投影</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Bahdanau%E6%B3%A8%E6%84%8F%E5%8A%9B%E3%80%81%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B%E4%B8%8E%E4%BA%A4%E5%8F%89%E6%B3%A8%E6%84%8F%E5%8A%9B"><span class="nav-number">15.3.3.</span> <span class="nav-text">Bahdanau注意力、自注意力与交叉注意力</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BB%85%E7%BC%96%E7%A0%81%E5%99%A8%E3%80%81%E4%BB%85%E8%A7%A3%E7%A0%81%E5%99%A8%E4%B8%8E%E7%BC%96%E7%A0%81%E5%99%A8%E2%80%94%E8%A7%A3%E7%A0%81%E5%99%A8"><span class="nav-number">15.3.4.</span> <span class="nav-text">仅编码器、仅解码器与编码器—解码器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%87%AA%E5%9B%9E%E5%BD%92%E4%B8%8E%E9%9D%9E%E8%87%AA%E5%9B%9E%E5%BD%92%E7%94%9F%E6%88%90"><span class="nav-number">15.3.5.</span> <span class="nav-text">自回归与非自回归生成</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A2%AF%E5%BA%A6%E6%B6%88%E5%A4%B1%E3%80%81%E6%A2%AF%E5%BA%A6%E7%88%86%E7%82%B8%E4%B8%8E%E6%BF%80%E6%B4%BB%E5%87%BD%E6%95%B0"><span class="nav-number">15.3.6.</span> <span class="nav-text">梯度消失、梯度爆炸与激活函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95%E3%80%81%E6%89%B9%E9%87%8F%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95%E4%B8%8E%E5%BC%A0%E9%87%8F%E5%BD%A2%E7%8A%B6"><span class="nav-number">15.3.7.</span> <span class="nav-text">矩阵乘法、批量矩阵乘法与张量形状</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%8D%B7%E7%A7%AF%E7%BD%91%E7%BB%9C%E3%80%81%E8%A7%86%E8%A7%89Transformer%E4%B8%8E%E5%A4%9A%E6%A8%A1%E6%80%81"><span class="nav-number">15.4.</span> <span class="nav-text">4. 卷积网络、视觉Transformer与多模态</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%A8%E8%BF%9E%E6%8E%A5%E5%B1%82%E4%B8%8E%E5%8D%B7%E7%A7%AF%E5%B1%82"><span class="nav-number">15.4.1.</span> <span class="nav-text">全连接层与卷积层</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ViT%E7%9A%84%E5%9B%BE%E5%83%8F%E5%88%86%E5%9D%97"><span class="nav-number">15.4.2.</span> <span class="nav-text">ViT的图像分块</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CLIP%E4%B8%8EOpenCLIP"><span class="nav-number">15.4.3.</span> <span class="nav-text">CLIP与OpenCLIP</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#BLIP-2%E7%9A%84%E8%A7%86%E8%A7%89%E5%88%B0%E8%AF%AD%E8%A8%80%E6%8A%95%E5%BD%B1"><span class="nav-number">15.4.4.</span> <span class="nav-text">BLIP-2的视觉到语言投影</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E5%B5%8C%E5%85%A5%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0"><span class="nav-number">15.5.</span> <span class="nav-text">5. 嵌入模型与对比学习</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A3%E6%A0%B7%E6%9C%AC%E3%80%81%E8%B4%9F%E6%A0%B7%E6%9C%AC%E4%B8%8E%E5%9B%B0%E9%9A%BE%E8%B4%9F%E6%A0%B7%E6%9C%AC"><span class="nav-number">15.5.1.</span> <span class="nav-text">正样本、负样本与困难负样本</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%B9%E6%AF%94%E6%8D%9F%E5%A4%B1"><span class="nav-number">15.5.2.</span> <span class="nav-text">对比损失</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A2%86%E5%9F%9F%E9%80%82%E9%85%8D%E4%B8%8ETSDAE"><span class="nav-number">15.5.3.</span> <span class="nav-text">领域适配与TSDAE</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%81%9A%E7%B1%BB%E4%B8%8E%E4%B8%BB%E9%A2%98%E5%BB%BA%E6%A8%A1"><span class="nav-number">15.5.4.</span> <span class="nav-text">聚类与主题建模</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E5%BE%AE%E8%B0%83%E3%80%81%E5%8E%8B%E7%BC%A9%E4%B8%8E%E5%81%8F%E5%A5%BD%E5%AF%B9%E9%BD%90%E7%9A%84%E5%85%B6%E4%BB%96%E8%B7%AF%E7%BA%BF"><span class="nav-number">15.6.</span> <span class="nav-text">6. 微调、压缩与偏好对齐的其他路线</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Adapter%E4%B8%8EAdapterHub"><span class="nav-number">15.6.1.</span> <span class="nav-text">Adapter与AdapterHub</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%85%E5%9C%A8%E7%BB%B4%E5%BA%A6%E4%B8%8ELoRA%E7%9B%B4%E8%A7%89"><span class="nav-number">15.6.2.</span> <span class="nav-text">内在维度与LoRA直觉</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%89%AA%E6%9E%9D%E4%B8%8E%E7%9F%A5%E8%AF%86%E8%92%B8%E9%A6%8F"><span class="nav-number">15.6.3.</span> <span class="nav-text">剪枝与知识蒸馏</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A5%96%E5%8A%B1%E6%A8%A1%E5%9E%8B%E4%B8%8EPPO"><span class="nav-number">15.6.4.</span> <span class="nav-text">奖励模型与PPO</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DPO%E4%B8%8E%E5%8F%82%E8%80%83%E6%A8%A1%E5%9E%8B"><span class="nav-number">15.6.5.</span> <span class="nav-text">DPO与参考模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ORPO"><span class="nav-number">15.6.6.</span> <span class="nav-text">ORPO</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%95%BF%E6%8E%A8%E7%90%86%E6%95%B0%E6%8D%AE%E7%9A%84%E7%94%9F%E6%88%90%E6%88%90%E6%9C%AC"><span class="nav-number">15.6.7.</span> <span class="nav-text">长推理数据的生成成本</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-%E6%9C%89%E9%99%90%E6%A0%87%E6%B3%A8%E6%95%B0%E6%8D%AE%E4%B8%8B%E7%9A%84%E5%AD%A6%E4%B9%A0%E6%96%B9%E6%B3%95"><span class="nav-number">15.7.</span> <span class="nav-text">7. 有限标注数据下的学习方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B0%91%E6%A0%B7%E6%9C%AC%E5%AD%A6%E4%B9%A0%E4%B8%8E%E5%85%83%E5%AD%A6%E4%B9%A0"><span class="nav-number">15.7.1.</span> <span class="nav-text">少样本学习与元学习</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%8A%E7%9B%91%E7%9D%A3%E5%AD%A6%E4%B9%A0"><span class="nav-number">15.7.2.</span> <span class="nav-text">半监督学习</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%B1%E7%9B%91%E7%9D%A3%E5%AD%A6%E4%B9%A0"><span class="nav-number">15.7.3.</span> <span class="nav-text">弱监督学习</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%87%AA%E8%AE%AD%E7%BB%83%E4%B8%8E%E4%BC%AA%E6%A0%87%E7%AD%BE"><span class="nav-number">15.7.4.</span> <span class="nav-text">自训练与伪标签</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-%E5%88%86%E5%B8%83%E5%BC%8F%E8%AE%AD%E7%BB%83%E4%B8%8E%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96%E4%B8%AD%E5%B0%9A%E6%9C%AA%E5%B1%95%E5%BC%80%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%A6%82%E5%BF%B5"><span class="nav-number">15.8.</span> <span class="nav-text">8. 分布式训练与推理优化中尚未展开的实现概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E9%87%8F%E5%A6%82%E4%BD%95%E8%AE%A1%E7%AE%97"><span class="nav-number">15.8.1.</span> <span class="nav-text">参数量如何计算</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SIMD%E3%80%81%E5%90%91%E9%87%8F%E5%8C%96%E4%B8%8EBLAS"><span class="nav-number">15.8.2.</span> <span class="nav-text">SIMD、向量化与BLAS</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BE%AA%E7%8E%AF%E5%88%86%E5%9D%97"><span class="nav-number">15.8.3.</span> <span class="nav-text">循环分块</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AE%97%E5%AD%90%E8%9E%8D%E5%90%88%E4%B8%8E%E9%87%8D%E5%8F%82%E6%95%B0%E5%8C%96"><span class="nav-number">15.8.4.</span> <span class="nav-text">算子融合与重参数化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E5%90%8E%E9%87%8F%E5%8C%96%E4%B8%8E%E9%87%8F%E5%8C%96%E6%84%9F%E7%9F%A5%E8%AE%AD%E7%BB%83"><span class="nav-number">15.8.5.</span> <span class="nav-text">训练后量化与量化感知训练</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%89%B9%E9%87%8F%E6%8E%A8%E7%90%86"><span class="nav-number">15.8.6.</span> <span class="nav-text">批量推理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E6%94%BE%E6%9D%83%E9%87%8D%E6%A8%A1%E5%9E%8B%E4%B8%8E%E9%97%AD%E6%BA%90API"><span class="nav-number">15.8.7.</span> <span class="nav-text">开放权重模型与闭源API</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E4%BA%8EPrefill%E2%80%93Decode%E5%88%86%E7%A6%BB%E7%9A%84%E8%BE%B9%E7%95%8C%E8%AF%B4%E6%98%8E"><span class="nav-number">15.8.8.</span> <span class="nav-text">关于Prefill–Decode分离的边界说明</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-%E8%AF%84%E4%BC%B0%E3%80%81%E5%88%86%E5%B8%83%E5%8F%98%E5%8C%96%E4%B8%8E%E4%B8%8D%E7%A1%AE%E5%AE%9A%E6%80%A7"><span class="nav-number">15.9.</span> <span class="nav-text">9. 评估、分布变化与不确定性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%81%8F%E7%A7%BB%E7%9A%84%E7%BB%86%E5%88%86"><span class="nav-number">15.9.1.</span> <span class="nav-text">分布偏移的细分</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BD%AE%E4%BF%A1%E5%8C%BA%E9%97%B4%E4%B8%8E%E9%A2%84%E6%B5%8B%E5%8C%BA%E9%97%B4"><span class="nav-number">15.9.2.</span> <span class="nav-text">置信区间与预测区间</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B1%E5%BD%A2%E9%A2%84%E6%B5%8B%E4%B8%8E%E9%9D%9E%E4%B8%80%E8%87%B4%E6%80%A7%E5%88%86%E6%95%B0"><span class="nav-number">15.9.3.</span> <span class="nav-text">共形预测与非一致性分数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%A4%E5%8F%89%E7%86%B5%E4%B8%8D%E4%BB%85%E6%98%AF%E4%B8%80%E4%B8%AA%E8%AE%AD%E7%BB%83%E6%8C%89%E9%92%AE"><span class="nav-number">15.9.4.</span> <span class="nav-text">交叉熵不仅是一个训练按钮</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-%E3%80%8AGPT%E5%9B%BE%E8%A7%A3%E3%80%8B%E5%BD%93%E5%89%8D%E9%98%85%E8%AF%BB%E8%BF%9B%E5%BA%A6%E4%B8%AD%E7%9A%84%E6%A6%82%E5%BF%B5"><span class="nav-number">15.10.</span> <span class="nav-text">10. 《GPT图解》当前阅读进度中的概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Prompt%E6%A8%A1%E5%BC%8F%E4%B8%8EInstruct%E6%A8%A1%E5%BC%8F"><span class="nav-number">15.10.1.</span> <span class="nav-text">Prompt模式与Instruct模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BB%9F%E8%AE%A1%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B%E7%9A%84%E4%BB%B7%E5%80%BC"><span class="nav-number">15.10.2.</span> <span class="nav-text">统计语言模型的价值</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%A0%E9%87%8F%E7%9A%84%E9%98%B6%E6%95%B0%E3%80%81%E5%BD%A2%E7%8A%B6%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="nav-number">15.10.3.</span> <span class="nav-text">张量的阶数、形状与数据类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%B1%E5%B1%82%E7%BD%91%E7%BB%9C%E7%9A%84%E5%B1%82%E7%BA%A7%E7%89%B9%E5%BE%81"><span class="nav-number">15.10.4.</span> <span class="nav-text">深层网络的层级特征</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B3%A8%E6%84%8F%E5%8A%9B%E5%88%86%E6%95%B0%E4%B8%8E%E5%BD%92%E4%B8%80%E5%8C%96%E6%9D%83%E9%87%8D"><span class="nav-number">15.10.5.</span> <span class="nav-text">注意力分数与归一化权重</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%A4%E5%8F%89%E6%B3%A8%E6%84%8F%E5%8A%9B%E7%9A%84%E7%9B%B4%E8%A7%89"><span class="nav-number">15.10.6.</span> <span class="nav-text">交叉注意力的直觉</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#11-%E8%BF%99%E4%BB%BD%E6%A6%82%E5%BF%B5%E7%B4%A2%E5%BC%95%E6%8E%A5%E4%B8%8B%E6%9D%A5%E5%8F%AF%E4%BB%A5%E6%80%8E%E6%A0%B7%E4%BD%BF%E7%94%A8"><span class="nav-number">15.11.</span> <span class="nav-text">11. 这份概念索引接下来可以怎样使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E4%BA%94%E3%80%81%E7%8E%B0%E9%98%B6%E6%AE%B5%E5%BD%A2%E6%88%90%E7%9A%84%E5%87%A0%E4%B8%AA%E5%88%A4%E6%96%AD"><span class="nav-number">16.</span> <span class="nav-text">十五、现阶段形成的几个判断</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E4%B8%80%EF%BC%9A%E5%A4%A7%E6%A8%A1%E5%9E%8B%E9%A6%96%E5%85%88%E6%98%AF%E4%B8%80%E7%A7%8D%E8%A1%A8%E5%BE%81%E7%B3%BB%E7%BB%9F%EF%BC%8C%E7%84%B6%E5%90%8E%E6%89%8D%E6%98%AF%E4%B8%80%E7%A7%8D%E7%94%9F%E6%88%90%E7%B3%BB%E7%BB%9F"><span class="nav-number">16.1.</span> <span class="nav-text">判断一：大模型首先是一种表征系统，然后才是一种生成系统</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E4%BA%8C%EF%BC%9A%E8%83%BD%E5%8A%9B%E3%80%81%E7%9F%A5%E8%AF%86%E5%92%8C%E8%A1%8C%E4%B8%BA%E6%98%AF%E4%B8%89%E4%B8%AA%E4%B8%8D%E5%90%8C%E9%97%AE%E9%A2%98"><span class="nav-number">16.2.</span> <span class="nav-text">判断二：能力、知识和行为是三个不同问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E4%B8%89%EF%BC%9A%E6%B3%A8%E6%84%8F%E5%8A%9B%E8%A7%A3%E5%86%B3%E7%9A%84%E6%98%AF%E4%BF%A1%E6%81%AF%E8%B7%AF%E7%94%B1%EF%BC%8C%E4%B8%8D%E7%AD%89%E4%BA%8E%E6%A8%A1%E5%9E%8B%E5%B7%B2%E7%BB%8F%E6%8B%A5%E6%9C%89%E4%BA%8B%E5%AE%9E%E5%88%A4%E6%96%AD%E8%83%BD%E5%8A%9B"><span class="nav-number">16.3.</span> <span class="nav-text">判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E5%9B%9B%EF%BC%9A%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%9C%80%E9%87%8D%E8%A6%81%E7%9A%84%E5%B7%A5%E7%A8%8B%E8%BE%B9%E7%95%8C%EF%BC%8C%E6%98%AF%E6%A6%82%E7%8E%87%E7%94%9F%E6%88%90%E4%B8%8E%E7%A1%AE%E5%AE%9A%E6%80%A7%E8%A6%81%E6%B1%82%E4%B9%8B%E9%97%B4%E7%9A%84%E5%86%B2%E7%AA%81"><span class="nav-number">16.4.</span> <span class="nav-text">判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E4%BA%94%EF%BC%9A%E6%9C%AA%E6%9D%A5%E7%9A%84%E5%A4%A7%E6%A8%A1%E5%9E%8B%E5%BA%94%E7%94%A8%E7%AB%9E%E4%BA%89%EF%BC%8C%E5%BE%88%E5%8F%AF%E8%83%BD%E4%B8%8D%E5%8F%AA%E5%8F%91%E7%94%9F%E5%9C%A8%E6%A8%A1%E5%9E%8B%E5%B1%82"><span class="nav-number">16.5.</span> <span class="nav-text">判断五：未来的大模型应用竞争，很可能不只发生在模型层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E5%85%AD%EF%BC%9A%E7%90%86%E8%A7%A3%E6%A8%A1%E5%9E%8B%E8%A7%84%E6%A8%A1%EF%BC%8C%E4%B8%8D%E8%83%BD%E5%8F%AA%E7%9C%8B%E6%80%BB%E5%8F%82%E6%95%B0%E9%87%8F"><span class="nav-number">16.6.</span> <span class="nav-text">判断六：理解模型规模，不能只看总参数量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD%EF%BC%9A%E7%90%86%E8%A7%A3%E4%B8%80%E6%9D%A1%E4%BB%8E%E6%96%87%E5%AD%97%E5%88%B0%E6%A6%82%E7%8E%87%E7%9A%84%E9%93%BE%E8%B7%AF"><span class="nav-number">17.</span> <span class="nav-text">结语：理解一条从文字到概率的链路</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
+  <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
+  <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">174</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">303</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/how-large-language-models-generate-answers.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="衣舞晨风 (jiankunking)">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+      <meta itemprop="description" content="专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="阅读五本大模型书的阶段性思考：一个 Token 如何变成答案 | 衣舞晨风">
+      <meta itemprop="description" content="在阅读五本大模型书籍的过程中，从技术演进、分词、注意力、MoE、推理训练、RAG、微调和评估等角度，阶段性梳理大模型从 Token 到答案的完整链路。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          阅读五本大模型书的阶段性思考：一个 Token 如何变成答案
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-08-29 18:50:00" itemprop="dateCreated datePublished" datetime="2026-08-29T18:50:00+08:00">2026-08-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ai/" itemprop="url" rel="index"><span itemprop="name">AI</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>22k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>20 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">在阅读五本大模型书籍的过程中，从技术演进、分词、注意力、MoE、推理训练、RAG、微调和评估等角度，阶段性梳理大模型从 Token 到答案的完整链路。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>最近集中整理了五本与大模型有关的阅读笔记：</p>
+<ul>
+<li>《从零构建大模型》</li>
+<li>《图解大模型：生成式AI原理与实战》</li>
+<li>《大模型技术30讲》</li>
+<li>《GPT图解：大模型是怎样构建的》</li>
+<li>《图解DeepSeek技术》</li>
+</ul>
+<p>目前，《从零构建大模型》《图解大模型：生成式AI原理与实战》《大模型技术30讲》和《图解DeepSeek技术》已经读完；《GPT图解：大模型是怎样构建的》还在阅读中。因此，这篇文章仍不是最终的读书总结，而是基于目前阅读进度形成的一次阶段性整理。随着《GPT图解》的后续阅读继续深入，文中的认识和技术版图也会继续补充、修正。</p>
+<blockquote>
+<p><strong>写作边界说明：</strong> 本文讨论的主要技术主题来自这五本书的阅读笔记，但并不是书摘或逐句复述。文章的主线结构、概念之间的连接、解释性例子和最后的阶段性判断，是在笔记基础上的二次整理；个别超出笔记的工程延伸会单独标明。</p>
+</blockquote>
+<p>五本书的侧重点并不相同，它们分别从技术演进、代码实现、应用体系、工程实践，以及稀疏架构与推理强化等方向帮助我理解大模型。</p>
+<p><strong>《GPT图解：大模型是怎样构建的》（在读）：理解语言模型的技术演进</strong></p>
+<p>这本书从N-Gram、词袋模型、Word2Vec、RNN和Seq2Seq讲起，解释语言模型为什么需要不断改变表示和处理上下文的方式，又为什么会一步步走到注意力机制与Transformer。它提供的主要是一条技术演进线，帮助我理解Transformer并不是突然出现的结构，而是在解决前面一系列模型局限的过程中发展出来的。由于这本书还没有读完，这里只是根据当前阅读进度形成的认识。</p>
+<p><strong>《从零构建大模型》：理解GPT内部究竟怎样计算</strong></p>
+<p>这本书沿着代码实现逐层拆解模型，把文本分词、Token ID、嵌入、位置编码、自注意力、多头注意力、Transformer块和GPT架构连接起来。它的重点不是只告诉我各个概念的定义，而是让我看到张量如何流动、维度如何变化，以及一个语言模型怎样从基础组件逐步搭建出来。</p>
+<p><strong>《图解大模型：生成式AI原理与实战》：理解大模型的应用版图</strong></p>
+<p>这本书把表示模型与生成模型放在同一张地图中，继续延伸到语义搜索、RAG、多模态、微调和偏好对齐。它让我看到，大模型应用并不只是调用一个聊天模型：表示模型可以负责检索与聚类，生成模型可以负责理解和组织答案，外部知识、微调方法及多模态组件则共同组成完整系统。</p>
+<p><strong>《大模型技术30讲》：理解模型进入工程环境后会遇到什么</strong></p>
+<p>这本书把视角从模型结构扩展到更完整的机器学习与工程问题，包括过拟合、多GPU训练、推理加速、数据分布偏移、评估和不确定性。它补充了一个很重要的视角：模型能够运行，只代表技术链路的开始；要让模型稳定、快速、低成本地服务真实业务，还要处理数据、计算、部署和持续评估问题。</p>
+<p><strong>《图解DeepSeek技术》：理解规模扩展、MoE与推理强化</strong></p>
+<p>读完这本书后整理出的23条笔记，主要集中在训练时计算、Kaplan与Chinchilla缩放定律、MoE、Top-K路由、细粒度专家分割、共享专家隔离，以及DeepSeek-R1-Zero使用的GRPO。它补充的是更接近现代大模型架构与训练策略的一层：模型如何在扩大总参数容量的同时控制实际计算量，以及如何通过结果反馈调整推理路径。</p>
+<p>整理这些已经读过的内容后，我目前最大的感受是：<strong>理解大模型不能只记住Transformer、注意力和提示词这些名词，而要建立一条从数据表示、模型训练到系统应用的完整因果链。</strong></p>
+<p>这篇文章不是五本书的逐章摘要，也不是把目前整理的488条笔记依次重新排列。我更想用一个问题，把分散在五本书里的知识串起来：</p>
+<blockquote>
+<p>当我们向大模型提出一个问题时，一段人类文字究竟如何进入模型，最后又如何变成一段答案？</p>
+</blockquote>
+<p>当我们在对话框里输入一句话：</p>
+<blockquote>
+<p>请用简单的语言解释什么是大模型。</p>
+</blockquote>
+<p>几秒后，屏幕上出现了一段结构清楚、语气自然的回答。它似乎读懂了问题，回忆了相关知识，组织好语言，然后把答案告诉了我们。</p>
+<p>但大模型内部发生的事情，和这种直觉并不一样。</p>
+<p>它没有先在脑海里想好一整段话，也不一定是从某个知识库里找到了现成答案。它真正做的事情，可以压缩成一个循环：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">读取已有上下文</span><br><span class="line">→ 计算下一个 Token 的概率</span><br><span class="line">→ 选择一个 Token</span><br><span class="line">→ 把它加入上下文</span><br><span class="line">→ 再预测下一个 Token</span><br></pre></td></tr></table></figure>
+
+<p>如此反复，最终形成一句话、一段文字，甚至一篇文章。</p>
+<p>看起来只是“预测下一个词”，为什么最后却产生了翻译、摘要、问答、编程和推理等能力？要回答这个问题，我们可以跟随一个 Token，看看它从进入模型到变成答案，经历了什么。</p>
+<span id="more"></span>
+
+<h2 id="从N-Gram到Transformer：每一代模型都在修补上一代的缺陷"><a href="#从N-Gram到Transformer：每一代模型都在修补上一代的缺陷" class="headerlink" title="从N-Gram到Transformer：每一代模型都在修补上一代的缺陷"></a>从N-Gram到Transformer：每一代模型都在修补上一代的缺陷</h2><p>在顺着一个Token进入GPT之前，有必要先回头看一眼语言模型的演进。因为Transformer并不是突然出现的，它所采用的每个关键设计，几乎都对应着前一代方法没有解决的问题。</p>
+<p>最早的N-Gram模型，用前面有限的几个词预测下一个词。它简单、直观，也确实抓住了语言的统计规律。但它只观察固定长度的窗口，难以处理跨越很远的依赖；没有出现过的词语组合，还会带来严重的数据稀疏问题。</p>
+<p>词袋模型走了另一条路：不考虑词序，只统计词是否出现以及出现多少次。它适合早期的文本分类和相似度计算，却丢掉了语言最重要的结构。同样几个词，换一种顺序可能表达完全不同的含义，但在词袋模型中得到的表示可能完全一样。</p>
+<p>Word2Vec和神经概率语言模型开始用稠密向量表示词语。相比高维、稀疏的独热编码，嵌入向量不仅更紧凑，还让语义相似性变得可以计算。但早期词向量通常是静态的：“苹果”无论出现在什么句子里，初始表示都相同，无法充分处理一词多义和动态上下文。</p>
+<p>RNN把顺序重新带回模型，让信息沿着时间步不断传递。理论上，后面的词可以获得前文信息；实际处理长序列时，早期信息要经过很长的传播路径，容易衰减，训练也很难并行。</p>
+<p>Seq2Seq使用编码器把输入序列压缩成一个表示，再由解码器生成输出。它推动了机器翻译的发展，却又遇到新的瓶颈：无论输入多长，都试图把全部信息压进一个固定大小的向量，长句中的细节很容易丢失。</p>
+<p>注意力机制打破了这个限制。解码器不再只依赖一个固定向量，而是可以在生成每一步时，直接查看输入序列的不同位置，决定哪些信息更重要。</p>
+<p>Transformer更进一步：它去掉了RNN的递归结构，把注意力变成主要的信息交互方式。序列中的不同位置可以并行计算，任意两个Token之间也能通过较短路径建立联系。这种更适合并行训练和扩展的架构，最终成为现代大模型的基础。</p>
+<p>这段演进可以概括成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">N-Gram：看得太近</span><br><span class="line">→ 词袋模型：丢掉顺序</span><br><span class="line">→ Word2Vec：有了语义空间，但上下文仍然有限</span><br><span class="line">→ RNN：保留顺序，但难以并行和记住长距离信息</span><br><span class="line">→ Seq2Seq：能生成序列，但固定向量形成瓶颈</span><br><span class="line">→ Attention：按需要访问上下文</span><br><span class="line">→ Transformer：用自注意力实现大规模并行和全局交互</span><br></pre></td></tr></table></figure>
+
+<p>理解这条历史路径后，再看Token、嵌入和注意力，就不会觉得它们只是凭空堆叠起来的一组术语。</p>
+<h2 id="一、模型看到的不是文字，而是-Token"><a href="#一、模型看到的不是文字，而是-Token" class="headerlink" title="一、模型看到的不是文字，而是 Token"></a>一、模型看到的不是文字，而是 Token</h2><p>人类看到的是文字，计算机处理的是数字。</p>
+<p>“苹果发布了新手机”对我们来说是一句话，但神经网络不能直接对“苹果”“发布”“手机”做矩阵乘法。文字进入模型之前，必须先经过分词器，被拆成若干个可以处理的基本单元。这些单元叫作 <strong>Token</strong>。</p>
+<p>Token 不一定等于一个汉字，也不一定等于一个完整单词。它可能是：</p>
+<ul>
+<li>一个常见汉字；</li>
+<li>一个英文单词；</li>
+<li>一个词根或后缀；</li>
+<li>一段标点符号；</li>
+<li>一个生僻词的一部分。</li>
+</ul>
+<p>例如，一句话可能被处理成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">原始文字：大模型正在生成答案</span><br><span class="line">Token：  [大模型] [正在] [生成] [答案]</span><br><span class="line">Token ID：[3812] [947] [5621] [2308]</span><br></pre></td></tr></table></figure>
+
+<p>这里的数字只是示意。实际使用哪个 ID，由模型的词表和分词器决定。</p>
+<p>为什么不把所有词都收进词表？因为语言中的词几乎是无限的：人名、地名、专业术语和新造词不断出现。如果每个词都占一个位置，词表会变得异常庞大；如果词表太小，又会遇到大量未知词。</p>
+<p>BPE 一类子词分词方法在两者之间做了折中：常见词可以作为整体保留，少见词则被拆成更小的片段。这样，即使模型没有见过某个完整单词，也可以通过已有的子词单元表示它。</p>
+<p>经过这一步，文字变成了一串 Token ID。但 ID 只是编号。编号 3812 并不比 2308 更“大”，数字之间的距离也不代表语义距离。为了让神经网络处理语言，还需要把编号变成向量。</p>
+<h2 id="二、嵌入：把语言放进一个可以计算的空间"><a href="#二、嵌入：把语言放进一个可以计算的空间" class="headerlink" title="二、嵌入：把语言放进一个可以计算的空间"></a>二、嵌入：把语言放进一个可以计算的空间</h2><p>模型会通过嵌入层，把每个 Token ID 映射成一个固定长度的向量：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Token ID → [0.17, -0.42, 0.08, ..., 0.31]</span><br></pre></td></tr></table></figure>
+
+<p>这个过程叫作 <strong>Embedding</strong>，也就是嵌入。</p>
+<p>可以把嵌入空间想象成一张维度极高的“语义地图”。在训练过程中，经常出现在相似语境中的 Token，会逐渐形成相似的向量表示；语义或用法相近的内容，在这个空间中的位置通常也更接近。</p>
+<p>模型不是先得到一本词典，再把词典里的定义写进向量。它是从大量上下文中学习关系：</p>
+<ul>
+<li>哪些词经常一起出现；</li>
+<li>哪些词可以在相似位置互换；</li>
+<li>哪些概念彼此接近；</li>
+<li>哪些关系会反复出现。</li>
+</ul>
+<p>因此，模型中的“含义”更像一种关系结构，而不是一条孤立的文字定义。</p>
+<p>这也解释了为什么向量可以用于语义搜索。当查询和文档被映射到同一个向量空间后，我们可以通过余弦相似度等方法，寻找方向更加接近的向量。系统比较的不再只是两段文字有没有相同关键词，而是它们在语义空间中是否接近。</p>
+<p>不过，仅有嵌入还不够。</p>
+<p>“苹果发布了新手机”和“我吃了一个苹果”中都出现了“苹果”，但含义完全不同。如果“苹果”永远对应同一个固定向量，模型就无法根据上下文区分公司和水果。</p>
+<p>于是，注意力机制登场了。</p>
+<h2 id="三、注意力：让每个-Token-重新阅读上下文"><a href="#三、注意力：让每个-Token-重新阅读上下文" class="headerlink" title="三、注意力：让每个 Token 重新阅读上下文"></a>三、注意力：让每个 Token 重新阅读上下文</h2><p>自注意力机制要解决的问题是：</p>
+<blockquote>
+<p>对当前 Token 来说，上下文中的哪些信息更有用？</p>
+</blockquote>
+<p>在计算时，每个 Token 的向量会经过不同的线性变换，产生三个新的向量：</p>
+<ul>
+<li><strong>Query</strong>：我正在寻找什么信息；</li>
+<li><strong>Key</strong>：我能被别人用什么方式找到；</li>
+<li><strong>Value</strong>：我实际携带什么信息。</li>
+</ul>
+<p>以“苹果发布了新手机”为例。当模型更新“苹果”的表示时，它会拿“苹果”的 Query 和句子中各个 Token 的 Key 计算相关程度。</p>
+<p>如果“发布”“手机”和“苹果”的相关分数较高，它们对应的 Value 就会以更大的权重汇入“苹果”的新表示。经过这次计算，“苹果”的向量不再只是一个静态词义，而是融合了当前句子的上下文，更倾向于表示一家科技公司。</p>
+<p>注意力计算可以粗略理解为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">当前 Token 提出问题</span><br><span class="line">→ 和其他 Token 计算匹配程度</span><br><span class="line">→ 将分数归一化为注意力权重</span><br><span class="line">→ 按权重汇总其他 Token 携带的信息</span><br></pre></td></tr></table></figure>
+
+<p>严格地说，注意力分数和注意力权重不是同一回事。模型会先通过 Query 和 Key 的点积得到相关分数，再进行缩放、掩码和 Softmax 归一化，最后得到权重，并用这些权重对 Value 加权求和。</p>
+<p>为什么还要缩放？当向量维度很高时，点积结果可能变得很大，使 Softmax 过早进入非常陡峭的区域，影响梯度和训练稳定性。缩放点积注意力会用特征维度的平方根对结果进行缩放，让数值保持在更合适的范围。</p>
+<p>一个注意力头可以学习一种关系，但语言中同时存在很多关系：</p>
+<ul>
+<li>主语和谓语；</li>
+<li>代词和指代对象；</li>
+<li>问题和答案；</li>
+<li>条件和结论；</li>
+<li>相隔很远的上下文依赖。</li>
+</ul>
+<p>因此，Transformer通常会并行使用多个注意力头。不同的头可以从不同角度提取关系，最后再把结果合并。</p>
+<p>这就是多头注意力。</p>
+<h2 id="四、因果掩码：生成时不能偷看未来"><a href="#四、因果掩码：生成时不能偷看未来" class="headerlink" title="四、因果掩码：生成时不能偷看未来"></a>四、因果掩码：生成时不能偷看未来</h2><p>GPT使用的是只包含解码器的Transformer架构，按照从左到右的方式生成文本。</p>
+<p>当模型正在预测一句话中的第三个 Token 时，它只能使用前两个 Token，不能提前看到第四个、第五个 Token。否则，训练就变成了偷看答案。</p>
+<p>因此，GPT的自注意力中会加入 <strong>因果掩码</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">第1个 Token：只能看到第1个</span><br><span class="line">第2个 Token：可以看到第1、2个</span><br><span class="line">第3个 Token：可以看到第1、2、3个</span><br><span class="line">……</span><br></pre></td></tr></table></figure>
+
+<p>掩码会把未来位置的注意力分数屏蔽掉。这样，模型在训练时遵守的规则和生成时一致：每一步都只能依据已经出现的内容预测后文。</p>
+<p>这里也能看出BERT和GPT的一项关键区别。</p>
+<p>BERT通常使用双向上下文，通过遮住句子中的部分内容，让模型根据前后文预测被遮住的Token。这使它很适合生成文本表示、分类和信息提取。GPT则严格依据左侧上下文预测下一个Token，因此更适合连续生成文本。</p>
+<p>二者都使用Transformer，但训练目标和注意力方式不同，最终擅长的任务也不同。</p>
+<h2 id="五、Transformer块：交流、加工，再保留原始信息"><a href="#五、Transformer块：交流、加工，再保留原始信息" class="headerlink" title="五、Transformer块：交流、加工，再保留原始信息"></a>五、Transformer块：交流、加工，再保留原始信息</h2><p>注意力并不是Transformer的全部。一个典型的Transformer块，还包含前馈神经网络、残差连接和层归一化等组件。</p>
+<p>可以把一个Transformer块粗略类比成一个小组的工作过程：</p>
+<ol>
+<li><strong>注意力层负责开会交流</strong>：每个Token从其他Token那里收集信息；</li>
+<li><strong>前馈网络负责独立思考</strong>：对每个Token的表示进一步加工；</li>
+<li><strong>残差连接负责保留原始材料</strong>：避免多层处理后丢失重要信息；</li>
+<li><strong>层归一化负责维持工作秩序</strong>：让不同层中的数值分布更加稳定。</li>
+</ol>
+<p>其结构可以简化为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">输入向量</span><br><span class="line">→ 层归一化</span><br><span class="line">→ 多头自注意力</span><br><span class="line">→ 残差连接</span><br><span class="line">→ 层归一化</span><br><span class="line">→ 前馈神经网络</span><br><span class="line">→ 残差连接</span><br><span class="line">→ 输出向量</span><br></pre></td></tr></table></figure>
+
+<p>一个块只能完成有限的信息交换和变换。把许多Transformer块堆叠起来后，Token的表示会被一层层更新。</p>
+<p>较浅的层可能更多处理局部搭配和基本语法，较深的层则有机会组合出更加抽象的模式。需要注意的是，这不是一个由人类提前规定好的明确分工，而是模型在训练过程中自行形成的内部表征。</p>
+<p>在经历多层Transformer块后，输入中的每个Token已经从初始嵌入，变成了包含丰富上下文信息的向量。</p>
+<p>接下来，模型要根据这些信息决定：下一个Token应该是什么？</p>
+<h2 id="六、从向量到概率：模型如何选择下一个-Token"><a href="#六、从向量到概率：模型如何选择下一个-Token" class="headerlink" title="六、从向量到概率：模型如何选择下一个 Token"></a>六、从向量到概率：模型如何选择下一个 Token</h2><p>Transformer最后得到的向量，会被映射成一个与词表大小相同的分数列表。这些原始分数通常叫作 <strong>logits</strong>。</p>
+<p>假设当前上下文是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">法国的首都是</span><br></pre></td></tr></table></figure>
+
+<p>模型可能为候选Token计算出类似下面的结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">巴黎：9.8</span><br><span class="line">伦敦：3.1</span><br><span class="line">法国：2.4</span><br><span class="line">城市：1.7</span><br><span class="line">……</span><br></pre></td></tr></table></figure>
+
+<p>经过Softmax后，这些分数会被转换为概率分布：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">巴黎：0.92</span><br><span class="line">伦敦：0.02</span><br><span class="line">法国：0.01</span><br><span class="line">城市：0.006</span><br><span class="line">……</span><br></pre></td></tr></table></figure>
+
+<p>模型可以直接选择概率最高的Token，也可以按照概率进行采样。</p>
+<p>不同的采样策略，会让输出呈现不同特征：</p>
+<ul>
+<li>总选概率最高的Token，结果稳定，但可能机械和重复；</li>
+<li>提高温度，概率分布会变得更加平缓，输出更有变化，也更容易偏离事实；</li>
+<li>降低温度，模型更倾向于高概率选项，输出更加保守；</li>
+<li>Top-k只保留概率最高的若干候选；</li>
+<li>Top-p只保留累计概率达到某个阈值的一组候选。</li>
+</ul>
+<p>当模型选出“巴黎”以后，它会把“巴黎”加入上下文：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">法国的首都是巴黎</span><br></pre></td></tr></table></figure>
+
+<p>然后再次执行同样的流程，预测下一个Token。模型每次只生成一步，但把成百上千次预测连接起来，就形成了完整答案。</p>
+<p>所以，大模型并不是先想好整篇文章再逐字输出。至少从生成机制上看，它是在不断回答同一个问题：</p>
+<blockquote>
+<p>根据目前已经出现的全部内容，接下来最适合出现什么？</p>
+</blockquote>
+<h2 id="七、只预测下一个-Token，为什么会产生复杂能力？"><a href="#七、只预测下一个-Token，为什么会产生复杂能力？" class="headerlink" title="七、只预测下一个 Token，为什么会产生复杂能力？"></a>七、只预测下一个 Token，为什么会产生复杂能力？</h2><p>“预测下一个Token”听起来像手机输入法，似乎不应该产生多么复杂的能力。</p>
+<p>但训练任务是否简单，不能只看它的名称，还要看数据规模和预测难度。</p>
+<p>如果模型需要补全的是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">今天天气很____</span><br></pre></td></tr></table></figure>
+
+<p>它可能只需要学习简单搭配。</p>
+<p>如果模型需要继续的是数学证明、程序代码、法律条文、历史分析或多轮对话，那么为了持续提高预测准确率，它就不得不学习更复杂的结构：</p>
+<ul>
+<li>语法和语义；</li>
+<li>事实之间的关联；</li>
+<li>文章组织方式；</li>
+<li>问题与答案的对应关系；</li>
+<li>代码的语法和运行模式；</li>
+<li>文本中呈现出的推理步骤；</li>
+<li>不同任务的指令形式。</li>
+</ul>
+<p>可以把它类比成一种规模极大的填空训练。考试形式始终是“填下一个空”，但为了在无数领域、无数上下文中填对，模型必须压缩和吸收数据中大量可重复的规律。</p>
+<p>当模型规模、数据规模和训练计算量达到一定程度，一些没有被逐项明确教授的能力也可能表现出来。人们通常把这种现象称为涌现。</p>
+<p>不过，涌现并不意味着模型突然获得了神秘力量。更谨慎的理解是：训练目标没有直接要求它完成某项任务，但完成海量下一Token预测所形成的内部表示，使它具备了迁移到这项任务上的能力。</p>
+<h2 id="八、《图解DeepSeek技术》补上的一块：规模、稀疏激活与推理强化"><a href="#八、《图解DeepSeek技术》补上的一块：规模、稀疏激活与推理强化" class="headerlink" title="八、《图解DeepSeek技术》补上的一块：规模、稀疏激活与推理强化"></a>八、《图解DeepSeek技术》补上的一块：规模、稀疏激活与推理强化</h2><p>前面介绍的GPT可以看作一种典型的稠密Transformer：每个Token经过每一层时，都会使用这一层中的注意力和前馈网络参数。《图解DeepSeek技术》的23条笔记在这条主线上继续追问了三个问题：</p>
+<ol>
+<li>模型、数据和训练算力应该怎样一起扩大？</li>
+<li>模型参数越来越多以后，能不能只激活当前Token真正需要的部分？</li>
+<li>除了模仿训练文本，能不能根据答案结果继续强化模型的推理路径？</li>
+</ol>
+<p>这三个问题分别对应缩放定律、MoE和GRPO，也构成了我理解DeepSeek技术路线的三个入口。</p>
+<h3 id="1-训练时计算：参数、数据和算力要同步考虑"><a href="#1-训练时计算：参数、数据和算力要同步考虑" class="headerlink" title="1. 训练时计算：参数、数据和算力要同步考虑"></a>1. 训练时计算：参数、数据和算力要同步考虑</h3><p>训练时计算，是指模型在训练阶段处理数据、完成前向计算、反向传播和参数更新所消耗的计算资源。模型性能的提高通常与三个要素有关：</p>
+<ul>
+<li>模型参数规模；</li>
+<li>训练数据规模；</li>
+<li>可使用的训练计算量。</li>
+</ul>
+<p>笔记中的一个重要提醒是，这三个要素不能彼此孤立。只扩大模型，但没有足够数据，模型可能训练不足；只增加数据，但模型容量和算力跟不上，数据也无法被充分吸收；只有算力，却没有合适的模型与数据配比，同样可能造成浪费。</p>
+<p>Kaplan缩放定律和Chinchilla缩放定律给出了两种不同的配比认识。</p>
+<p><strong>Kaplan缩放定律</strong>更强调模型规模。在固定训练算力预算下，与其用更多数据把较小模型训练到充分收敛，不如训练参数量更大的模型，并在完全收敛之前停止。</p>
+<p><strong>Chinchilla缩放定律</strong>则认为模型参数量和训练数据量应当更均衡地扩大。对于给定参数规模，训练数据不能太少；笔记中给出的经验比例是，训练数据规模大约应达到参数数量的20倍。按照这一视角，GPT-3一类模型可能不是参数不够大，而是相对于参数规模训练得还不够充分。</p>
+<p>两者虽然结论侧重不同，但共同说明了一件事：</p>
+<blockquote>
+<p>扩展大模型不是简单增加参数，而是在参数、数据与计算预算之间寻找更有效的组合。</p>
+</blockquote>
+<h3 id="2-MoE：总参数很多，但每个Token只使用一部分"><a href="#2-MoE：总参数很多，但每个Token只使用一部分" class="headerlink" title="2. MoE：总参数很多，但每个Token只使用一部分"></a>2. MoE：总参数很多，但每个Token只使用一部分</h3><p>传统Transformer中的前馈神经网络属于稠密计算。一个Token进入前馈层后，这一层中的全部参数都会参与计算，只是产生的激活程度不同。</p>
+<p>MoE，也就是混合专家模型，把一个前馈层改造成多个较小的专家模块，并增加一个路由器：</p>
+<ul>
+<li><strong>专家</strong>通常是前馈神经网络子模块，负责处理被分配给自己的Token；</li>
+<li><strong>路由器或门控网络</strong>根据当前输入计算分数，决定应该把Token交给哪些专家；</li>
+<li>被选中专家的输出会结合对应的门控值，再聚合成这一层的最终输出。</li>
+</ul>
+<p>这个过程可以简化为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Token表示</span><br><span class="line">→ 路由器计算专家分数</span><br><span class="line">→ 选择得分最高的若干专家</span><br><span class="line">→ 专家分别完成前馈计算</span><br><span class="line">→ 按门控值聚合输出</span><br></pre></td></tr></table></figure>
+
+<p>这里的“专家”不能简单理解成数学专家、医学专家或编程专家。它首先是模型内部的一个计算子模块，可能在训练中逐渐擅长处理某些上下文、词法或句法模式，但这种分工并不是人为预先写好的职业分类。</p>
+<p>MoE可以分为稠密混合与稀疏混合。稠密MoE会让所有专家都参与，只是参与权重不同；稀疏MoE则只激活少数专家。当前大模型讨论MoE时通常更关注后者，因为它允许模型拥有很大的总参数量，却只让一部分参数参与当前Token的计算。</p>
+<p>因此，理解MoE时需要区分两个数字：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">模型拥有的总参数量</span><br><span class="line">≠</span><br><span class="line">一次前向计算实际激活的参数量</span><br></pre></td></tr></table></figure>
+
+<p>MoE并不是让计算免费消失，而是试图用稀疏激活换取更大的模型容量：模型可以容纳更多专家参数，同时把每个Token的计算控制在较小范围内。</p>
+<h3 id="3-DeepSeekMoE：Top-K路由、细粒度专家与共享专家"><a href="#3-DeepSeekMoE：Top-K路由、细粒度专家与共享专家" class="headerlink" title="3. DeepSeekMoE：Top-K路由、细粒度专家与共享专家"></a>3. DeepSeekMoE：Top-K路由、细粒度专家与共享专家</h3><p>DeepSeek-R1所使用的MoE以Top-K路由为基础。路由器为各个专家计算分数，然后选择得分最高的K个专家处理当前Token，再聚合它们的输出。</p>
+<p>但如果专家数量太少、每个专家都很大，一个专家仍可能被迫学习许多不同类型的知识，很难形成更细的分工。DeepSeekMoE因此采用了<strong>细粒度专家分割</strong>：把少数大型专家拆分成更多、更小的专家单元，通过降低每个专家前馈网络的隐藏维度，让专家数量增加。</p>
+<p>在总参数量和计算预算大致保持不变的情况下，模型可以激活更多小专家，而不是少数大专家。这为更细致的路由和专业化提供了空间。</p>
+<p>不过，小专家之间仍可能重复学习大量通用知识。如果每个专家都要保存同一部分基础能力，就会形成知识冗余，也会挤占它们学习差异化模式的空间。</p>
+<p>为此，DeepSeek进一步引入了<strong>共享专家隔离</strong>：</p>
+<ul>
+<li>一部分共享专家对所有Token始终保持激活，负责吸收通用知识；</li>
+<li>其他路由专家根据Token动态选择，更专注于特定上下文中的差异化知识。</li>
+</ul>
+<p>其思路可以概括为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">共享专家负责通用能力</span><br><span class="line">+</span><br><span class="line">路由专家负责差异化处理</span><br></pre></td></tr></table></figure>
+
+<p>这并不意味着专家之间从此完全没有重叠，而是通过结构上的职责分配，减少所有专家重复学习同一类通用模式的问题。</p>
+<h3 id="4-调整词元分布，也是在调整后续推理路径"><a href="#4-调整词元分布，也是在调整后续推理路径" class="headerlink" title="4. 调整词元分布，也是在调整后续推理路径"></a>4. 调整词元分布，也是在调整后续推理路径</h3><p>如果生成时永远选择当前概率最高的Token，就是贪婪解码。单独看某一步，最高概率Token可能完全合理；但对需要多步推理的问题来说，这个Token还会改变后续能够展开的路径。</p>
+<p>有些Token只是局部上自然，有些Token则会引导模型开始拆解问题、列出条件或执行中间计算。后者在当前一步未必拥有绝对最高概率，却可能让后续推理更加完整。</p>
+<p>因此，《图解DeepSeek技术》的笔记补充了一个很有价值的视角：</p>
+<blockquote>
+<p>选择下一个Token，不只是选择眼前最顺的一小段文字，也是在选择接下来沿着哪条路径继续生成。</p>
+</blockquote>
+<p>这与前文“模型逐Token生成”的机制并不矛盾。恰恰因为后续内容依赖已经生成的Token，每一步选择才可能对整个答案产生连锁影响。</p>
+<h3 id="5-DeepSeek-R1-Zero与GRPO"><a href="#5-DeepSeek-R1-Zero与GRPO" class="headerlink" title="5. DeepSeek-R1-Zero与GRPO"></a>5. DeepSeek-R1-Zero与GRPO</h3><p>DeepSeek-R1-Zero的推理能力训练使用了组相对策略优化，也就是GRPO。根据当前笔记，GRPO的核心可以理解为：模型生成不同的回答或推理路径后，根据结果反馈调整这些路径的概率。</p>
+<p>如果某些Token组合和推理步骤更容易导向正确答案，训练就提高相关决策再次出现的可能性；如果某条路径更容易导向错误结果，则降低相关选择的概率权重。</p>
+<p>这使后训练不再只是模仿一份给定的标准回答，还可以从答案结果反过来塑造生成过程：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">生成若干回答或推理路径</span><br><span class="line">→ 根据结果获得反馈</span><br><span class="line">→ 比较路径表现</span><br><span class="line">→ 调整相关Token与推理步骤的概率</span><br></pre></td></tr></table></figure>
+
+<p>从这些笔记中，我目前形成的理解是：预训练让模型拥有语言、知识和模式基础，强化学习则可以进一步改变模型面对复杂问题时更倾向于走哪类生成路径。它优化的仍然是Token概率，但反馈信号已经从“训练文本中的下一个Token”扩展到了“整条回答最终表现得怎样”。</p>
+<p>这本书已经读完，但现有23条笔记对GRPO主要记录了核心思想，没有继续展开算法公式、奖励设计和完整训练流程。因此，这里只整理笔记已经覆盖的部分，不把额外资料中的内容补写成书中结论。</p>
+<h2 id="九、预训练让它会续写，后训练让它像助手"><a href="#九、预训练让它会续写，后训练让它像助手" class="headerlink" title="九、预训练让它会续写，后训练让它像助手"></a>九、预训练让它会续写，后训练让它像助手</h2><p>完成大规模下一Token预测训练后，我们得到的是基座模型。它学到了大量语言模式，但未必会像今天的对话助手一样回答问题。</p>
+<p>如果输入“解释什么是自注意力”，基座模型可能继续写成教材，也可能补成一段问题列表，甚至模仿网页中的其他内容。因为它首先学习的是续写，而不是服从命令。</p>
+<p>要把基座模型变成更好用的助手，通常还需要后训练。</p>
+<h3 id="1-指令微调"><a href="#1-指令微调" class="headerlink" title="1. 指令微调"></a>1. 指令微调</h3><p>使用“指令—回答”形式的数据继续训练，让模型学会：</p>
+<ul>
+<li>识别用户意图；</li>
+<li>按照要求完成任务；</li>
+<li>使用合适的格式回答；</li>
+<li>在多轮对话中保持角色和上下文。</li>
+</ul>
+<h3 id="2-偏好对齐"><a href="#2-偏好对齐" class="headerlink" title="2. 偏好对齐"></a>2. 偏好对齐</h3><p>同一个问题往往存在很多形式上都合理的答案。偏好数据会告诉模型，哪些回答更加有帮助、准确、安全和符合人类期待。</p>
+<p>PPO、DPO、ORPO等方法虽然实现方式不同，但它们都在尝试解决同一个问题：不仅让模型生成“可能出现的文字”，还要让它更倾向于生成“人类更希望得到的回答”。</p>
+<p>因此，可以把几个训练阶段简化为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">预训练：学习语言和知识模式</span><br><span class="line">指令微调：学习如何完成任务</span><br><span class="line">偏好对齐：学习人类更喜欢什么回答</span><br></pre></td></tr></table></figure>
+
+<p>预训练塑造能力，指令微调塑造行为，偏好对齐进一步塑造回答风格和边界。</p>
+<h2 id="十、为什么大模型会一本正经地犯错？"><a href="#十、为什么大模型会一本正经地犯错？" class="headerlink" title="十、为什么大模型会一本正经地犯错？"></a>十、为什么大模型会一本正经地犯错？</h2><p>理解了生成过程，也就容易理解所谓的“幻觉”。</p>
+<p>模型每一步优化的是：在当前上下文中，哪个Token更可能出现。这个目标和“这句话在现实世界中是否真实”并不完全相同。</p>
+<p>一段话可以同时满足两个条件：</p>
+<ul>
+<li>在语言上非常连贯；</li>
+<li>在事实上完全错误。</li>
+</ul>
+<p>大模型尤其可能在以下情况下犯错：</p>
+<ul>
+<li>问题涉及训练数据中很少出现的知识；</li>
+<li>用户要求提供精确日期、数字或出处；</li>
+<li>多个相似人物、概念或事件容易被混合；</li>
+<li>上下文中的条件互相冲突；</li>
+<li>模型缺少信息，但仍被要求继续回答。</li>
+</ul>
+<p>这并不意味着模型完全没有知识。模型参数确实压缩了大量从训练数据中学习到的结构和事实关系。但这些知识不是一个可以逐条核对、实时更新的数据库。模型有可能把几个局部上都合理的模式，组合成一个整体上不存在的答案。</p>
+<p>因此，流畅性不等于真实性，语言自信也不等于事实可靠。</p>
+<h2 id="十一、RAG、微调和提示词分别解决什么问题？"><a href="#十一、RAG、微调和提示词分别解决什么问题？" class="headerlink" title="十一、RAG、微调和提示词分别解决什么问题？"></a>十一、RAG、微调和提示词分别解决什么问题？</h2><p>模型自身存在局限，所以一个真正可用的大模型应用，通常不只包含模型。</p>
+<h3 id="提示词：告诉模型当前怎样做"><a href="#提示词：告诉模型当前怎样做" class="headerlink" title="提示词：告诉模型当前怎样做"></a>提示词：告诉模型当前怎样做</h3><p>提示词适合描述当前任务、输出格式、角色、限制和判断标准。它改变的是本次推理时的上下文，并没有修改模型参数。</p>
+<h3 id="RAG：为模型提供当前需要的资料"><a href="#RAG：为模型提供当前需要的资料" class="headerlink" title="RAG：为模型提供当前需要的资料"></a>RAG：为模型提供当前需要的资料</h3><p>RAG会先从文档库中检索相关内容，再把检索结果与问题一起交给模型。它适合：</p>
+<ul>
+<li>私有知识库问答；</li>
+<li>需要更新的事实；</li>
+<li>必须引用来源的内容；</li>
+<li>模型参数中缺失的专业资料。</li>
+</ul>
+<p>RAG主要补充“模型此刻知道什么”。</p>
+<h3 id="微调：长期改变模型的行为"><a href="#微调：长期改变模型的行为" class="headerlink" title="微调：长期改变模型的行为"></a>微调：长期改变模型的行为</h3><p>微调会使用新的训练数据更新部分或全部参数。LoRA等参数高效微调方法，可以只训练少量附加参数，降低显存和训练成本。</p>
+<p>微调更适合改变：</p>
+<ul>
+<li>固定的写作风格；</li>
+<li>专业任务模式；</li>
+<li>特定格式习惯；</li>
+<li>长期稳定的行为偏好。</li>
+</ul>
+<p>微调主要改变“模型习惯怎样做”，而不适合拿来频繁更新事实知识。</p>
+<p>因此，这三种方法并不是谁替代谁：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">提示词：规定当前任务</span><br><span class="line">RAG：补充当前知识</span><br><span class="line">微调：改变长期行为</span><br></pre></td></tr></table></figure>
+
+<p>复杂系统还会加入搜索、计算器、代码执行、数据库和其他工具，让模型不仅能生成语言，还能获取信息、执行操作并验证结果。</p>
+<h2 id="十二、大模型不是一个孤立的模型，而是一套系统"><a href="#十二、大模型不是一个孤立的模型，而是一套系统" class="headerlink" title="十二、大模型不是一个孤立的模型，而是一套系统"></a>十二、大模型不是一个孤立的模型，而是一套系统</h2><p>从用户输入到最终答案，一个成熟的大模型应用可能包含：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">用户问题</span><br><span class="line">→ 意图识别</span><br><span class="line">→ 上下文组织</span><br><span class="line">→ 资料检索</span><br><span class="line">→ 工具调用</span><br><span class="line">→ 大模型生成</span><br><span class="line">→ 事实或格式检查</span><br><span class="line">→ 安全控制</span><br><span class="line">→ 返回答案</span><br></pre></td></tr></table></figure>
+
+<p>模型能力并不等于系统能力。</p>
+<p>一个参数更多的模型，如果没有高质量数据、合理提示、可靠检索和持续评估，未必能构成更好的产品。相反，一个规模适中的模型，配合清晰的任务边界、可靠工具和完善验证，也可能在特定场景中表现得更加稳定。</p>
+<p>模型上线也不是终点。现实数据会发生变化：用户问题变了、业务概念变了、输入分布变了，原本有效的模型可能逐渐失效。因此，大模型系统还需要持续监控：</p>
+<ul>
+<li>检索是否找到了正确资料；</li>
+<li>回答是否忠于上下文；</li>
+<li>工具调用是否成功；</li>
+<li>延迟和成本是否可接受；</li>
+<li>线上问题是否偏离测试数据；</li>
+<li>评测指标是否真正对应用户价值。</li>
+</ul>
+<p>当一个指标成为唯一目标时，系统可能学会优化指标，而不是真正解决问题。评估模型不能只看一个分数，还要结合任务、数据、人工判断和真实使用效果。</p>
+<h2 id="十三、五本书还拼出了一张更大的技术地图"><a href="#十三、五本书还拼出了一张更大的技术地图" class="headerlink" title="十三、五本书还拼出了一张更大的技术地图"></a>十三、五本书还拼出了一张更大的技术地图</h2><p>沿着“一个Token如何变成答案”这条主线，可以理解GPT的核心机制。但五本书涉及的内容实际上远不止模型的一次前向计算。把其他章节放在一起，还能看到一套大模型从训练到上线的完整生命周期。</p>
+<h3 id="1-训练大模型，首先是一项数据与计算工程"><a href="#1-训练大模型，首先是一项数据与计算工程" class="headerlink" title="1. 训练大模型，首先是一项数据与计算工程"></a>1. 训练大模型，首先是一项数据与计算工程</h3><p>模型需要把文本切分成训练样本，通过滑动窗口构造输入和目标：输入是已有Token，目标是向后错开一位的Token。训练不断比较预测分布与正确Token之间的差异，再通过反向传播更新参数。</p>
+<p>当模型大到单张GPU无法容纳时，问题便从算法扩展为分布式系统问题：</p>
+<ul>
+<li>数据并行把不同批次分给多张GPU；</li>
+<li>模型并行把不同层放到不同设备；</li>
+<li>张量并行进一步拆分单层中的矩阵计算；</li>
+<li>流水线并行让不同设备处理不同阶段。</li>
+</ul>
+<p>模型规模不是一个孤立数字。参数量还会影响显存、通信、训练稳定性、推理延迟和部署成本。真正训练一个大模型，需要同时处理数据质量、计算效率、并行策略和优化稳定性。</p>
+<p>《图解DeepSeek技术》的笔记又把这个问题推进了一步：参数量、数据量和训练算力需要寻找合适配比；采用MoE后，还要区分模型拥有的总参数量与每个Token实际激活的参数量。一个模型“更大”，不再必然意味着每次推理都要使用全部参数。</p>
+<h3 id="2-更大的模型不等于简单地“更不容易过拟合”"><a href="#2-更大的模型不等于简单地“更不容易过拟合”" class="headerlink" title="2. 更大的模型不等于简单地“更不容易过拟合”"></a>2. 更大的模型不等于简单地“更不容易过拟合”</h3><p>传统偏差—方差理论告诉我们，参数越多，模型记住噪声的能力越强。Dropout、早停、权重衰减、数据增强等方法，都是为了提升泛化能力。</p>
+<p>但深度学习又呈现出更复杂的现象。某些过参数化模型在跨过传统意义上的过拟合点后，测试性能反而重新改善，这常被描述为“双下降”；有些模型在训练很久之后才从记忆训练样本转向学会可泛化规律，也会表现出类似“顿悟”的现象。</p>
+<p>这提醒我：理解大模型不能机械套用“小模型时代”的直觉。参数数量、数据规模、优化过程和泛化能力之间，并不是简单的线性关系。</p>
+<h3 id="3-微调的关键不只是“继续训练”，而是控制改变的范围"><a href="#3-微调的关键不只是“继续训练”，而是控制改变的范围" class="headerlink" title="3. 微调的关键不只是“继续训练”，而是控制改变的范围"></a>3. 微调的关键不只是“继续训练”，而是控制改变的范围</h3><p>完整微调会更新模型的大量参数，成本高，也会为每项任务产生一份完整模型。适配器、LoRA和QLoRA等参数高效微调方法，只训练少量新增参数或低秩矩阵，让同一个基座模型以较低成本适应不同任务。</p>
+<p>低秩方法之所以有效，一个重要直觉是：虽然大模型的权重矩阵非常庞大，但完成某项具体任务所需要的参数变化，可能集中在一个低维子空间中。我们不一定要移动整个模型，只需要找到少数关键方向。</p>
+<p>量化则从另一个方向降低成本：用更少的比特表示权重或激活，减少显存和计算需求。它和LoRA解决的不是同一个问题，却可以组合使用。</p>
+<h3 id="4-生成能力之外，还有表示模型、语义搜索和多模态"><a href="#4-生成能力之外，还有表示模型、语义搜索和多模态" class="headerlink" title="4. 生成能力之外，还有表示模型、语义搜索和多模态"></a>4. 生成能力之外，还有表示模型、语义搜索和多模态</h3><p>GPT类模型擅长生成，但Transformer并不只用于生成。BERT类仅编码器模型更擅长生成上下文表示，可用于分类、聚类、主题建模和语义搜索。</p>
+<p>语义搜索把查询与文档转换成嵌入向量，通过向量相似度召回相关内容；RAG再把召回内容交给生成模型组织答案。由此可以看到，表示模型和生成模型并非竞争关系，而是可以在同一系统中分工协作：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">表示模型负责“找”</span><br><span class="line">→ 生成模型负责“读、理解和回答”</span><br></pre></td></tr></table></figure>
+
+<p>多模态模型则把同一种思路扩展到图像、音频和视频。不同模态先被编码成模型可以处理的向量表示，再在共享或可对齐的表示空间中发生交互。从这个角度看，大模型的核心不只是语言，而是把不同类型的信息转化为可计算、可关联的表征。</p>
+<h3 id="5-推理速度决定能力能否真正被使用"><a href="#5-推理速度决定能力能否真正被使用" class="headerlink" title="5. 推理速度决定能力能否真正被使用"></a>5. 推理速度决定能力能否真正被使用</h3><p>模型训练完成，并不代表它已经适合产品环境。生成过程是自回归的，每产生一个Token，都要基于已有上下文继续计算。上下文越长、并发越高，显存占用和推理延迟越明显。</p>
+<p>缓存已经计算过的Key和Value，可以避免每一步都重复处理全部历史Token；量化、蒸馏和剪枝可以用不同方式降低计算与存储成本；批处理和合理的服务调度则决定硬件能否被充分利用。</p>
+<p>工程上经常要做的不是单纯追求“最强模型”，而是在质量、延迟、吞吐量、显存和成本之间取得平衡。</p>
+<h3 id="6-评估不是训练结束后的附属步骤"><a href="#6-评估不是训练结束后的附属步骤" class="headerlink" title="6. 评估不是训练结束后的附属步骤"></a>6. 评估不是训练结束后的附属步骤</h3><p>困惑度衡量模型对文本的预测能力；BLEU、ROUGE和BERTScore可以从不同角度比较生成内容；但任何单一指标都只能覆盖任务的一部分。</p>
+<p>一个摘要可能和参考答案用词不同，却同样准确；一段回答可能词语高度重合，却误解了问题。更重要的是，当一个指标成为唯一目标时，系统可能开始迎合指标，而不再真正改善用户体验。</p>
+<p>模型进入现实环境后，还会遇到数据分布偏移：</p>
+<ul>
+<li>输入数据变化，但输入到输出的关系不变；</li>
+<li>标签比例发生变化；</li>
+<li>输入和目标之间的关系随时间改变；</li>
+<li>整个业务领域发生变化。</li>
+</ul>
+<p>因此，评估不是发布前跑一次测试集，而是贯穿数据、训练、部署和监控的持续过程。置信区间、预测区间和共形预测等方法，也是在提醒我们：除了给出一个预测，还要尽可能描述这个预测的不确定性。</p>
+<h2 id="十四、没有进入主线的概念备忘：给五本书留一份索引"><a href="#十四、没有进入主线的概念备忘：给五本书留一份索引" class="headerlink" title="十四、没有进入主线的概念备忘：给五本书留一份索引"></a>十四、没有进入主线的概念备忘：给五本书留一份索引</h2><p>前面的文章刻意沿着一条主线展开：<strong>一个Token如何经过分词、嵌入、注意力、Transformer和概率采样，最终成为答案。</strong> 这条线能够把大模型的核心工作方式讲清楚，但它也必然压缩掉许多旁支内容。</p>
+<p>这些内容没有进入主线，并不代表它们不重要。有些属于实现细节，有些属于另一类模型，有些涉及训练和推理系统，还有些本身就足以单独写成一篇文章。为了不让五本书的阅读笔记在整理过程中再次丢失，下面把尚未充分继承到正文中的概念集中记录下来，作为后续继续学习和写作的索引。</p>
+<p>这里列出的<strong>概念主题主要来自五本书现有的阅读笔记</strong>，但具体定义、概念对比、例子和段落衔接包含了我的解释性整理，并不等于书中的原句。其中，《GPT图解：大模型是怎样构建的》仍在阅读，所以相关内容只代表<strong>当前阅读进度下的笔记</strong>，不代表对全书的最终总结。《图解DeepSeek技术》中的缩放定律、MoE、Top-K路由、细粒度专家分割、共享专家隔离和GRPO已经集中写入第八章，因此不在本章重复。PD分离等笔记之外的延伸内容会明确标注，不计入五本书原有概念。</p>
+<h3 id="1-数据如何变成模型能够学习的样本"><a href="#1-数据如何变成模型能够学习的样本" class="headerlink" title="1. 数据如何变成模型能够学习的样本"></a>1. 数据如何变成模型能够学习的样本</h3><h4 id="滑动窗口与“输入—目标”构造"><a href="#滑动窗口与“输入—目标”构造" class="headerlink" title="滑动窗口与“输入—目标”构造"></a>滑动窗口与“输入—目标”构造</h4><p>语言模型训练并不是把整本书一次性交给模型，而是从连续文本中截取固定数量的Token作为输入，再把同一段文本整体向后移动一个位置，作为模型需要预测的目标。</p>
+<p>例如，一段文本被切成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">我｜喜欢｜学习｜人工智能｜技术</span><br></pre></td></tr></table></figure>
+
+<p>那么其中一个训练样本可以是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入：我｜喜欢｜学习｜人工智能</span><br><span class="line">目标：喜欢｜学习｜人工智能｜技术</span><br></pre></td></tr></table></figure>
+
+<p>窗口继续向前滑动，就能从一段文本中构造出大量训练样本。这个细节把“预测下一个Token”从一句抽象描述变成了真实的数据工程过程：模型看到的每一个正确答案，本质上都来自原始文本中的下一个位置。</p>
+<h4 id="分词器不只有BPE一种选择"><a href="#分词器不只有BPE一种选择" class="headerlink" title="分词器不只有BPE一种选择"></a>分词器不只有BPE一种选择</h4><p>笔记中还提到WordPiece和SentencePiece。选择哪一种算法，只是分词器设计的一部分；还要决定：</p>
+<ul>
+<li>词表究竟应该多大；</li>
+<li>是否保留专门的开始、结束、填充等特殊Token；</li>
+<li>是否区分大小写；</li>
+<li>如何处理不同语言和混合语言；</li>
+<li>用什么领域的数据训练分词器。</li>
+</ul>
+<p>因此，分词器并不是模型前面一个可以随意替换的小工具。词表过小会让文本被切得过碎，序列变长；词表过大又会增加嵌入矩阵和输出层的参数，并可能让低频Token难以学好。训练语料的领域也会决定专业术语能否被有效切分。</p>
+<h4 id="上下文长度与上下文窗口"><a href="#上下文长度与上下文窗口" class="headerlink" title="上下文长度与上下文窗口"></a>上下文长度与上下文窗口</h4><p>上下文窗口限定了模型一次能够直接处理多少Token。超过窗口的内容不能仅靠“模型记得前文”解决，而要通过截断、分块、摘要、检索或更长上下文的模型重新组织。</p>
+<p>这也是一个容易被忽略的边界：模型可以利用上下文，并不等于它拥有无限记忆；把大量材料塞进提示词，也不等于所有信息都会被同等有效地使用。</p>
+<h4 id="文本数据增强"><a href="#文本数据增强" class="headerlink" title="文本数据增强"></a>文本数据增强</h4><p>在标注数据不足时，可以通过同义词替换、随机删除、词语交换、句子顺序调整、噪声注入和回译等方式扩充数据。回译是先翻译到另一种语言，再翻译回原语言，以获得语义接近但表达不同的样本。</p>
+<p>这些方法的目标不是机械增加文本数量，而是在尽量保持标签和语义不变的前提下，让模型看到更多表达形式。不过，增强过程也可能改变原意，因此仍然需要质量检查。</p>
+<h4 id="数据中心AI"><a href="#数据中心AI" class="headerlink" title="数据中心AI"></a>数据中心AI</h4><p>“模型效果不好就换一个更大的模型”并不是唯一方向。数据中心AI更强调系统检查数据采集、标签质量、类别覆盖、重复样本、困难样本和评测集代表性。很多问题的根源不在模型结构，而在模型究竟学到了什么数据。</p>
+<h4 id="有状态训练与无状态训练"><a href="#有状态训练与无状态训练" class="headerlink" title="有状态训练与无状态训练"></a>有状态训练与无状态训练</h4><p>无状态训练通常在新数据到来后，用更新后的完整数据重新训练模型；有状态训练则保留已有模型状态，在新数据到来时继续更新。前者过程更容易复现和控制，后者成本较低、更新更快，但也更容易受到数据顺序、灾难性遗忘和历史偏差的影响。</p>
+<h3 id="2-表示、向量与输出头"><a href="#2-表示、向量与输出头" class="headerlink" title="2. 表示、向量与输出头"></a>2. 表示、向量与输出头</h3><h4 id="Embedding、表示与潜在向量不是完全同一个词"><a href="#Embedding、表示与潜在向量不是完全同一个词" class="headerlink" title="Embedding、表示与潜在向量不是完全同一个词"></a>Embedding、表示与潜在向量不是完全同一个词</h4><p>Embedding通常强调把离散对象映射为连续向量的过程或结果；表示是更宽泛的概念，可以指神经网络任意层对输入形成的内部描述；潜在向量则强调向量位于模型学习出的潜在空间中，常常对应无法直接观察、但能够解释数据变化的隐藏因素。</p>
+<p>在日常讨论中三者经常混用，但区分它们有助于判断我们说的是“输入查表得到的词向量”，还是“经过多层网络之后形成的上下文表示”。</p>
+<h4 id="词嵌入与位置嵌入承担不同职责"><a href="#词嵌入与位置嵌入承担不同职责" class="headerlink" title="词嵌入与位置嵌入承担不同职责"></a>词嵌入与位置嵌入承担不同职责</h4><p>词嵌入回答“这个Token大致是什么”，位置嵌入回答“它出现在序列的哪里”。两者相加后，模型才能同时利用内容与顺序。位置表示还可以区分绝对位置与相对位置：前者标记Token位于第几个位置，后者更关注Token之间相隔多远以及先后关系。</p>
+<h4 id="分布假设、CBOW与Skip-gram"><a href="#分布假设、CBOW与Skip-gram" class="headerlink" title="分布假设、CBOW与Skip-gram"></a>分布假设、CBOW与Skip-gram</h4><p>Word2Vec背后的分布假设可以概括为：经常出现在相似上下文中的词，往往具有相近含义。CBOW根据周围上下文预测中心词，Skip-gram则根据中心词预测周围词。两者都能学习词向量，但训练目标和在高低频词上的表现有所不同。</p>
+<h4 id="余弦相似度与欧氏距离"><a href="#余弦相似度与欧氏距离" class="headerlink" title="余弦相似度与欧氏距离"></a>余弦相似度与欧氏距离</h4><p>余弦相似度关注两个向量方向是否一致，对向量长度不太敏感；欧氏距离关注空间中的直线距离，同时受方向和模长影响。在语义嵌入中，人们经常更关心方向所代表的语义，因此常用余弦相似度，但具体选择仍取决于模型的训练目标和向量是否经过归一化。</p>
+<h4 id="同一个骨干网络可以连接不同任务头"><a href="#同一个骨干网络可以连接不同任务头" class="headerlink" title="同一个骨干网络可以连接不同任务头"></a>同一个骨干网络可以连接不同任务头</h4><p>语言模型头把隐藏状态投影到整个词表，用于预测下一个Token；序列分类头通常读取整段文本的聚合表示，用于情感分类、主题判断等任务；Token分类头则为序列中的每个位置输出类别，可用于命名实体识别等任务。</p>
+<p>因此，“Transformer输出什么”不是由Transformer三个字决定的，还取决于它后面连接了什么任务头，以及训练时使用了什么目标。</p>
+<h3 id="3-Transformer主线之外的结构细节"><a href="#3-Transformer主线之外的结构细节" class="headerlink" title="3. Transformer主线之外的结构细节"></a>3. Transformer主线之外的结构细节</h3><h4 id="注意力分数、注意力权重和模型参数不是一回事"><a href="#注意力分数、注意力权重和模型参数不是一回事" class="headerlink" title="注意力分数、注意力权重和模型参数不是一回事"></a>注意力分数、注意力权重和模型参数不是一回事</h4><p>Query与Key计算得到的是尚未归一化的注意力分数；经过缩放和Softmax后，才得到总和为1的注意力权重；这些权重又会随输入上下文动态变化。它们不同于训练后保存在模型中的固定权重参数。</p>
+<p>注意力层还可以使用Attention Dropout：训练时随机丢弃部分注意力连接，并对保留下来的值进行缩放，以降低模型对少数位置的过度依赖。</p>
+<h4 id="多头注意力之后还有输出投影"><a href="#多头注意力之后还有输出投影" class="headerlink" title="多头注意力之后还有输出投影"></a>多头注意力之后还有输出投影</h4><p>不同注意力头分别在不同子空间中汇总信息，拼接后通常还要经过一次线性输出投影。它的作用是把多个头的结果重新混合，并投影回Transformer块所需要的隐藏维度。只说“多头结果拼接”还没有完整结束一次多头注意力计算。</p>
+<h4 id="Bahdanau注意力、自注意力与交叉注意力"><a href="#Bahdanau注意力、自注意力与交叉注意力" class="headerlink" title="Bahdanau注意力、自注意力与交叉注意力"></a>Bahdanau注意力、自注意力与交叉注意力</h4><p>早期Seq2Seq中的Bahdanau注意力主要让解码器在生成每个词时，从编码器的全部输出中选择相关信息；自注意力让同一序列内部的Token彼此建立联系；交叉注意力则让一组表示作为Query，去读取另一组表示中的Key和Value。</p>
+<p>三者都在解决“从哪些信息中取出什么”，但信息来源和使用场景不同。多模态模型中让文本读取图像特征，也可以看作交叉注意力的一种应用。</p>
+<h4 id="仅编码器、仅解码器与编码器—解码器"><a href="#仅编码器、仅解码器与编码器—解码器" class="headerlink" title="仅编码器、仅解码器与编码器—解码器"></a>仅编码器、仅解码器与编码器—解码器</h4><p>仅编码器模型能同时利用左右两侧上下文，适合理解、分类和表示学习；仅解码器模型通过因果掩码逐Token生成，适合开放式文本生成；编码器—解码器模型先编码输入，再由解码器通过交叉注意力生成输出，适合翻译、摘要等输入到输出的转换任务。</p>
+<p>这三类结构共享Transformer组件，但注意力可见范围、训练目标和擅长任务并不相同。</p>
+<h4 id="自回归与非自回归生成"><a href="#自回归与非自回归生成" class="headerlink" title="自回归与非自回归生成"></a>自回归与非自回归生成</h4><p>自回归模型一次生成一个Token，后一个Token依赖前面已经生成的结果，质量较高但难以完全并行；非自回归模型尝试同时或分阶段预测多个位置，速度更快，却要处理输出长度、多种合理排列以及位置之间依赖不足的问题。</p>
+<h4 id="梯度消失、梯度爆炸与激活函数"><a href="#梯度消失、梯度爆炸与激活函数" class="headerlink" title="梯度消失、梯度爆炸与激活函数"></a>梯度消失、梯度爆炸与激活函数</h4><p>深层网络反向传播时，梯度经过许多层的连乘，可能越来越小，也可能越来越大。残差连接、归一化、合理初始化和梯度裁剪等方法，都是为了让训练更稳定。</p>
+<p>ReLU计算简单，但负半轴梯度为零；GELU不是直接把负值全部截断，而是以更平滑的方式调节输入。Transformer中的前馈网络常使用GELU或其他平滑激活函数，而不只是传统ReLU。</p>
+<h4 id="矩阵乘法、批量矩阵乘法与张量形状"><a href="#矩阵乘法、批量矩阵乘法与张量形状" class="headerlink" title="矩阵乘法、批量矩阵乘法与张量形状"></a>矩阵乘法、批量矩阵乘法与张量形状</h4><p>注意力公式背后真正执行的是大量矩阵运算。批量矩阵乘法允许模型同时处理多个样本、多个注意力头和多个位置。理解张量的阶数、形状和数据类型，能够把纸面公式对应到代码中的<code>batch × heads × sequence × dimension</code>，也能帮助定位维度不匹配和显存占用问题。</p>
+<h3 id="4-卷积网络、视觉Transformer与多模态"><a href="#4-卷积网络、视觉Transformer与多模态" class="headerlink" title="4. 卷积网络、视觉Transformer与多模态"></a>4. 卷积网络、视觉Transformer与多模态</h3><h4 id="全连接层与卷积层"><a href="#全连接层与卷积层" class="headerlink" title="全连接层与卷积层"></a>全连接层与卷积层</h4><p>全连接层让每个输出单元连接全部输入，表达灵活但参数较多；卷积层只在局部区域共享同一个卷积核，因此天然具有局部性和权重共享。随着网络逐层堆叠，低层可以识别边缘和纹理，高层再组合出形状和对象，形成层级特征。</p>
+<p>CNN由此获得了若干适合图像的归纳偏置：局部性、权重共享、层级结构，以及对平移的等变性或一定程度的不变性。这些先验让CNN在数据有限时也能高效学习视觉规律。</p>
+<h4 id="ViT的图像分块"><a href="#ViT的图像分块" class="headerlink" title="ViT的图像分块"></a>ViT的图像分块</h4><p>视觉Transformer先把图像切成固定大小的Patch，再把每个Patch映射成类似Token的向量。这样，原本用于文本序列的自注意力就可以处理图像序列。</p>
+<p>与CNN相比，ViT预设的局部和空间归纳偏置更少，更容易直接建立远距离区域之间的关系，但通常也更依赖大规模训练数据。笔记还提供了一个高通—低通的直觉：卷积更容易关注边缘、纹理等高频局部信息，自注意力更容易整合形状和全局关系等低频信息。不过这只是理解倾向的类比，并不是每一层都固定充当某一种滤波器。</p>
+<h4 id="CLIP与OpenCLIP"><a href="#CLIP与OpenCLIP" class="headerlink" title="CLIP与OpenCLIP"></a>CLIP与OpenCLIP</h4><p>CLIP用文本编码器和图像编码器分别生成向量，再通过对比学习把匹配的图文对拉近、把不匹配的组合推远，使图像和文本进入可比较的共享向量空间。这样可以支持零样本分类、图文检索和语义聚类。OpenCLIP则提供了这一思路的开源实现路径。</p>
+<h4 id="BLIP-2的视觉到语言投影"><a href="#BLIP-2的视觉到语言投影" class="headerlink" title="BLIP-2的视觉到语言投影"></a>BLIP-2的视觉到语言投影</h4><p>BLIP-2并不是简单把图片文件直接交给语言模型，而是先由视觉编码器提取图像特征，再通过中间模块把视觉表示投影到语言模型能够读取的表示空间。这个过程说明，多模态的关键问题之一是如何让不同模态的表示对齐并建立接口。</p>
+<h3 id="5-嵌入模型与对比学习"><a href="#5-嵌入模型与对比学习" class="headerlink" title="5. 嵌入模型与对比学习"></a>5. 嵌入模型与对比学习</h3><h4 id="正样本、负样本与困难负样本"><a href="#正样本、负样本与困难负样本" class="headerlink" title="正样本、负样本与困难负样本"></a>正样本、负样本与困难负样本</h4><p>训练语义嵌入模型时，语义相同或相关的文本构成正样本，不相关文本构成负样本。困难负样本在表面或主题上很相似，却不是正确匹配，能够迫使模型学习更细的语义边界，但错误的困难负样本也可能给训练引入矛盾信号。</p>
+<h4 id="对比损失"><a href="#对比损失" class="headerlink" title="对比损失"></a>对比损失</h4><p>余弦相似度损失可以直接约束两个向量的方向；Multiple Negatives Ranking Loss、InfoNCE和NT-Xent等目标，则会在一个批次中同时比较正样本与多个负样本，让正确配对的相似度相对更高。批次中的其他样本可以充当负样本，因此批次构造会直接影响训练效果。</p>
+<h4 id="领域适配与TSDAE"><a href="#领域适配与TSDAE" class="headerlink" title="领域适配与TSDAE"></a>领域适配与TSDAE</h4><p>通用嵌入模型未必理解某个垂直领域中的特殊语义。领域适配可以使用领域内的正负样本继续训练，也可以借助TSDAE这类无监督方法：先破坏句子，再训练模型从受损输入重建原句，从无标签领域文本中学习更适合该领域的句子表示。</p>
+<h4 id="聚类与主题建模"><a href="#聚类与主题建模" class="headerlink" title="聚类与主题建模"></a>聚类与主题建模</h4><p>嵌入不仅可以服务于检索，也可以把语义相近的文本聚在一起，用于发现主题、整理语料和分析用户反馈。检索回答“哪个文档与查询最相近”，聚类和主题建模则尝试回答“这些文本自然形成了哪些群组”。</p>
+<h3 id="6-微调、压缩与偏好对齐的其他路线"><a href="#6-微调、压缩与偏好对齐的其他路线" class="headerlink" title="6. 微调、压缩与偏好对齐的其他路线"></a>6. 微调、压缩与偏好对齐的其他路线</h3><h4 id="Adapter与AdapterHub"><a href="#Adapter与AdapterHub" class="headerlink" title="Adapter与AdapterHub"></a>Adapter与AdapterHub</h4><p>Adapter方法在Transformer层中插入小型可训练模块，冻结大部分原始参数，只训练新增模块。不同任务可以加载不同Adapter，而不必保存多份完整模型。AdapterHub则围绕Adapter的共享、复用和组合形成工具与模型生态。</p>
+<h4 id="内在维度与LoRA直觉"><a href="#内在维度与LoRA直觉" class="headerlink" title="内在维度与LoRA直觉"></a>内在维度与LoRA直觉</h4><p>LoRA背后的另一个直觉是“内在维度”：一个拥有海量参数的模型，在适应具体任务时，真正需要探索的有效变化方向可能远少于参数总数。低秩矩阵正是在尝试用较少自由度描述这些关键变化。</p>
+<h4 id="剪枝与知识蒸馏"><a href="#剪枝与知识蒸馏" class="headerlink" title="剪枝与知识蒸馏"></a>剪枝与知识蒸馏</h4><p>剪枝删除不重要的权重、通道或结构，使模型更小；知识蒸馏让学生模型学习教师模型输出的概率分布，而不只学习硬标签。教师给出的软分布包含类别之间的相对关系，常用KL散度等方式衡量教师与学生分布的差异。</p>
+<p>量化改变的是数值精度，剪枝改变的是参与计算的结构或参数，蒸馏改变的是训练小模型的知识来源。三者都能降低成本，但路径不同。</p>
+<h4 id="奖励模型与PPO"><a href="#奖励模型与PPO" class="headerlink" title="奖励模型与PPO"></a>奖励模型与PPO</h4><p>经典RLHF通常先收集人类偏好数据训练奖励模型，再使用PPO等强化学习算法更新语言模型。它把“人更喜欢哪个回答”转换成可优化的奖励信号，但需要维护策略模型、参考模型、奖励模型等多个组件，训练成本和稳定性要求都较高。</p>
+<h4 id="DPO与参考模型"><a href="#DPO与参考模型" class="headerlink" title="DPO与参考模型"></a>DPO与参考模型</h4><p>DPO绕过显式奖励模型和在线强化学习，直接提高偏好回答相对于被拒绝回答的概率。参考模型用于约束可训练模型不要偏离原始行为过远，并为偏好差异提供比较基准。DPO流程更简洁，但训练数据的偏好质量仍然决定最终行为。</p>
+<h4 id="ORPO"><a href="#ORPO" class="headerlink" title="ORPO"></a>ORPO</h4><p>ORPO尝试把监督微调与偏好优化合并在同一训练过程中，不再先做一轮SFT、再做一轮DPO。它体现了偏好对齐的另一个方向：减少训练阶段和模型副本，在较低资源下完成行为调整。</p>
+<h4 id="长推理数据的生成成本"><a href="#长推理数据的生成成本" class="headerlink" title="长推理数据的生成成本"></a>长推理数据的生成成本</h4><p>笔记以DeepSeek-R1等推理模型为例，提到长链式推理数据的构造与筛选成本。模型表现出长推理能力，不只是因为提示词要求它“多想一步”，背后还涉及大规模推理轨迹的生成、验证、奖励设计和训练数据质量。</p>
+<h3 id="7-有限标注数据下的学习方法"><a href="#7-有限标注数据下的学习方法" class="headerlink" title="7. 有限标注数据下的学习方法"></a>7. 有限标注数据下的学习方法</h3><h4 id="少样本学习与元学习"><a href="#少样本学习与元学习" class="headerlink" title="少样本学习与元学习"></a>少样本学习与元学习</h4><p>少样本学习关注模型只看到少量标注样本时如何完成新任务；元学习则进一步尝试让模型“学会如何学习”，从多个任务中获得能够快速适应新任务的参数初始化、度量方式或更新策略。</p>
+<h4 id="半监督学习"><a href="#半监督学习" class="headerlink" title="半监督学习"></a>半监督学习</h4><p>半监督学习同时使用少量标注数据和大量未标注数据，利用数据结构、一致性约束或模型预测扩大监督信号。它的难点在于：模型早期的错误如果被当成真标签，可能不断自我强化。</p>
+<h4 id="弱监督学习"><a href="#弱监督学习" class="headerlink" title="弱监督学习"></a>弱监督学习</h4><p>弱监督通过规则、词典、启发式函数或外部系统为数据生成不完全可靠的标签。它解决的是人工逐条标注太贵的问题，但必须处理不同标签函数的覆盖率、冲突和噪声。</p>
+<h4 id="自训练与伪标签"><a href="#自训练与伪标签" class="headerlink" title="自训练与伪标签"></a>自训练与伪标签</h4><p>自训练先用已有标注数据训练模型，再让模型为未标注数据产生伪标签，并挑选高置信样本加入下一轮训练。它介于人工监督与完全无监督之间，关键是控制伪标签质量，避免错误反馈循环。</p>
+<h3 id="8-分布式训练与推理优化中尚未展开的实现概念"><a href="#8-分布式训练与推理优化中尚未展开的实现概念" class="headerlink" title="8. 分布式训练与推理优化中尚未展开的实现概念"></a>8. 分布式训练与推理优化中尚未展开的实现概念</h3><h4 id="参数量如何计算"><a href="#参数量如何计算" class="headerlink" title="参数量如何计算"></a>参数量如何计算</h4><p>模型参数主要来自嵌入矩阵、注意力中的Q&#x2F;K&#x2F;V与输出投影、前馈网络以及归一化等部分。参数量不仅决定模型文件大小，还会进一步影响训练时的权重、梯度、优化器状态和激活值所占显存。只看“多少B参数”，还不足以估算真实训练成本。</p>
+<h4 id="SIMD、向量化与BLAS"><a href="#SIMD、向量化与BLAS" class="headerlink" title="SIMD、向量化与BLAS"></a>SIMD、向量化与BLAS</h4><p>现代处理器和加速器擅长一次对多个数执行同一种操作。向量化把逐元素循环改写为批量张量运算，底层再交给BLAS等高度优化的线性代数库。深度学习代码中尽量避免Python层的小循环，本质上是在让计算进入更适合硬件的执行路径。</p>
+<h4 id="循环分块"><a href="#循环分块" class="headerlink" title="循环分块"></a>循环分块</h4><p>循环分块把大矩阵运算拆成能更好放入高速缓存的小块，使加载到缓存的数据在被替换前得到更多次利用。虽然PyTorch或NumPy用户通常不手写这类底层优化，但矩阵库和编译器的性能很大程度上来自这些技术。</p>
+<h4 id="算子融合与重参数化"><a href="#算子融合与重参数化" class="headerlink" title="算子融合与重参数化"></a>算子融合与重参数化</h4><p>算子融合把多个连续操作合并为一个内核，减少中间结果读写、循环控制和内核启动开销。重参数化则在训练后把多个分支或操作等价地折叠成更简单的推理结构。两者都说明：数学表达相同，不同执行形式的速度可能相差很大。</p>
+<h4 id="训练后量化与量化感知训练"><a href="#训练后量化与量化感知训练" class="headerlink" title="训练后量化与量化感知训练"></a>训练后量化与量化感知训练</h4><p>训练后量化直接对已经训练好的模型降低数值精度，成本低、实施快，但精度损失可能较明显；量化感知训练在训练过程中模拟低精度误差，让模型提前适应量化，通常能更好地保留质量，但训练流程更复杂。</p>
+<h4 id="批量推理"><a href="#批量推理" class="headerlink" title="批量推理"></a>批量推理</h4><p>把多个请求合并成批次，可以提高GPU矩阵计算的利用率和整体吞吐量，但也可能让某些请求等待凑批，并增加显存占用。因此，在线服务必须在单请求延迟、批次大小和总吞吐量之间取舍。</p>
+<h4 id="开放权重模型与闭源API"><a href="#开放权重模型与闭源API" class="headerlink" title="开放权重模型与闭源API"></a>开放权重模型与闭源API</h4><p>闭源API降低了部署门槛，却带来持续调用成本、数据隐私、供应商依赖，以及无法直接修改权重等限制；开放权重模型允许本地部署和深度定制，但需要自己承担硬件、推理优化、模型评估与安全治理。技术选型不仅是在比较榜单分数，也是在选择成本结构和控制边界。</p>
+<h4 id="关于Prefill–Decode分离的边界说明"><a href="#关于Prefill–Decode分离的边界说明" class="headerlink" title="关于Prefill–Decode分离的边界说明"></a>关于Prefill–Decode分离的边界说明</h4><p>五本书当前笔记中包含自回归生成、KV Cache、批量推理、向量化、算子融合、量化等基础概念，<strong>但没有直接讲解Prefill–Decode分离（PD分离）</strong>。因此本文不把PD分离算作从五本书继承来的概念。</p>
+<p>从推理系统角度看，PD分离确实可以建立在这些知识之上：Prefill阶段主要处理整段输入并建立KV Cache，Decode阶段则逐Token生成，两者的计算特征和资源需求不同。但这一解释属于由笔记向外延伸的工程话题，适合以后单独查资料、单独成文，而不应倒填为书中已有内容。</p>
+<h3 id="9-评估、分布变化与不确定性"><a href="#9-评估、分布变化与不确定性" class="headerlink" title="9. 评估、分布变化与不确定性"></a>9. 评估、分布变化与不确定性</h3><h4 id="分布偏移的细分"><a href="#分布偏移的细分" class="headerlink" title="分布偏移的细分"></a>分布偏移的细分</h4><p>协变量偏移表示输入分布发生变化，但输入到标签的关系基本不变；标签偏移表示不同类别所占比例变化；概念偏移表示同样输入所对应的目标关系发生变化；领域或联合分布变化则可能同时改变多个部分。</p>
+<p>区分偏移类型很重要，因为不同问题需要不同处理方式。对抗验证可以训练一个分类器判断样本来自训练集还是线上数据，从而发现两者差异；重要性加权则尝试让训练过程更重视那些与目标分布相似的样本。</p>
+<h4 id="置信区间与预测区间"><a href="#置信区间与预测区间" class="headerlink" title="置信区间与预测区间"></a>置信区间与预测区间</h4><p>置信区间描述的是总体参数或平均估计的不确定范围；预测区间描述的是未来单个观测值可能落入的范围。后者通常更宽，因为它既包含参数估计的不确定性，也包含单个样本自身的随机变化。</p>
+<h4 id="共形预测与非一致性分数"><a href="#共形预测与非一致性分数" class="headerlink" title="共形预测与非一致性分数"></a>共形预测与非一致性分数</h4><p>共形预测使用一个独立校准集，为样本计算“有多异常”的非一致性分数，再根据期望覆盖率构造预测集合或区间。它不只是输出一个最可能类别，而是尝试在有限假设下给出具有覆盖保证的候选范围。</p>
+<h4 id="交叉熵不仅是一个训练按钮"><a href="#交叉熵不仅是一个训练按钮" class="headerlink" title="交叉熵不仅是一个训练按钮"></a>交叉熵不仅是一个训练按钮</h4><p>交叉熵衡量目标分布与模型预测分布之间的差异。当正确类别获得的概率很低时，损失会显著增大。把它理解为“两个概率分布之间的距离式度量”，比只记住一个框架API更能解释模型为何这样更新参数。</p>
+<h3 id="10-《GPT图解》当前阅读进度中的概念"><a href="#10-《GPT图解》当前阅读进度中的概念" class="headerlink" title="10. 《GPT图解》当前阅读进度中的概念"></a>10. 《GPT图解》当前阅读进度中的概念</h3><p>下面这些内容来自尚未读完的《GPT图解：大模型是怎样构建的》。先保留为阶段性笔记，后续读完后还需要重新核对、补充和归类。</p>
+<h4 id="Prompt模式与Instruct模式"><a href="#Prompt模式与Instruct模式" class="headerlink" title="Prompt模式与Instruct模式"></a>Prompt模式与Instruct模式</h4><p>Prompt模式通常从一个词、短语或开头继续生成，重点是语言上的自然延续；Instruct模式接收更明确的任务要求，重点是按照指令完成回答、解释或改写。两者的差异不仅是输入长短，也体现了基础续写模型与指令对齐模型在使用方式上的区别。</p>
+<h4 id="统计语言模型的价值"><a href="#统计语言模型的价值" class="headerlink" title="统计语言模型的价值"></a>统计语言模型的价值</h4><p>统计语言模型结构相对简单、结果更容易分析，在数据和计算资源有限时仍然有价值，也为理解“根据历史上下文估计下一个词的概率”提供了清晰起点。神经概率语言模型则用连续向量和神经网络替代稀疏的离散计数，使相似词能够共享统计信息，并缓解传统N-Gram的数据稀疏问题。</p>
+<h4 id="张量的阶数、形状与数据类型"><a href="#张量的阶数、形状与数据类型" class="headerlink" title="张量的阶数、形状与数据类型"></a>张量的阶数、形状与数据类型</h4><p>标量可以看作0阶张量，向量是1阶，矩阵是2阶，更高维数组则对应更高阶张量。形状说明每个维度有多大，数据类型决定每个元素使用多少存储空间以及支持怎样的计算精度。这些基础概念会直接影响模型代码是否能运行、一次能处理多少样本以及显存消耗。</p>
+<h4 id="深层网络的层级特征"><a href="#深层网络的层级特征" class="headerlink" title="深层网络的层级特征"></a>深层网络的层级特征</h4><p>深层网络不是每一层都重复做同一件事。较浅层往往学习更局部、更基础的模式，较深层再把它们组合成更抽象的特征。这个直觉既可以帮助理解视觉模型从边缘到物体的层级，也可以帮助理解语言模型从局部搭配到上下文语义的逐层变换。</p>
+<h4 id="注意力分数与归一化权重"><a href="#注意力分数与归一化权重" class="headerlink" title="注意力分数与归一化权重"></a>注意力分数与归一化权重</h4><p>原始注意力分数可以为任意实数，表示Query与各个Key之间未经归一化的匹配程度；Softmax之后才变成可用于加权求和的注意力权重。区分二者，可以避免把“点积结果”“概率式权重”和“模型参数”混为一谈。</p>
+<h4 id="交叉注意力的直觉"><a href="#交叉注意力的直觉" class="headerlink" title="交叉注意力的直觉"></a>交叉注意力的直觉</h4><p>如果把一组对象当作Query，另一组对象当作Key和Value，模型就可以用前者去检索后者。书中用用户与电影等关系帮助建立直觉；同样的结构也能解释翻译模型中解码器读取源句，以及多模态模型中文本读取图像特征。</p>
+<h3 id="11-这份概念索引接下来可以怎样使用"><a href="#11-这份概念索引接下来可以怎样使用" class="headerlink" title="11. 这份概念索引接下来可以怎样使用"></a>11. 这份概念索引接下来可以怎样使用</h3><p>这些概念不适合全部塞回“一个Token如何变成答案”的因果链，否则文章会从解释主线变成术语百科。但它们可以继续发展成几条独立写作线索：</p>
+<ol>
+<li><strong>分词器与数据工程</strong>：从滑动窗口、词表设计写到数据增强和数据中心AI；</li>
+<li><strong>模型结构地图</strong>：比较编码器、解码器、交叉注意力、CNN与ViT；</li>
+<li><strong>表示学习与多模态</strong>：从Word2Vec、对比学习写到CLIP和BLIP-2；</li>
+<li><strong>低成本训练与对齐</strong>：比较Adapter、LoRA、量化、蒸馏、DPO和ORPO；</li>
+<li><strong>推理系统优化</strong>：从KV Cache、批量推理写到算子融合，并把PD分离作为外部扩展专题；</li>
+<li><strong>模型评估与不确定性</strong>：从分布偏移写到共形预测和持续监控。</li>
+</ol>
+<p>这样处理以后，正文负责讲清楚一条主线，这一章负责保存五本书提供的其他路标。它既能提醒我还有哪些知识没有真正讲透，也为后续文章保留了可以继续展开的问题。</p>
+<h2 id="十五、现阶段形成的几个判断"><a href="#十五、现阶段形成的几个判断" class="headerlink" title="十五、现阶段形成的几个判断"></a>十五、现阶段形成的几个判断</h2><h3 id="判断一：大模型首先是一种表征系统，然后才是一种生成系统"><a href="#判断一：大模型首先是一种表征系统，然后才是一种生成系统" class="headerlink" title="判断一：大模型首先是一种表征系统，然后才是一种生成系统"></a>判断一：大模型首先是一种表征系统，然后才是一种生成系统</h3><p>模型之所以能够生成，是因为它先学会了把Token、句子、知识和上下文映射成可以计算的内部表示。没有嵌入和上下文表征，后面的生成只是无源之水。</p>
+<h3 id="判断二：能力、知识和行为是三个不同问题"><a href="#判断二：能力、知识和行为是三个不同问题" class="headerlink" title="判断二：能力、知识和行为是三个不同问题"></a>判断二：能力、知识和行为是三个不同问题</h3><p>预训练主要形成基础能力和参数知识；RAG补充当前需要的外部知识；指令微调和偏好对齐改变模型的行为方式。把这三者混在一起，就会在技术选型时不断用错工具。</p>
+<h3 id="判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力"><a href="#判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力" class="headerlink" title="判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力"></a>判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力</h3><p>注意力告诉模型应该从上下文的哪些位置汇总信息，但它不会自动判断这些信息是真是假。能关联信息和能验证事实，是两个不同层次的问题。</p>
+<h3 id="判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突"><a href="#判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突" class="headerlink" title="判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突"></a>判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突</h3><p>写作、头脑风暴和表达润色允许多种答案，概率生成是优势；金额计算、权限变更、医疗结论和数据库写入要求明确正确，仅靠自由生成就不够。越接近高风险操作，越需要工具、规则、验证和人工介入。</p>
+<h3 id="判断五：未来的大模型应用竞争，很可能不只发生在模型层"><a href="#判断五：未来的大模型应用竞争，很可能不只发生在模型层" class="headerlink" title="判断五：未来的大模型应用竞争，很可能不只发生在模型层"></a>判断五：未来的大模型应用竞争，很可能不只发生在模型层</h3><p>基座模型固然重要，但用户最终体验到的是整个系统：数据是否可靠、检索是否准确、上下文是否干净、工具是否稳定、结果是否经过验证、线上是否持续评估。很多应用的真正壁垒，可能来自这些环节的组合，而不是简单更换一个参数更多的模型。</p>
+<h3 id="判断六：理解模型规模，不能只看总参数量"><a href="#判断六：理解模型规模，不能只看总参数量" class="headerlink" title="判断六：理解模型规模，不能只看总参数量"></a>判断六：理解模型规模，不能只看总参数量</h3><p>缩放定律提醒我同时观察参数量、训练数据量和计算预算；MoE又进一步把“总参数量”和“实际激活参数量”区分开来。因此，比较两个大模型时，只看多少B参数已经不够，还要继续追问：训练数据是否充足、一次计算激活多少参数、路由如何工作，以及这些设计最终换来了怎样的质量和成本。</p>
+<h2 id="结语：理解一条从文字到概率的链路"><a href="#结语：理解一条从文字到概率的链路" class="headerlink" title="结语：理解一条从文字到概率的链路"></a>结语：理解一条从文字到概率的链路</h2><p>现在，我们可以重新描述大模型的一次回答：</p>
+<p>首先，分词器把文字拆成Token并转换成ID；嵌入层把离散编号映射到连续向量；位置编码为模型补充顺序信息；多层自注意力让每个Token从上下文中提取相关信息；前馈网络继续加工这些表示；最后，模型把当前表示转换成整个词表上的概率分布，从中选出下一个Token，再把它加入上下文，重复同样的过程。</p>
+<p>整个链路可以压缩成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">文字</span><br><span class="line">→ Token</span><br><span class="line">→ 向量</span><br><span class="line">→ 上下文表示</span><br><span class="line">→ 概率分布</span><br><span class="line">→ 新 Token</span><br><span class="line">→ 答案</span><br></pre></td></tr></table></figure>
+
+<p>大模型的能力，来自它对海量语言模式的压缩；它的局限，也来自概率上合理的语言并不天然等于事实。</p>
+<p>它不是先想好一段话，再把答案逐字说出来。它是在高维向量空间中，根据已经出现的上下文，一步一步寻找接下来最可能、或者最合适出现的Token。</p>
+<p>每一步看起来都很小。</p>
+<p>但当足够多的参数、数据、计算和训练步骤叠加在一起，这个简单循环最终变成了今天的大模型。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>请我喝杯啤酒吧！</div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风 (jiankunking) 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <span>微信</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>衣舞晨风 (jiankunking)
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://jiankunking.com/how-large-language-models-generate-answers.html" title="阅读五本大模型书的阶段性思考：一个 Token 如何变成答案">https://jiankunking.com/how-large-language-models-generate-answers.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/llm/" rel="tag"># LLM</a>
+              <a href="/tags/transformer/" rel="tag"># Transformer</a>
+              <a href="/tags/token/" rel="tag"># Token</a>
+              <a href="/tags/attention/" rel="tag"># Attention</a>
+              <a href="/tags/gpt/" rel="tag"># GPT</a>
+              <a href="/tags/deepseek/" rel="tag"># DeepSeek</a>
+              <a href="/tags/moe/" rel="tag"># MoE</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/understand-ai-agent-development-with-agentmesh-demo.html" rel="prev" title="我用一个点餐 Demo，串了一遍 Agent 应用开发">
+                  <i class="fa fa-angle-left"></i> 我用一个点餐 Demo，串了一遍 Agent 应用开发
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风 (jiankunking)</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">801k</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"jiankunking","repo":"blog-comments","client_id":"5e2e6dc5bd7af549261d","client_secret":"f37069692932676f0ad9fbfecb5164aee191fe23","admin_user":"jiankunking","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"558cb8668ec5ddd3e2163e77c2ff5de0"}</script>
+<script src="/js/third-party/comments/gitalk.js" defer></script>
+
+</body>
+</html>
