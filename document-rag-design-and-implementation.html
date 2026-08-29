@@ -334,11 +334,11 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>我一直在维护一个个人 Go 项目，项目里的文档问答功能已经用到了 RAG、Embedding 和向量检索。这篇文章就以这套功能为例，顺着文件上传、解析、切片、检索和回答生成的代码，看看这些概念在项目里分别对应什么。为了方便行文，下文把这个项目称为「知页」。</p>
+    <div class="post-body" itemprop="articleBody"><p>最近在做一个个人 Go 项目，其中的文档问答功能用到了 RAG、Embedding 和向量检索。这篇文章就以这套功能为例，顺着文件上传、解析、切片、检索和回答生成的代码，看看这些概念在项目里分别对应什么。为了方便行文，下文把这个项目称为「知页」。</p>
 <p>在「知页」里，用户可以新建资料库并上传 PDF、Word 或图片。后台处理完成后，用户就可以针对这些文档提问。回答除了正文，还会带上文件名、页码和原文片段，方便回到文档核对。</p>
 <span id="more"></span>
-
-<h2 id="先把流程拆开"><a href="#先把流程拆开" class="headerlink" title="先把流程拆开"></a>先把流程拆开</h2><p>如果文档很短，最省事的办法当然是把全文和问题一起发给模型。但资料库里一旦有多份长文档，这种做法很快就会遇到问题：</p>
+<h2 id="先把流程拆开">先把流程拆开</h2>
+<p>如果文档很短，最省事的办法当然是把全文和问题一起发给模型。但资料库里一旦有多份长文档，这种做法很快就会遇到问题：</p>
 <ul>
 <li>全文可能超过模型的上下文限制；</li>
 <li>每次重复发送，耗时和调用成本都会增加；</li>
@@ -347,67 +347,67 @@
 </ul>
 <p>所以代码里没有直接做“上传文件后问模型”，而是分成了两条流程：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">文档处理：文件 → 解析 / OCR → 切片 → 关键词索引 / 向量索引</span><br><span class="line">在线问答：问题 → 混合检索 → 组装上下文 → 模型回答 → 引用校验</span><br></pre></td></tr></table></figure>
-
 <p>文档只需要处理一次，后面的每次提问都复用已经生成的文本和索引。</p>
-<h2 id="项目里的几个主要部分"><a href="#项目里的几个主要部分" class="headerlink" title="项目里的几个主要部分"></a>项目里的几个主要部分</h2><p><img src="/images/document-rag-design-and-implementation/service-architecture.svg" alt="知页文档问答服务架构" loading="eager" fetchpriority="high" decoding="async" width="1600" height="1120"></p>
+<h2 id="项目里的几个主要部分">项目里的几个主要部分</h2>
+<p><img src="/images/document-rag-design-and-implementation/service-architecture.svg" alt="知页文档问答服务架构" loading="eager" fetchpriority="high" decoding="async" width="1600" height="1120"></p>
 <p>后端使用 Go 和 Gin。MySQL 保存资料库、文档、切片、后台任务和问答记录；原文件先放在本地目录；向量写入 Qdrant；PDF 文本提取依赖 Poppler，扫描件和图片交给 OCR；检索完成后再调用大模型。</p>
 <p>这里有一个我一开始容易忽略的点：<strong>文本处理状态和向量状态要分开。</strong></p>
-<p>一份文档可能已经解析成功，但 Embedding 服务暂时不可用。如果只保留一个“处理成功&#x2F;失败”状态，向量服务出错就会让整份文档不可用。现在的做法是分别记录正文处理和向量化状态。正文完成后，关键词检索就可以工作；向量失败时，单独重试向量任务即可，不需要重新解析或 OCR。</p>
-<h2 id="上传接口只做接收，不做解析"><a href="#上传接口只做接收，不做解析" class="headerlink" title="上传接口只做接收，不做解析"></a>上传接口只做接收，不做解析</h2><p>上传接口主要完成下面几件事：</p>
+<p>一份文档可能已经解析成功，但 Embedding 服务暂时不可用。如果只保留一个“处理成功/失败”状态，向量服务出错就会让整份文档不可用。现在的做法是分别记录正文处理和向量化状态。正文完成后，关键词检索就可以工作；向量失败时，单独重试向量任务即可，不需要重新解析或 OCR。</p>
+<h2 id="上传接口只做接收，不做解析">上传接口只做接收，不做解析</h2>
+<p>上传接口主要完成下面几件事：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">校验资料库归属</span><br><span class="line">  ↓</span><br><span class="line">检查文件类型和大小</span><br><span class="line">  ↓</span><br><span class="line">保存原文件并计算 SHA-256</span><br><span class="line">  ↓</span><br><span class="line">按用户、资料库和文件哈希查重</span><br><span class="line">  ↓</span><br><span class="line">创建文档记录和解析任务</span><br></pre></td></tr></table></figure>
-
 <p>文件名会先做清理，真正落盘时使用 UUID，目录按用户和资料库隔离。读取上传内容时还会通过 <code>io.LimitReader</code> 限制实际字节数，不能只相信请求中声明的文件大小。</p>
 <p>查重也不只做一次查询。应用层先按 SHA-256 查找已有文档，数据库里再用唯一约束处理并发上传。如果两个相同文件同时写入，最终只保留一条有效记录，本次上传产生的临时文件会被清理。</p>
 <p>接口在创建解析任务后就返回，不等待 PDF 解析。普通文本可能几乎立刻完成，扫描 PDF 却要逐页 OCR，如果都放在 HTTP 请求里，超时、重试和进度展示都会变得麻烦。</p>
-<h2 id="解析和向量化放到后台任务里"><a href="#解析和向量化放到后台任务里" class="headerlink" title="解析和向量化放到后台任务里"></a>解析和向量化放到后台任务里</h2><p>后台 Runner 定时领取任务，并限制同时执行的任务数量。每个任务都有超时、进度和心跳；服务异常退出后，长时间没有心跳的任务会被重新领取。任务执行中的 panic 也会被捕获并记为失败，避免状态一直停在 <code>processing</code>。</p>
+<h2 id="解析和向量化放到后台任务里">解析和向量化放到后台任务里</h2>
+<p>后台 Runner 定时领取任务，并限制同时执行的任务数量。每个任务都有超时、进度和心跳；服务异常退出后，长时间没有心跳的任务会被重新领取。任务执行中的 panic 也会被捕获并记为失败，避免状态一直停在 <code>processing</code>。</p>
 <p>文档处理分成两个任务：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">document_parse</span><br><span class="line">  读取文件 → 解析 / OCR → 切片 → 写入 MySQL</span><br><span class="line">        ↓</span><br><span class="line">document_embed</span><br><span class="line">  分批计算 Embedding → 写入 Qdrant</span><br></pre></td></tr></table></figure>
-
 <p>拆开之后，解析成功但向量化失败不会互相影响。以后更换 Embedding 模型时，也只需要重建向量，不必再读一遍原文件。</p>
 <p>任务使用带截止时间的 <code>context.Context</code>。OCR、Embedding、Qdrant 请求和 Poppler 进程都会接收这个上下文，任务超时或服务停止时，下游调用也能跟着结束。</p>
-<h2 id="不同格式先统一成带页码的文本"><a href="#不同格式先统一成带页码的文本" class="headerlink" title="不同格式先统一成带页码的文本"></a>不同格式先统一成带页码的文本</h2><p>目前处理的文件类型包括：</p>
+<h2 id="不同格式先统一成带页码的文本">不同格式先统一成带页码的文本</h2>
+<p>目前处理的文件类型包括：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">txt / md / csv / json</span><br><span class="line">docx</span><br><span class="line">pdf</span><br><span class="line">jpg / jpeg / png / webp</span><br></pre></td></tr></table></figure>
-
 <p>解析层最后都返回同一种结构：</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ParsedPage&#123;</span><br><span class="line">    PageNumber: <span class="number">1</span>,</span><br><span class="line">    Text:       <span class="string">&quot;提取出的正文&quot;</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>普通文本按一页处理。DOCX 本质上是 ZIP，代码读取 <code>word/document.xml</code> 中的文本节点，并在段落结束的位置补换行。</p>
 <p>PDF 先用 Poppler 按页读取文本层。如果整份文档几乎没有有效文字，再转到 OCR；图片则直接进入 OCR。没有配置 OCR 时，文档会进入 <code>ocr_required</code> 状态，而不是笼统地显示处理失败。当前 PDF OCR 默认最多处理 20 页，防止单个文件消耗太多外部调用。</p>
 <p>从这一层往后，切片和检索不再关心输入是 PDF、Word 还是图片，只处理“页码 + 文本”。</p>
-<h2 id="切片时保留页码"><a href="#切片时保留页码" class="headerlink" title="切片时保留页码"></a>切片时保留页码</h2><p>当前切片长度是 800 个 rune，相邻切片重叠 100 个 rune。切片不会跨页，并优先在换行、句号、问号、分号或空白处断开。</p>
+<h2 id="切片时保留页码">切片时保留页码</h2>
+<p>当前切片长度是 800 个 rune，相邻切片重叠 100 个 rune。切片不会跨页，并优先在换行、句号、问号、分号或空白处断开。</p>
 <p>每个切片保存这些信息：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">page_start / page_end</span><br><span class="line">chunk_index</span><br><span class="line">content</span><br><span class="line">content_hash</span><br></pre></td></tr></table></figure>
-
 <p>这里按 rune 而不是字节计数，主要是为了避免把中文 UTF-8 字符截断。切片之间保留少量重叠，是为了减少句子刚好落在边界上造成的信息丢失。</p>
 <p>不跨页并不是召回效果最好的切法，但页码会更稳定。这个项目需要把回答定位回原文，所以我暂时把可核对性放在跨页上下文之前。</p>
 <p>切片写入 MySQL 后，关键词检索已经可以使用。Embedding 启用时，后台再为切片生成向量。Qdrant 的 Payload 里带有用户、资料库、文档和切片标识，查询时先按用户和资料库过滤。</p>
-<h2 id="检索分为关键词和向量两路"><a href="#检索分为关键词和向量两路" class="headerlink" title="检索分为关键词和向量两路"></a>检索分为关键词和向量两路</h2><p>提问时，服务先检查当前用户是否有权访问资料库，然后分别走关键词和向量两条检索路径。</p>
-<h3 id="关键词检索"><a href="#关键词检索" class="headerlink" title="关键词检索"></a>关键词检索</h3><p>MySQL 优先使用带 <code>ngram</code> 分词器的全文索引：</p>
+<h2 id="检索分为关键词和向量两路">检索分为关键词和向量两路</h2>
+<p>提问时，服务先检查当前用户是否有权访问资料库，然后分别走关键词和向量两条检索路径。</p>
+<h3 id="关键词检索">关键词检索</h3>
+<p>MySQL 优先使用带 <code>ngram</code> 分词器的全文索引：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">MATCH</span>(content) AGAINST (? <span class="keyword">IN</span> <span class="keyword">NATURAL</span> <span class="keyword">LANGUAGE</span> MODE)</span><br></pre></td></tr></table></figure>
-
 <p>查询范围只包含当前用户、当前资料库中已经处理完成的文档。</p>
 <p>全文检索报错或没有命中时，还有一层简单回退：英文和数字按连续词拆分，中文生成 2～4 字片段，再用 <code>LIKE</code> 找候选并在代码里计分。这条路径适合兜底，也比较容易命中文件中的名称、编号和日期，但数据量大以后不会有太好的性能。</p>
-<h3 id="向量检索"><a href="#向量检索" class="headerlink" title="向量检索"></a>向量检索</h3><p>问题会先转成 Embedding，再到 Qdrant 中查找语义相近的切片。它能补充关键词检索不容易覆盖的近义表达和概括性问题。</p>
+<h3 id="向量检索">向量检索</h3>
+<p>问题会先转成 Embedding，再到 Qdrant 中查找语义相近的切片。它能补充关键词检索不容易覆盖的近义表达和概括性问题。</p>
 <p>向量检索不是硬依赖。Embedding 或 Qdrant 没有启用、调用失败，或者向量结果无法从 MySQL 回查时，接口都会退回关键词结果，并记录降级原因。</p>
-<h3 id="用-RRF-合并"><a href="#用-RRF-合并" class="headerlink" title="用 RRF 合并"></a>用 RRF 合并</h3><p>关键词和向量路径各取最多 30 条结果，再按 RRF 合并：</p>
+<h3 id="用-RRF-合并">用 RRF 合并</h3>
+<p>关键词和向量路径各取最多 30 条结果，再按 RRF 合并：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">score += 1 / (60 + rank + 1)</span><br></pre></td></tr></table></figure>
-
 <p>RRF 只看一条结果在两组列表中的名次，不直接比较全文检索分数和向量相似度。两边都排得靠前的切片，合并后通常也会靠前。</p>
 <p>去重后取前 8 个切片进入回答阶段。30、60、8 都只是当前代码里的参数，不代表它们一定合适，后面还是要用真实问题做评测。</p>
-<h2 id="回答里的引用不能完全交给模型"><a href="#回答里的引用不能完全交给模型" class="headerlink" title="回答里的引用不能完全交给模型"></a>回答里的引用不能完全交给模型</h2><p>发送给模型的不是资料库全文，而是检索得到的几个切片。每个切片都带有：</p>
+<h2 id="回答里的引用不能完全交给模型">回答里的引用不能完全交给模型</h2>
+<p>发送给模型的不是资料库全文，而是检索得到的几个切片。每个切片都带有：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">chunk_id</span><br><span class="line">文件名</span><br><span class="line">起止页码</span><br><span class="line">正文</span><br></pre></td></tr></table></figure>
-
 <p>模型返回结构化 JSON：</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;suggested_reply&quot;</span><span class="punctuation">:</span> <span class="string">&quot;回答内容&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;basis_chunk_ids&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="number">12</span><span class="punctuation">,</span> <span class="number">36</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;risks&quot;</span><span class="punctuation">:</span> <span class="string">&quot;需要核实的内容&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;confidence&quot;</span><span class="punctuation">:</span> <span class="string">&quot;low|medium|high&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;risk_level&quot;</span><span class="punctuation">:</span> <span class="string">&quot;low|medium|high&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
 <p>其中 <code>basis_chunk_ids</code> 只是模型选择的切片编号。最终展示的文件名、页码和引用原文由后端重新组装，不能直接采用模型返回的内容。</p>
 <p>具体做法是把本次检索结果当作白名单：只有出现在白名单中的 <code>chunk_id</code> 才会被接受，重复编号会被去掉，引用内容再从数据库中读取，单条最多返回 500 个 rune。</p>
 <p>如果一个编号都没有通过校验，接口会返回：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">basis = []</span><br><span class="line">basis_verified = false</span><br><span class="line">confidence = low</span><br><span class="line">risk_level 至少为 medium</span><br></pre></td></tr></table></figure>
-
 <p>系统不会为了让页面看起来完整，就自动拿第一条检索结果冒充引用。LLM 没有启用或生成失败时，也只返回检索降级提示，不伪造回答依据。</p>
 <p>不过，这种校验只能说明“引用来自本次检索结果”，不能说明它真的支持回答里的每一句话。引用是否充分，仍然是当前实现没有解决好的问题。</p>
-<h2 id="目前还欠缺什么"><a href="#目前还欠缺什么" class="headerlink" title="目前还欠缺什么"></a>目前还欠缺什么</h2><p>这版代码已经可以走通上传、处理、检索和回答，但还有几处比较明显的缺口：</p>
+<h2 id="目前还欠缺什么">目前还欠缺什么</h2>
+<p>这版代码已经可以走通上传、处理、检索和回答，但还有几处比较明显的缺口：</p>
 <ul>
 <li><strong>缺少最低相关性判断。</strong> 即使检索结果很弱，模型仍可能继续生成回答；目前也没有无答案分类和回答—引用一致性检查。</li>
 <li><strong>关键词回退只适合小数据量。</strong> <code>LIKE</code> 最多扫描 200 个候选，前导 <code>%</code> 也很难利用普通索引。</li>
@@ -416,7 +416,8 @@
 <li><strong>模型给出的置信度没有校准。</strong> <code>confidence</code> 和 <code>risk_level</code> 适合做界面提示，不能拿来直接做自动决策。</li>
 </ul>
 <p>下一步我会先准备一批“问题—正确引用”样本，看看正确片段能不能进入 Top 3、Top 5 和 Top 8，同时记录无答案识别、引用正确率和检索耗时。有评测结果后，再决定是调整切片、增加 Reranker，还是更换关键词检索方案。</p>
-<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>做之前，我比较关注 Embedding 和向量数据库；真正写完一遍后，反而觉得向量检索只是中间的一环。</p>
+<h2 id="最后">最后</h2>
+<p>做之前，我比较关注 Embedding 和向量数据库；真正写完一遍后，反而觉得向量检索只是中间的一环。</p>
 <p>前面要处理文件格式、OCR、任务状态和切片，后面还要限制模型能看到什么、检查引用能不能回到原文。任何一段出了问题，最后的回答都会受影响。</p>
 <p>现在我对这条流程的理解可以简单概括为：先把不同格式的文件整理成带位置的文本，再找出和问题有关的片段，最后让模型基于这些片段回答，并保留回到原文核对的入口。</p>
 
