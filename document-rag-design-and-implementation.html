@@ -316,7 +316,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>3.4k</span>
+      <span>3.5k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -345,6 +345,7 @@
 <li>扫描 PDF 和图片本身没有可检索的文本；</li>
 <li>回答即使看起来合理，也很难定位到原文件和页码。</li>
 </ul>
+<p>这里 RAG 要解决的核心问题是：不把资料库中的全部文档都塞给模型，而是在用户提问时先检索出相关片段，只把这些片段作为上下文交给模型。这样既能控制上下文长度和调用开销，也能让回答尽量基于用户提供的文档，并回溯到具体的原文依据。扫描件的文本提取则由 OCR 负责，它是进入后续检索流程前的文档处理步骤。</p>
 <p>所以代码里没有直接做“上传文件后问模型”，而是分成了两条流程：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">文档处理：文件 → 解析 / OCR → 切片 → 关键词索引 / 向量索引</span><br><span class="line">在线问答：问题 → 混合检索 → 组装上下文 → 模型回答 → 引用校验</span><br></pre></td></tr></table></figure>
 
