@@ -19,16 +19,16 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="记录一个个人 Go 项目中的文档问答实现，包括文件解析、OCR、文本切片、混合检索、回答生成和引用校验。">
+    <meta name="description" content="沿一份文档和一次提问的完整链路，拆解 Go 项目中的异步解析、OCR、切片、混合检索、RRF、Reranker、引用校验与故障降级。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="一个文档问答项目里的 RAG 实现">
+<meta property="og:title" content="从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现">
 <meta property="og:url" content="https://jiankunking.com/document-rag-design-and-implementation.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="记录一个个人 Go 项目中的文档问答实现，包括文件解析、OCR、文本切片、混合检索、回答生成和引用校验。">
+<meta property="og:description" content="沿一份文档和一次提问的完整链路，拆解 Go 项目中的异步解析、OCR、切片、混合检索、RRF、Reranker、引用校验与故障降级。">
 <meta property="og:locale" content="zh_CN">
 
 <meta property="article:published_time" content="2026-07-17T14:20:37.000Z">
-<meta property="article:modified_time" content="2026-08-29T08:51:43.000Z">
+<meta property="article:modified_time" content="2026-09-02T13:48:51.000Z">
 <meta property="article:author" content="衣舞晨风 (jiankunking)">
 <meta property="article:tag" content="Go">
 <meta property="article:tag" content="OCR">
@@ -42,10 +42,10 @@
 <link rel="canonical" href="https://jiankunking.com/document-rag-design-and-implementation.html">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/document-rag-design-and-implementation.html","path":"document-rag-design-and-implementation.html","title":"一个文档问答项目里的 RAG 实现"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/document-rag-design-and-implementation.html","path":"document-rag-design-and-implementation.html","title":"从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>一个文档问答项目里的 RAG 实现 | 衣舞晨风</title>
+<title>从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现 | 衣舞晨风</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
   <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
@@ -81,16 +81,16 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/document-rag-design-and-implementation.html#article","url":"https://jiankunking.com/document-rag-design-and-implementation.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/document-rag-design-and-implementation.html"},"headline":"一个文档问答项目里的 RAG 实现","description":"记录一个个人 Go 项目中的文档问答实现，包括文件解析、OCR、文本切片、混合检索、回答生成和引用校验。","abstract":"记录一个个人 Go 项目中的文档问答实现，包括文件解析、OCR、文本切片、混合检索、回答生成和引用校验。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-07-17T14:20:37.000Z","dateModified":"2026-08-29T08:51:43.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"AI","keywords":"Go, RAG, OCR, Qdrant, 系统设计","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/document-rag-design-and-implementation.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/document-rag-design-and-implementation.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"AI","item":"https://jiankunking.com/categories/ai/"},{"@type":"ListItem","position":3,"name":"一个文档问答项目里的 RAG 实现","item":"https://jiankunking.com/document-rag-design-and-implementation.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/document-rag-design-and-implementation.html#article","url":"https://jiankunking.com/document-rag-design-and-implementation.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/document-rag-design-and-implementation.html"},"headline":"从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现","description":"沿一份文档和一次提问的完整链路，拆解 Go 项目中的异步解析、OCR、切片、混合检索、RRF、Reranker、引用校验与故障降级。","abstract":"沿一份文档和一次提问的完整链路，拆解 Go 项目中的异步解析、OCR、切片、混合检索、RRF、Reranker、引用校验与故障降级。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-07-17T14:20:37.000Z","dateModified":"2026-09-02T13:48:51.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"AI","keywords":"Go, RAG, OCR, Qdrant, 系统设计","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/document-rag-design-and-implementation.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/document-rag-design-and-implementation.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"AI","item":"https://jiankunking.com/categories/ai/"},{"@type":"ListItem","position":3,"name":"从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现","item":"https://jiankunking.com/document-rag-design-and-implementation.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
 <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
 <meta property="og:image" content="https://jiankunking.com/images/og-default.png">
-<meta property="og:image:alt" content="一个文档问答项目里的 RAG 实现">
+<meta property="og:image:alt" content="从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现">
 <meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
-<meta name="twitter:image:alt" content="一个文档问答项目里的 RAG 实现">
+<meta name="twitter:image:alt" content="从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -178,7 +178,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%88%E6%8A%8A%E6%B5%81%E7%A8%8B%E6%8B%86%E5%BC%80"><span class="nav-number">1.</span> <span class="nav-text">先把流程拆开</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A1%B9%E7%9B%AE%E9%87%8C%E7%9A%84%E5%87%A0%E4%B8%AA%E4%B8%BB%E8%A6%81%E9%83%A8%E5%88%86"><span class="nav-number">2.</span> <span class="nav-text">项目里的几个主要部分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8A%E4%BC%A0%E6%8E%A5%E5%8F%A3%E5%8F%AA%E5%81%9A%E6%8E%A5%E6%94%B6%EF%BC%8C%E4%B8%8D%E5%81%9A%E8%A7%A3%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">上传接口只做接收，不做解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E6%9E%90%E5%92%8C%E5%90%91%E9%87%8F%E5%8C%96%E6%94%BE%E5%88%B0%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E9%87%8C"><span class="nav-number">4.</span> <span class="nav-text">解析和向量化放到后台任务里</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8D%E5%90%8C%E6%A0%BC%E5%BC%8F%E5%85%88%E7%BB%9F%E4%B8%80%E6%88%90%E5%B8%A6%E9%A1%B5%E7%A0%81%E7%9A%84%E6%96%87%E6%9C%AC"><span class="nav-number">5.</span> <span class="nav-text">不同格式先统一成带页码的文本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%87%E7%89%87%E6%97%B6%E4%BF%9D%E7%95%99%E9%A1%B5%E7%A0%81"><span class="nav-number">6.</span> <span class="nav-text">切片时保留页码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E7%B4%A2%E5%88%86%E4%B8%BA%E5%85%B3%E9%94%AE%E8%AF%8D%E5%92%8C%E5%90%91%E9%87%8F%E4%B8%A4%E8%B7%AF"><span class="nav-number">7.</span> <span class="nav-text">检索分为关键词和向量两路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E8%AF%8D%E6%A3%80%E7%B4%A2"><span class="nav-number">7.1.</span> <span class="nav-text">关键词检索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2"><span class="nav-number">7.2.</span> <span class="nav-text">向量检索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RRF%EF%BC%9A%E6%8A%8A%E4%B8%A4%E4%BB%BD%E6%8E%92%E5%90%8D%E5%90%88%E6%88%90%E4%B8%80%E4%BB%BD"><span class="nav-number">7.3.</span> <span class="nav-text">RRF：把两份排名合成一份</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9E%E7%AD%94%E9%87%8C%E7%9A%84%E5%BC%95%E7%94%A8%E4%B8%8D%E8%83%BD%E5%AE%8C%E5%85%A8%E4%BA%A4%E7%BB%99%E6%A8%A1%E5%9E%8B"><span class="nav-number">8.</span> <span class="nav-text">回答里的引用不能完全交给模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E7%BB%AD%E8%AE%A1%E5%88%92"><span class="nav-number">9.</span> <span class="nav-text">后续计划</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%88%E7%9C%8B%E7%BB%93%E8%AE%BA%EF%BC%9ARAG-%E4%B8%8D%E6%98%AF%E4%B8%80%E6%AC%A1%E6%A8%A1%E5%9E%8B%E8%B0%83%E7%94%A8%EF%BC%8C%E8%80%8C%E6%98%AF%E4%B8%A4%E6%9D%A1%E6%B5%81%E6%B0%B4%E7%BA%BF"><span class="nav-number">1.</span> <span class="nav-text">先看结论：RAG 不是一次模型调用，而是两条流水线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%9D%A1%E9%93%BE%E8%B7%AF%EF%BC%9A%E6%8A%8A%E6%96%87%E4%BB%B6%E5%8F%98%E6%88%90%E5%8F%AF%E6%A3%80%E7%B4%A2%E7%9A%84%E5%88%87%E7%89%87"><span class="nav-number">2.</span> <span class="nav-text">第一条链路：把文件变成可检索的切片</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%B8%8A%E4%BC%A0%E6%8E%A5%E5%8F%A3%E5%8F%AA%E8%B4%9F%E8%B4%A3%E5%8F%AF%E9%9D%A0%E6%8E%A5%E6%94%B6"><span class="nav-number">2.1.</span> <span class="nav-text">1. 上传接口只负责可靠接收</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%90%8E%E5%8F%B0%E5%A4%84%E7%90%86%E4%B8%8D%E6%98%AF%E7%AE%80%E5%8D%95%E5%9C%B0%E5%BC%80%E4%B8%80%E4%B8%AA-goroutine"><span class="nav-number">2.2.</span> <span class="nav-text">2. 后台处理不是简单地开一个 goroutine</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%B8%8D%E5%90%8C%E6%96%87%E4%BB%B6%E5%85%88%E7%BB%9F%E4%B8%80%E6%88%90%E2%80%9C%E9%A1%B5%E7%A0%81-%E6%96%87%E6%9C%AC%E2%80%9D"><span class="nav-number">2.3.</span> <span class="nav-text">3. 不同文件先统一成“页码 + 文本”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%88%87%E7%89%87%E6%97%B6%EF%BC%8C%E5%85%88%E4%BF%9D%E4%BD%8F%E9%A1%B5%E7%A0%81"><span class="nav-number">2.4.</span> <span class="nav-text">4. 切片时，先保住页码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E6%9D%A1%E9%93%BE%E8%B7%AF%EF%BC%9A%E4%BB%8E%E9%97%AE%E9%A2%98%E6%89%BE%E5%88%B0%E4%BE%9D%E6%8D%AE%EF%BC%8C%E5%86%8D%E7%94%9F%E6%88%90%E5%9B%9E%E7%AD%94"><span class="nav-number">3.</span> <span class="nav-text">第二条链路：从问题找到依据，再生成回答</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%85%88%E7%A1%AE%E5%AE%9A%E8%BF%99%E6%AC%A1%E9%97%AE%E9%A2%98%E5%85%81%E8%AE%B8%E6%90%9C%E7%B4%A2%E5%93%AA%E4%BA%9B%E6%9D%90%E6%96%99"><span class="nav-number">3.1.</span> <span class="nav-text">1. 先确定这次问题允许搜索哪些材料</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%85%B3%E9%94%AE%E8%AF%8D%E5%92%8C%E5%90%91%E9%87%8F%E5%90%84%E8%87%AA%E8%B4%9F%E8%B4%A3%E4%BB%80%E4%B9%88"><span class="nav-number">3.2.</span> <span class="nav-text">2. 关键词和向量各自负责什么</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL-%E8%B4%9F%E8%B4%A3%E5%85%B3%E9%94%AE%E8%AF%8D%E5%8F%AC%E5%9B%9E"><span class="nav-number">3.2.1.</span> <span class="nav-text">MySQL 负责关键词召回</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%A8%E6%96%87%E6%A3%80%E7%B4%A2%E5%A4%B1%E8%B4%A5%E6%97%B6%E6%80%8E%E6%A0%B7%E9%99%8D%E7%BA%A7"><span class="nav-number">3.2.2.</span> <span class="nav-text">全文检索失败时怎样降级</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Qdrant-%E8%B4%9F%E8%B4%A3%E8%AF%AD%E4%B9%89%E5%8F%AC%E5%9B%9E"><span class="nav-number">3.2.3.</span> <span class="nav-text">Qdrant 负责语义召回</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Qdrant-%E5%86%85%E9%83%A8%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2%E6%80%8E%E6%A0%B7%E5%B7%A5%E4%BD%9C"><span class="nav-number">3.2.4.</span> <span class="nav-text">Qdrant 内部混合检索怎样工作</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-RRF-%E8%9E%8D%E5%90%88%E7%9A%84%E6%98%AF%E5%90%8D%E6%AC%A1%EF%BC%8C%E4%B8%8D%E6%98%AF%E5%8E%9F%E5%A7%8B%E5%88%86%E6%95%B0"><span class="nav-number">3.3.</span> <span class="nav-text">3. RRF 融合的是名次，不是原始分数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-Reranker-%E5%8F%AA%E5%81%9A%E6%9C%80%E5%90%8E%E4%B8%80%E8%BD%AE%E8%AF%AD%E4%B9%89%E7%B2%BE%E6%8E%92"><span class="nav-number">3.4.</span> <span class="nav-text">4. Reranker 只做最后一轮语义精排</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-LLM-%E5%8F%AA%E7%9C%8B%E5%88%B0%E6%9C%80%E7%BB%88%E5%80%99%E9%80%89"><span class="nav-number">3.5.</span> <span class="nav-text">5. LLM 只看到最终候选</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E6%A8%A1%E5%9E%8B%E9%80%89%E6%8B%A9%E4%BA%86%E5%BC%95%E7%94%A8%EF%BC%8C%E4%BD%86%E5%BC%95%E7%94%A8%E5%86%85%E5%AE%B9%E5%BF%85%E9%A1%BB%E7%94%B1%E5%90%8E%E7%AB%AF%E7%94%9F%E6%88%90"><span class="nav-number">3.6.</span> <span class="nav-text">6. 模型选择了引用，但引用内容必须由后端生成</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%85%E9%9A%9C%E6%97%B6%EF%BC%8C%E5%93%AA%E4%BA%9B%E5%8F%AF%E4%BB%A5%E9%99%8D%E7%BA%A7%EF%BC%8C%E5%93%AA%E4%BA%9B%E5%BF%85%E9%A1%BB%E7%BB%88%E6%AD%A2"><span class="nav-number">4.</span> <span class="nav-text">故障时，哪些可以降级，哪些必须终止</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%B0%E5%BD%95%E6%A3%80%E7%B4%A2%E8%BF%87%E7%A8%8B%EF%BC%8C%E6%89%8D%E8%83%BD%E7%9F%A5%E9%81%93%E5%9B%9E%E7%AD%94%E6%98%AF%E6%80%8E%E6%A0%B7%E4%BA%A7%E7%94%9F%E7%9A%84"><span class="nav-number">5.</span> <span class="nav-text">记录检索过程，才能知道回答是怎样产生的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9E%E5%A4%B4%E7%9C%8B%EF%BC%8C%E7%9C%9F%E6%AD%A3%E9%87%8D%E8%A6%81%E7%9A%84%E6%98%AF%E4%B8%83%E4%B8%AA%E7%B3%BB%E7%BB%9F%E5%8F%96%E8%88%8D"><span class="nav-number">6.</span> <span class="nav-text">回头看，真正重要的是七个系统取舍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%89%8D%E8%BF%98%E6%B2%A1%E6%9C%89%E8%A7%A3%E5%86%B3%E5%A5%BD%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">7.</span> <span class="nav-text">目前还没有解决好的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%BC%BA%E5%B0%91%E5%8F%AF%E9%87%8D%E5%A4%8D%E7%9A%84%E8%AF%84%E6%B5%8B%E9%9B%86"><span class="nav-number">7.1.</span> <span class="nav-text">1. 缺少可重复的评测集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%BC%95%E7%94%A8%E7%99%BD%E5%90%8D%E5%8D%95%E4%B8%8D%E7%AD%89%E4%BA%8E%E4%BA%8B%E5%AE%9E%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">7.2.</span> <span class="nav-text">2. 引用白名单不等于事实一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90%E8%BF%98%E6%9C%89%E8%BE%B9%E7%95%8C%E7%BC%BA%E5%8F%A3"><span class="nav-number">7.3.</span> <span class="nav-text">3. 文档解析还有边界缺口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E4%BB%BB%E5%8A%A1%E5%B9%82%E7%AD%89%E4%B8%8E%E5%A4%9A%E5%AD%98%E5%82%A8%E4%B8%80%E8%87%B4%E6%80%A7%E8%BF%98%E4%B8%8D%E5%A4%9F%E7%A8%B3"><span class="nav-number">7.4.</span> <span class="nav-text">4. 任务幂等与多存储一致性还不够稳</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-Qdrant-%E8%BF%87%E6%BB%A4%E5%AD%97%E6%AE%B5%E9%9C%80%E8%A6%81%E7%B4%A2%E5%BC%95%E8%A7%84%E5%88%92"><span class="nav-number">7.5.</span> <span class="nav-text">5. Qdrant 过滤字段需要索引规划</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E6%A8%A1%E5%9E%8B%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA%E8%BE%B9%E7%95%8C%E8%BF%98%E9%9C%80%E5%8A%A0%E5%BC%BA"><span class="nav-number">7.6.</span> <span class="nav-text">6. 模型输入输出边界还需加强</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">8.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E4%BD%8D%E7%BD%AE%E7%B4%A2%E5%BC%95"><span class="nav-number">9.</span> <span class="nav-text">代码位置索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">总结</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -267,12 +267,12 @@
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="一个文档问答项目里的 RAG 实现 | 衣舞晨风">
-      <meta itemprop="description" content="记录一个个人 Go 项目中的文档问答实现，包括文件解析、OCR、文本切片、混合检索、回答生成和引用校验。">
+      <meta itemprop="name" content="从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现 | 衣舞晨风">
+      <meta itemprop="description" content="沿一份文档和一次提问的完整链路，拆解 Go 项目中的异步解析、OCR、切片、混合检索、RRF、Reranker、引用校验与故障降级。">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          一个文档问答项目里的 RAG 实现
+          从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现
         </h1>
 
         <div class="post-meta-container">
@@ -290,7 +290,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-08-29 16:51:43" itemprop="dateModified" datetime="2026-08-29T16:51:43+08:00">2026-08-29</time>
+      <time title="修改时间：2026-09-02 21:48:51" itemprop="dateModified" datetime="2026-09-02T21:48:51+08:00">2026-09-02</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -316,109 +316,506 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>3.5k</span>
+      <span>12k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>3 分钟</span>
+      <span>11 分钟</span>
     </span>
 </div>
 
-            <div class="post-description">记录一个个人 Go 项目中的文档问答实现，包括文件解析、OCR、文本切片、混合检索、回答生成和引用校验。</div>
+            <div class="post-description">沿一份文档和一次提问的完整链路，拆解 Go 项目中的异步解析、OCR、切片、混合检索、RRF、Reranker、引用校验与故障降级。</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>最近在做一个个人 Go 项目，其中的文档问答功能用到了 RAG、Embedding 和向量检索。这篇文章就以这套功能为例，顺着文件上传、解析、切片、检索和回答生成的代码，看看这些概念在项目里分别对应什么。为了方便行文，下文把这个项目称为「知页」。</p>
-<p>在「知页」里，用户可以新建资料库并上传 PDF、Word 或图片。后台处理完成后，用户就可以针对这些文档提问。回答除了正文，还会带上文件名、页码和原文片段，方便回到文档核对。</p>
+    <div class="post-body" itemprop="articleBody"><p>最近在做一个文档问答项目。用户上传 PDF、DOCX、文本或图片，等后台完成处理后，就可以针对资料库提问。系统返回的不是一段孤立答案，还包括文件名、页码、原文片段和内容哈希，方便回到原文核对。</p>
+<p>为了方便行文，下文把这个项目称为「知页」。</p>
+<p>这篇文章只回答一个问题：<strong>一份文件上传之后，怎样经过解析和索引，最终变成一条带可核对引用的回答？</strong></p>
 <span id="more"></span>
 
-<h2 id="先把流程拆开"><a href="#先把流程拆开" class="headerlink" title="先把流程拆开"></a>先把流程拆开</h2><p>如果文档很短，最省事的办法当然是把全文和问题一起发给模型。但资料库里一旦有多份长文档，这种做法很快就会遇到问题：</p>
+<h2 id="先看结论：RAG-不是一次模型调用，而是两条流水线"><a href="#先看结论：RAG-不是一次模型调用，而是两条流水线" class="headerlink" title="先看结论：RAG 不是一次模型调用，而是两条流水线"></a>先看结论：RAG 不是一次模型调用，而是两条流水线</h2><p>如果资料很少，可以把全文和问题一起发给模型。但文档一多，这种做法很快会遇到几个限制：上下文装不下、重复发送成本高、扫描件没有文本层、答案难以定位原文，以及多用户场景下的权限隔离。</p>
+<p>因此，「知页」没有在提问时读取全部文件，而是把系统拆成两条链路：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">文档处理链路（离线）</span><br><span class="line">文件 → 解析 / OCR → 按页切片 → 写入 MySQL → 生成向量 → 写入 Qdrant</span><br><span class="line"></span><br><span class="line">问答链路（在线）</span><br><span class="line">问题 + 过滤条件 → 关键词 / 向量召回 → RRF 融合排序</span><br><span class="line">                 → Reranker 语义精排（可选）</span><br><span class="line">                 → LLM 生成回答 → 后端校验并组装引用</span><br></pre></td></tr></table></figure>
+
+<p>第一条链路把原始文件变成可检索的切片，一份文档通常只处理一次；第二条链路只取与当前问题最相关的少量切片，再交给模型回答。</p>
+<p>这也是理解全文最重要的分界：</p>
 <ul>
-<li>全文可能超过模型的上下文限制；</li>
-<li>每次重复发送，耗时和调用成本都会增加；</li>
-<li>扫描 PDF 和图片本身没有可检索的文本；</li>
-<li>回答即使看起来合理，也很难定位到原文件和页码。</li>
+<li><strong>文档处理阶段解决“材料怎样变得可检索”；</strong></li>
+<li><strong>在线问答阶段解决“怎样找到依据，并约束模型只基于依据回答”。</strong></li>
 </ul>
-<p>这里 RAG 要解决的核心问题是：不把资料库中的全部文档都塞给模型，而是在用户提问时先检索出相关片段，只把这些片段作为上下文交给模型。这样既能控制上下文长度和调用开销，也能让回答尽量基于用户提供的文档，并回溯到具体的原文依据。扫描件的文本提取则由 OCR 负责，它是进入后续检索流程前的文档处理步骤。</p>
-<p>所以代码里没有直接做“上传文件后问模型”，而是分成了两条流程：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">文档处理：文件 → 解析 / OCR → 切片 → 关键词索引 / 向量索引</span><br><span class="line">在线问答：问题 → 混合检索 → 组装上下文 → 模型回答 → 引用校验</span><br></pre></td></tr></table></figure>
+<p>用一个具体例子串起来：用户上传一份 30 页的合同，其中第 12 页写着“剩余款项应在验收完成后 10 日内支付”。后台把这句话切成一个带页码的文本块，同时建立关键词和向量索引。用户随后询问“款项最晚什么时候支付”，系统先找回这个文本块，再让模型基于它回答。模型只返回所使用的切片编号，最终展示的文件名、第 12 页原文和哈希则由后端从检索结果中重新组装。</p>
+<p><img src="/images/document-rag-design-and-implementation/service-architecture.svg" alt="知页文档问答服务架构" loading="eager" fetchpriority="high" decoding="async" width="1600" height="1120"></p>
+<p>后端使用 Go 和 Gin。MySQL 保存资料库、文档、切片、后台任务和问答记录；原文件通过对象存储抽象管理，当前实现落在本地目录；Qdrant 保存向量索引；Poppler（开源的 PDF 解析与渲染工具集）负责提取 PDF 文本和渲染页面；扫描件交给 OCR；最后再调用 LLM。</p>
+<p>为了避免后文术语混在一起，先给出一张最小词汇表：</p>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>在本文中的含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Chunk（切片）</td>
+<td>从某一页正文中切出的、可独立检索的一小段文本</td>
+</tr>
+<tr>
+<td>Embedding</td>
+<td>把问题或切片编码为稠密向量，用于比较语义相似度</td>
+</tr>
+<tr>
+<td>Point &#x2F; Payload</td>
+<td>Qdrant 中的一条向量记录，以及附带的用户、文档、页码等元数据</td>
+</tr>
+<tr>
+<td>Recall（召回）</td>
+<td>从大量切片中先找出一批可能相关的候选</td>
+</tr>
+<tr>
+<td>RRF</td>
+<td>依据多路结果的排名进行融合，不直接比较不同系统的原始分数</td>
+</tr>
+<tr>
+<td>Reranker</td>
+<td>同时阅读问题与候选片段，再做一次更精细的相关性排序</td>
+</tr>
+</tbody></table>
+<p>下面先沿着一份文档的处理过程展开。</p>
+<h2 id="第一条链路：把文件变成可检索的切片"><a href="#第一条链路：把文件变成可检索的切片" class="headerlink" title="第一条链路：把文件变成可检索的切片"></a>第一条链路：把文件变成可检索的切片</h2><h3 id="1-上传接口只负责可靠接收"><a href="#1-上传接口只负责可靠接收" class="headerlink" title="1. 上传接口只负责可靠接收"></a>1. 上传接口只负责可靠接收</h3><p>上传接口不会同步解析文档，只做六件事：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">校验资料库归属</span><br><span class="line">  ↓</span><br><span class="line">清理文件名，检查扩展名和大小</span><br><span class="line">  ↓</span><br><span class="line">以 UUID 对象名保存文件，同时计算 SHA-256</span><br><span class="line">  ↓</span><br><span class="line">按用户、资料库和文件哈希查重</span><br><span class="line">  ↓</span><br><span class="line">事务创建文档记录和 document_parse 任务</span><br><span class="line">  ↓</span><br><span class="line">立即返回文档状态</span><br></pre></td></tr></table></figure>
 
-<p>文档只需要处理一次，后面的每次提问都复用已经生成的文本和索引。</p>
-<h2 id="项目里的几个主要部分"><a href="#项目里的几个主要部分" class="headerlink" title="项目里的几个主要部分"></a>项目里的几个主要部分</h2><p><img src="/images/document-rag-design-and-implementation/service-architecture.svg" alt="知页文档问答服务架构" loading="eager" fetchpriority="high" decoding="async" width="1600" height="1120"></p>
-<p>后端使用 Go 和 Gin。MySQL 保存资料库、文档、切片、后台任务和问答记录；原文件先放在本地目录；向量写入 Qdrant；PDF 文本提取依赖 Poppler，扫描件和图片交给 OCR；检索完成后再调用大模型。</p>
-<p>这里有一个我一开始容易忽略的点：<strong>文本处理状态和向量状态要分开。</strong></p>
-<p>一份文档可能已经解析成功，但 Embedding 服务暂时不可用。如果只保留一个“处理成功&#x2F;失败”状态，向量服务出错就会让整份文档不可用。现在的做法是分别记录正文处理和向量化状态。正文完成后，关键词检索就可以工作；向量失败时，单独重试向量任务即可，不需要重新解析或 OCR。</p>
-<h2 id="上传接口只做接收，不做解析"><a href="#上传接口只做接收，不做解析" class="headerlink" title="上传接口只做接收，不做解析"></a>上传接口只做接收，不做解析</h2><p>上传接口主要完成下面几件事：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">校验资料库归属</span><br><span class="line">  ↓</span><br><span class="line">检查文件类型和大小</span><br><span class="line">  ↓</span><br><span class="line">保存原文件并计算 SHA-256</span><br><span class="line">  ↓</span><br><span class="line">按用户、资料库和文件哈希查重</span><br><span class="line">  ↓</span><br><span class="line">创建文档记录和解析任务</span><br></pre></td></tr></table></figure>
+<p>为什么不在 HTTP 请求里直接完成解析？</p>
+<p>因为普通文本也许几百毫秒就能处理完，扫描 PDF 却可能需要逐页渲染、OCR 和 Embedding。把这些工作放在上传请求里，会让接口同时承担长时间占用、超时重试、进度展示和服务重启恢复等问题。</p>
+<p>所以这里的边界很明确：<strong>HTTP 请求负责把文件可靠地收下来，后台任务负责把文件处理完。</strong></p>
+<p>上传阶段还有两个容易忽略的细节。</p>
+<p>第一，文件大小不能只相信请求头。接口会先检查客户端声明的大小，但实际保存时仍使用 <code>io.LimitReader</code> 多读一个字节，并在写入后再次检查对象存储统计的大小，以防 <code>Content-Length</code> 缺失或被伪造。</p>
+<p>第二，查重必须有两道防线：</p>
+<ul>
+<li>应用层先按 <code>user_id + case_id + file_hash</code> 查询；</li>
+<li>数据库再用唯一约束处理并发上传。</li>
+</ul>
+<p>两个相同文件同时上传时，两个请求都可能通过第一次查询，但最终只有一个能插入成功。另一个请求识别到唯一键冲突后返回已有文档，并清理本次产生的多余对象。数据库约束在这里保证的是并发正确性，而不只是查询性能。</p>
+<h3 id="2-后台处理不是简单地开一个-goroutine"><a href="#2-后台处理不是简单地开一个-goroutine" class="headerlink" title="2. 后台处理不是简单地开一个 goroutine"></a>2. 后台处理不是简单地开一个 goroutine</h3><p>文档处理被拆成两个任务：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">document_parse</span><br><span class="line">  读取文件 → 解析 / OCR → 切片 → 事务替换 MySQL 切片</span><br><span class="line">        ↓</span><br><span class="line">document_embed</span><br><span class="line">  分批生成 Embedding → 写入 Qdrant → 更新向量状态</span><br></pre></td></tr></table></figure>
 
-<p>文件名会先做清理，真正落盘时使用 UUID，目录按用户和资料库隔离。读取上传内容时还会通过 <code>io.LimitReader</code> 限制实际字节数，不能只相信请求中声明的文件大小。</p>
-<p>查重也不只做一次查询。应用层先按 SHA-256 查找已有文档，数据库里再用唯一约束处理并发上传。如果两个相同文件同时写入，最终只保留一条有效记录，本次上传产生的临时文件会被清理。</p>
-<p>接口在创建解析任务后就返回，不等待 PDF 解析。普通文本可能几乎立刻完成，扫描 PDF 却要逐页 OCR，如果都放在 HTTP 请求里，超时、重试和进度展示都会变得麻烦。</p>
-<h2 id="解析和向量化放到后台任务里"><a href="#解析和向量化放到后台任务里" class="headerlink" title="解析和向量化放到后台任务里"></a>解析和向量化放到后台任务里</h2><p>后台 Runner 定时领取任务，并限制同时执行的任务数量。每个任务都有超时、进度和心跳；服务异常退出后，长时间没有心跳的任务会被重新领取。任务执行中的 panic 也会被捕获并记为失败，避免状态一直停在 <code>processing</code>。</p>
-<p>文档处理分成两个任务：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">document_parse</span><br><span class="line">  读取文件 → 解析 / OCR → 切片 → 写入 MySQL</span><br><span class="line">        ↓</span><br><span class="line">document_embed</span><br><span class="line">  分批计算 Embedding → 写入 Qdrant</span><br></pre></td></tr></table></figure>
+<p>拆成两个任务的原因是：<strong>正文可用和向量可用不是同一件事。</strong></p>
+<p>一份文档可能已经解析成功，关键词检索也已经能找到它，但 Embedding 服务或 Qdrant 暂时不可用。如果系统只有一个笼统的“处理成功&#x2F;失败”状态，向量路径的故障就会让整份文档失去检索能力。</p>
+<p>因此代码分别记录：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">processing_status  文本解析和切片是否完成</span><br><span class="line">vector_status      文档整体向量是否完成</span><br><span class="line">embedding_status   单个切片的向量是否完成</span><br></pre></td></tr></table></figure>
 
-<p>拆开之后，解析成功但向量化失败不会互相影响。以后更换 Embedding 模型时，也只需要重建向量，不必再读一遍原文件。</p>
-<p>任务使用带截止时间的 <code>context.Context</code>。OCR、Embedding、Qdrant 请求以及 PDF 解析时启动的外部命令都会绑定这个上下文。任务超时或服务停止后，正在执行的请求和命令也会随之结束。</p>
-<h2 id="不同格式先统一成带页码的文本"><a href="#不同格式先统一成带页码的文本" class="headerlink" title="不同格式先统一成带页码的文本"></a>不同格式先统一成带页码的文本</h2><p>目前处理的文件类型包括：</p>
+<p>这样做带来几条清晰的恢复路径：</p>
+<ul>
+<li>正文完成后，MySQL 关键词检索立即可用；</li>
+<li>向量化失败时，只重试 <code>document_embed</code>；</li>
+<li>更换 Embedding 模型时，只重建向量；</li>
+<li>没有配置向量能力时，系统仍能以关键词模式工作。</li>
+</ul>
+<p>后台 Runner 默认每两秒领取任务，最多同时处理三个。每个任务会记录状态、处理阶段、进度、开始和完成时间、最近心跳、重试次数与错误信息。</p>
+<p>任务运行时默认每 15 秒更新一次心跳。超过一分钟没有心跳的 <code>processing</code> 任务会被视为中断并重新入队；自动重试耗尽后才标记为失败。任务中的 panic 也会被转换成失败状态，避免记录永久停在 <code>processing</code>。</p>
+<p>Runner 还会做一层状态修复。例如，文档处于待解析状态却没有解析任务，或者正文已经完成、向量待处理却没有 Embedding 任务，Runner 会补建缺失任务。这种 reconciliation 不能代替严格的幂等设计，但可以修复一部分“状态已写入、任务记录却丢失”的异常。</p>
+<p>这里还要区分“任务能重试”和“任务重试后不会重复写坏数据”。心跳、超时回收和 reconciliation 解决的是任务可能丢失的问题；多个 Worker 同时处理同一任务、旧 Worker 超时后继续写入，则需要更严格的幂等与并发控制。生产环境至少应考虑：</p>
+<ul>
+<li>原子领取任务，并为领取结果设置租约；</li>
+<li>使用 fencing token 或任务版本，拒绝过期 Worker 的写入；</li>
+<li>根据切片稳定标识生成确定性的 Qdrant Point ID；</li>
+<li>对 MySQL 和 Qdrant 使用可重复执行的 upsert；</li>
+<li>为一次索引构建记录 generation&#x2F;version，便于识别新旧数据；</li>
+<li>定期修复孤立 Point、缺失 Point 和过期索引。</li>
+</ul>
+<p>本文能确认当前实现具备心跳、重试和状态修复；上面这些“重复执行安全”仍应作为需要继续验证和加强的边界，而不能仅凭存在重试机制就默认成立。</p>
+<p>最后，超时必须一直传到最底层。每个任务都使用带截止时间的 <code>context.Context</code>，OCR、Embedding、Qdrant 请求以及 Poppler 子进程都绑定这个上下文。否则，外层虽然已经返回超时，底层 HTTP 请求或子进程仍可能继续消耗资源。</p>
+<h3 id="3-不同文件先统一成“页码-文本”"><a href="#3-不同文件先统一成“页码-文本”" class="headerlink" title="3. 不同文件先统一成“页码 + 文本”"></a>3. 不同文件先统一成“页码 + 文本”</h3><p>解析器目前支持：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">txt / md / csv / json</span><br><span class="line">docx</span><br><span class="line">pdf</span><br><span class="line">jpg / jpeg / png / webp</span><br></pre></td></tr></table></figure>
 
-<p>解析层最后都返回同一种结构：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ParsedPage&#123;</span><br><span class="line">    PageNumber: <span class="number">1</span>,</span><br><span class="line">    Text:       <span class="string">&quot;提取出的正文&quot;</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>不同格式的内部结构差异很大，但解析层最终只输出一种结构：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">TrialCueParsedPage&#123;</span><br><span class="line">    PageNumber: <span class="number">1</span>,</span><br><span class="line">    Text:       <span class="string">&quot;提取出的正文&quot;</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>普通文本按一页处理。DOCX 本质上是 ZIP，代码读取 <code>word/document.xml</code> 中的文本节点，并在段落结束的位置补换行。</p>
-<p>PDF 先用 Poppler 的 <code>pdfinfo</code> 获取页数，再用 <code>pdftotext</code> 按页提取文本层。Poppler 不是常驻服务，而是一组由 Go 通过 <code>exec.CommandContext</code> 临时启动的命令行工具；命令结束或上下文取消后，子进程随之退出。文本层几乎为空时，代码会用 <code>pdftoppm</code> 将页面转成图片，再交给 OCR。图片则直接进入 OCR；没有配置 OCR 时，文档会进入 <code>ocr_required</code> 状态。PDF OCR 默认最多处理 20 页，避免单个文件消耗过多外部调用。</p>
-<p>从这一层往后，切片和检索不再关心输入是 PDF、Word 还是图片，只处理“页码 + 文本”。</p>
-<h2 id="切片时保留页码"><a href="#切片时保留页码" class="headerlink" title="切片时保留页码"></a>切片时保留页码</h2><p>当前切片长度是 800 个 rune，相邻切片重叠 100 个 rune。切片不会跨页，并优先在换行、句号、问号、分号或空白处断开。</p>
-<p>每个切片保存这些信息：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">page_start / page_end</span><br><span class="line">chunk_index</span><br><span class="line">content</span><br><span class="line">content_hash</span><br></pre></td></tr></table></figure>
-
-<p>这里按 rune 而不是字节计数，主要是为了避免把中文 UTF-8 字符截断。切片之间保留少量重叠，是为了减少句子刚好落在边界上造成的信息丢失。</p>
-<p>不跨页并不是召回效果最好的切法，但页码会更稳定。这个项目需要把回答定位回原文，所以我暂时把可核对性放在跨页上下文之前。</p>
-<p>切片写入 MySQL 后，关键词检索已经可以使用。Embedding 启用时，后台再为切片生成向量。Qdrant 的 Payload 里带有用户、资料库、文档和切片标识，查询时先按用户和资料库过滤。</p>
-<h2 id="检索分为关键词和向量两路"><a href="#检索分为关键词和向量两路" class="headerlink" title="检索分为关键词和向量两路"></a>检索分为关键词和向量两路</h2><p>提问时，服务先检查当前用户是否有权访问资料库，然后分别走关键词和向量两条检索路径。</p>
-<h3 id="关键词检索"><a href="#关键词检索" class="headerlink" title="关键词检索"></a>关键词检索</h3><p>MySQL 优先使用带 <code>ngram</code> 分词器的全文索引：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">MATCH</span>(content) AGAINST (? <span class="keyword">IN</span> <span class="keyword">NATURAL</span> <span class="keyword">LANGUAGE</span> MODE)</span><br></pre></td></tr></table></figure>
+<p>从这一层开始，后面的切片、索引和检索都不再关心输入是 PDF、Word 还是图片。不过，这里的 <code>PageNumber</code> 对不同格式并不完全等价：</p>
+<table>
+<thead>
+<tr>
+<th>格式</th>
+<th>当前“页码”的含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PDF</td>
+<td>PDF 文件中的物理页序号，可用于回到对应页面核对</td>
+</tr>
+<tr>
+<td>图片</td>
+<td>一张图片视为一页，页码为 1</td>
+</tr>
+<tr>
+<td>TXT &#x2F; Markdown &#x2F; CSV &#x2F; JSON</td>
+<td>当前整体作为一个逻辑页处理，页码为 1</td>
+</tr>
+<tr>
+<td>DOCX</td>
+<td>当前正文整体作为逻辑页处理，不能可靠对应 Word 排版后的物理页码</td>
+</tr>
+</tbody></table>
+<p>尤其是 DOCX：<code>word/document.xml</code> 保存的是文档结构，不保存一套在所有环境中都稳定的分页结果。字体、纸张、页边距和渲染引擎变化，都可能让 Word 的视觉页码发生变化。如果业务要求引用“Word 第几页”，更可靠的路径是先用固定环境把 DOCX 渲染或转换为 PDF，再按 PDF 物理页解析。</p>
+<p>普通文本会去掉 BOM 和首尾空白，并作为单页处理。DOCX 本质上是 ZIP，代码读取 <code>word/document.xml</code> 中的文本节点，并在段落结束处补换行。当前实现只覆盖正文，还没有完整处理表格语义、页眉页脚、批注和文本框，也缺少严格的解压大小与压缩比限制。</p>
+<p>PDF 的处理路径更长：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">pdfinfo 获取页数</span><br><span class="line">  ↓</span><br><span class="line">pdftotext -layout 提取文本层</span><br><span class="line">  ↓</span><br><span class="line">按分页符恢复页码</span><br><span class="line">  ↓</span><br><span class="line">如果整份文本几乎为空，再进入 OCR</span><br><span class="line">  ↓</span><br><span class="line">必要时用 pdftoppm 逐页渲染图片后识别</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>这里没有另外部署 Elasticsearch，主要是因为 VPS 资源有限。现阶段先复用 MySQL 的全文索引，可以少运行一个常驻服务，也能降低内存占用和运维成本。以后数据量和检索需求增加，再考虑是否换成专门的搜索引擎。</p>
+<p><strong>Poppler 是什么</strong>：Poppler 是一套开源的 PDF 解析与渲染工具。这里用到的 <code>pdfinfo</code>、<code>pdftotext</code> 和 <code>pdftoppm</code> 都是它提供的命令行程序：<code>pdfinfo</code> 用来读取页数等文档信息，<code>pdftotext</code> 用来提取已有的文本层，<code>pdftoppm</code> 则把 PDF 页面渲染成图片，供后续 OCR 识别。它本身不负责 OCR。</p>
 </blockquote>
-<p>查询范围只包含当前用户、当前资料库中已经处理完成的文档。</p>
-<p>全文检索报错或没有命中时，还有一层简单回退：英文和数字按连续词拆分，中文生成 2～4 字片段，再用 <code>LIKE</code> 找候选并在代码里计分。这条路径适合兜底，也比较容易命中文件中的名称、编号和日期，但数据量大以后不会有太好的性能。</p>
-<h3 id="向量检索"><a href="#向量检索" class="headerlink" title="向量检索"></a>向量检索</h3><p>问题会先转成 Embedding，再到 Qdrant 中查找语义相近的切片。它能补充关键词检索不容易覆盖的近义表达和概括性问题。</p>
-<p>向量检索不是硬依赖。Embedding 或 Qdrant 没有启用、调用失败，或者向量结果无法从 MySQL 回查时，接口都会退回关键词结果，并记录降级原因。</p>
-<h3 id="RRF：把两份排名合成一份"><a href="#RRF：把两份排名合成一份" class="headerlink" title="RRF：把两份排名合成一份"></a>RRF：把两份排名合成一份</h3><p>关键词检索和向量检索的分数含义不同，不能直接比较。RRF（Reciprocal Rank Fusion，倒数排名融合）的思路是忽略原始分数，只看每个切片在两路结果中的名次。</p>
-<p>例如，关键词检索将 A 排在第 1、B 排在第 2，向量检索将 B 排在第 1、A 排在第 3。RRF 会分别按照名次给 A 和 B 计分，再把两路得分相加。B 虽然在关键词结果中排第 2，但两边都比较靠前，最终可能排在 A 前面。</p>
-<p>代码中，两路各取最多 30 条，并按下面的公式累计分数：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">score += 1 / (60 + rank + 1)</span><br></pre></td></tr></table></figure>
+<p>项目没有把 Poppler 当作常驻服务，而是由 Go 通过 <code>exec.CommandContext</code> 按需启动这些命令。解析器限制了 PDF 处理并发和单次命令时间，避免异常文件长期占住 Worker。</p>
+<p>PDF OCR 默认最多处理 20 页，并只对限流、超时和服务端错误等可重试异常做有限次数的指数退避。</p>
+<p>“最多 20 页”不只是性能参数，还会影响结果完整性。例如一份 85 页扫描 PDF 如果只识别前 20 页，接口不能仍然把它表现为“整份文档处理成功”。本文仅能确认存在页数上限，不根据这里的代码描述推断超限后的实际产品行为；更稳妥的设计是二选一：超过上限直接失败并提示拆分文件，或者明确返回部分完成状态，例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">processing_status = partial</span><br><span class="line">processed_pages   = 20</span><br><span class="line">total_pages       = 85</span><br></pre></td></tr></table></figure>
 
-<p><code>rank</code> 越小，得到的分数越高。去重后取前 8 个切片进入回答阶段。30、60、8 都是当前使用的参数，后面还需要根据实际检索效果调整。</p>
-<h2 id="回答里的引用不能完全交给模型"><a href="#回答里的引用不能完全交给模型" class="headerlink" title="回答里的引用不能完全交给模型"></a>回答里的引用不能完全交给模型</h2><p>发送给模型的不是资料库全文，而是检索得到的几个切片。每个切片都带有：</p>
+<p>无论选择哪种方式，都不应静默丢弃后续页面。</p>
+<p>这里仍有一个明显缺口：当前按“整份 PDF”判断是否需要 OCR。若大部分页面有文本层、只有少数页面是扫描图，这些扫描页可能被漏掉。更合理的做法是逐页判断并混合解析。</p>
+<h3 id="4-切片时，先保住页码"><a href="#4-切片时，先保住页码" class="headerlink" title="4. 切片时，先保住页码"></a>4. 切片时，先保住页码</h3><p>解析结果接下来会被切成较小的文本块。当前参数是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">target_runes  = 800</span><br><span class="line">overlap_runes = 100</span><br></pre></td></tr></table></figure>
+
+<p>切片按 rune 而不是字节计数，避免从一个中文 UTF-8 字符的中间截断；优先在换行、句号、问号、分号或空白处断开；相邻切片保留 100 个 rune 的重叠，降低关键信息刚好落在边界上的概率。</p>
+<p>但 rune 数不等于模型 Token 数。不同 Embedding 和 LLM 使用不同分词器，同样 800 个 rune 可能对应不同数量的 Token。因此，rune 适合做语言无关的初步切分，却不能保证一定低于模型输入上限。更稳妥的边界是：切片后再用实际模型的 tokenizer 检查，Embedding 前和组装 LLM 上下文前分别执行 Token 预算与截断。</p>
+<p>更关键的约束是：<strong>切片不跨页。</strong></p>
+<p>不跨页未必能得到最激进的召回效果，却能让引用页码保持稳定。这个项目要求用户可以回到原文核对，因此在“可能更高的召回率”和“更可靠的页码”之间，当前实现选择后者。</p>
+<p>每个切片都会保存：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">page_start / page_end</span><br><span class="line">chunk_index</span><br><span class="line">content</span><br><span class="line">content_hash</span><br><span class="line">embedding_status / embedding_model / embedding_dimension</span><br></pre></td></tr></table></figure>
+
+<p>切片写入 MySQL 后，关键词检索已经可以使用。若启用 Embedding，后台再分批生成向量，并把用户、资料库、文档、切片、页码、材料类型、证据编号、内容哈希和模型名写入 Qdrant Payload。</p>
+<p>到这里，第一条链路完成：原始文件已经变成带页码、带权限边界、可通过关键词或向量检索的切片。</p>
+<h2 id="第二条链路：从问题找到依据，再生成回答"><a href="#第二条链路：从问题找到依据，再生成回答" class="headerlink" title="第二条链路：从问题找到依据，再生成回答"></a>第二条链路：从问题找到依据，再生成回答</h2><p>一次提问不会直接进入 LLM。它要先经过过滤、召回、融合、精排和引用校验：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">权限校验与过滤条件规范化</span><br><span class="line">        ↓</span><br><span class="line">MySQL 关键词候选（默认 40）</span><br><span class="line">        +</span><br><span class="line">Qdrant 候选（默认 40）</span><br><span class="line">        ↓</span><br><span class="line">RRF 融合、去重（保留 20）</span><br><span class="line">        ↓</span><br><span class="line">Reranker 语义精排（可选）</span><br><span class="line">        ↓</span><br><span class="line">最终上下文（默认 8）</span><br><span class="line">        ↓</span><br><span class="line">LLM 生成结构化回答</span><br><span class="line">        ↓</span><br><span class="line">后端校验引用编号并组装原文</span><br></pre></td></tr></table></figure>
+
+<p>这里最容易混淆的是三个数量：召回 40 条、融合后保留 20 条、最终给模型 8 条。它们不是同一个 Top K：前面尽量提高召回，后面再逐步压缩上下文。</p>
+<h3 id="1-先确定这次问题允许搜索哪些材料"><a href="#1-先确定这次问题允许搜索哪些材料" class="headerlink" title="1. 先确定这次问题允许搜索哪些材料"></a>1. 先确定这次问题允许搜索哪些材料</h3><p>提问接口除了 <code>question</code>，还支持文档、材料类型、证据编号和页码范围等过滤条件：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;question&quot;</span><span class="punctuation">:</span> <span class="string">&quot;这份材料里提到的付款时间是什么？&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;filter&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;document_ids&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="number">12</span><span class="punctuation">,</span> <span class="number">18</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;document_types&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;合同&quot;</span><span class="punctuation">,</span> <span class="string">&quot;付款凭证&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;evidence_numbers&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;证据3&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;page_from&quot;</span><span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;page_to&quot;</span><span class="punctuation">:</span> <span class="number">20</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>代码会先限制过滤项数量、去重并校验页码范围，再把同一组条件应用到 MySQL 和 Qdrant。页码采用区间相交语义：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chunk.page_end   &gt;= page_from</span><br><span class="line">chunk.page_start &lt;= page_to</span><br></pre></td></tr></table></figure>
+
+<p>比起要求切片完全落在查询区间内，这种判断更符合“查第 2 到 20 页”的直觉。</p>
+<p>权限条件同样必须进入每一条召回路径。关键词和向量检索都带上当前用户与资料库；Qdrant 返回切片 ID 后，服务还会回到 MySQL，按用户、资料库、过滤条件和文档状态重新加载切片。</p>
+<p>换句话说，<strong>向量库负责找候选，但业务数据库仍然掌握最终授权。</strong> 外部索引返回的 ID 不能直接越过权限和状态校验。</p>
+<h3 id="2-关键词和向量各自负责什么"><a href="#2-关键词和向量各自负责什么" class="headerlink" title="2. 关键词和向量各自负责什么"></a>2. 关键词和向量各自负责什么</h3><p>这一层实际上包含三种检索能力：MySQL 全文检索、Qdrant 稠密向量检索，以及可选的 Qdrant 内部稠密 + 稀疏混合检索。为了避免“Hybrid”一词指代不清，下文把它们分别称为：</p>
+<ul>
+<li><strong>Qdrant 内部混合检索</strong>：在 Qdrant 内融合 Dense 与 Sparse&#x2F;BM25；</li>
+<li><strong>服务层多路召回</strong>：在 Go 服务中融合 MySQL 候选与整个 Qdrant 候选列表。</li>
+</ul>
+<h4 id="MySQL-负责关键词召回"><a href="#MySQL-负责关键词召回" class="headerlink" title="MySQL 负责关键词召回"></a>MySQL 负责关键词召回</h4><p>MySQL 路径优先使用全文索引。代码中的核心表达式如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">MATCH</span>(content) AGAINST (? <span class="keyword">IN</span> <span class="keyword">NATURAL</span> <span class="keyword">LANGUAGE</span> MODE)</span><br></pre></td></tr></table></figure>
+
+<p>可以把它拆成三部分理解：</p>
+<ul>
+<li><code>MATCH(content)</code>：指定在 <code>content</code> 列中检索。这个列需要建立与查询匹配的 <code>FULLTEXT</code> 全文索引；</li>
+<li><code>AGAINST (?)</code>：指定查询内容。这里的 <code>?</code> 不是要搜索的问号，而是数据库驱动执行预编译语句时使用的参数占位符，运行时会绑定为用户的问题；</li>
+<li><code>IN NATURAL LANGUAGE MODE</code>：使用自然语言模式。MySQL 会对查询和文档分词、计算相关度并返回一个浮点分数，分数越高通常表示越相关。自然语言模式也是 MySQL 全文检索的默认模式，这段声明主要是在代码中把意图写清楚。</li>
+</ul>
+<p>例如用户询问“款项最晚什么时候支付”，绑定参数之后，可以近似理解为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">MATCH</span>(content) AGAINST (<span class="string">&#x27;款项最晚什么时候支付&#x27;</span> <span class="keyword">IN</span> <span class="keyword">NATURAL</span> <span class="keyword">LANGUAGE</span> MODE)</span><br></pre></td></tr></table></figure>
+
+<p>下面是为了说明语法而简化的查询，不代表项目中的完整表结构和权限条件：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    id,</span><br><span class="line">    content,</span><br><span class="line">    <span class="keyword">MATCH</span>(content) AGAINST (? <span class="keyword">IN</span> <span class="keyword">NATURAL</span> <span class="keyword">LANGUAGE</span> MODE) <span class="keyword">AS</span> score</span><br><span class="line"><span class="keyword">FROM</span> document_chunks</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">MATCH</span>(content) AGAINST (? <span class="keyword">IN</span> <span class="keyword">NATURAL</span> <span class="keyword">LANGUAGE</span> MODE) <span class="operator">&gt;</span> <span class="number">0</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> score <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">40</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这里出现了两个 <code>?</code>，执行时必须把同一个问题参数绑定两次：第一次用于 <code>SELECT</code> 计算 <code>score</code>，第二次用于 <code>WHERE</code> 过滤无关结果。示意性的中文全文索引可以写成：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> document_chunks</span><br><span class="line"><span class="keyword">ADD</span> FULLTEXT INDEX idx_content (content) <span class="keyword">WITH</span> PARSER ngram;</span><br></pre></td></tr></table></figure>
+
+<p>这和 <code>LIKE &#39;%付款时间%&#39;</code> 不同：<code>LIKE</code> 主要判断原始字符串是否包含指定片段，而全文检索会基于分词和词项统计计算相关度，因此更适合从大量切片中选出候选。本文使用 <code>ngram</code> 分词器处理中文；它会把连续文本切成相互重叠的短词元，让没有空格分隔的中文也能进入全文索引。项目没有额外部署 Elasticsearch，主要是为了控制 VPS 的常驻资源和运维复杂度。</p>
+<blockquote>
+<p><strong>MySQL 版本说明</strong>：全文检索以及 <code>MATCH ... AGAINST</code> 能力从 MySQL 3.23.23 开始出现，最初仅支持 MyISAM；显式的 <code>IN NATURAL LANGUAGE MODE</code> 修饰语从 MySQL 5.1.7 开始支持；InnoDB 全文索引属于 MySQL 5.6 引入的能力；内置 <code>ngram</code> 全文解析器从 MySQL 5.7.6 开始提供。因此，只看这段显式语法需要 MySQL 5.1.7 或更高版本，而本文实际使用的 <strong>InnoDB + <code>ngram</code> + <code>MATCH ... AGAINST</code></strong> 组合至少需要 <strong>MySQL 5.7.6</strong>。</p>
+</blockquote>
+<h4 id="全文检索失败时怎样降级"><a href="#全文检索失败时怎样降级" class="headerlink" title="全文检索失败时怎样降级"></a>全文检索失败时怎样降级</h4><p>全文检索报错或没有命中时，还会回退到简单 Token 检索：英文和数字按连续词切分，中文生成 2～4 字片段，使用 <code>LIKE</code> 找出最多 200 条候选，再在 Go 中重新计分排序。</p>
+<p>这条兜底路径容易命中名称、编号和日期，但无法支撑很大的数据量，不适合作为长期主方案。</p>
+<h4 id="Qdrant-负责语义召回"><a href="#Qdrant-负责语义召回" class="headerlink" title="Qdrant 负责语义召回"></a>Qdrant 负责语义召回</h4><p>Qdrant 路径把问题转换成 Embedding，再执行稠密向量相似度检索。它主要补充关键词不容易覆盖的近义表达和概括性问题。</p>
+<p>这里先解释两个 Qdrant 术语。<strong>Point</strong> 可以理解为向量库中的一条记录：在本文的设计里，一个文档切片对应一个 Point。Point 除了保存一组或多组向量，还带有 <strong>Payload</strong>，用于记录切片 ID、用户、资料库、文档、页码等业务元数据。</p>
+<h4 id="Qdrant-内部混合检索怎样工作"><a href="#Qdrant-内部混合检索怎样工作" class="headerlink" title="Qdrant 内部混合检索怎样工作"></a>Qdrant 内部混合检索怎样工作</h4><p>代码还提供可选的 Qdrant 内部混合检索。启用后，每个 Point 同时保存两种表示：</p>
+<table>
+<thead>
+<tr>
+<th>表示</th>
+<th>如何生成</th>
+<th>更擅长命中什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>稠密向量（Dense Vector）</td>
+<td>Embedding 模型把整段文本编码成固定长度的浮点数组</td>
+<td>语义相近但字面不同的表达，例如“尾款什么时候付”和“剩余款项的支付期限”</td>
+</tr>
+<tr>
+<td>稀疏向量（Sparse Vector）</td>
+<td>使用 BM25 对文本中的词项进行编码，并以稀疏形式保存</td>
+<td>精确名称、编号、日期和原文词项</td>
+</tr>
+</tbody></table>
+<p>稠密向量通常每个维度都有值，适合比较整体语义；稀疏向量的大部分维度为零，非零维度通常对应实际出现过的词项，因此更接近传统关键词检索。</p>
+<p>查询时，同一个问题会走两条子查询：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">问题</span><br><span class="line">├─ Embedding → 稠密向量检索 → 取前 N 条</span><br><span class="line">└─ BM25      → 稀疏向量检索 → 取前 N 条</span><br><span class="line">                              ↓</span><br><span class="line">                         Qdrant 内部 RRF</span><br><span class="line">                              ↓</span><br><span class="line">                    Qdrant 内部混合候选</span><br></pre></td></tr></table></figure>
+
+<p>Qdrant Query API 把这两条子查询称为 <code>prefetch</code>。这里的“预取”不是提前把数据加载到内存，而是<strong>先执行若干路候选查询，再把候选交给主查询融合</strong>。RRF 只根据两路结果的名次合并，不直接比较稠密相似度与 BM25 分数，因为这两类分数不在同一个尺度上。</p>
+<p>继续使用开头的合同示例。对于“款项最晚什么时候支付”这个问题，稠密检索可能找出第 12 页“剩余款项应在验收完成后 10 日内支付”的切片；稀疏检索则更容易抓住“款项”“支付”等原词。如果同一切片在两路都排名靠前，融合后的排名通常会更稳定。</p>
+<p>完整链路存在两层融合：</p>
+<ol>
+<li><strong>Qdrant 内部 RRF</strong>：融合 Qdrant 的稠密结果和 BM25 稀疏结果；</li>
+<li><strong>服务层 RRF</strong>：融合 MySQL 全文检索列表与整个 Qdrant 候选列表。</li>
+</ol>
+<p>因此，开启 Qdrant 内部混合检索后，服务层拿到的“Qdrant 候选”本身已经融合过一次；后面的服务层 RRF 仍要把它与独立的 MySQL 关键词召回合并。</p>
+<p>Qdrant 内部混合检索默认关闭。原有 Collection 只保存单路稠密向量，而该模式需要命名的稠密向量和稀疏向量；即使修改了 Collection 的向量 Schema，已有 Point 也不会自动生成缺失的 BM25 稀疏向量，仍然需要重新计算并回填。为了避免新旧 Point 结构混杂，并保留快速回滚能力，本文采用更稳妥的迁移方式：新建 Collection，重建全部索引，校验完成后再切换。</p>
+<blockquote>
+<p><strong>版本补充</strong>：Qdrant 1.18.0 开始支持为已有 Collection 动态增加或删除命名向量配置，但它解决的是 Schema 变更，不会替旧数据生成向量。因此，“可以修改结构”和“不需要重建数据”是两回事；如果使用更早版本，或者希望迁移过程容易验证和回滚，新建 Collection 仍然是更简单的方案。</p>
+</blockquote>
+<h3 id="3-RRF-融合的是名次，不是原始分数"><a href="#3-RRF-融合的是名次，不是原始分数" class="headerlink" title="3. RRF 融合的是名次，不是原始分数"></a>3. RRF 融合的是名次，不是原始分数</h3><p>MySQL 全文分数、Qdrant 稠密向量相似度，以及 Qdrant 内部混合检索的融合分数不在同一尺度上，直接相加没有明确含义。</p>
+<p>服务层因此使用 RRF（Reciprocal Rank Fusion，倒数排名融合）。这个名字可以拆开理解：</p>
+<ul>
+<li><strong>Rank</strong>：只看一个切片在每路结果中排第几名；</li>
+<li><strong>Reciprocal</strong>：把名次转换成倒数分数，排名越靠前，分母越小，得到的分数越高；</li>
+<li><strong>Fusion</strong>：同一个切片如果出现在多路结果中，就把它在各路得到的分数相加。</li>
+</ul>
+<p>它不比较原始分数，只看同一切片在每路结果中的排名：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">score += 1 / (rrf_k + rank + 1)</span><br></pre></td></tr></table></figure>
+
+<p>代码中的 <code>rank</code> 从 0 开始，因此最后要加 1。如果按日常习惯把第一名记为 1、第二名记为 2，公式可以更直观地写成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">本路贡献分数 = 1 / (rrf_k + 名次)</span><br><span class="line">最终 RRF 分数 = 一个切片在所有召回路径中的贡献分数之和</span><br></pre></td></tr></table></figure>
+
+<p>假设 <code>rrf_k = 60</code>，有两个切片：</p>
+<table>
+<thead>
+<tr>
+<th>切片</th>
+<th align="right">MySQL 关键词排名</th>
+<th align="right">Qdrant 排名</th>
+<th align="right">RRF 分数（约）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td align="right">第 2 名</td>
+<td align="right">第 1 名</td>
+<td align="right"><code>1/62 + 1/61 = 0.0325</code></td>
+</tr>
+<tr>
+<td>B</td>
+<td align="right">第 1 名</td>
+<td align="right">未命中</td>
+<td align="right"><code>1/61 = 0.0164</code></td>
+</tr>
+</tbody></table>
+<p>虽然 B 在 MySQL 中排第一，但 A 同时被两条路径排在前面，所以融合后 A 的分数更高。RRF 想表达的正是：<strong>被多种检索方法共同认可的结果，通常比只在单一路径中排名靠前的结果更可靠。</strong></p>
+<p><code>rrf_k</code> 是平滑常数。它越大，排名衰减曲线越平缓，相邻名次之间的贡献差异越小；它越小，靠前名次的优势越明显。当前配置取 60。</p>
+<p>融合后按 <code>chunk_id</code> 去重，可选地过滤低于阈值的结果，再排序并保留前 20 条。</p>
+<p>当前配置如下：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">trial_cue_search:</span></span><br><span class="line">  <span class="attr">keyword_candidate_limit:</span> <span class="number">40</span></span><br><span class="line">  <span class="attr">vector_candidate_limit:</span> <span class="number">40</span></span><br><span class="line">  <span class="attr">fusion_candidate_limit:</span> <span class="number">20</span></span><br><span class="line">  <span class="attr">result_limit:</span> <span class="number">8</span></span><br><span class="line">  <span class="attr">rrf_k:</span> <span class="number">60</span></span><br><span class="line">  <span class="attr">min_fusion_score:</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p>这些数字只是工程默认值，不是经过证明的最佳参数。真正调整它们，需要固定评测集，而不是凭线上感觉反复试。</p>
+<h3 id="4-Reranker-只做最后一轮语义精排"><a href="#4-Reranker-只做最后一轮语义精排" class="headerlink" title="4. Reranker 只做最后一轮语义精排"></a>4. Reranker 只做最后一轮语义精排</h3><p>RRF 和 Reranker 都会影响排序，但解决的问题不同：</p>
+<ul>
+<li><strong>RRF 负责融合多路排名。</strong> 它根据切片在关键词和向量结果中的名次计算分数，不重新阅读切片内容；</li>
+<li><strong>Reranker 负责判断语义相关性。</strong> 它同时读取“问题 + 候选片段”，重新判断每个片段是否真正回答了问题。</li>
+</ul>
+<p>例如用户问“款项最晚什么时候支付”。一个片段可能多次出现“款项”，因而在关键词检索中排名靠前，却没有说明付款期限；另一个片段只出现一次相关表述，却明确写着“剩余款项应在验收完成后 10 日内支付”。Reranker 会结合完整问题和片段语义，把后者排到前面。</p>
+<p>在当前流程中，RRF 先把关键词与向量结果融合成最多 20 条候选，Reranker 再对这些候选打分，选出最终 8 条交给 LLM。它只负责缩小和调整候选顺序，不直接生成答案。</p>
+<p>这里的“可选”表示 Reranker 不是问答链路的硬依赖：</p>
+<ul>
+<li>已配置并启用时，执行语义精排；</li>
+<li>没有配置时，直接使用 RRF 的排序结果；</li>
+<li>调用失败或响应非法时，降级使用 RRF 的排序结果，整次问答不会因此失败。</li>
+</ul>
+<p>当前 Reranker 通过 HTTP 服务调用，返回候选下标和相关性分数。后端还会检查：</p>
+<ul>
+<li>下标不能越界或重复；</li>
+<li>分数不能是 <code>NaN</code> 或无穷；</li>
+<li>返回数量不能超过请求的 <code>top_k</code>。</li>
+</ul>
+<p>一句话概括：<strong>RRF 负责把多路检索结果合在一起，Reranker 负责进一步判断哪些片段真正回答了问题。</strong></p>
+<h3 id="5-LLM-只看到最终候选"><a href="#5-LLM-只看到最终候选" class="headerlink" title="5. LLM 只看到最终候选"></a>5. LLM 只看到最终候选</h3><p>经过前面的过滤和排序，最终只有少量切片会进入 LLM 上下文。每条切片包含：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">chunk_id</span><br><span class="line">文件名</span><br><span class="line">起止页码</span><br><span class="line">正文</span><br></pre></td></tr></table></figure>
 
-<p>模型返回结构化 JSON：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;suggested_reply&quot;</span><span class="punctuation">:</span> <span class="string">&quot;回答内容&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;basis_chunk_ids&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="number">12</span><span class="punctuation">,</span> <span class="number">36</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;risks&quot;</span><span class="punctuation">:</span> <span class="string">&quot;需要核实的内容&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;confidence&quot;</span><span class="punctuation">:</span> <span class="string">&quot;low|medium|high&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;risk_level&quot;</span><span class="punctuation">:</span> <span class="string">&quot;low|medium|high&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>Prompt 要求模型只能根据这些材料回答；材料不足时必须明确提示，并返回结构化 JSON：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;suggested_reply&quot;</span><span class="punctuation">:</span> <span class="string">&quot;剩余款项应在验收完成后 10 日内支付。&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;basis_chunk_ids&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="number">12</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;risks&quot;</span><span class="punctuation">:</span> <span class="string">&quot;需要确认验收完成日期。&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;confidence&quot;</span><span class="punctuation">:</span> <span class="string">&quot;high&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;risk_level&quot;</span><span class="punctuation">:</span> <span class="string">&quot;medium&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
 
-<p>其中 <code>basis_chunk_ids</code> 只是模型选择的切片编号。最终展示的文件名、页码和引用原文由后端重新组装，不能直接采用模型返回的内容。</p>
-<p>具体做法是把本次检索结果当作白名单：只有出现在白名单中的 <code>chunk_id</code> 才会被接受，重复编号会被去掉，引用内容再从数据库中读取，单条最多返回 500 个 rune。</p>
-<p>如果一个编号都没有通过校验，接口会返回：</p>
+<p>其中，<code>confidence</code> 和 <code>risk_level</code> 的允许值分别是 <code>low</code>、<code>medium</code>、<code>high</code>。示例里的答案有直接原文依据，因此置信度为高；但要计算具体截止日期，还缺少“验收完成日期”，所以风险等级仍为中。</p>
+<p>没有任何检索结果时，服务不会调用 LLM，而是直接返回“材料依据不足”。LLM 未配置、调用失败或输出无效时，也只返回降级提示，不伪造一条看似完整的回答。</p>
+<h3 id="6-模型选择了引用，但引用内容必须由后端生成"><a href="#6-模型选择了引用，但引用内容必须由后端生成" class="headerlink" title="6. 模型选择了引用，但引用内容必须由后端生成"></a>6. 模型选择了引用，但引用内容必须由后端生成</h3><p><code>basis_chunk_ids</code> 只是模型声称使用了哪些片段，不能直接视为可信引用。</p>
+<p>后端会把本次最终检索结果建成白名单，然后：</p>
+<ol>
+<li>只接受白名单中的 <code>chunk_id</code>；</li>
+<li>删除重复编号；</li>
+<li>从后端持有的切片重新组装文件名、文档 ID、页码和原文；</li>
+<li>将单条引用限制在 500 个 rune；</li>
+<li>同时返回文件 SHA-256 和切片内容 SHA-256，用于追踪材料版本。</li>
+</ol>
+<p>如果没有任何编号通过校验，接口会强制返回：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">basis = []</span><br><span class="line">basis_verified = false</span><br><span class="line">confidence = low</span><br><span class="line">risk_level 至少为 medium</span><br></pre></td></tr></table></figure>
 
-<p>系统不会为了让页面看起来完整，就自动拿第一条检索结果冒充引用。LLM 没有启用或生成失败时，也只返回检索降级提示，不伪造回答依据。</p>
-<p>不过，这种校验只能说明“引用来自本次检索结果”，不能说明它真的支持回答里的每一句话。引用是否充分，仍然是当前实现没有解决好的问题。</p>
-<h2 id="后续计划"><a href="#后续计划" class="headerlink" title="后续计划"></a>后续计划</h2><p>接下来主要处理三件事：</p>
+<p>系统不会为了让页面看起来完整，就自动拿第一条检索结果冒充模型依据。</p>
+<p>不过这里要区分两个概念：</p>
 <ul>
-<li><strong>先建立检索评测集。</strong> 准备一批“问题—正确引用”样本，记录正确片段能否进入 Top 3、Top 5 和 Top 8，以及无答案识别、引用正确率和检索耗时。有了这些数据，再决定是否调整切片、RRF 参数或增加 Reranker。</li>
-<li><strong>补充拒答和引用一致性判断。</strong> 当前只能确认引用来自本次检索结果，还不能判断引用是否真的支持回答。检索结果过弱时应直接返回没有找到依据，生成回答后也需要检查回答与引用是否一致。</li>
-<li><strong>完善文件解析边界。</strong> 混合型 PDF 改为按页判断是否需要 OCR，并给 DOCX 增加解压大小和压缩比限制，避免异常文件占用过多资源。</li>
+<li><code>basis_verified=true</code> 表示引用编号确实来自本次检索白名单；</li>
+<li>它<strong>不表示</strong>这些引用已经充分支持回答中的每一个事实。</li>
 </ul>
-<p>删除过程的重试和清理机制可以随后补充。<code>LIKE</code> 回退目前只用于小数据量下的兜底，模型置信度也不参与自动决策，这两项暂时不需要优先处理。</p>
+<p>当前实现解决的是“引用不能凭空伪造”，还没有完全解决“回答与引用是否逐项一致”。</p>
+<h2 id="故障时，哪些可以降级，哪些必须终止"><a href="#故障时，哪些可以降级，哪些必须终止" class="headerlink" title="故障时，哪些可以降级，哪些必须终止"></a>故障时，哪些可以降级，哪些必须终止</h2><p>向量检索和精排都是增强能力，而不是问答接口的硬依赖。以下情况会退回关键词或 RRF 结果：</p>
+<ul>
+<li>Embedding 与 Qdrant 没有同时启用；</li>
+<li>问题向量生成失败；</li>
+<li>Qdrant 查询失败；</li>
+<li>向量命中无法从 MySQL 安全回表；</li>
+<li>Reranker 调用失败或返回非法结果。</li>
+</ul>
+<p>但 <code>context.Canceled</code> 和 <code>context.DeadlineExceeded</code> 不应被包装成一次“成功降级”。调用方已经取消或上游截止时间已经耗尽时，整条链路应该尽快终止。</p>
+<p>这两类错误看起来都叫失败，系统语义却不同：</p>
+<ul>
+<li><strong>可选依赖失败</strong>：保留已有能力，继续降级执行；</li>
+<li><strong>请求生命周期结束</strong>：停止所有工作，把取消或超时继续向上传递。</li>
+</ul>
+<h2 id="记录检索过程，才能知道回答是怎样产生的"><a href="#记录检索过程，才能知道回答是怎样产生的" class="headerlink" title="记录检索过程，才能知道回答是怎样产生的"></a>记录检索过程，才能知道回答是怎样产生的</h2><p>每次问答除了保存问题、回答、风险和引用，当前还会记录：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">retrieval_mode        keyword 或 hybrid</span><br><span class="line">embedding_model       查询使用的 Embedding 模型</span><br><span class="line">keyword_hit_count     关键词候选数</span><br><span class="line">vector_hit_count      Qdrant 候选数</span><br><span class="line">retrieval_latency_ms  检索耗时</span><br></pre></td></tr></table></figure>
+
+<p>这里的 <code>retrieval_mode=hybrid</code> 指<strong>服务层同时使用了 MySQL 和 Qdrant 两路候选</strong>；它不等价于“Qdrant 内部一定启用了 Dense + Sparse&#x2F;BM25”。如果两层模式都需要观测，应拆成独立字段，例如 <code>retrieval_mode</code> 与 <code>qdrant_query_mode</code>，避免一个 <code>hybrid</code> 同时表达两件事。</p>
+<p>现有字段已经能回答：请求是否退化成关键词检索、向量路径是否返回候选、总检索耗时是否异常，以及查询使用了哪个 Embedding 模型。但要定位一次慢请求或复现一次回答，还需要更细的字段：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">degraded                 是否发生降级</span><br><span class="line">degradation_reason       降级原因</span><br><span class="line">keyword_latency_ms        MySQL 关键词召回耗时</span><br><span class="line">embedding_latency_ms      问题向量生成耗时</span><br><span class="line">vector_latency_ms         Qdrant 查询耗时</span><br><span class="line">rerank_latency_ms         精排耗时</span><br><span class="line">llm_latency_ms            回答生成耗时</span><br><span class="line">embedding_model_version   Embedding 模型版本</span><br><span class="line">reranker_model_version    Reranker 模型版本</span><br><span class="line">prompt_version            Prompt 版本</span><br><span class="line">index_generation          索引代次</span><br><span class="line">qdrant_query_mode         dense 或 dense_sparse</span><br></pre></td></tr></table></figure>
+
+<p>这些字段属于下一步的可观测性目标，不应写成已经落地的能力。它们可以把“这次回答不好”进一步拆解为召回、融合、精排、模型或降级问题，也能支持后续对比不同切片参数、RRF 阈值与模型版本。</p>
+<h2 id="回头看，真正重要的是七个系统取舍"><a href="#回头看，真正重要的是七个系统取舍" class="headerlink" title="回头看，真正重要的是七个系统取舍"></a>回头看，真正重要的是七个系统取舍</h2><table>
+<thead>
+<tr>
+<th>取舍</th>
+<th>当前选择</th>
+<th>主要目的</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>上传与处理</td>
+<td>HTTP 接收与后台任务解耦</td>
+<td>避免长请求，并支持重试与恢复</td>
+</tr>
+<tr>
+<td>正文与向量状态</td>
+<td>分开记录</td>
+<td>向量服务故障时仍保留关键词检索</td>
+</tr>
+<tr>
+<td>多格式解析</td>
+<td>先统一成“页码 + 文本”</td>
+<td>让切片和索引不感知原始格式</td>
+</tr>
+<tr>
+<td>权限边界</td>
+<td>贯穿每路召回，并在 MySQL 回表校验</td>
+<td>不信任外部索引直接授权</td>
+</tr>
+<tr>
+<td>检索策略</td>
+<td>先扩大召回，再融合和精排</td>
+<td>区分召回量、融合量和最终上下文量</td>
+</tr>
+<tr>
+<td>引用生成</td>
+<td>模型只选 ID，后端组装原文</td>
+<td>防止模型伪造文件名、页码和内容</td>
+</tr>
+<tr>
+<td>页码与召回率</td>
+<td>当前切片不跨页</td>
+<td>优先保证引用可核对</td>
+</tr>
+</tbody></table>
+<p>这些选择共同指向一个目标：外部服务失败或模型输出不可靠时，系统仍尽量保留可用能力，并明确说明用了什么材料、在哪一步发生了降级。</p>
+<h2 id="目前还没有解决好的问题"><a href="#目前还没有解决好的问题" class="headerlink" title="目前还没有解决好的问题"></a>目前还没有解决好的问题</h2><p>这套代码已经形成了完整链路，但“能够运行”距离“回答可靠”仍有明显差距。</p>
+<h3 id="1-缺少可重复的评测集"><a href="#1-缺少可重复的评测集" class="headerlink" title="1. 缺少可重复的评测集"></a>1. 缺少可重复的评测集</h3><p>需要准备一批脱敏的“问题—正确文档—正确页码—正确切片”样本，至少统计：</p>
+<ul>
+<li>Recall@3、Recall@5、Recall@8；</li>
+<li>MRR 或 nDCG；</li>
+<li>引用正确率和引用完整率；</li>
+<li>无答案问题的拒答率；</li>
+<li>关键词、向量、RRF、Reranker 各阶段耗时；</li>
+<li>降级率和无有效引用率。</li>
+</ul>
+<p>没有这些数据，<code>40 / 40 / 20 / 8</code>、<code>rrf_k=60</code> 和 <code>min_fusion_score=0</code> 都只能算初始配置。</p>
+<h3 id="2-引用白名单不等于事实一致性"><a href="#2-引用白名单不等于事实一致性" class="headerlink" title="2. 引用白名单不等于事实一致性"></a>2. 引用白名单不等于事实一致性</h3><p>下一步需要把回答拆成事实或 claim，逐项检查引用是否支持对应结论，并区分：</p>
+<ul>
+<li>材料直接记载的事实；</li>
+<li>模型根据多段材料做出的归纳；</li>
+<li>没有依据、需要人工确认的内容。</li>
+</ul>
+<h3 id="3-文档解析还有边界缺口"><a href="#3-文档解析还有边界缺口" class="headerlink" title="3. 文档解析还有边界缺口"></a>3. 文档解析还有边界缺口</h3><ul>
+<li>混合型 PDF 应逐页决定是否 OCR；</li>
+<li>应保存 OCR 置信度和文字坐标，以支持原页高亮；</li>
+<li>DOCX 需要限制解压大小、压缩比和 XML 复杂度；</li>
+<li>文件类型检查应结合 magic number，而不只看扩展名。</li>
+</ul>
+<h3 id="4-任务幂等与多存储一致性还不够稳"><a href="#4-任务幂等与多存储一致性还不够稳" class="headerlink" title="4. 任务幂等与多存储一致性还不够稳"></a>4. 任务幂等与多存储一致性还不够稳</h3><p>MySQL、对象存储和 Qdrant 不共享一个数据库事务。除了前文提到的任务租约、fencing token、确定性 Point ID 和索引 generation，还需要周期性对账：修复 MySQL 中存在但 Qdrant 缺失的切片，清理 Qdrant 中已经失去业务记录的孤立 Point。</p>
+<p>删除链路也有同样的问题。当前顺序是 Qdrant、原文件、MySQL，任一步中途失败都可能留下部分资源。删除过程仍需要任务化、幂等化，并允许补偿重试。</p>
+<h3 id="5-Qdrant-过滤字段需要索引规划"><a href="#5-Qdrant-过滤字段需要索引规划" class="headerlink" title="5. Qdrant 过滤字段需要索引规划"></a>5. Qdrant 过滤字段需要索引规划</h3><p>用户、资料库、文档、页码和材料类型等条件被写入 Payload，并不意味着过滤一定高效。数据量增大后，应为高频过滤字段建立 Qdrant Payload Index，并结合字段基数和查询模式验证效果。本文没有确认当前部署已经为这些字段建索引，因此将其列为生产化改进，而不是既有能力。</p>
+<h3 id="6-模型输入输出边界还需加强"><a href="#6-模型输入输出边界还需加强" class="headerlink" title="6. 模型输入输出边界还需加强"></a>6. 模型输入输出边界还需加强</h3><p>文档内容本身也是不可信输入。后续还需要处理 Prompt Injection、严格 JSON Schema、字段长度限制、敏感信息脱敏和模型供应商的数据留存策略。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/en/fulltext-natural-language.html">MySQL 8.0：Natural Language Full-Text Searches</a></li>
+<li><a href="https://downloads.mysql.com/docs/refman-5.1-en.pdf">MySQL 5.1 手册：<code>IN NATURAL LANGUAGE MODE</code> 于 5.1.7 加入</a></li>
+<li><a href="https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-6.html">MySQL 5.7.6 Release Notes：内置 ngram 全文解析器</a></li>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/en/fulltext-search-ngram.html">MySQL 8.0：ngram Full-Text Parser</a></li>
+<li><a href="https://qdrant.tech/documentation/concepts/vectors/">Qdrant：Vectors</a></li>
+<li><a href="https://qdrant.tech/documentation/concepts/hybrid-queries/">Qdrant：Hybrid Queries</a></li>
+<li><a href="https://qdrant.tech/documentation/manage-data/collections/#update-vector-schema">Qdrant：Collection 向量 Schema 更新（1.18.0 起）</a></li>
+<li><a href="https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf">Reciprocal Rank Fusion 原始论文（Cormack、Clarke、Buettcher，SIGIR 2009）</a></li>
+</ul>
+<h2 id="代码位置索引"><a href="#代码位置索引" class="headerlink" title="代码位置索引"></a>代码位置索引</h2><p>如果要对照代码阅读，主要模块如下：</p>
+<table>
+<thead>
+<tr>
+<th>职责</th>
+<th>主要代码位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文档上传、状态查询、重试和删除</td>
+<td><code>internal/service/trial_cue_document.go</code></td>
+</tr>
+<tr>
+<td>解析 PDF、DOCX、文本和图片</td>
+<td><code>pkg/document/</code></td>
+</tr>
+<tr>
+<td>OCR 及 PDF 转图片回退</td>
+<td><code>pkg/ocr/</code></td>
+</tr>
+<tr>
+<td>切片</td>
+<td><code>pkg/document/trial_cue_chunker.go</code></td>
+</tr>
+<tr>
+<td>后台任务调度</td>
+<td><code>internal/task/trial_cue_runner.go</code></td>
+</tr>
+<tr>
+<td>MySQL 关键词检索</td>
+<td><code>internal/dao/trial_cue_search.go</code></td>
+</tr>
+<tr>
+<td>Embedding</td>
+<td><code>pkg/embedding/</code></td>
+</tr>
+<tr>
+<td>Qdrant 索引和检索</td>
+<td><code>pkg/vectorstore/</code></td>
+</tr>
+<tr>
+<td>RRF、过滤、降级和回答编排</td>
+<td><code>internal/service/trial_cue_question.go</code></td>
+</tr>
+<tr>
+<td>可选 Reranker</td>
+<td><code>pkg/reranker/</code></td>
+</tr>
+<tr>
+<td>LLM 上下文与结构化输出</td>
+<td><code>pkg/llm/trial_cue.go</code></td>
+</tr>
+</tbody></table>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这套文档问答链路的核心不是“把文档转成向量”，而是把原始文件逐步变成<strong>可检索、可过滤、可追踪、可核对</strong>的材料，再约束模型只基于这些材料回答。</p>
+<p>真正需要守住的边界有三条：解析结果是否完整，召回是否遵守权限，最终引用是否确实来自本次候选。Embedding、Qdrant 内部混合检索和 Reranker 都可以增强效果，但任务幂等、降级语义、引用校验和离线评测，才决定这个系统能否稳定地从 Demo 走向实际使用。</p>
 
     </div>
 
@@ -450,7 +847,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="https://jiankunking.com/document-rag-design-and-implementation.html" title="一个文档问答项目里的 RAG 实现">https://jiankunking.com/document-rag-design-and-implementation.html</a>
+      <a href="https://jiankunking.com/document-rag-design-and-implementation.html" title="从文件上传到可核对回答：一个 Go 文档问答项目的 RAG 实现">https://jiankunking.com/document-rag-design-and-implementation.html</a>
   </li>
   <li class="post-copyright-license">
       <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -540,7 +937,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">806k</span>
+    <span title="站点总字数">814k</span>
   </span>
 </div>
 <div class="busuanzi-count">
