@@ -81,7 +81,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/java-aqs.html#article","url":"https://jiankunking.com/java-aqs.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-aqs.html"},"headline":"Java AQS 实现原理（图文）分析","description":"通过图文和源码分析 Java AQS 的实现原理，包括 FIFO 同步队列、独占模式、共享模式和线程唤醒机制。","abstract":"通过图文和源码分析 Java AQS 的实现原理，包括 FIFO 同步队列、独占模式、共享模式和线程唤醒机制。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-03-03T12:01:45.000Z","dateModified":"2018-03-03T12:01:45.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"Concurrent, AQS, Lock","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/java-aqs.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/java-aqs.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Java","item":"https://jiankunking.com/categories/java/"},{"@type":"ListItem","position":3,"name":"Java AQS 实现原理（图文）分析","item":"https://jiankunking.com/java-aqs.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/java-aqs.html#article","url":"https://jiankunking.com/java-aqs.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/java-aqs.html"},"headline":"Java AQS 实现原理（图文）分析","description":"通过图文和源码分析 Java AQS 的实现原理，包括 FIFO 同步队列、独占模式、共享模式和线程唤醒机制。","abstract":"通过图文和源码分析 Java AQS 的实现原理，包括 FIFO 同步队列、独占模式、共享模式和线程唤醒机制。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2018-03-03T12:01:45.000Z","dateModified":"2018-03-03T12:01:45.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Java","keywords":"AQS, Concurrent, Lock","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/java-aqs.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/java-aqs.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Java","item":"https://jiankunking.com/categories/java/"},{"@type":"ListItem","position":3,"name":"Java AQS 实现原理（图文）分析","item":"https://jiankunking.com/java-aqs.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
 <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
@@ -193,7 +193,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">174</span>
+          <span class="site-state-item-count">176</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -204,7 +204,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">305</span>
+        <span class="site-state-item-count">310</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -545,8 +545,8 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/concurrent/" rel="tag"># Concurrent</a>
               <a href="/tags/aqs/" rel="tag"># AQS</a>
+              <a href="/tags/concurrent/" rel="tag"># Concurrent</a>
               <a href="/tags/lock/" rel="tag"># Lock</a>
           </div>
 
@@ -595,7 +595,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">816k</span>
+    <span title="站点总字数">828k</span>
   </span>
 </div>
 <div class="busuanzi-count">

@@ -5,16 +5,900 @@
 Canonical site: https://jiankunking.com/
 Author: 衣舞晨风 (jiankunking)
 Author profile: https://jiankunking.com/about/
-Generated from 173 indexable articles. Each entry keeps its canonical URL and content provenance.
+Generated from 175 indexable articles. Each entry keeps its canonical URL and content provenance.
 
 ## Core topics
 
-- [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
-- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
 - [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
+- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
+- [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
 - [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
 
 ## Articles
+### 把 Coding Agent Harness 用到业务里：我们能复用什么，又该自己建设什么
+
+- URL: https://jiankunking.com/using-coding-agent-harness-as-business-runtime.html
+- Content type: original
+- Published: 2026-09-05
+- Updated: 2026-09-05
+- Summary: 从通用业务视角说明如何把 OpenCode、Pi、DeepSeek Harness 等工具作为 Agent Runtime，分析可复用能力、业务侧职责、CLI/MCP 接入方式和生产演进路线。
+- Categories: AI
+- Tags: AI Agent, Harness Engineering, OpenCode, Pi, DeepSeek Harness, MCP, Agent Runtime
+
+Key takeaways:
+
+- OpenCode、Pi、DeepSeek Harness 可以作为业务 Agent 的执行 Runtime，省掉 Agent Loop、上下文、工具调用和会话等重复建设。
+- Harness 负责一次任务怎样执行，业务系统仍要负责身份、权限、任务状态、幂等、审批、审计和结果正确性。
+- 已有 CLI 适合快速验证，稳定后应补充结构化参数、权限和审计，公共能力再逐步迁到 Native Tool 或 MCP。
+- 在业务侧保留统一的 Run、Event 和 Result，才能在不重做业务系统的情况下替换 Runtime。
+
+Article text:
+
+上一篇把 OpenCode、Pi、DeepSeek Harness 等工具放在一起做了比较。这一篇接着讨论一个更实际的问题：如果已经有业务系统、内部 API 和一批 CLI，能不能直接利用这些 Harness，而不是再从头写一套 Agent？
+
+我的答案是可以，而且早期很值得这样做。
+
+Agent Loop、上下文、Session、工具调用、流式事件这些能力，自己写一遍并不难，难的是把各种异常情况都补齐。现成 Harness 已经替我们做了不少工作。业务团队真正应该投入的地方，是工具是否好用、数据是否可信、权限是否清楚，以及最后的结果能不能对业务负责。
+
+不过这里有一条边界：Harness 可以替我们执行任务，不能替我们管理业务。
+
+接触这些工具，能给业务团队带来什么
+
+先用较小成本判断任务值不值得做
+
+很多 Agent 项目一开始就讨论模型网关、记忆、多 Agent、向量库和调度平台，但最基本的问题还没有答案：模型拿到现有工具以后，到底能不能完成任务？
+
+用 OpenCode 或 Pi 先搭一个 Runtime，可以很快验证几件事：
+
+- 模型能不能理解业务目标；
+
+- 现有 API、CLI 和文档够不够用；
+
+- 任务是否真的需要动态规划；
+
+- 哪些步骤适合自动执行，哪些必须让人确认；
+
+- 完成一次任务需要多少时间和成本。
+
+这个阶段最重要的产出不是界面，而是一批真实任务和失败记录。跑完几十个任务，通常就能看出问题主要出在模型、工具、数据，还是任务本身根本不适合 Agent。
+
+少写一遍通用 Agent Loop
+
+模型要完成一个多步骤任务，背后至少会经历这些事情：
+
+- 组装 Prompt、Skill、历史消息和工具说明；
+
+- 调用模型；
+
+- 解析 Tool Call；
+
+- 执行工具并收集结果；
+
+- 把结果放回上下文；
+
+- 继续调用模型，直到任务结束；
+
+- 处理中断、超时、权限确认和上下文过长。
+
+这些工作和具体业务关系不大，却会消耗不少开发时间。OpenCode、Pi、DeepSeek Harness 已经提供了不同程度的实现。使用它们，相当于先拿到一个能工作的执行内核，再把精力放在业务工具和结果质量上。
+
+让已有系统变得更容易被自动化使用
+
+不少内部 CLI 是给人写的：帮助信息很长，参数名不统一，错误全部打印成文本，输出格式随版本变化。人用的时候可以临场判断，Agent 批量调用时就容易出问题。
+
+接入 Harness 后，团队往往会开始补这些细节：
+
+- 参数有没有明确类型和范围；
+
+- 输出能不能统一成 JSON；
+
+- 错误能不能区分权限不足、参数错误、暂时失败；
+
+- 查询和修改是不是两个独立命令；
+
+- 一次调用读取了哪些数据；
+
+- 结果太大时怎样分页或裁剪。
+
+最后得到的其实不只是“给 Agent 用的工具”，也是一套更规范的自动化接口。
+
+把经验整理成 Skill、Tool 和评测集
+
+业务 SOP 经常散落在文档和专家经验里。接入 Agent 后，可以把这些内容拆得更清楚：
+
+- Skill 说明遇到某类任务时应该怎样判断；
+
+- Tool 负责查询或修改真实系统；
+
+- Policy 约束哪些操作允许自动执行；
+
+- Eval 判断输出是否正确、证据是否充分。
+
+这样做比把所有内容塞进一个很长的 Prompt 更容易维护。以后替换模型或 Runtime 时，也能继续使用同一套工具和评测任务。
+
+Harness 能替我们做什么
+
+把 OpenCode、Pi 或 DeepSeek Harness 放在业务系统后面，我会把它们当成执行面。一次 Run 内部的事情，尽量交给 Harness：
+
+- 调用模型并维护 Agent Loop；
+
+- 保存本轮会话上下文；
+
+- 注册和调用工具；
+
+- 载入 Skill、Agent 或扩展；
+
+- 处理文件、Shell 和工作目录；
+
+- 发送消息、工具和错误事件；
+
+- 做基础的权限确认和任务取消；
+
+- 在支持的情况下约束结构化输出。
+
+这些能力足以让一个业务想法快速跑起来。例如客服助手可以先查订单和历史工单，再组织回复；数据助手可以先查指标，发现异常后继续查询明细；研发助手可以修改代码并运行测试。
+
+哪些东西不能交给 Harness
+
+真正进入业务以后，仍然有一批事情必须由自己的系统负责。
+
+业务任务状态
+
+Harness 认识的是 Session 和 Message，业务认识的是工单、审核单、报表任务、订单或代码变更。两者不能直接画等号。
+
+一次业务任务可能因为超时重跑两次，也可能先由 OpenCode 执行，后来再交给 Pi 做复核。因此更合适的关系是：
+
+1
+
+ | BusinessTask 1 ── N AgentRun 1 ── N HarnessSession
+
+ |
+
+我会保留三个 ID：
+
+- task_id：业务任务；
+
+- run_id：一次执行尝试；
+
+- session_id：具体 Runtime 内的会话。
+
+这样以后做重试、回放或替换 Runtime，不需要改变业务数据模型。
+
+身份和权限
+
+Harness 不知道某个用户属于哪个部门，也不知道他能不能查看某个客户、数据集或项目。它提供的工具权限通常只是第一层，真正的资源级授权仍然要在业务系统或 Tool Gateway 里完成。
+
+最好给每次 Run 签发短期身份，让工具按租户、用户和任务检查权限，而不是把一个长期管理员 Token 放进 Agent 容器。
+
+幂等、重试和审批
+
+模型调用失败可以重试，查询工具超时也可以重试，但“提交退款”“发布内容”“修改配置”不能简单重放。
+
+业务侧需要知道一个操作有没有执行过，是否允许再次执行，以及由谁审批。Harness 的确认弹窗可以承载交互，但审批规则和最终状态仍然应保存在业务系统。
+
+结果是否正确
+
+Harness 能让模型输出一份报告，却不知道这份报告是否符合公司的业务定义。
+
+例如一份数据分析结果可能必须包含统计周期、数据口径和样本量；一份审核结果需要规则编号和证据；一次代码修改必须通过指定测试。最终结果应该经过 Schema 和业务规则校验，不能只看文字是否通顺。
+
+调度、容量和高可用
+
+任务队列、Worker、限流、优先级、失败补偿、成本配额、跨机房部署，这些通常也不属于单个 Harness 的职责。把 Harness 当作 Worker 使用会比较清楚，而不是让业务请求一直同步等待某个 CLI 进程退出。
+
+一个比较稳妥的分层
+
+我倾向于把系统拆成四层：
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+
+ | ┌───────────────────────────────────────────┐
+│ Business Control Plane │
+│ API / Tenant / Task / Retry / Approval │
+│ Result / Notification / Billing │
+└──────────────────┬────────────────────────┘
+ │ internal API
+┌──────────────────▼────────────────────────┐
+│ Harness Adapter │
+│ OpenCode / Pi / DeepSeek / Codex │
+│ event normalize / capability / routing │
+└──────────────────┬────────────────────────┘
+ │ run
+┌──────────────────▼────────────────────────┐
+│ Execution Runtime │
+│ Session / Context / Skill / Workspace │
+└──────────────────┬────────────────────────┘
+ │ tool call
+┌──────────────────▼────────────────────────┐
+│ Tool Plane │
+│ CLI / Native Tool / MCP / Workflow API │
+│ Auth / Schema / Timeout / Audit │
+└───────────────────────────────────────────┘
+
+ |
+
+控制面保存业务事实；Adapter 屏蔽 Runtime 差异；Harness 完成一次执行；工具层访问真实系统。
+
+这个分层的好处是边界比较清楚。模型可以决定下一步查什么，但不能决定用户有没有权限；Harness 可以保存 Session，但不能把 Session 状态当成业务最终状态；工具可以执行操作，但高风险写入仍要经过审批。
+
+已有 CLI 能不能直接放进去
+
+可以，尤其适合 PoC。
+
+最简单的做法是把 CLI 固化到 Runtime 镜像并加入 PATH：
+
+1
+2
+3
+
+ | biz-ticket get --id TICKET-001 --output json
+biz-data query --dataset sales --range 7d --output json
+biz-content inspect --content-id C-1001 --output json
+
+ |
+
+再写一份 Skill，说明每个命令什么时候用、需要哪些参数、返回值是什么。OpenCode、Pi 这类工具都可以通过 Shell 执行它们。
+
+但我不建议把二进制临时复制到每个任务目录，然后让模型自由组合命令。目录只是文件位置，不是权限边界。至少要处理下面几件事：
+
+- CLI 版本固定，镜像可追溯；
+
+- 只开放允许执行的命令；
+
+- 参数经过校验，不直接拼接 Shell；
+
+- 默认只读，写操作使用独立入口；
+
+- 统一 JSON 输出和错误码；
+
+- 设置超时、输出大小和资源限制；
+
+- 使用短期凭证；
+
+- 记录调用人、参数、耗时和结果摘要。
+
+CLI、Native Tool 和 MCP 怎么选
+
+这三种方式不是互斥关系，通常会同时存在。
+
+CLI：最快接入
+
+如果团队已经有成熟 CLI，先复用它最省时间。文件处理、本地脚本、一次性迁移任务也很适合 CLI。
+
+问题是模型需要理解命令行语法，参数转义、长输出和错误文本也容易带来不确定性。进入试生产后，最好在 CLI 外面增加 Wrapper，把结构化参数转换成命令参数。
+
+例如模型调用的是：
+
+1
+2
+3
+4
+5
+6
+
+ | &#123;
+ "tool": "get_ticket",
+ "arguments": &#123;
+ "ticket_id": "TICKET-001"
+ &#125;
+&#125;
+
+ |
+
+Wrapper 再执行固定命令，而不是把一整段 Shell 交给模型生成。
+
+Native Tool：单个 Runtime 内体验最好
+
+OpenCode Custom Tool、Pi Extension 或厂商 SDK 的进程内工具，可以直接使用类型、事件、权限和错误处理能力。
+
+对于调用频率高、交互复杂的核心工具，Native Tool 会比 Shell 顺手。不过这种实现通常和 Runtime 绑定，工具太多以后，替换成本会逐渐上升。
+
+MCP：更适合共享能力
+
+如果日志、订单、知识库、数据查询等能力要同时提供给多个 Agent 客户端，MCP 更合适。业务接口和凭证留在独立服务里，OpenCode、Pi、Codex 或 Claude 都通过同一套工具协议访问。
+
+1
+2
+3
+
+ | OpenCode ─┐
+Pi ───────┼── MCP / Tool Gateway ── Business APIs
+Codex ────┘
+
+ |
+
+MCP 解决连接方式，企业通常还需要在它前后补身份、资源授权、限流、缓存、脱敏和审计。
+
+我的实际选择
+
+我会按下面的顺序推进：
+
+- 已有 CLI 先接进来，把任务跑通；
+
+- 高频 CLI 增加 Schema Wrapper；
+
+- 少量强交互能力做成 Native Tool；
+
+- 跨团队、跨 Runtime 的公共能力迁到 MCP 或 Tool Gateway；
+
+- 高风险写操作仍走确定性 Workflow API 和人工审批。
+
+这样不用一开始就建设一个很重的平台，也不会长期停留在“模型随便执行 Shell”的状态。
+
+哪些业务值得先试
+
+客服和工单
+
+先查询客户信息、订单和历史工单，再做分类、补充信息和建议回复，是比较适合的切入点。退款、补偿和封禁不要直接自动执行。
+
+数据分析和报告
+
+这类任务经常需要根据中间结果继续查数据，Agent 比固定问答更有优势。但数据库应通过只读数据集、查询模板和扫描量限制开放，不能让模型直接拿生产库管理员权限。
+
+内容审核
+
+Agent 擅长理解上下文、整理规则和证据，可以用来做风险分类和复核辅助。最终裁决仍应保留规则引擎或人工审核，特别是影响用户权益的场景。
+
+运维和问题诊断
+
+日志、指标、Trace、变更记录本来就分散在多个系统中，很适合通过工具让 Agent 动态查询。诊断和执行修复需要分开，前者可以逐步自动化，后者要设置更严格的审批。
+
+研发自动化
+
+读代码、修改文件、运行测试正是 Coding Agent Harness 最熟悉的任务。如果需要完整仓库、容器和浏览器，运行环境的重要性甚至会超过模型本身。
+
+企业流程助手
+
+制度查询、材料检查、表单准备和流程导航也能受益。这里要特别注意区分“给出建议”和“业务已经办理完成”，不能让模型的文字回复替代真实系统状态。
+
+反过来，如果任务步骤固定、规则能完全枚举、延迟要求很高，或者一次错误就会产生不可逆损失，普通程序和工作流往往更合适。Agent 可以放在某个需要理解和判断的节点，不必接管整个流程。
+
+OpenCode、Pi、DeepSeek Harness 怎么放进这套架构
+
+详细的产品比较放在上一篇，这里只保留和落地有关的区别：
+
+情况
+可以先试
+
+希望通过 HTTP&#x2F;SSE 接到现有服务 |
+OpenCode |
+
+希望把 Runtime 嵌进自己的 Node.js 产品 |
+Pi SDK |
+
+非 Node 服务，但可以管理长驻子进程 |
+Pi RPC |
+
+Python 团队，围绕 DeepSeek 和训练评测建设 |
+DeepSeek Harness |
+
+已确定 OpenAI 或 Claude 平台 |
+Codex &#x2F; Claude Agent SDK |
+
+需要完整远程软件开发环境 |
+OpenHands |
+
+不管先选哪一个，业务服务最好只依赖自己的接口：
+
+1
+2
+3
+4
+5
+6
+7
+8
+
+ | type Harness interface &#123;
+ CreateRun(ctx context.Context, req CreateRunRequest) (Run, error)
+ Send(ctx context.Context, runID string, input Input) error
+ Subscribe(ctx context.Context, runID string) (<-chan Event, error)
+ GetResult(ctx context.Context, runID string) (Result, error)
+ Approve(ctx context.Context, runID string, approval Approval) error
+ Cancel(ctx context.Context, runID string) error
+&#125;
+
+ |
+
+然后分别实现 OpenCodeAdapter、PiAdapter 或 DeepSeekAdapter。
+
+Adapter 不需要把所有产品抹成完全一样，只统一业务真正依赖的部分，例如 Run 状态、事件、取消和最终结果。Structured Output、Session Fork、特定 Sandbox 等能力可以通过 capability 标记暴露。
+
+从 PoC 走到生产
+
+我会分四步，而不是第一天就把所有基础设施建齐。
+
+第一步：只证明任务有价值
+
+选一个 Runtime、一个模型和几项只读工具，跑一批真实任务。记录成功率、人工接管、耗时、Token 和工具调用情况。
+
+这一步先不要追求多模型和多 Agent。如果单 Agent 加几个工具都无法稳定完成任务，增加更多角色通常只会让问题更难定位。
+
+第二步：把工具和结果收紧
+
+让 CLI 输出稳定 JSON，给高频工具增加 Schema，限制参数和资源范围。最终结果也用 Schema 校验，并明确区分事实、证据、推断和建议。
+
+有副作用的工具先全部放到审批后面。
+
+第三步：补业务控制面
+
+增加任务表、队列、异步 Worker、幂等、分层重试和取消。把 task_id、run_id、session_id 串起来，并记录模型、工具和审批事件。
+
+到这一步，Harness 才真正从个人工具变成业务执行器。
+
+第四步：再考虑 Runtime 替换和共享工具层
+
+准备固定回放集，让候选 Runtime 跑影子任务，对比质量、成本、耗时和失败恢复。如果公共工具越来越多，再建设 MCP 或 Tool Gateway。
+
+不要因为社区里出现了一个新项目就立刻迁移。Adapter 和回放集的意义，就是让切换建立在数据上。
+
+上生产前我会检查这些问题
+
+- 用户取消后，模型请求和子进程是否真的停止；
+
+- Runtime 崩溃后，任务能否安全恢复或重试；
+
+- 不同租户的目录、Session 和凭证是否隔离；
+
+- 工具参数和资源范围是否可限制；
+
+- 工具返回超长内容或恶意文本时怎样处理；
+
+- 最终结果是否经过 Schema 和业务规则校验；
+
+- 写操作是否有幂等键和审批记录；
+
+- 一次 Run 的模型、工具、审批和结果能否完整追踪；
+
+- 单任务的时间、Token、工具次数和资源是否有限额；
+
+- Runtime 升级失败时能否回滚。
+
+这些问题没有处理完，系统可以做内部试用，但不适合承担重要业务动作。
+
+总结
+
+OpenCode、Pi、DeepSeek Harness 这类工具最适合放在“执行”这个位置。它们让模型能够使用上下文、Skill 和工具完成一次任务，省掉了很多重复的 Agent Loop 开发。
+
+业务系统仍然要握住几样东西：任务状态、身份权限、幂等审批、结果标准和审计记录。这些内容一旦跟某个 Harness 的 Session 和消息格式绑在一起，后面升级或换工具都会很麻烦。
+
+所以比较实际的做法是：先用现成 Harness 和已有 CLI 把任务跑通；确认有价值后，再逐步把 CLI 收紧成结构化工具，把公共能力放进 MCP 或 Tool Gateway，并在业务和 Runtime 之间加一层 Adapter。
+
+这样做既利用了 OpenCode、Pi、DeepSeek Harness 已经完成的工作，也不会把自己的业务平台变成某个 Agent 项目的附属品。
+
+上一篇 《OpenCode、Pi、DeepSeek Harness 怎么选：Coding Agent Harness 全景与服务化对比》 对主要工具的接口和取舍做了更完整的比较。
+
+参考资料
+
+- OpenCode Server
+
+- OpenCode SDK
+
+- OpenCode Custom Tools
+
+- OpenCode Permissions
+
+- OpenCode MCP Servers
+
+- Pi RPC Mode
+
+- Pi SDK
+
+- Pi Extensions
+
+- DeepSeek Harness GitHub Repository
+
+- DeepSeek Harness Interaction Modes
+
+- Codex as a Platform
+
+- Claude Agent SDK Overview
+
+- OpenHands Software Agent SDK
+
+- OpenHands Agent Server
+
+常见问题
+
+能不能把企业已有 CLI 放进 OpenCode、Pi 或 DeepSeek Harness 的运行环境，让它们直接调用？可以，尤其适合早期验证。正式使用时应把 CLI 固化进版本化镜像并加入 PATH，限制命令和参数，统一 JSON 输出、超时、错误码、凭证与审计。公共或高频能力可以继续封装为 Native Tool 或 MCP。
+
+使用现成 Harness 后，业务 Agent 平台还需要建设什么？仍需建设任务状态机、多租户和 ACL、幂等与重试、审批、隔离、审计、评测、成本治理和结果校验。Harness 主要解决一次 Agent 执行，不会自动理解业务责任。
+
+### OpenCode、Pi、DeepSeek Harness 怎么选：Coding Agent Harness 全景与服务化对比
+
+- URL: https://jiankunking.com/coding-agent-harness-landscape-and-selection.html
+- Content type: original
+- Published: 2026-09-05
+- Updated: 2026-09-05
+- Summary: 梳理 OpenCode、Pi、DeepSeek Harness、Codex、Claude Agent SDK、OpenHands 等 Agent Harness，重点比较远程接口、工具扩展、会话、权限、隔离和生产服务化能力。
+- Categories: AI
+- Tags: AI Agent, Harness Engineering, OpenCode, Pi, DeepSeek Harness, Codex, MCP
+
+Key takeaways:
+
+- OpenCode 适合通过 HTTP/SSE 快速接入现有业务，Pi 适合嵌入自有产品，DeepSeek Harness 更适合 Python、DeepSeek 生态和训练闭环探索。
+- 选 Harness 不能只看终端体验，还要看会话、事件、取消、权限、隔离和结构化结果。
+- CLI 可以作为工具接入，但业务系统不应直接依赖某个 Harness 的 Session 和消息格式。
+- 最好先定义自己的 Run、Event、Tool 和 Result，再通过 Adapter 接不同 Runtime。
+
+Article text:
+
+最近集中看了几套 Coding Agent 工具：OpenCode、Pi、DeepSeek Harness、Codex、Claude Agent SDK、OpenHands。刚开始看时，它们都能聊天、读文件、执行命令、调用工具，功能表放在一起很像，越看反而越难选。
+
+真正拉开差距的不是它们会不会写代码，而是怎么接进现有系统：有没有稳定的服务接口，会话和事件能不能拿出来，工具怎么注册，任务能不能取消，运行环境怎么隔离，以及我们要为它补多少控制面。
+
+这篇主要做工具梳理和选型。至于选完以后怎样放进业务、现有 CLI 怎么接、哪些能力还得自己建设，放到下一篇单独讨论。
+
+以下判断基于 2026 年 9 月 5 日 能查到的官方资料。这个领域变化很快，具体接口仍应以实际采用版本为准。
+
+先说结论
+
+如果只看目前比较常见的几种建设目标，我的选择会是：
+
+建设目标
+优先看什么
+
+已有 Go、Java、Python 服务，想尽快接一个独立 Agent Runtime |
+OpenCode |
+
+想把 Agent 内核嵌进自己的 Node.js 产品 |
+Pi |
+
+团队以 Python、DeepSeek 为主，并关注轨迹、评测或训练闭环 |
+DeepSeek Harness |
+
+已经确定使用 OpenAI 或 Claude |
+Codex &#x2F; Claude Agent SDK |
+
+需要完整仓库、容器、浏览器和远程开发环境 |
+OpenHands |
+
+这不是产品能力排名。OpenCode 的优势是接入快，Pi 的优势是容易改，DeepSeek Harness 的吸引力在模型与训练方向，OpenHands 解决的是更重的执行环境。团队面对的问题不同，答案自然也不同。
+
+还有一个结论比较确定：不要因为某个工具恰好能执行 Shell，就直接把它当成业务后端。 能跑命令只能说明 Demo 能工作，离生产还差会话、取消、隔离、权限、审计和任务恢复。
+
+这些工具属于同一类吗
+
+不完全是。
+
+我这里把 Harness 理解为模型外部的执行环境。它负责组织上下文，让模型选择工具，把工具结果送回模型，并把这个循环持续到任务结束。
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+
+ | Agent = Model + Harness
+
+Harness =
+ Agent Loop
++ Context
++ Tool Runtime
++ Session
++ Permission
++ Workspace / Sandbox
++ Event Stream
+
+ |
+
+按这个定义，常见项目大致可以分成三类：
+
+类型
+代表工具
+更像什么
+
+可以直接运行的 Harness |
+OpenCode、Pi、DeepSeek Harness、Codex、Claude Agent SDK |
+已经装好的执行引擎 |
+
+Agent 开发框架 |
+LangGraph、AutoGen、PydanticAI、Semantic Kernel |
+用来自己组装执行引擎的零件 |
+
+协议和基础设施 |
+MCP、ACP、A2A、Sandbox |
+连接工具、Agent 或运行环境的标准 |
+
+LangGraph 和 OpenCode 经常会被放在一起比较，但它们不在同一层。用 LangGraph，任务状态、节点、路由和持久化大多由我们自己设计；用 OpenCode，现成的 Agent Loop、Session、工具和交互方式已经在那里了。
+
+OpenCode：最像一个现成的 Agent Backend
+
+OpenCode 最吸引我的地方不是终端界面，而是它已经把 Server、SDK、Session、事件和扩展方式接到了一起。
+
+官方提供 opencode serve，业务侧可以通过 HTTP 创建 Session、发送消息，通过 SSE 接收事件。工具侧既可以直接使用 Bash，也可以写 Custom Tool、Plugin，或者连接 MCP Server。Agent、Subagent 和 Skill 也有明确的配置方式。
+
+典型接法很直观：
+
+1
+2
+3
+4
+5
+6
+7
+8
+
+ | Business Service
+ │ HTTP / SSE
+ ▼
+OpenCode Server
+ ├── Agent / Skill
+ ├── Custom Tool
+ ├── Bash
+ └── MCP Server
+
+ |
+
+它适合下面这种团队：
+
+- 业务服务已经存在，不想为了 Agent 改成 Node.js；
+
+- 希望 Runtime 独立部署；
+
+- 想先用 HTTP&#x2F;SSE 把任务、过程和结果跑通；
+
+- 还没有决定长期绑定哪家模型。
+
+需要注意的是，OpenCode 仍然带有本地 Coding Agent 的设计背景。多租户、Worker 调度、共享存储、工作目录隔离、凭证和高可用不是启动一个 Server 就自动具备的。把它接成后端容易，把它做成稳定的多租户执行面仍然需要工程投入。
+
+Pi：更像可以嵌入产品的 Agent 内核
+
+Pi 的感觉和 OpenCode不太一样。OpenCode 更像一个已经可以对外提供服务的进程，Pi 更像一组小而清晰的可编程构件。
+
+它有两种比较实用的接入方式：
+
+- 在 TypeScript&#x2F;JavaScript 服务里使用 SDK，直接创建和控制 Agent Session；
+
+- 以 RPC 模式运行长驻进程，通过 stdin&#x2F;stdout 上的 JSONL 发送命令和接收事件。
+
+Pi 的 Extension 可以注册工具、命令和事件钩子，Skill、Prompt Template、Package 也比较适合做产品级组合。如果团队想自己决定外部 API、UI、会话存储和任务状态，只复用 Agent Loop，Pi 会比较顺手。
+
+代价也很直接：它不会替我们提供完整的企业控制面。认证、租户、数据库、Worker 调度、配额和运维接口，基本都要自己做。对于 Go 或 Java 服务，JSONL RPC 虽然能接，但还要处理子进程退出、背压、重启和协议版本。
+
+所以我会把 Pi 放在“自由度更高，但建设量也更大”的位置。
+
+DeepSeek Harness：值得关注，但要给变化留空间
+
+DeepSeek Harness 的特点不只是运行 Agent。它试图把 Harness、插件、部署、轨迹和模型训练放在同一条链路上，这一点和单纯面向个人使用的 Coding Agent 不太一样。
+
+从当前资料看，它提供 CLI、Web、Python SDK、Plugin 和 ACP 等接入方式。对于 Python 团队，或者本来就在围绕 DeepSeek 做行业 Agent、数据回放和持续评测，这个方向很有吸引力。
+
+但它仍是较新的项目，官方也将当前阶段标为 Developer Preview。真正上生产前，需要自己验证：
+
+- 并发任务和长任务是否稳定；
+
+- Session 能否恢复；
+
+- 取消后子进程是否真的结束；
+
+- Plugin 和 SDK 升级是否兼容；
+
+- 多模型 Provider 是否满足实际需求；
+
+- 轨迹数据怎样落库和脱敏。
+
+我的看法是可以尽早试，但不要让业务接口直接依赖它当前的 SDK 类型。外面包一层 Adapter，升级或切回其他 Runtime 都容易一些。
+
+Codex 和 Claude Agent SDK：生态确定时更省事
+
+如果公司已经确定模型平台，就不一定非要追求“模型中立”。
+
+Codex 提供非交互执行、SDK 和 App Server 等方式，可以管理 Thread、Turn、事件、审批、结构化输出、MCP 和 Sandbox。Claude Agent SDK 则把 Claude Code 的 Agent Loop、工具、Session、Hook 和权限机制开放给 Python、TypeScript 应用。
+
+这类厂商 Runtime 的优点是模型和 Harness 的配合通常更完整，官方能力出现后也更容易直接用上。缺点是迁移成本更高，账号、模型、协议和运行时会形成一组绑定。
+
+如果本来就确定使用对应平台，这种绑定未必是问题；如果目标是做一个可在多家模型间切换的通用 Agent 平台，就要谨慎一些。
+
+OpenHands：需要完整执行环境时再考虑
+
+OpenHands 比前几种更重。它不只是一个 Agent Loop，还包含 SDK、Agent Server、远程 Sandbox、Web UI，以及面向软件工程任务的完整执行环境。
+
+如果任务需要拉取仓库、安装依赖、启动服务、运行测试、操作浏览器，并持续执行较长时间，OpenHands 的价值会比较明显。如果只是读取几项业务数据，再生成一个结构化结果，这套平台可能有些重。
+
+这里不是说重不好，而是要看我们的任务到底需要“一个循环”，还是需要“一台可远程使用的开发机”。
+
+放在一起比较
+
+下面这张表只比较作为业务 Runtime 时比较关心的部分，不比较代码补全体验：
+
+工具
+接入方式
+工具扩展
+模型选择
+服务化感受
+主要代价
+
+OpenCode |
+HTTP Server、SSE、SDK |
+Bash、Custom Tool、Plugin、MCP、Skill |
+相对开放 |
+接入最快 |
+企业控制面和隔离要自己补 |
+
+Pi |
+TypeScript SDK、JSONL RPC |
+Extension、Tool、Skill、Package |
+相对开放 |
+适合深度嵌入 |
+外部服务层基本要自己建 |
+
+DeepSeek Harness |
+CLI、Python SDK、ACP、Web |
+Plugin、工具和协议扩展 |
+偏 DeepSeek 方向 |
+适合验证新方向 |
+项目较新，要控制版本风险 |
+
+Codex |
+exec、SDK、App Server |
+MCP、Skill、Sandbox、Approval |
+OpenAI |
+服务接口完整 |
+平台绑定较强 |
+
+Claude Agent SDK |
+Python&#x2F;TS SDK |
+MCP、自定义 Tool、Hook、Permission |
+Claude |
+SDK 集成方便 |
+平台绑定较强 |
+
+OpenHands |
+SDK、Agent Server |
+Tool、MCP、Remote Sandbox |
+可配置 |
+软件工程环境完整 |
+部署和资源成本较高 |
+
+表里的“服务化方便”不等于“已经可以直接承担生产业务”。它只代表二次封装的起点更高。
+
+选型时我会重点看什么
+
+1. 怎么被业务系统调用
+
+TUI 好不好用和服务端好不好接是两回事。我会先确认有没有稳定的 SDK、RPC 或 HTTP 接口，以及能不能持续获取事件。
+
+如果只能启动一次 CLI、等进程退出后读取 stdout，那么任务取消、审批、进度展示和故障恢复都会比较难做。
+
+2. Session 到底归谁管理
+
+要确认 Session 能不能创建、恢复、查询和删除，数据存在哪里，多实例之间是否共享。
+
+业务任务和 Harness Session 也不应该混成一个 ID。一次业务任务可能因为超时、重试或切换 Runtime 产生多个 Session。
+
+3. 工具是不是有明确契约
+
+所有 Coding Agent 几乎都能执行 Shell，但我更关心能否把工具描述成带 Schema 的接口：参数有什么类型，哪些值允许传，返回值是否稳定，哪些调用需要审批。
+
+只靠 Prompt 告诉模型“请按这个格式拼命令”，能跑，但不适合作为长期方案。
+
+4. 任务能不能停下来
+
+用户取消以后，不能只把页面状态改成 cancelled。模型请求、Shell 子进程、浏览器任务和远程工具都要一起结束，否则后台仍会继续花钱，甚至继续执行有副作用的操作。
+
+5. 隔离是不是足够
+
+工作目录不是安全边界。并发任务至少要考虑目录、进程、网络、凭证、缓存和 Session 的隔离。涉及代码执行或不可信输入时，还要看容器或 Sandbox 能力。
+
+6. 最终结果能不能被程序使用
+
+业务系统通常需要 JSON，而不是一段“看起来不错”的 Markdown。最好直接支持 JSON Schema 或结构化结果；其次可以通过一个专门的 Tool 提交最终结果；最差才是从自由文本里解析。
+
+按团队情况怎么选
+
+已有业务服务，先把链路跑起来
+
+我会先试 OpenCode。HTTP&#x2F;SSE 对现有 Go、Java、Python 服务都比较友好，也不必把 Agent 内核嵌进主进程。
+
+准备把 Agent 做成自己的产品能力
+
+我会重点看 Pi。它给的控制权更多，适合自己定义 API、会话和 UI，但要接受更多平台建设工作。
+
+Python 团队，希望结合 DeepSeek 做持续评测或训练
+
+可以验证 DeepSeek Harness。建议固定版本，先跑离线任务或影子流量，再决定是否进入核心链路。
+
+已经确定单一模型平台
+
+直接评估 Codex 或 Claude Agent SDK 往往更省时间。所谓中立性不是免费获得的，如果团队没有真实的多模型需求，不必为了抽象而抽象。
+
+任务本身就是远程软件开发
+
+优先看 OpenHands，或者其他带完整 Sandbox 的平台。此时运行环境的能力可能比 Agent Loop 本身更重要。
+
+最后不要靠 Demo 拍板
+
+选型时最好准备一组真实任务，固定输入、工具和结果格式，然后分别跑候选 Runtime。至少记录：
+
+- 任务完成率；
+
+- 工具调用是否正确；
+
+- 无依据结论的比例；
+
+- 人工接管次数；
+
+- p50、p95 完成时间；
+
+- Token 和基础设施成本；
+
+- 超时、取消和恢复是否正常。
+
+一次演示效果很好，可能只是模型碰巧选对了路径。能稳定跑完几十个真实任务，才说明 Harness、工具和上下文设计基本合适。
+
+总结
+
+如果现在要做一个业务 Agent 原型，我会先从 OpenCode 开始，因为接入成本低；如果很快发现需要自己掌控会话、事件和工具生命周期，再考虑用 Pi 重做执行内核；如果团队的重点是 DeepSeek 和训练评测闭环，就单独验证 DeepSeek Harness。
+
+不管选哪一个，业务侧最好先保留自己的 task_id、run_id、事件和结果格式。这样 OpenCode、Pi、DeepSeek Harness 才是可替换的执行器，而不是整个系统无法绕开的中心。
+
+下一篇 《把 Coding Agent Harness 用到业务里：我们能复用什么，又该自己建设什么》 继续讨论选完以后怎样接进业务，以及已有 CLI 应该以什么方式交给 Harness。
+
+参考资料
+
+- OpenCode Server
+
+- OpenCode SDK
+
+- OpenCode Tools
+
+- OpenCode Custom Tools
+
+- OpenCode MCP Servers
+
+- Pi RPC Mode
+
+- Pi SDK
+
+- Pi Extensions
+
+- DeepSeek Harness GitHub Repository
+
+- DeepSeek Harness Interaction Modes
+
+- Codex as a Platform
+
+- Codex Non-interactive Mode
+
+- Claude Agent SDK Overview
+
+- OpenHands Software Agent SDK
+
+- OpenHands Agent Server
+
+常见问题
+
+OpenCode、Pi、DeepSeek Harness 都能调用自定义 CLI 吗？原则上都可以。OpenCode 可以通过 Bash、自定义 Tool 和 MCP，Pi 可以通过 Extension 注册工具或执行命令，DeepSeek Harness 可以通过 Plugin、SDK 或 ACP 扩展。正式使用时最好为 CLI 增加结构化参数、权限和审计，而不是让模型自由拼接 Shell。
+
+哪个更适合接到已有业务服务后面？如果希望通过 HTTP/SSE 快速接入，OpenCode 的路径较短；如果准备把 Agent 内核嵌入自己的 Node.js 服务并自行设计控制面，Pi 更灵活；如果团队以 Python 和 DeepSeek 为主，可以验证 DeepSeek Harness，但要给早期版本变化留出隔离层。
+
 ### 阅读六本大模型书的阶段性思考：一个 Token 如何变成答案
 
 - URL: https://jiankunking.com/how-large-language-models-generate-answers.html
@@ -652,10 +1536,10 @@ GPU 拥有大量并行计算单元，适合把同一种运算同时应用到许�
 - URL: https://jiankunking.com/understand-ai-agent-development-with-agentmesh-demo.html
 - Content type: original
 - Published: 2026-08-21
-- Updated: 2026-08-31
+- Updated: 2026-09-05
 - Summary: 通过一个可运行的点餐 Demo，串联 Tool Calling、MCP、A2A、AG-UI、HITL、Skill 路由与多 Agent 协作的完整开发链路。
 - Categories: AI
-- Tags: AI Agent, AgentScope, AG-UI, MCP, A2A, Tool-Calling, HITL, Skill
+- Tags: AI Agent, MCP, AgentScope, AG-UI, A2A, Tool-Calling, HITL, Skill
 
 Article text:
 
@@ -6699,7 +7583,7 @@ https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/convers
 - Updated: 2025-01-18
 - Summary: 记录 Go HTTP Client 产生大量 TIME_WAIT 的排查过程，分析连接复用、响应体处理和 Transport 参数调优。
 - Categories: Go
-- Tags: Network, TCP, Go, Client, HTTP, IP, Settings, TIME_WAIT
+- Tags: Go, Network, TCP, Client, HTTP, IP, Settings, TIME_WAIT
 
 Article text:
 
@@ -13890,7 +14774,7 @@ Redis 的 MONITOR 命令在执行后，会持续输出监测到的各个命令�
 - Updated: 2023-06-03
 - Summary: 分析Elasticsearch Index文件是如何存储的？ 主要是想看一下FST文件是以什么粒度创建的？
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Lucene, Storage
+- Tags: Elasticsearch, Storage, Lucene
 
 Article text:
 
@@ -15511,7 +16395,7 @@ Ngram分词会消耗大量资源(尤其是磁盘),reindex有可能会超时
 - Updated: 2023-05-12
 - Summary: 基于Golang、Gin和ReverseProxy构建高效业务网关，实现路由热加载、反向代理、权限控制等功能。
 - Categories: Architecture
-- Tags: Gateway, Go, Gin, ReverseProxy
+- Tags: Gateway, Gin, Go, ReverseProxy
 
 Article text:
 
@@ -15617,7 +16501,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2023-02-24
 - Summary: 复盘 Gin 中读取和缓存 Response Body 导致的 OOM，分析内存增长原因并给出更安全的实现方式。
 - Categories: Go
-- Tags: Go, Gin, OOM, Response, Body
+- Tags: Gin, Go, OOM, Response, Body
 
 Article text:
 
@@ -36072,7 +36956,7 @@ RentrantReadWriteLock的具体流程梳理完了，回过头来想一下前言�
 - Updated: 2018-10-27
 - Summary: 基于《Java并发编程的艺术》分析 AQS Condition 的等待队列、await、signal 及线程重新竞争锁的过程。
 - Categories: Java
-- Tags: Concurrent, AQS, Condition, Lock
+- Tags: AQS, Concurrent, Lock, Condition
 
 Article text:
 
@@ -37933,7 +38817,7 @@ BootstrapMethods:
 - Updated: 2018-03-03
 - Summary: 通过图文和源码分析 Java AQS 的实现原理，包括 FIFO 同步队列、独占模式、共享模式和线程唤醒机制。
 - Categories: Java
-- Tags: Concurrent, AQS, Lock
+- Tags: AQS, Concurrent, Lock
 
 Article text:
 
