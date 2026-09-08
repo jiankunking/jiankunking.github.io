@@ -5,7 +5,7 @@
 Canonical site: https://jiankunking.com/
 Author: 衣舞晨风 (jiankunking)
 Author profile: https://jiankunking.com/about/
-Generated from 174 indexable articles. Each entry keeps its canonical URL and content provenance.
+Generated from 175 indexable articles. Each entry keeps its canonical URL and content provenance.
 
 ## Core topics
 
@@ -15,6 +15,275 @@ Generated from 174 indexable articles. Each entry keeps its canonical URL and co
 - [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
 
 ## Articles
+### 15秒之谜：一次APISIX网关超时问题的排查记录
+
+- URL: https://jiankunking.com/APISIX-504-troubleshooting.html
+- Content type: original
+- Published: 2026-09-08
+- Updated: 2026-09-08
+- Summary: 线上AI网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 tcp_syn_retries=3 导致的SYN重传超时。
+- Categories: Debugging
+- Tags: APISIX, Gateway, TCP, Troubleshooting, Linux Kernel
+
+Article text:
+
+线上AI网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 tcp_syn_retries=3 导致的SYN重传超时。
+
+起因
+
+线上反馈说AI网关偶尔会报504，我看了下监控，确实有，但不多。点进去一看，发现一个很诡异的现象：这些504请求的耗时全部精确卡在15秒。
+
+不是14秒，不是16秒，就是15秒。
+
+我们的插件配置的超时是600秒，按理说不应该这么快超时。这个15秒到底是从哪来的？
+
+第一步：追代码
+
+让AI助手帮我追了一下超时的传递链路。从插件配置开始，经过Lua层、FFI层，最终到C模块，600秒的超时确实正确传递下去了，C模块也确实设置了600秒的定时器。
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+ | -- ai-transport/http.lua:145
+httpc:set_timeout(timeout)
+
+-- resty/ngx_http_ffi_client.lua
+client.set_timeouts(self, 600000, 600000, 600000)
+
+-- ngx_http_ffi_client_request.c:2238
+op->connect_timeout = 600000
+ngx_add_timer(c->write, op->connect_timeout)
+
+ |
+
+代码没问题，那15秒从哪来的？
+
+第二步：怀疑内核
+
+15秒这个数字很特殊，我怀疑可能是内核的TCP SYN重传超时。
+
+查了一下APISIX pod的内核参数：
+
+1
+2
+
+ | sysctl net.ipv4.tcp_syn_retries
+# 输出: net.ipv4.tcp_syn_retries = 3
+
+ |
+
+Linux内核SYN超时的计算公式是：
+
+1
+
+ | timeout = ((2 << boundary) - 1) * rto_base
+
+ |
+
+tcp_syn_retries=3时：
+
+1
+
+ | timeout = ((2 << 3) - 1) * 1 = 15秒
+
+ |
+
+完美匹配。
+
+SYN重传的时间线是这样的：
+
+1
+2
+3
+4
+
+ | 第1次SYN: t=0s发送, 超时t=1s (累计1s)
+第2次SYN重传: t=1s发送, 超时t=3s (累计3s)
+第3次SYN重传: t=3s发送, 超时t=7s (累计7s)
+第4次SYN尝试: t=7s发送, 超时t=15s (累计15s) ← 内核放弃
+
+ |
+
+不会发第5次。tcp_syn_retries=3表示最多重传3次，总共4次尝试。
+
+第三步：排除DNS
+
+会不会是DNS解析失败导致的？分析了一下APISIX的DNS解析代码，找到了错误日志的格式：
+
+1
+2
+3
+4
+5
+
+ | -- resolver.lua:83
+log.error("failed to parse domain: ", host, ", error: ", err)
+
+-- resty/ngx_http_ffi_client.lua
+return nil, host .. " could not be resolved (" .. (err or "no address") .. ")"
+
+ |
+
+去网关日志里搜了一下，确实找到了DNS错误：
+
+1
+2
+3
+
+ | 2026/09/07 08:59:15 [warn] base.lua:255: failed to send request to LLM server:
+connect: failed to parse domain: failed to query the DNS server:
+dns server error: 2 server failure
+
+ |
+
+用这些DNS错误的request_id去ES里查了一下，发现了区别：
+
+DNS错误
+TCP SYN超时
+
+数量 |
+21条 |
+750条 |
+
+平均耗时 |
+2.25s |
+15.38s |
+
+状态码 |
+500 |
+504 |
+
+DNS错误是立即返回的，不会卡15秒。这是两个完全独立的问题。
+
+第四步：抓包验证
+
+通过流量仪抓包，用tcpdump分析了一下：
+
+1
+2
+3
+4
+5
+6
+
+ | # 找SYN包
+tcpdump -r capture.pcap &#x27;tcp[tcpflags] & (tcp-syn) != 0&#x27; -nn
+
+# 找SYN重传（同一端口发多次SYN）
+tcpdump -r capture.pcap &#x27;tcp[tcpflags] & (tcp-syn) != 0&#x27; -nn | \
+ awk &#x27;&#123;print $3, $5&#125;&#x27; | sort | uniq -c | sort -rn
+
+ |
+
+找到了完整的SYN重传序列：
+
+1
+2
+3
+4
+5
+6
+
+ | 10.200.76.55.18494 -> 39.96.198.249.443:
+ 首次SYN: 15:27:20.096
+ 第1次重传: 15:27:21.117 (间隔1.0s)
+ 第2次重传: 15:27:23.133 (间隔3.0s)
+ 第3次重传: 15:27:27.229 (间隔7.1s)
+ → 内核放弃，连接失败
+
+ |
+
+SYN重传间隔的分布：
+
+间隔
+次数
+理论值
+
+1.0s |
+2 |
+✓ |
+
+3.0s |
+2 |
+✓ |
+
+7.1s |
+2 |
+✓ |
+
+网络层的证据和内核参数的理论计算完全吻合。
+
+三层证据
+
+层级
+证据
+结论
+
+应用层 |
+ES数据：717条504，request_time=15s |
+超时精确卡在15秒 |
+
+代码层 |
+源码追踪：600s超时正确传递 |
+不是应用层超时 |
+
+网络层 |
+PCAP：SYN重传间隔1s,3s,7s |
+内核SYN重传超时 |
+
+三层证据指向同一个结论：根因是tcp_syn_retries=3。
+
+修复
+
+这个修复其实没有采用。
+
+原因是：单纯调 tcp_syn_retries=5 只是治标不治本，总超时从15秒变成63秒，用户体验更差，而且掩盖了真正的问题。
+
+问题在于：
+
+- 根因没解决 — SYN包为什么发不出去/收不到响应？网络链路有问题
+
+- 只是延长失败时间 — 从15秒变成63秒，用户体验更差
+
+- 掩盖了真正的问题 — 应该查的是网络层面
+
+正确的修复方向：
+
+- 网络层面解决连通性问题
+
+- 或者在应用层做重试/降级，而不是依赖内核重试
+
+后续拉通集团深入排查网络层面的问题。
+
+一点感想
+
+这次排查大概花了大半天时间。如果是以前，可能要花更久，甚至可能方向都找不到。
+
+AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查询、PCAP解析，这些事情它都能做。但方向判断还是得人来，比如"怀疑是内核参数"这个思路，是我提出来的，AI只是帮我验证了计算。
+
+最后的三层证据链也是这样：ES数据、源码分析、PCAP抓包，三个维度交叉验证，才能确认根因。单一维度的证据可能有误导，比如DNS错误看起来也是超时，但耗时完全不同。
+
+记录下来，下次遇到类似问题可以参考。
+
+关于MiMo V2.5 Free
+
+这次用的是OpenCode + MiMo V2.5 Free，一个免费模型。说实话，效果超出预期。
+
+以前觉得免费模型也就做做简单问答，这次拿来排查问题，发现还真能打。让它追代码，它能把整条链路串起来，不需要我一步步喂。让它分析数据，它能自己判断"DNS错误和15秒超时是两个独立问题"，这个结论是它自己得出的，我没告诉它。
+
+写Python脚本也能直接跑，不用我调试半天。
+
+在这个问题上，MiMo V2.5 Free给我的体感比GPT 5.6 sol还要好。
+
+总的来说，这次体验让我对免费模型有了新认识。下次遇到类似问题，我还会用它。
+
 ### Coding Agent Harness 选型与接入：OpenCode、Pi、DeepSeek Harness 对比
 
 - URL: https://jiankunking.com/coding-agent-harness-landscape-and-selection.html
