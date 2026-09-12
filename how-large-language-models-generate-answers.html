@@ -197,7 +197,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">176</span>
+          <span class="site-state-item-count">177</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -208,7 +208,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">312</span>
+        <span class="site-state-item-count">315</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -339,10 +339,8 @@
 <p><strong>核心问题是：当我们向大模型提出一个问题时，一段人类文字究竟如何进入模型，最后又如何变成一段答案？</strong></p>
 <p>比如，我们在对话框里输入：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">请用简单的语言解释什么是大模型。</span><br></pre></td></tr></table></figure>
-
 <p>几秒后，屏幕上便出现了一段结构清楚、语气自然的回答。它看起来像是先理解了问题，再回忆相关知识，组织好语言后给出答案。但模型内部并不是这样工作的：它不会先在“脑海”中写好整篇回答，也不一定是从某个知识库里取出一段现成文字。它实际执行的是一个不断重复的过程：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">读取已有上下文</span><br><span class="line">→ 计算下一个 Token 的概率</span><br><span class="line">→ 选择一个 Token</span><br><span class="line">→ 把它加入上下文</span><br><span class="line">→ 再预测下一个 Token</span><br></pre></td></tr></table></figure>
-
 <p>如此反复，许多个 Token 才逐渐组成一句话、一段文字，甚至一篇文章。</p>
 <p><img src="/images/how-large-language-models-generate-answers/token-to-answer-overview.svg" alt="一个 Token 从输入文字到逐步生成答案的完整过程" loading="eager" fetchpriority="high" decoding="async" width="1600" height="960"></p>
 <p>看起来只是不断预测“接下来最可能出现什么”，为什么最后却能表现出翻译、摘要、问答、编程和推理等能力？为了追清这条链路，我整理了下面六本书的阅读笔记：</p>
@@ -359,8 +357,8 @@
 <p>六本书关注的层次并不相同，但刚好可以拼出一条相对完整的路径：语言模型为何演变成 Transformer，GPT 内部如何计算，模型怎样训练和生成，又如何在 GPU 与实际应用系统中运行。</p>
 <p>本文不会依次总结六本书，也不会把目前整理的 502 条笔记逐条搬过来。接下来，我会沿着“一个 Token 如何变成答案”这条主线，把分散在各本书中的知识连接起来。</p>
 <span id="more"></span>
-
-<h2 id="从-N-Gram-到-Transformer：每一代模型都在修补上一代的缺陷"><a href="#从-N-Gram-到-Transformer：每一代模型都在修补上一代的缺陷" class="headerlink" title="从 N-Gram 到 Transformer：每一代模型都在修补上一代的缺陷"></a>从 N-Gram 到 Transformer：每一代模型都在修补上一代的缺陷</h2><p>在顺着一个 Token 进入 GPT 之前，有必要先回头看一眼语言模型的演进。因为 Transformer 并不是突然出现的，它所采用的每个关键设计，几乎都对应着前一代方法没有解决的问题。</p>
+<h2 id="从-N-Gram-到-Transformer：每一代模型都在修补上一代的缺陷">从 N-Gram 到 Transformer：每一代模型都在修补上一代的缺陷</h2>
+<p>在顺着一个 Token 进入 GPT 之前，有必要先回头看一眼语言模型的演进。因为 Transformer 并不是突然出现的，它所采用的每个关键设计，几乎都对应着前一代方法没有解决的问题。</p>
 <p>最早的 N-Gram 模型，用前面有限的几个词预测下一个词。它简单、直观，也确实抓住了语言的统计规律。但它只观察固定长度的窗口，难以处理跨越很远的依赖；没有出现过的词语组合，还会带来严重的数据稀疏问题。</p>
 <p>词袋模型走了另一条路：不考虑词序，只统计词是否出现以及出现多少次。它适合早期的文本分类和相似度计算，却丢掉了语言最重要的结构。同样几个词，换一种顺序可能表达完全不同的含义，但在词袋模型中得到的表示可能完全一样。</p>
 <p>Word2Vec 和神经概率语言模型开始用稠密向量表示词语。相比高维、稀疏的独热编码，嵌入向量不仅更紧凑，还让语义相似性变得可以计算。但早期词向量通常是静态的：“苹果”无论出现在什么句子里，初始表示都相同，无法充分处理一词多义和动态上下文。</p>
@@ -379,9 +377,9 @@
 <p>Transformer 更进一步：它去掉了 RNN 的递归结构，把注意力变成主要的信息交互方式。序列中的不同位置可以并行计算，任意两个 Token 之间也能通过较短路径建立联系。这种更适合并行训练和扩展的架构，最终成为现代大模型的基础。</p>
 <p>这段演进可以概括成：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">N-Gram：看得太近</span><br><span class="line">→ 词袋模型：丢掉顺序</span><br><span class="line">→ Word2Vec：有了语义空间，但上下文仍然有限</span><br><span class="line">→ RNN：保留顺序，但难以并行和记住长距离信息</span><br><span class="line">→ Seq2Seq：能生成序列，但固定向量形成瓶颈</span><br><span class="line">→ Attention：按需要访问上下文</span><br><span class="line">→ Transformer：用自注意力实现大规模并行和全局交互</span><br></pre></td></tr></table></figure>
-
 <p>理解这条历史路径后，再看 Token、嵌入和注意力，就不会觉得它们只是凭空堆叠起来的一组术语。</p>
-<h2 id="一、模型看到的不是文字，而是-Token"><a href="#一、模型看到的不是文字，而是-Token" class="headerlink" title="一、模型看到的不是文字，而是 Token"></a>一、模型看到的不是文字，而是 Token</h2><p>人类看到的是文字，计算机处理的是数字。</p>
+<h2 id="一、模型看到的不是文字，而是-Token">一、模型看到的不是文字，而是 Token</h2>
+<p>人类看到的是文字，计算机处理的是数字。</p>
 <p>“苹果发布了新手机”对我们来说是一句话，但神经网络不能直接对“苹果”“发布”“手机”做矩阵乘法。文字进入模型之前，必须先经过分词器，被拆成若干个可以处理的基本单元。这些单元叫作 <strong>Token</strong>。</p>
 <p>Token 不一定等于一个汉字，也不一定等于一个完整单词。它可能是：</p>
 <ul>
@@ -393,7 +391,6 @@
 </ul>
 <p>例如，一句话可能被处理成：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">原始文字：大模型正在生成答案</span><br><span class="line">Token：  [大模型] [正在] [生成] [答案]</span><br><span class="line">Token ID：[3812] [947] [5621] [2308]</span><br></pre></td></tr></table></figure>
-
 <p>这里的数字只是示意。实际使用哪个 ID，由模型的词表和分词器决定。</p>
 <p>为什么不把所有词都收进词表？因为语言中的词几乎是无限的：人名、地名、专业术语和新造词不断出现。如果每个词都占一个位置，词表会变得异常庞大；如果词表太小，又会遇到大量未知词。</p>
 <p>BPE 一类子词分词方法在两者之间做了折中：常见词可以作为整体保留，少见词则被拆成更小的片段。这样，即使模型没有见过某个完整单词，也可以通过已有的子词单元表示它。</p>
@@ -401,9 +398,9 @@
 <p><strong>BPE（Byte Pair Encoding，字节对编码）：</strong> 一种常见的子词分词算法。它反复合并语料中高频出现的相邻符号，逐步形成词表，使常见组合能够作为较完整的单元保留，少见词也可以被拆分表示。</p>
 </blockquote>
 <p>经过这一步，文字变成了一串 Token ID。但 ID 只是编号。编号 3812 并不比 2308 更“大”，数字之间的距离也不代表语义距离。为了让神经网络处理语言，还需要把编号变成向量。</p>
-<h2 id="二、嵌入：把语言放进一个可以计算的空间"><a href="#二、嵌入：把语言放进一个可以计算的空间" class="headerlink" title="二、嵌入：把语言放进一个可以计算的空间"></a>二、嵌入：把语言放进一个可以计算的空间</h2><p>模型会通过嵌入层，把每个 Token ID 映射成一个固定长度的向量：</p>
+<h2 id="二、嵌入：把语言放进一个可以计算的空间">二、嵌入：把语言放进一个可以计算的空间</h2>
+<p>模型会通过嵌入层，把每个 Token ID 映射成一个固定长度的向量：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Token ID → [0.17, -0.42, 0.08, ..., 0.31]</span><br></pre></td></tr></table></figure>
-
 <p>这个过程叫作 <strong>Embedding</strong>，也就是嵌入。</p>
 <p>可以把嵌入空间想象成一张维度极高的“语义地图”。在训练过程中，经常出现在相似语境中的 Token，会逐渐形成相似的向量表示；语义或用法相近的内容，在这个空间中的位置通常也更接近。</p>
 <p>模型不是先得到一本词典，再把词典里的定义写进向量。它是从大量上下文中学习关系：</p>
@@ -418,7 +415,8 @@
 <p>不过，仅有嵌入还不够。</p>
 <p>“苹果发布了新手机”和“我吃了一个苹果”中都出现了“苹果”，但含义完全不同。如果“苹果”永远对应同一个固定向量，模型就无法根据上下文区分公司和水果。</p>
 <p>于是，注意力机制登场了。</p>
-<h2 id="三、注意力：让每个-Token-重新阅读上下文"><a href="#三、注意力：让每个-Token-重新阅读上下文" class="headerlink" title="三、注意力：让每个 Token 重新阅读上下文"></a>三、注意力：让每个 Token 重新阅读上下文</h2><p>自注意力机制要解决的问题是：<strong>当前 Token 应该从可见上下文中吸收哪些信息，以及每部分信息应该占多大比重。</strong></p>
+<h2 id="三、注意力：让每个-Token-重新阅读上下文">三、注意力：让每个 Token 重新阅读上下文</h2>
+<p>自注意力机制要解决的问题是：<strong>当前 Token 应该从可见上下文中吸收哪些信息，以及每部分信息应该占多大比重。</strong></p>
 <p>在计算时，每个 Token 的输入向量会经过三组不同的线性变换，得到 Query、Key 和 Value。它们不是三个新的词义，而是同一个 Token 为注意力计算准备的三种数值表示：</p>
 <ul>
 <li><strong>Query（查询向量）</strong>：表示当前位置想要匹配什么样的信息；</li>
@@ -437,7 +435,6 @@
 </ol>
 <p>可以把权重简单想象成：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">“发布”的 Value × 0.30</span><br><span class="line">+ “手机”的 Value × 0.45</span><br><span class="line">+ 其他 Token 的 Value × 较小权重</span><br><span class="line">→ 汇总到“苹果”的新表示中</span><br></pre></td></tr></table></figure>
-
 <p>这些数字只是示意。<strong>Query 与 Key 用来计算各位置应占的权重，Value 才是按照这些权重被汇总的信息。</strong></p>
 <p>经过这次计算，“苹果”的向量不再只有静态词义，而是吸收了“发布”“手机”等上下文，更倾向于表示一家科技公司。</p>
 <p>严格地说，注意力分数和注意力权重不是同一回事。模型会先通过 Query 和 Key 的点积得到相关分数，再进行缩放、掩码和 Softmax 归一化，最后得到权重，并用这些权重对 Value 加权求和。</p>
@@ -452,16 +449,17 @@
 </ul>
 <p>因此，Transformer 通常会并行使用多个注意力头。不同的头可以从不同角度提取关系，最后再把结果合并。</p>
 <p>这就是多头注意力。</p>
-<h2 id="四、因果掩码：生成时不能偷看未来"><a href="#四、因果掩码：生成时不能偷看未来" class="headerlink" title="四、因果掩码：生成时不能偷看未来"></a>四、因果掩码：生成时不能偷看未来</h2><p>GPT 使用的是只包含解码器的 Transformer 架构，按照从左到右的方式生成文本。</p>
+<h2 id="四、因果掩码：生成时不能偷看未来">四、因果掩码：生成时不能偷看未来</h2>
+<p>GPT 使用的是只包含解码器的 Transformer 架构，按照从左到右的方式生成文本。</p>
 <p>当模型正在预测一句话中的第三个 Token 时，它只能使用前两个 Token，不能提前看到第四个、第五个 Token。否则，训练就变成了偷看答案。</p>
 <p>因此，GPT 的自注意力中会加入 <strong>因果掩码</strong>：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">第 1 个 Token：只能看到第 1 个</span><br><span class="line">第 2 个 Token：可以看到第 1、2 个</span><br><span class="line">第 3 个 Token：可以看到第 1、2、3 个</span><br><span class="line">……</span><br></pre></td></tr></table></figure>
-
 <p>掩码会把未来位置的注意力分数屏蔽掉。这样，模型在训练时遵守的规则和生成时一致：每一步都只能依据已经出现的内容预测后文。</p>
 <p>这里也能看出 BERT 和 GPT 的一项关键区别。</p>
 <p>BERT 通常使用双向上下文，通过遮住句子中的部分内容，让模型根据前后文预测被遮住的 Token。这使它很适合生成文本表示、分类和信息提取。GPT 则严格依据左侧上下文预测下一个 Token，因此更适合连续生成文本。</p>
 <p>二者都使用 Transformer，但训练目标和注意力方式不同，最终擅长的任务也不同。</p>
-<h2 id="五、Transformer-块：整合上下文并继续加工表示"><a href="#五、Transformer-块：整合上下文并继续加工表示" class="headerlink" title="五、Transformer 块：整合上下文并继续加工表示"></a>五、Transformer 块：整合上下文并继续加工表示</h2><p>注意力并不是 Transformer 的全部。一个典型的 Transformer 块还包含前馈神经网络、残差连接和层归一化等组件，它们分别承担不同的计算作用：</p>
+<h2 id="五、Transformer-块：整合上下文并继续加工表示">五、Transformer 块：整合上下文并继续加工表示</h2>
+<p>注意力并不是 Transformer 的全部。一个典型的 Transformer 块还包含前馈神经网络、残差连接和层归一化等组件，它们分别承担不同的计算作用：</p>
 <ol>
 <li><strong>自注意力</strong>：让每个 Token 按不同权重汇总可见上下文的信息；</li>
 <li><strong>前馈神经网络</strong>：对每个位置的向量分别进行非线性变换；</li>
@@ -470,24 +468,20 @@
 </ol>
 <p>其结构可以简化为：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">输入向量</span><br><span class="line">→ 层归一化</span><br><span class="line">→ 多头自注意力</span><br><span class="line">→ 残差连接</span><br><span class="line">→ 层归一化</span><br><span class="line">→ 前馈神经网络</span><br><span class="line">→ 残差连接</span><br><span class="line">→ 输出向量</span><br></pre></td></tr></table></figure>
-
 <p>一个 Transformer 块只能完成一次有限的上下文整合和向量变换。堆叠许多块后，上一层输出的 Token 表示会成为下一层的输入，同一位置的向量因而被连续更新。</p>
 <p>仍以“发布新手机后，苹果再次成为科技媒体的焦点”为例，可以用下面的过程建立直觉：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">初始表示：“苹果”同时保留水果和公司的多种可能</span><br><span class="line">经过若干层：前文中的“发布”“新手机”等信息逐渐影响它的表示</span><br><span class="line">继续向后传播：这些上下文关系被进一步组合和加工</span><br><span class="line">最终表示：当前语境中的“苹果”更偏向科技公司</span><br></pre></td></tr></table></figure>
-
 <p>这只是帮助理解的示意，并不表示某一层固定负责识别“发布”、下一层固定负责识别“手机”。这些职责不是人为指定的，模型在不同层中具体学习到什么，也很难用一套固定分工准确概括。真正发生的是一系列向量计算：每经过一个 Transformer 块，“苹果”所在位置的向量都会基于已有表示和可见上下文再次更新。</p>
 <p>因此，多层 Transformer 的核心作用是持续更新每个 Token 的上下文表示。最终得到的向量不再只表示一个脱离语境的词，而是包含“这个 Token 在当前位置、结合前文应当如何理解”的信息。对于 GPT 来说，每个位置只能使用自己及其前面的内容，不能提前看到后文。</p>
 <p>接下来，模型要用这些上下文表示预测下一个 Token。</p>
-<h2 id="六、从向量到概率：模型如何选择下一个-Token"><a href="#六、从向量到概率：模型如何选择下一个-Token" class="headerlink" title="六、从向量到概率：模型如何选择下一个 Token"></a>六、从向量到概率：模型如何选择下一个 Token</h2><p>输入序列经过最后一个 Transformer 块后，每个 Token 位置都会得到一个隐藏状态向量。生成下一个 Token 时，模型通常取当前序列最后一个位置的隐藏状态，通过输出层映射成一个与词表大小相同的分数列表。这些原始分数通常叫作 <strong>logits</strong>。</p>
+<h2 id="六、从向量到概率：模型如何选择下一个-Token">六、从向量到概率：模型如何选择下一个 Token</h2>
+<p>输入序列经过最后一个 Transformer 块后，每个 Token 位置都会得到一个隐藏状态向量。生成下一个 Token 时，模型通常取当前序列最后一个位置的隐藏状态，通过输出层映射成一个与词表大小相同的分数列表。这些原始分数通常叫作 <strong>logits</strong>。</p>
 <p>假设当前上下文是：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">法国的首都是</span><br></pre></td></tr></table></figure>
-
 <p>模型可能为候选 Token 计算出类似下面的结果：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">巴黎：9.8</span><br><span class="line">伦敦：3.1</span><br><span class="line">法国：2.4</span><br><span class="line">城市：1.7</span><br><span class="line">……</span><br></pre></td></tr></table></figure>
-
 <p>经过 Softmax 后，这些分数会被转换为概率分布：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">巴黎：0.92</span><br><span class="line">伦敦：0.02</span><br><span class="line">法国：0.01</span><br><span class="line">城市：0.006</span><br><span class="line">……</span><br></pre></td></tr></table></figure>
-
 <p>模型可以直接选择概率最高的 Token，也可以按照概率进行采样。</p>
 <p>不同的采样策略，会让输出呈现不同特征：</p>
 <ul>
@@ -499,15 +493,14 @@
 </ul>
 <p>当模型选出“巴黎”以后，它会把“巴黎”加入上下文：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">法国的首都是巴黎</span><br></pre></td></tr></table></figure>
-
 <p>然后再次执行同样的流程，预测下一个 Token。模型每次只生成一步，但把成百上千次预测连接起来，就形成了完整答案。</p>
 <p>所以，大模型并不是先想好整篇文章再逐字输出。至少从生成机制上看，它是在不断回答同一个问题：</p>
 <p><strong>根据目前已经出现的全部内容，接下来最适合出现什么？</strong></p>
-<h2 id="七、只预测下一个-Token，为什么会产生复杂能力？"><a href="#七、只预测下一个-Token，为什么会产生复杂能力？" class="headerlink" title="七、只预测下一个 Token，为什么会产生复杂能力？"></a>七、只预测下一个 Token，为什么会产生复杂能力？</h2><p>“预测下一个 Token”听起来像手机输入法，似乎不应该产生多么复杂的能力。</p>
+<h2 id="七、只预测下一个-Token，为什么会产生复杂能力？">七、只预测下一个 Token，为什么会产生复杂能力？</h2>
+<p>“预测下一个 Token”听起来像手机输入法，似乎不应该产生多么复杂的能力。</p>
 <p>但训练任务是否简单，不能只看它的名称，还要看数据规模和预测难度。</p>
 <p>如果模型需要补全的是：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">今天天气很____</span><br></pre></td></tr></table></figure>
-
 <p>它可能只需要学习简单搭配。</p>
 <p>如果模型需要继续的是数学证明、程序代码、法律条文、历史分析或多轮对话，那么为了持续提高预测准确率，它就不得不学习更复杂的结构：</p>
 <ul>
@@ -522,14 +515,16 @@
 <p>可以把它类比成一种规模极大的填空训练。考试形式始终是“填下一个空”，但为了在无数领域、无数上下文中填对，模型必须压缩和吸收数据中大量可重复的规律。</p>
 <p>随着模型规模、数据规模和训练计算量增加，一些没有被逐项明确教授的能力可能变得明显，人们通常把这种现象称为“涌现”。</p>
 <p>不过，“涌现”并不一定意味着某种能力在某个规模上突然从无到有。能力可能一直在逐渐增强，只是在达到评测阈值后才表现为分数上的跃升；不同指标和测试方法，也可能让同一种能力看起来更加突然。更谨慎的理解是：模型通过海量下一个 Token 预测学到的内部表示，可以迁移到训练目标没有直接列出的任务上。</p>
-<h2 id="八、从稠密模型到-DeepSeek：规模、稀疏激活与推理强化"><a href="#八、从稠密模型到-DeepSeek：规模、稀疏激活与推理强化" class="headerlink" title="八、从稠密模型到 DeepSeek：规模、稀疏激活与推理强化"></a>八、从稠密模型到 DeepSeek：规模、稀疏激活与推理强化</h2><p>前面介绍的 GPT 可以看作一种典型的稠密 Transformer：每个 Token 经过一层时，都会使用这一层中的注意力和前馈网络参数。《图解DeepSeek技术》进一步讨论了三个问题：</p>
+<h2 id="八、从稠密模型到-DeepSeek：规模、稀疏激活与推理强化">八、从稠密模型到 DeepSeek：规模、稀疏激活与推理强化</h2>
+<p>前面介绍的 GPT 可以看作一种典型的稠密 Transformer：每个 Token 经过一层时，都会使用这一层中的注意力和前馈网络参数。《图解DeepSeek技术》进一步讨论了三个问题：</p>
 <ol>
 <li>模型、数据和训练算力应该怎样一起扩大？</li>
 <li>模型参数越来越多以后，能不能只激活当前 Token 真正需要的部分？</li>
 <li>除了模仿训练文本，能不能利用答案结果继续改进模型的生成策略？</li>
 </ol>
 <p>这三个问题分别对应缩放定律、MoE 和 GRPO，也构成了理解 DeepSeek 技术路线的三个入口。</p>
-<h3 id="1-训练时计算：参数、数据和算力要同步考虑"><a href="#1-训练时计算：参数、数据和算力要同步考虑" class="headerlink" title="1. 训练时计算：参数、数据和算力要同步考虑"></a>1. 训练时计算：参数、数据和算力要同步考虑</h3><p>训练时计算，是指模型在训练阶段处理数据、完成前向计算、反向传播和参数更新所消耗的计算资源。模型性能的提高通常与三个要素有关：</p>
+<h3 id="1-训练时计算：参数、数据和算力要同步考虑">1. 训练时计算：参数、数据和算力要同步考虑</h3>
+<p>训练时计算，是指模型在训练阶段处理数据、完成前向计算、反向传播和参数更新所消耗的计算资源。模型性能的提高通常与三个要素有关：</p>
 <ul>
 <li>模型参数规模；</li>
 <li>训练数据规模；</li>
@@ -541,7 +536,8 @@
 <p><strong>Chinchilla 缩放定律</strong>强调，在给定训练计算预算下，模型参数量和训练数据量需要更均衡地配置。相关研究得到过一个常被引用的经验量级：训练 Token 数量约为参数数量的 20 倍。这个比例来自特定模型、数据和计算假设，并不是所有训练任务都必须遵守的固定公式；它更重要的启示是，参数增加后，训练数据也需要相应增加。按照这一视角，GPT-3 一类模型的问题可能不只是参数规模，还包括相对于参数量训练得不够充分。</p>
 <p>两者虽然结论侧重不同，但共同说明了一件事：</p>
 <p><strong>扩展大模型不是简单增加参数，而是在参数、数据与计算预算之间寻找更有效的组合。</strong></p>
-<h3 id="2-MoE：总参数很多，但每个-Token-只使用一部分"><a href="#2-MoE：总参数很多，但每个-Token-只使用一部分" class="headerlink" title="2. MoE：总参数很多，但每个 Token 只使用一部分"></a>2. MoE：总参数很多，但每个 Token 只使用一部分</h3><p>传统 Transformer 中的前馈神经网络属于稠密计算。一个 Token 进入前馈层后，这一层中的全部参数都会参与计算，只是产生的激活程度不同。</p>
+<h3 id="2-MoE：总参数很多，但每个-Token-只使用一部分">2. MoE：总参数很多，但每个 Token 只使用一部分</h3>
+<p>传统 Transformer 中的前馈神经网络属于稠密计算。一个 Token 进入前馈层后，这一层中的全部参数都会参与计算，只是产生的激活程度不同。</p>
 <p>MoE，也就是混合专家模型，把一个前馈层改造成多个较小的专家模块，并增加一个路由器：</p>
 <ul>
 <li><strong>专家</strong>通常是前馈神经网络子模块，负责处理被分配给自己的 Token；</li>
@@ -553,14 +549,13 @@
 </blockquote>
 <p>这个过程可以简化为：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Token 表示</span><br><span class="line">→ 路由器计算专家分数</span><br><span class="line">→ 选择得分最高的若干专家</span><br><span class="line">→ 专家分别完成前馈计算</span><br><span class="line">→ 按路由器分配的权重合并专家输出</span><br></pre></td></tr></table></figure>
-
 <p>这里的“专家”不能简单理解成数学专家、医学专家或编程专家。它首先是模型内部的一个计算子模块，可能在训练中逐渐擅长处理某些上下文、词法或句法模式，但这种分工并不是人为预先写好的职业分类。</p>
 <p>MoE 可以分为稠密混合与稀疏混合。稠密 MoE 会让所有专家都参与，只是参与权重不同；稀疏 MoE 则只激活少数专家。当前大模型讨论 MoE 时通常更关注后者，因为它允许模型拥有很大的总参数量，却只让一部分参数参与当前 Token 的计算。</p>
 <p>因此，理解 MoE 时需要区分两个数字：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">模型拥有的总参数量</span><br><span class="line">≠</span><br><span class="line">一次前向计算实际激活的参数量</span><br></pre></td></tr></table></figure>
-
 <p>MoE 并不是让计算免费消失，而是试图用稀疏激活换取更大的模型容量：模型可以容纳更多专家参数，同时把每个 Token 的计算控制在较小范围内。</p>
-<h3 id="3-DeepSeekMoE：Top-K-路由、细粒度专家与共享专家"><a href="#3-DeepSeekMoE：Top-K-路由、细粒度专家与共享专家" class="headerlink" title="3. DeepSeekMoE：Top-K 路由、细粒度专家与共享专家"></a>3. DeepSeekMoE：Top-K 路由、细粒度专家与共享专家</h3><p>DeepSeek-R1 所使用的 MoE 以 Top-K 路由为基础。路由器为各个专家计算分数，然后选择得分最高的 K 个专家处理当前 Token，再聚合它们的输出。</p>
+<h3 id="3-DeepSeekMoE：Top-K-路由、细粒度专家与共享专家">3. DeepSeekMoE：Top-K 路由、细粒度专家与共享专家</h3>
+<p>DeepSeek-R1 所使用的 MoE 以 Top-K 路由为基础。路由器为各个专家计算分数，然后选择得分最高的 K 个专家处理当前 Token，再聚合它们的输出。</p>
 <p>但如果专家数量太少、每个专家都很大，一个专家仍可能被迫学习许多不同类型的知识，很难形成更细的分工。DeepSeekMoE 因此采用了<strong>细粒度专家分割</strong>：把少数大型专家拆分成更多、更小的专家单元，通过降低每个专家前馈网络的隐藏维度，让专家数量增加。</p>
 <p>在总参数量和计算预算大致保持不变的情况下，模型可以激活更多小专家，而不是少数大专家。这为更细致的路由和专业化提供了空间。</p>
 <p>不过，小专家之间仍可能重复学习大量通用知识。如果每个专家都要保存同一部分基础能力，就会形成知识冗余，也会挤占它们学习差异化模式的空间。</p>
@@ -571,21 +566,23 @@
 </ul>
 <p>其思路可以概括为：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">共享专家负责通用能力</span><br><span class="line">+</span><br><span class="line">路由专家负责差异化处理</span><br></pre></td></tr></table></figure>
-
 <p>这并不意味着专家之间从此完全没有重叠，而是通过结构上的职责分配，减少所有专家重复学习同一类通用模式的问题。</p>
-<h3 id="4-当前-Token-的选择如何影响后续生成"><a href="#4-当前-Token-的选择如何影响后续生成" class="headerlink" title="4. 当前 Token 的选择如何影响后续生成"></a>4. 当前 Token 的选择如何影响后续生成</h3><p>如果生成时永远选择当前概率最高的 Token，就是贪婪解码。单独看某一步，最高概率 Token 可能完全合理；但对需要多步推理的问题来说，这个 Token 还会改变后续能够展开的路径。</p>
+<h3 id="4-当前-Token-的选择如何影响后续生成">4. 当前 Token 的选择如何影响后续生成</h3>
+<p>如果生成时永远选择当前概率最高的 Token，就是贪婪解码。单独看某一步，最高概率 Token 可能完全合理；但对需要多步推理的问题来说，这个 Token 还会改变后续能够展开的路径。</p>
 <p>有些 Token 只是局部上自然，有些 Token 则会引导模型开始拆解问题、列出条件或执行中间计算。后者在当前一步未必拥有绝对最高概率，却可能让后续推理更加完整。</p>
 <p>因此，选择下一个 Token 不只是决定眼前出现哪个词元，也会改变后续生成所依赖的上下文。前面一步选择不同，后面的概率分布就可能随之变化，最终形成不同的回答过程和结果。</p>
 <p>这与前文“模型逐 Token 生成”的机制并不矛盾。恰恰因为后续内容依赖已经生成的 Token，每一步选择才可能对整个答案产生连锁影响。这里所说的“路径”只是对连续生成过程的概括，并不表示模型内部存在一条可以被直接编辑的固定思维路线。</p>
-<h3 id="5-DeepSeek-R1-Zero-与-GRPO"><a href="#5-DeepSeek-R1-Zero-与-GRPO" class="headerlink" title="5. DeepSeek-R1-Zero 与 GRPO"></a>5. DeepSeek-R1-Zero 与 GRPO</h3><p>DeepSeek-R1-Zero 的推理能力训练使用了组相对策略优化，也就是 GRPO。这里需要强调：GRPO 发生在训练阶段，而不是模型回答用户问题时根据结果临时修改参数。</p>
+<h3 id="5-DeepSeek-R1-Zero-与-GRPO">5. DeepSeek-R1-Zero 与 GRPO</h3>
+<p>DeepSeek-R1-Zero 的推理能力训练使用了组相对策略优化，也就是 GRPO。这里需要强调：GRPO 发生在训练阶段，而不是模型回答用户问题时根据结果临时修改参数。</p>
 <p>训练时，模型会针对同一个问题生成一组候选回答，再依据可验证结果或奖励规则比较它们的表现。训练算法利用这些相对奖励更新模型参数，使高奖励回答中出现的生成决策以后更容易被模型选中，低奖励回答中的决策则相对减少。</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">针对同一问题生成一组候选回答</span><br><span class="line">→ 根据结果计算奖励并进行组内比较</span><br><span class="line">→ 计算策略更新方向</span><br><span class="line">→ 更新模型参数</span><br><span class="line">→ 影响模型今后生成各类 Token 序列的概率</span><br></pre></td></tr></table></figure>
-
 <p>因此，强化学习改变的是模型之后更倾向于生成哪类回答。它仍然通过调整 Token 概率发挥作用，但反馈信号不再只来自训练文本中的下一个 Token，还可以来自整条回答的最终表现。</p>
 <p>这里只说明 GRPO 的基本训练直觉，不展开算法公式、奖励设计和完整训练流程。</p>
-<h2 id="九、从模型计算到硬件执行：矩阵乘法、Prefill-与-Decode"><a href="#九、从模型计算到硬件执行：矩阵乘法、Prefill-与-Decode" class="headerlink" title="九、从模型计算到硬件执行：矩阵乘法、Prefill 与 Decode"></a>九、从模型计算到硬件执行：矩阵乘法、Prefill 与 Decode</h2><p>前面的章节解释了 Token 怎样经过嵌入、注意力、前馈网络和输出层变成下一个 Token。接下来换到硬件执行的角度，回答两个更具体的问题：这些向量和矩阵运算怎样在 GPU 上完成？为什么第一个 Token 通常来得慢，后面的 Token 却一个接一个出现？</p>
+<h2 id="九、从模型计算到硬件执行：矩阵乘法、Prefill-与-Decode">九、从模型计算到硬件执行：矩阵乘法、Prefill 与 Decode</h2>
+<p>前面的章节解释了 Token 怎样经过嵌入、注意力、前馈网络和输出层变成下一个 Token。接下来换到硬件执行的角度，回答两个更具体的问题：这些向量和矩阵运算怎样在 GPU 上完成？为什么第一个 Token 通常来得慢，后面的 Token 却一个接一个出现？</p>
 <p>《大模型是怎样跑起来的（轻科技）》主要帮助连接这两个层面：上层看到的是注意力和 Transformer，硬件实际执行的则是矩阵乘加、数据读取与写入。</p>
-<h3 id="1-软件概念最终都要落到矩阵乘加"><a href="#1-软件概念最终都要落到矩阵乘加" class="headerlink" title="1. 软件概念最终都要落到矩阵乘加"></a>1. 软件概念最终都要落到矩阵乘加</h3><p>在概念层面，我们会谈到 Token 向量、注意力权重、参数矩阵和词表分数；到了硬件层面，它们最终都会落到大量乘法与加法上，尤其是矩阵乘法。</p>
+<h3 id="1-软件概念最终都要落到矩阵乘加">1. 软件概念最终都要落到矩阵乘加</h3>
+<p>在概念层面，我们会谈到 Token 向量、注意力权重、参数矩阵和词表分数；到了硬件层面，它们最终都会落到大量乘法与加法上，尤其是矩阵乘法。</p>
 <p>例如：</p>
 <ul>
 <li>嵌入后的 Token 由一组数字表示；</li>
@@ -595,38 +592,37 @@
 <li>输出层要把当前表示映射成整个词表上的分数。</li>
 </ul>
 <p>单次乘加并不神秘，困难来自数量。大模型要在很短时间内完成规模极大的矩阵运算，因此不能只依靠适合通用串行任务的执行方式，而需要能够并行处理大量相似计算的加速硬件。</p>
-<h3 id="2-GPU-与-Tensor-Core-为什么适合大模型"><a href="#2-GPU-与-Tensor-Core-为什么适合大模型" class="headerlink" title="2. GPU 与 Tensor Core 为什么适合大模型"></a>2. GPU 与 Tensor Core 为什么适合大模型</h3><p>GPU 拥有大量并行计算单元，适合把同一种运算同时应用到许多数据上。英伟达 GPU 中的 Tensor Core，则对小块矩阵的乘加进行了专门优化：它不是逐个数字完成计算，而是把一组矩阵乘加打包处理。</p>
+<h3 id="2-GPU-与-Tensor-Core-为什么适合大模型">2. GPU 与 Tensor Core 为什么适合大模型</h3>
+<p>GPU 拥有大量并行计算单元，适合把同一种运算同时应用到许多数据上。英伟达 GPU 中的 Tensor Core，则对小块矩阵的乘加进行了专门优化：它不是逐个数字完成计算，而是把一组矩阵乘加打包处理。</p>
 <p>这与大模型的主要计算形态正好匹配：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Token 与参数变换</span><br><span class="line">→ 大量矩阵乘法</span><br><span class="line">→ 并行处理许多乘加操作</span><br><span class="line">→ 得到新的隐藏表示或词表分数</span><br></pre></td></tr></table></figure>
-
 <p>因此，GPU 并不是因为“懂语言”才适合运行大模型，而是因为语言已经被模型转换成了数值和矩阵，而 GPU 擅长的正是大规模并行数值计算。</p>
 <p>不过，一次完整的生成式推理并不是从头到尾都以同一种方式使用硬件。它通常可以分成 Prefill 和 Decode 两个阶段，两者的计算特点并不相同。</p>
-<h3 id="3-Prefill：为什么第一个-Token-出现得慢"><a href="#3-Prefill：为什么第一个-Token-出现得慢" class="headerlink" title="3. Prefill：为什么第一个 Token 出现得慢"></a>3. Prefill：为什么第一个 Token 出现得慢</h3><p>Prefill 可以理解成模型正式回答前的“读题阶段”。就像让一个人总结一份报告，他必须先把报告读完，才能说出答案的第一句话。模型也需要先处理用户输入的全部 Token，然后才能生成第一个输出 Token。</p>
+<h3 id="3-Prefill：为什么第一个-Token-出现得慢">3. Prefill：为什么第一个 Token 出现得慢</h3>
+<p>Prefill 可以理解成模型正式回答前的“读题阶段”。就像让一个人总结一份报告，他必须先把报告读完，才能说出答案的第一句话。模型也需要先处理用户输入的全部 Token，然后才能生成第一个输出 Token。</p>
 <p>例如：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入一句短问题：模型只需要先处理少量 Token</span><br><span class="line">输入一整份报告：模型需要先处理成千上万个 Token</span><br></pre></td></tr></table></figure>
-
 <p>因此，输入越长，模型在开口回答之前通常要做的准备工作越多。这个等待过程并不是模型还没开始工作，而是它正在处理输入。</p>
 <p>具体来说，模型会把输入 Token 转换成向量，让它们依次经过多层 Transformer，计算各个 Token 之间的关系，并保存生成答案时还会用到的中间结果。完成这些工作后，模型才开始预测第一个输出 Token：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">读入用户输入</span><br><span class="line">→ 处理输入中各个 Token 之间的关系</span><br><span class="line">→ 保存后续生成需要的信息</span><br><span class="line">→ 生成第一个输出 Token</span><br></pre></td></tr></table></figure>
-
 <blockquote>
 <p><strong>首 Token 延迟（Time to First Token，TTFT）：</strong> 从提交请求到看到第一个输出 Token 的等待时间。Prefill 是其中的重要组成部分，但排队、调度、网络和外部检索等环节也可能产生延迟。</p>
 </blockquote>
 <p>虽然输入中的许多 Token 可以放在一起进行矩阵计算，由 GPU 并行处理，但并行不代表没有成本。输入越长，需要完成的计算和保存的中间结果通常仍然越多。</p>
-<h3 id="4-Decode：为什么标准生成过程需要逐-Token-推进"><a href="#4-Decode：为什么标准生成过程需要逐-Token-推进" class="headerlink" title="4. Decode：为什么标准生成过程需要逐 Token 推进"></a>4. Decode：为什么标准生成过程需要逐 Token 推进</h3><p>第一个输出 Token 产生后，模型进入 Decode 阶段，也就是开始“作答”。</p>
+<h3 id="4-Decode：为什么标准生成过程需要逐-Token-推进">4. Decode：为什么标准生成过程需要逐 Token 推进</h3>
+<p>第一个输出 Token 产生后，模型进入 Decode 阶段，也就是开始“作答”。</p>
 <p>可以把 Decode 理解成文字接龙：模型每次只决定接下来写什么，写出来以后，再把刚生成的内容也作为上下文，继续决定下一步。它并不是先在内部写好整篇答案，再把答案逐字显示出来。</p>
 <p>例如，下面按词语示意一次生成过程，实际的 Token 可能是一个字、一个词或词的一部分：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">已有内容：法国的首都是</span><br><span class="line">第 1 步生成：巴黎</span><br><span class="line"></span><br><span class="line">已有内容：法国的首都是巴黎</span><br><span class="line">第 2 步生成：，</span><br><span class="line"></span><br><span class="line">已有内容：法国的首都是巴黎，</span><br><span class="line">第 3 步生成：它</span><br><span class="line"></span><br><span class="line">……如此重复，直到答案结束</span><br></pre></td></tr></table></figure>
-
 <p>在标准自回归生成中，为什么不能一次确定整段答案？因为后面的内容依赖前面刚生成的 Token。如果第一步选择不同，下一步面对的上下文和概率分布也会变化。因此，模型需要先确定当前 Token，再继续计算下一个 Token。</p>
 <p>Decode 阶段直接影响回答的持续生成速度：生成一个 Token，把它加入上下文，再生成下一个 Token，循环直到回答结束。</p>
 <p>与 Prefill 可以并行处理许多输入 Token 不同，Decode 的前后步骤存在顺序依赖，不能直接把尚未确定的整段答案同时算完。推测解码等技术可以并行提出或验证多个候选 Token，从系统层面加速生成，但并没有消除自回归模型对前文的依赖。与此同时，每一步还要读取模型参数和已经保存的上下文信息，所以生成速度也会受到显存读取和数据搬运速度的影响。</p>
-<h3 id="5-KV-Cache：用显存换取时间"><a href="#5-KV-Cache：用显存换取时间" class="headerlink" title="5. KV Cache：用显存换取时间"></a>5. KV Cache：用显存换取时间</h3><p>Decode 每生成一个新 Token，都要参考前面的全部内容。如果每一步都从头处理一遍历史 Token，就会反复做许多已经做过的计算。</p>
+<h3 id="5-KV-Cache：用显存换取时间">5. KV Cache：用显存换取时间</h3>
+<p>Decode 每生成一个新 Token，都要参考前面的全部内容。如果每一步都从头处理一遍历史 Token，就会反复做许多已经做过的计算。</p>
 <p>KV Cache 的作用，是保存历史 Token 在各层已经计算出的 Key 和 Value。生成下一个 Token 时，模型仍会让当前 Query 与可见历史位置的 Key 计算注意力分数，并按权重汇总对应的 Value；节省的是重新计算历史 Key 和 Value 的工作。</p>
 <p>可以把缓存理解成已经整理好的“上下文卡片”，但这个类比只表示计算结果被复用，并不表示模型像数据库一样先检索出少量记录。标准注意力通常仍要读取可见历史位置的缓存并参与权重计算。</p>
 <p>例如：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">处理“法国的首都是”</span><br><span class="line">→ 保存这些 Token 的 Key 和 Value</span><br><span class="line"></span><br><span class="line">生成“巴黎”</span><br><span class="line">→ 直接读取已有缓存</span><br><span class="line">→ 只计算“巴黎”新增的部分</span><br><span class="line">→ 再把“巴黎”的 Key 和 Value 加入缓存</span><br><span class="line"></span><br><span class="line">生成下一个 Token 时</span><br><span class="line">→ 继续读取已经扩充的缓存</span><br></pre></td></tr></table></figure>
-
 <blockquote>
 <p><strong>KV Cache：</strong> 保存各层历史 Token 已经计算出的 Key 和 Value，供后续生成直接复用，从而减少重复计算。</p>
 </blockquote>
@@ -636,10 +632,10 @@
 <li><strong>占用更多显存</strong>：每个历史 Token 都要保存相应的 Key 和 Value；</li>
 <li><strong>读取更多数据</strong>：生成新 Token 时，需要读取更长的历史 Key 和 Value，并计算注意力权重。</li>
 </ul>
-<h3 id="6-为什么长上下文通常更贵"><a href="#6-为什么长上下文通常更贵" class="headerlink" title="6. 为什么长上下文通常更贵"></a>6. 为什么长上下文通常更贵</h3><p>可以把上下文理解成模型回答问题时需要随身查阅的资料。资料越长，模型就要读得更多、记得更多，在生成答案时需要查阅的历史信息也更多。</p>
+<h3 id="6-为什么长上下文通常更贵">6. 为什么长上下文通常更贵</h3>
+<p>可以把上下文理解成模型回答问题时需要随身查阅的资料。资料越长，模型就要读得更多、记得更多，在生成答案时需要查阅的历史信息也更多。</p>
 <p>例如，同样让模型回答一个问题：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">只提供一段话</span><br><span class="line">→ 需要读取和保存的 Token 较少</span><br><span class="line"></span><br><span class="line">提供一整本书</span><br><span class="line">→ 需要读取和保存的 Token 更多</span><br><span class="line">→ 开始回答前通常要等待更久</span><br><span class="line">→ 生成过程中也要处理更长的历史信息</span><br></pre></td></tr></table></figure>
-
 <p>具体来说，长上下文会影响三个环节：</p>
 <ol>
 <li><strong>开始回答前</strong>：Prefill 需要处理更多输入 Token，因此第一个输出 Token 可能出现得更慢；</li>
@@ -650,35 +646,35 @@
 <p>这并不意味着上下文长度翻倍后，所有成本一定按同样比例翻倍。实际开销还取决于模型结构、注意力算法和推理系统的优化方式。但总体上，让模型参考更多内容，通常需要更多计算、显存和数据传输，因此不会是免费的。</p>
 <p>从计算过程看，一次回答可以分成两个阶段：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Prefill：集中读完输入，建立上下文和 KV Cache</span><br><span class="line">Decode：读取历史缓存，逐 Token 生成答案</span><br></pre></td></tr></table></figure>
-
 <p>这一区分也为理解推理优化提供了基础。不过，<strong>认识 Prefill 与 Decode 两个阶段，不等于已经讨论了 PD 分离部署</strong>。把两个阶段进一步放到不同实例或不同资源上运行，是另一层推理系统架构问题，本文会在后面的概念备忘中单独说明边界。</p>
-<h2 id="十、预训练让它会续写，后训练让它像助手"><a href="#十、预训练让它会续写，后训练让它像助手" class="headerlink" title="十、预训练让它会续写，后训练让它像助手"></a>十、预训练让它会续写，后训练让它像助手</h2><p>前面说过，大模型的基本任务是预测下一个 Token。但只靠这个任务训练出来的模型，为什么还不一定会像聊天助手一样回答问题？关键在于：<strong>会续写文字，不等于知道用户希望它做什么。</strong></p>
-<h3 id="1-预训练：先从海量文本中学习“文字通常怎样继续”"><a href="#1-预训练：先从海量文本中学习“文字通常怎样继续”" class="headerlink" title="1. 预训练：先从海量文本中学习“文字通常怎样继续”"></a>1. 预训练：先从海量文本中学习“文字通常怎样继续”</h3><p>预训练阶段，模型会阅读大量书籍、网页、代码等文本，并反复练习根据前文预测下一个 Token。例如：</p>
+<h2 id="十、预训练让它会续写，后训练让它像助手">十、预训练让它会续写，后训练让它像助手</h2>
+<p>前面说过，大模型的基本任务是预测下一个 Token。但只靠这个任务训练出来的模型，为什么还不一定会像聊天助手一样回答问题？关键在于：<strong>会续写文字，不等于知道用户希望它做什么。</strong></p>
+<h3 id="1-预训练：先从海量文本中学习“文字通常怎样继续”">1. 预训练：先从海量文本中学习“文字通常怎样继续”</h3>
+<p>预训练阶段，模型会阅读大量书籍、网页、代码等文本，并反复练习根据前文预测下一个 Token。例如：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入：法国的首都是</span><br><span class="line">目标：预测“巴黎”</span><br></pre></td></tr></table></figure>
-
 <p>经过大量练习，模型会逐渐学到语言规则、常见事实、概念关系、代码结构和一定的推理模式。这时得到的通常称为<strong>基座模型（Base Model）</strong>。</p>
 <p>但是，基座模型主要学到的是“接下来可能出现什么”，而不是“面对用户时应该怎样回答”。例如输入：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">请用三句话解释什么是自注意力。</span><br></pre></td></tr></table></figure>
-
 <p>它可能给出解释，也可能继续补写成一组考试题、网页内容或类似的文本。因为从单纯的续写角度看，这些结果都有可能接在原文后面。</p>
 <p><strong>预训练让模型获得大量基础能力，但还没有把它训练成一个稳定服从指令的助手。</strong></p>
-<h3 id="2-指令微调：用示范教它怎样完成任务"><a href="#2-指令微调：用示范教它怎样完成任务" class="headerlink" title="2. 指令微调：用示范教它怎样完成任务"></a>2. 指令微调：用示范教它怎样完成任务</h3><p>指令微调会准备大量“用户要求—理想回答”的示例，让模型继续训练。例如：</p>
+<h3 id="2-指令微调：用示范教它怎样完成任务">2. 指令微调：用示范教它怎样完成任务</h3>
+<p>指令微调会准备大量“用户要求—理想回答”的示例，让模型继续训练。例如：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">用户：请用三句话解释什么是自注意力。</span><br><span class="line">助手：自注意力会为可见位置计算不同权重，再把这些位置的信息汇总到当前 Token 的表示中……</span><br></pre></td></tr></table></figure>
-
 <p>模型从这些示范中学习：看到问题时应该回答，而不是随意续写；看到“列出三点”“使用表格”“翻译成英文”等要求时，应该按照相应格式完成任务。</p>
 <p>这个阶段可以简单理解为：基座模型已经“读过很多书”，指令微调再通过大量示范教它“别人提出要求时应该怎样回应”。</p>
-<h3 id="3-偏好对齐：让它更倾向于选择较好的回答"><a href="#3-偏好对齐：让它更倾向于选择较好的回答" class="headerlink" title="3. 偏好对齐：让它更倾向于选择较好的回答"></a>3. 偏好对齐：让它更倾向于选择较好的回答</h3><p>即使模型已经会回答，同一个问题仍然可能产生多个候选答案。例如：</p>
+<h3 id="3-偏好对齐：让它更倾向于选择较好的回答">3. 偏好对齐：让它更倾向于选择较好的回答</h3>
+<p>即使模型已经会回答，同一个问题仍然可能产生多个候选答案。例如：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">回答 A：直接、清楚，并说明不确定之处</span><br><span class="line">回答 B：内容冗长，语气肯定，但包含未经证实的信息</span><br></pre></td></tr></table></figure>
-
 <p>偏好数据会标出哪一个回答更符合期望。模型据此调整生成概率，使自己以后更倾向于产生有帮助、准确、安全、符合要求的回答，而不是较差的回答。</p>
 <p>PPO、DPO、ORPO 等方法的具体做法不同，但在这里可以先抓住共同目标：<strong>让模型不仅会回答，还更倾向于以人类期望的方式回答。</strong></p>
 <p>需要注意的是，偏好对齐不是给模型写入一套绝对生效的规则，而是在调整不同回答出现的可能性。因此，经过对齐的模型仍然可能误解要求、违反格式或生成错误内容。</p>
-<h3 id="4-三个阶段之间是什么关系"><a href="#4-三个阶段之间是什么关系" class="headerlink" title="4. 三个阶段之间是什么关系"></a>4. 三个阶段之间是什么关系</h3><p>可以把整个过程概括为：</p>
+<h3 id="4-三个阶段之间是什么关系">4. 三个阶段之间是什么关系</h3>
+<p>可以把整个过程概括为：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">预训练：从海量文本中学习语言、知识和模式</span><br><span class="line">    ↓</span><br><span class="line">指令微调：从示范中学习如何理解并完成任务</span><br><span class="line">    ↓</span><br><span class="line">偏好对齐：学习哪些回答方式更符合人类期望</span><br></pre></td></tr></table></figure>
-
 <p><strong>预训练主要形成基础能力，指令微调教模型怎样响应任务，偏好对齐则让模型更倾向于产生符合人类期望的回答。</strong></p>
 <p>这里的三个阶段并没有改变模型逐 Token 生成的基本方式。模型始终是在预测下一个 Token，只是经过不同数据和训练目标的调整后，符合指令、表达清楚且相对安全的 Token 序列，更容易获得较高概率。</p>
-<h2 id="十一、为什么大模型会一本正经地犯错？"><a href="#十一、为什么大模型会一本正经地犯错？" class="headerlink" title="十一、为什么大模型会一本正经地犯错？"></a>十一、为什么大模型会一本正经地犯错？</h2><p>理解了生成过程，也就容易理解所谓的“幻觉”。</p>
+<h2 id="十一、为什么大模型会一本正经地犯错？">十一、为什么大模型会一本正经地犯错？</h2>
+<p>理解了生成过程，也就容易理解所谓的“幻觉”。</p>
 <p>模型在预训练阶段优化的目标，是提高下一个 Token 预测的准确性；到了生成阶段，模型根据已经出现的上下文计算下一个 Token 的概率。这个训练目标和“整句话在现实世界中是否真实”并不完全相同。</p>
 <p>一段话可以同时满足两个条件：</p>
 <ul>
@@ -695,9 +691,12 @@
 </ul>
 <p>这并不意味着模型完全没有知识。模型参数确实压缩了大量从训练数据中学习到的结构和事实关系。但这些知识不是一个可以逐条核对、实时更新的数据库。模型有可能把几个局部上都合理的模式，组合成一个整体上不存在的答案。</p>
 <p>因此，流畅性不等于真实性，语言自信也不等于事实可靠。</p>
-<h2 id="十二、RAG、微调和提示词分别解决什么问题？"><a href="#十二、RAG、微调和提示词分别解决什么问题？" class="headerlink" title="十二、RAG、微调和提示词分别解决什么问题？"></a>十二、RAG、微调和提示词分别解决什么问题？</h2><p>模型自身存在局限，所以一个真正可用的大模型应用，通常不只包含模型。</p>
-<h3 id="提示词：告诉模型当前怎样做"><a href="#提示词：告诉模型当前怎样做" class="headerlink" title="提示词：告诉模型当前怎样做"></a>提示词：告诉模型当前怎样做</h3><p>提示词适合描述当前任务、输出格式、角色、限制和判断标准。它改变的是本次推理时的上下文，并没有修改模型参数。</p>
-<h3 id="RAG：为模型提供当前需要的资料"><a href="#RAG：为模型提供当前需要的资料" class="headerlink" title="RAG：为模型提供当前需要的资料"></a>RAG：为模型提供当前需要的资料</h3><p>RAG 会先从文档库中检索相关内容，再把检索结果与问题一起交给模型。它适合：</p>
+<h2 id="十二、RAG、微调和提示词分别解决什么问题？">十二、RAG、微调和提示词分别解决什么问题？</h2>
+<p>模型自身存在局限，所以一个真正可用的大模型应用，通常不只包含模型。</p>
+<h3 id="提示词：告诉模型当前怎样做">提示词：告诉模型当前怎样做</h3>
+<p>提示词适合描述当前任务、输出格式、角色、限制和判断标准。它改变的是本次推理时的上下文，并没有修改模型参数。</p>
+<h3 id="RAG：为模型提供当前需要的资料">RAG：为模型提供当前需要的资料</h3>
+<p>RAG 会先从文档库中检索相关内容，再把检索结果与问题一起交给模型。它适合：</p>
 <ul>
 <li>私有知识库问答；</li>
 <li>需要更新的事实；</li>
@@ -705,7 +704,8 @@
 <li>模型参数中缺失的专业资料。</li>
 </ul>
 <p>RAG 主要补充“模型此刻知道什么”。</p>
-<h3 id="微调：长期改变模型的行为"><a href="#微调：长期改变模型的行为" class="headerlink" title="微调：长期改变模型的行为"></a>微调：长期改变模型的行为</h3><p>微调会使用新的训练数据更新部分或全部参数。LoRA 等参数高效微调方法，可以只训练少量附加参数，降低显存和训练成本。</p>
+<h3 id="微调：长期改变模型的行为">微调：长期改变模型的行为</h3>
+<p>微调会使用新的训练数据更新部分或全部参数。LoRA 等参数高效微调方法，可以只训练少量附加参数，降低显存和训练成本。</p>
 <p>微调更适合改变：</p>
 <ul>
 <li>固定的写作风格；</li>
@@ -716,11 +716,10 @@
 <p>微调也可以让模型吸收领域知识，但这些知识会进入参数，难以逐条核对、及时更新和提供明确来源。因此，对于经常变化或需要可追溯依据的事实，RAG 通常比反复微调更合适；微调更常用于塑造相对稳定的任务能力、表达方式和行为习惯。</p>
 <p>因此，这三种方法并不是谁替代谁：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">提示词：规定这一次任务怎样完成</span><br><span class="line">RAG：提供这一次回答需要的外部资料</span><br><span class="line">微调：长期调整任务能力、表达方式和行为习惯</span><br></pre></td></tr></table></figure>
-
 <p>复杂系统还会加入搜索、计算器、代码执行、数据库和其他工具，让模型不仅能生成语言，还能获取信息、执行操作并验证结果。</p>
-<h2 id="十三、大模型不是一个孤立的模型，而是一套系统"><a href="#十三、大模型不是一个孤立的模型，而是一套系统" class="headerlink" title="十三、大模型不是一个孤立的模型，而是一套系统"></a>十三、大模型不是一个孤立的模型，而是一套系统</h2><p>从用户输入到最终答案，一个成熟的大模型应用可能包含：</p>
+<h2 id="十三、大模型不是一个孤立的模型，而是一套系统">十三、大模型不是一个孤立的模型，而是一套系统</h2>
+<p>从用户输入到最终答案，一个成熟的大模型应用可能包含：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">用户问题</span><br><span class="line">→ 意图识别</span><br><span class="line">→ 上下文组织</span><br><span class="line">→ 资料检索</span><br><span class="line">→ 工具调用</span><br><span class="line">→ 大模型生成</span><br><span class="line">→ 事实或格式检查</span><br><span class="line">→ 安全控制</span><br><span class="line">→ 返回答案</span><br></pre></td></tr></table></figure>
-
 <p>模型能力并不等于系统能力。</p>
 <p>一个参数更多的模型，如果没有高质量数据、合理提示、可靠检索和持续评估，未必能构成更好的产品。相反，一个规模适中的模型，配合清晰的任务边界、可靠工具和完善验证，也可能在特定场景中表现得更加稳定。</p>
 <p>模型上线也不是终点。现实数据会发生变化：用户问题变了、业务概念变了、输入分布变了，原本有效的模型可能逐渐失效。因此，大模型系统还需要持续监控：</p>
@@ -733,8 +732,10 @@
 <li>评测指标是否真正对应用户价值。</li>
 </ul>
 <p>当一个指标成为唯一目标时，系统可能学会优化指标，而不是真正解决问题。评估模型不能只看一个分数，还要结合任务、数据、人工判断和真实使用效果。</p>
-<h2 id="十四、从生成原理延伸到训练、应用与评估"><a href="#十四、从生成原理延伸到训练、应用与评估" class="headerlink" title="十四、从生成原理延伸到训练、应用与评估"></a>十四、从生成原理延伸到训练、应用与评估</h2><p>沿着“一个 Token 如何变成答案”这条主线，可以理解 GPT 的核心机制。但六本书涉及的内容实际上远不止模型的一次前向计算。把其他章节放在一起，还能看到一套大模型从训练到上线的完整生命周期。</p>
-<h3 id="1-训练大模型，首先是一项数据与计算工程"><a href="#1-训练大模型，首先是一项数据与计算工程" class="headerlink" title="1. 训练大模型，首先是一项数据与计算工程"></a>1. 训练大模型，首先是一项数据与计算工程</h3><p>模型需要把文本切分成训练样本，通过滑动窗口构造输入和目标：输入是已有 Token，目标是向后错开一位的 Token。训练不断比较预测分布与正确 Token 之间的差异，再通过反向传播更新参数。</p>
+<h2 id="十四、从生成原理延伸到训练、应用与评估">十四、从生成原理延伸到训练、应用与评估</h2>
+<p>沿着“一个 Token 如何变成答案”这条主线，可以理解 GPT 的核心机制。但六本书涉及的内容实际上远不止模型的一次前向计算。把其他章节放在一起，还能看到一套大模型从训练到上线的完整生命周期。</p>
+<h3 id="1-训练大模型，首先是一项数据与计算工程">1. 训练大模型，首先是一项数据与计算工程</h3>
+<p>模型需要把文本切分成训练样本，通过滑动窗口构造输入和目标：输入是已有 Token，目标是向后错开一位的 Token。训练不断比较预测分布与正确 Token 之间的差异，再通过反向传播更新参数。</p>
 <p>当模型大到单张 GPU 无法容纳时，问题便从算法扩展为分布式系统问题：</p>
 <ul>
 <li>数据并行把不同批次分给多张 GPU；</li>
@@ -744,21 +745,25 @@
 </ul>
 <p>模型规模不是一个孤立数字。参数量还会影响显存、通信、训练稳定性、推理延迟和部署成本。真正训练一个大模型，需要同时处理数据质量、计算效率、并行策略和优化稳定性。</p>
 <p>《图解DeepSeek技术》的笔记又把这个问题推进了一步：参数量、数据量和训练算力需要寻找合适配比；采用 MoE 后，还要区分模型拥有的总参数量与每个 Token 实际激活的参数量。一个模型“更大”，不再必然意味着每次推理都要使用全部参数。</p>
-<h3 id="2-更大的模型不等于简单地“更不容易过拟合”"><a href="#2-更大的模型不等于简单地“更不容易过拟合”" class="headerlink" title="2. 更大的模型不等于简单地“更不容易过拟合”"></a>2. 更大的模型不等于简单地“更不容易过拟合”</h3><p>传统偏差—方差理论告诉我们，参数越多，模型记住噪声的能力越强。Dropout、早停、权重衰减、数据增强等方法，都是为了提升泛化能力。</p>
+<h3 id="2-更大的模型不等于简单地“更不容易过拟合”">2. 更大的模型不等于简单地“更不容易过拟合”</h3>
+<p>传统偏差—方差理论告诉我们，参数越多，模型记住噪声的能力越强。Dropout、早停、权重衰减、数据增强等方法，都是为了提升泛化能力。</p>
 <p>但深度学习又呈现出更复杂的现象。某些过参数化模型在跨过传统意义上的过拟合点后，测试性能反而重新改善，这常被描述为“双下降”；有些模型在训练很久之后才从记忆训练样本转向学会可泛化规律，也会表现出类似“顿悟”的现象。</p>
 <p>这提醒我：理解大模型不能机械套用“小模型时代”的直觉。参数数量、数据规模、优化过程和泛化能力之间，并不是简单的线性关系。</p>
-<h3 id="3-微调的关键不只是“继续训练”，而是控制改变的范围"><a href="#3-微调的关键不只是“继续训练”，而是控制改变的范围" class="headerlink" title="3. 微调的关键不只是“继续训练”，而是控制改变的范围"></a>3. 微调的关键不只是“继续训练”，而是控制改变的范围</h3><p>完整微调会更新模型的大量参数，成本高，也会为每项任务产生一份完整模型。适配器、LoRA 和 QLoRA 等参数高效微调方法，只训练少量新增参数或低秩矩阵，让同一个基座模型以较低成本适应不同任务。</p>
+<h3 id="3-微调的关键不只是“继续训练”，而是控制改变的范围">3. 微调的关键不只是“继续训练”，而是控制改变的范围</h3>
+<p>完整微调会更新模型的大量参数，成本高，也会为每项任务产生一份完整模型。适配器、LoRA 和 QLoRA 等参数高效微调方法，只训练少量新增参数或低秩矩阵，让同一个基座模型以较低成本适应不同任务。</p>
 <p>低秩方法之所以有效，一个重要直觉是：虽然大模型的权重矩阵非常庞大，但完成某项具体任务所需要的参数变化，可能集中在一个低维子空间中。我们不一定要移动整个模型，只需要找到少数关键方向。</p>
 <p>量化则从另一个方向降低成本：用更少的比特表示权重或激活，减少显存和计算需求。它和 LoRA 解决的不是同一个问题，却可以组合使用。</p>
-<h3 id="4-生成能力之外，还有表示模型、语义搜索和多模态"><a href="#4-生成能力之外，还有表示模型、语义搜索和多模态" class="headerlink" title="4. 生成能力之外，还有表示模型、语义搜索和多模态"></a>4. 生成能力之外，还有表示模型、语义搜索和多模态</h3><p>GPT 类模型擅长生成，但 Transformer 并不只用于生成。BERT 类仅编码器模型更擅长生成上下文表示，可用于分类、聚类、主题建模和语义搜索。</p>
+<h3 id="4-生成能力之外，还有表示模型、语义搜索和多模态">4. 生成能力之外，还有表示模型、语义搜索和多模态</h3>
+<p>GPT 类模型擅长生成，但 Transformer 并不只用于生成。BERT 类仅编码器模型更擅长生成上下文表示，可用于分类、聚类、主题建模和语义搜索。</p>
 <p>语义搜索把查询与文档转换成嵌入向量，通过向量相似度召回相关内容；RAG 再把召回内容交给生成模型组织答案。由此可以看到，表示模型和生成模型并非竞争关系，而是可以在同一系统中分工协作：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">表示模型负责“找”</span><br><span class="line">→ 生成模型负责“读、理解和回答”</span><br></pre></td></tr></table></figure>
-
 <p>多模态模型则把同一种思路扩展到图像、音频和视频。不同模态先被编码成模型可以处理的向量表示，再在共享或可对齐的表示空间中发生交互。从这个角度看，大模型的核心不只是语言，而是把不同类型的信息转化为可计算、可关联的表征。</p>
-<h3 id="5-推理速度决定能力能否真正被使用"><a href="#5-推理速度决定能力能否真正被使用" class="headerlink" title="5. 推理速度决定能力能否真正被使用"></a>5. 推理速度决定能力能否真正被使用</h3><p>模型训练完成，并不代表它已经适合产品环境。生成过程是自回归的，每产生一个 Token，都要基于已有上下文继续计算。上下文越长、并发越高，显存占用和推理延迟越明显。</p>
+<h3 id="5-推理速度决定能力能否真正被使用">5. 推理速度决定能力能否真正被使用</h3>
+<p>模型训练完成，并不代表它已经适合产品环境。生成过程是自回归的，每产生一个 Token，都要基于已有上下文继续计算。上下文越长、并发越高，显存占用和推理延迟越明显。</p>
 <p>缓存已经计算过的 Key 和 Value，可以避免每一步都重复处理全部历史 Token；量化、蒸馏和剪枝可以用不同方式降低计算与存储成本；批处理和合理的服务调度则决定硬件能否被充分利用。</p>
 <p>工程上经常要做的不是单纯追求“最强模型”，而是在质量、延迟、吞吐量、显存和成本之间取得平衡。</p>
-<h3 id="6-评估不是训练结束后的附属步骤"><a href="#6-评估不是训练结束后的附属步骤" class="headerlink" title="6. 评估不是训练结束后的附属步骤"></a>6. 评估不是训练结束后的附属步骤</h3><p>困惑度衡量模型对文本的预测能力；BLEU、ROUGE 和 BERTScore 可以从不同角度比较生成内容；但任何单一指标都只能覆盖任务的一部分。</p>
+<h3 id="6-评估不是训练结束后的附属步骤">6. 评估不是训练结束后的附属步骤</h3>
+<p>困惑度衡量模型对文本的预测能力；BLEU、ROUGE 和 BERTScore 可以从不同角度比较生成内容；但任何单一指标都只能覆盖任务的一部分。</p>
 <p>一个摘要可能和参考答案用词不同，却同样准确；一段回答可能词语高度重合，却误解了问题。更重要的是，当一个指标成为唯一目标时，系统可能开始迎合指标，而不再真正改善用户体验。</p>
 <p>模型进入现实环境后，还会遇到数据分布偏移：</p>
 <ul>
@@ -768,17 +773,19 @@
 <li>整个业务领域发生变化。</li>
 </ul>
 <p>因此，评估不是发布前跑一次测试集，而是贯穿数据、训练、部署和监控的持续过程。置信区间、预测区间和共形预测等方法，也是在提醒我们：除了给出一个预测，还要尽可能描述这个预测的不确定性。</p>
-<h2 id="十五、没有进入主线的概念备忘：给六本书留一份索引"><a href="#十五、没有进入主线的概念备忘：给六本书留一份索引" class="headerlink" title="十五、没有进入主线的概念备忘：给六本书留一份索引"></a>十五、没有进入主线的概念备忘：给六本书留一份索引</h2><p>前文沿着“一个 Token 如何变成答案”的主线展开，因此没有容纳六本书中的全部内容。下面集中记录与主线有关、但不适合在正文中展开的实现细节和旁支概念，作为后续阅读索引。</p>
+<h2 id="十五、没有进入主线的概念备忘：给六本书留一份索引">十五、没有进入主线的概念备忘：给六本书留一份索引</h2>
+<p>前文沿着“一个 Token 如何变成答案”的主线展开，因此没有容纳六本书中的全部内容。下面集中记录与主线有关、但不适合在正文中展开的实现细节和旁支概念，作为后续阅读索引。</p>
 <p>这些定义、对比和例子经过了重新整理，并非书中原句。缩放定律、MoE 和 GRPO 已集中写入第八章，GPU、Prefill、Decode 和 KV Cache 已集中写入第九章，这里不再重复。</p>
-<h3 id="1-数据如何变成模型能够学习的样本"><a href="#1-数据如何变成模型能够学习的样本" class="headerlink" title="1. 数据如何变成模型能够学习的样本"></a>1. 数据如何变成模型能够学习的样本</h3><h4 id="滑动窗口与“输入—目标”构造"><a href="#滑动窗口与“输入—目标”构造" class="headerlink" title="滑动窗口与“输入—目标”构造"></a>滑动窗口与“输入—目标”构造</h4><p>语言模型训练并不是把整本书一次性交给模型，而是从连续文本中截取固定数量的 Token 作为输入，再把同一段文本整体向后移动一个位置，作为模型需要预测的目标。</p>
+<h3 id="1-数据如何变成模型能够学习的样本">1. 数据如何变成模型能够学习的样本</h3>
+<h4 id="滑动窗口与“输入—目标”构造">滑动窗口与“输入—目标”构造</h4>
+<p>语言模型训练并不是把整本书一次性交给模型，而是从连续文本中截取固定数量的 Token 作为输入，再把同一段文本整体向后移动一个位置，作为模型需要预测的目标。</p>
 <p>例如，一段文本被切成：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">我｜喜欢｜学习｜人工智能｜技术</span><br></pre></td></tr></table></figure>
-
 <p>那么其中一个训练样本可以是：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入：我｜喜欢｜学习｜人工智能</span><br><span class="line">目标：喜欢｜学习｜人工智能｜技术</span><br></pre></td></tr></table></figure>
-
 <p>窗口继续向前滑动，就能从一段文本中构造出大量训练样本。这个细节把“预测下一个 Token”从一句抽象描述变成了真实的数据工程过程：模型看到的每一个正确答案，本质上都来自原始文本中的下一个位置。</p>
-<h4 id="分词器不只有-BPE-一种选择"><a href="#分词器不只有-BPE-一种选择" class="headerlink" title="分词器不只有 BPE 一种选择"></a>分词器不只有 BPE 一种选择</h4><p>笔记中还提到 WordPiece 和 SentencePiece。选择哪一种算法，只是分词器设计的一部分；还要决定：</p>
+<h4 id="分词器不只有-BPE-一种选择">分词器不只有 BPE 一种选择</h4>
+<p>笔记中还提到 WordPiece 和 SentencePiece。选择哪一种算法，只是分词器设计的一部分；还要决定：</p>
 <ul>
 <li>词表究竟应该多大；</li>
 <li>是否保留专门的开始、结束、填充等特殊 Token；</li>
@@ -787,73 +794,136 @@
 <li>用什么领域的数据训练分词器。</li>
 </ul>
 <p>因此，分词器并不是模型前面一个可以随意替换的小工具。词表过小会让文本被切得过碎，序列变长；词表过大又会增加嵌入矩阵和输出层的参数，并可能让低频 Token 难以学好。训练语料的领域也会决定专业术语能否被有效切分。</p>
-<h4 id="上下文长度与上下文窗口"><a href="#上下文长度与上下文窗口" class="headerlink" title="上下文长度与上下文窗口"></a>上下文长度与上下文窗口</h4><p>上下文窗口限定了模型一次能够直接处理多少 Token。超过窗口的内容不能仅靠“模型记得前文”解决，而要通过截断、分块、摘要、检索或更长上下文的模型重新组织。</p>
+<h4 id="上下文长度与上下文窗口">上下文长度与上下文窗口</h4>
+<p>上下文窗口限定了模型一次能够直接处理多少 Token。超过窗口的内容不能仅靠“模型记得前文”解决，而要通过截断、分块、摘要、检索或更长上下文的模型重新组织。</p>
 <p>这也是一个容易被忽略的边界：模型可以利用上下文，并不等于它拥有无限记忆；把大量材料塞进提示词，也不等于所有信息都会被同等有效地使用。</p>
-<h4 id="文本数据增强"><a href="#文本数据增强" class="headerlink" title="文本数据增强"></a>文本数据增强</h4><p>在标注数据不足时，可以通过同义词替换、随机删除、词语交换、句子顺序调整、噪声注入和回译等方式扩充数据。回译是先翻译到另一种语言，再翻译回原语言，以获得语义接近但表达不同的样本。</p>
+<h4 id="文本数据增强">文本数据增强</h4>
+<p>在标注数据不足时，可以通过同义词替换、随机删除、词语交换、句子顺序调整、噪声注入和回译等方式扩充数据。回译是先翻译到另一种语言，再翻译回原语言，以获得语义接近但表达不同的样本。</p>
 <p>这些方法的目标不是机械增加文本数量，而是在尽量保持标签和语义不变的前提下，让模型看到更多表达形式。不过，增强过程也可能改变原意，因此仍然需要质量检查。</p>
-<h4 id="数据中心-AI"><a href="#数据中心-AI" class="headerlink" title="数据中心 AI"></a>数据中心 AI</h4><p>“模型效果不好就换一个更大的模型”并不是唯一方向。数据中心 AI 更强调系统检查数据采集、标签质量、类别覆盖、重复样本、困难样本和评测集代表性。很多问题的根源不在模型结构，而在模型究竟学到了什么数据。</p>
-<h4 id="有状态训练与无状态训练"><a href="#有状态训练与无状态训练" class="headerlink" title="有状态训练与无状态训练"></a>有状态训练与无状态训练</h4><p>无状态训练通常在新数据到来后，用更新后的完整数据重新训练模型；有状态训练则保留已有模型状态，在新数据到来时继续更新。前者过程更容易复现和控制，后者成本较低、更新更快，但也更容易受到数据顺序、灾难性遗忘和历史偏差的影响。</p>
-<h3 id="2-表示、向量与输出头"><a href="#2-表示、向量与输出头" class="headerlink" title="2. 表示、向量与输出头"></a>2. 表示、向量与输出头</h3><h4 id="Embedding、表示与潜在向量不是完全同一个词"><a href="#Embedding、表示与潜在向量不是完全同一个词" class="headerlink" title="Embedding、表示与潜在向量不是完全同一个词"></a>Embedding、表示与潜在向量不是完全同一个词</h4><p>Embedding 通常强调把离散对象映射为连续向量的过程或结果；表示是更宽泛的概念，可以指神经网络任意层对输入形成的内部描述；潜在向量则强调向量位于模型学习出的潜在空间中，常常对应无法直接观察、但能够解释数据变化的隐藏因素。</p>
+<h4 id="数据中心-AI">数据中心 AI</h4>
+<p>“模型效果不好就换一个更大的模型”并不是唯一方向。数据中心 AI 更强调系统检查数据采集、标签质量、类别覆盖、重复样本、困难样本和评测集代表性。很多问题的根源不在模型结构，而在模型究竟学到了什么数据。</p>
+<h4 id="有状态训练与无状态训练">有状态训练与无状态训练</h4>
+<p>无状态训练通常在新数据到来后，用更新后的完整数据重新训练模型；有状态训练则保留已有模型状态，在新数据到来时继续更新。前者过程更容易复现和控制，后者成本较低、更新更快，但也更容易受到数据顺序、灾难性遗忘和历史偏差的影响。</p>
+<h3 id="2-表示、向量与输出头">2. 表示、向量与输出头</h3>
+<h4 id="Embedding、表示与潜在向量不是完全同一个词">Embedding、表示与潜在向量不是完全同一个词</h4>
+<p>Embedding 通常强调把离散对象映射为连续向量的过程或结果；表示是更宽泛的概念，可以指神经网络任意层对输入形成的内部描述；潜在向量则强调向量位于模型学习出的潜在空间中，常常对应无法直接观察、但能够解释数据变化的隐藏因素。</p>
 <p>在日常讨论中三者经常混用，但区分它们有助于判断我们说的是“输入查表得到的词向量”，还是“经过多层网络之后形成的上下文表示”。</p>
-<h4 id="词嵌入与位置嵌入承担不同职责"><a href="#词嵌入与位置嵌入承担不同职责" class="headerlink" title="词嵌入与位置嵌入承担不同职责"></a>词嵌入与位置嵌入承担不同职责</h4><p>词嵌入回答“这个 Token 大致是什么”，位置嵌入回答“它出现在序列的哪里”。两者相加后，模型才能同时利用内容与顺序。位置表示还可以区分绝对位置与相对位置：前者标记 Token 位于第几个位置，后者更关注 Token 之间相隔多远以及先后关系。</p>
-<h4 id="分布假设、CBOW-与-Skip-gram"><a href="#分布假设、CBOW-与-Skip-gram" class="headerlink" title="分布假设、CBOW 与 Skip-gram"></a>分布假设、CBOW 与 Skip-gram</h4><p>Word2Vec 背后的分布假设可以概括为：经常出现在相似上下文中的词，往往具有相近含义。CBOW 根据周围上下文预测中心词，Skip-gram 则根据中心词预测周围词。两者都能学习词向量，但训练目标和在高低频词上的表现有所不同。</p>
-<h4 id="余弦相似度与欧氏距离"><a href="#余弦相似度与欧氏距离" class="headerlink" title="余弦相似度与欧氏距离"></a>余弦相似度与欧氏距离</h4><p>余弦相似度关注两个向量方向是否一致，对向量长度不太敏感；欧氏距离关注空间中的直线距离，同时受方向和模长影响。在语义嵌入中，人们经常更关心方向所代表的语义，因此常用余弦相似度，但具体选择仍取决于模型的训练目标和向量是否经过归一化。</p>
-<h4 id="同一个骨干网络可以连接不同任务头"><a href="#同一个骨干网络可以连接不同任务头" class="headerlink" title="同一个骨干网络可以连接不同任务头"></a>同一个骨干网络可以连接不同任务头</h4><p>语言模型头把隐藏状态投影到整个词表，用于预测下一个 Token；序列分类头通常读取整段文本的聚合表示，用于情感分类、主题判断等任务；Token 分类头则为序列中的每个位置输出类别，可用于命名实体识别等任务。</p>
+<h4 id="词嵌入与位置嵌入承担不同职责">词嵌入与位置嵌入承担不同职责</h4>
+<p>词嵌入回答“这个 Token 大致是什么”，位置嵌入回答“它出现在序列的哪里”。两者相加后，模型才能同时利用内容与顺序。位置表示还可以区分绝对位置与相对位置：前者标记 Token 位于第几个位置，后者更关注 Token 之间相隔多远以及先后关系。</p>
+<h4 id="分布假设、CBOW-与-Skip-gram">分布假设、CBOW 与 Skip-gram</h4>
+<p>Word2Vec 背后的分布假设可以概括为：经常出现在相似上下文中的词，往往具有相近含义。CBOW 根据周围上下文预测中心词，Skip-gram 则根据中心词预测周围词。两者都能学习词向量，但训练目标和在高低频词上的表现有所不同。</p>
+<h4 id="余弦相似度与欧氏距离">余弦相似度与欧氏距离</h4>
+<p>余弦相似度关注两个向量方向是否一致，对向量长度不太敏感；欧氏距离关注空间中的直线距离，同时受方向和模长影响。在语义嵌入中，人们经常更关心方向所代表的语义，因此常用余弦相似度，但具体选择仍取决于模型的训练目标和向量是否经过归一化。</p>
+<h4 id="同一个骨干网络可以连接不同任务头">同一个骨干网络可以连接不同任务头</h4>
+<p>语言模型头把隐藏状态投影到整个词表，用于预测下一个 Token；序列分类头通常读取整段文本的聚合表示，用于情感分类、主题判断等任务；Token 分类头则为序列中的每个位置输出类别，可用于命名实体识别等任务。</p>
 <p>因此，“Transformer 输出什么”不是由 Transformer 三个字决定的，还取决于它后面连接了什么任务头，以及训练时使用了什么目标。</p>
-<h3 id="3-Transformer-主线之外的结构细节"><a href="#3-Transformer-主线之外的结构细节" class="headerlink" title="3. Transformer 主线之外的结构细节"></a>3. Transformer 主线之外的结构细节</h3><h4 id="注意力分数、注意力权重和模型参数不是一回事"><a href="#注意力分数、注意力权重和模型参数不是一回事" class="headerlink" title="注意力分数、注意力权重和模型参数不是一回事"></a>注意力分数、注意力权重和模型参数不是一回事</h4><p>Query 与 Key 计算得到的是尚未归一化的注意力分数；经过缩放和 Softmax 后，才得到总和为 1 的注意力权重；这些权重又会随输入上下文动态变化。它们不同于训练后保存在模型中的固定权重参数。</p>
+<h3 id="3-Transformer-主线之外的结构细节">3. Transformer 主线之外的结构细节</h3>
+<h4 id="注意力分数、注意力权重和模型参数不是一回事">注意力分数、注意力权重和模型参数不是一回事</h4>
+<p>Query 与 Key 计算得到的是尚未归一化的注意力分数；经过缩放和 Softmax 后，才得到总和为 1 的注意力权重；这些权重又会随输入上下文动态变化。它们不同于训练后保存在模型中的固定权重参数。</p>
 <p>注意力层还可以使用 Attention Dropout：训练时随机丢弃部分注意力连接，并对保留下来的值进行缩放，以降低模型对少数位置的过度依赖。</p>
-<h4 id="多头注意力之后还有输出投影"><a href="#多头注意力之后还有输出投影" class="headerlink" title="多头注意力之后还有输出投影"></a>多头注意力之后还有输出投影</h4><p>不同注意力头分别在不同子空间中汇总信息，拼接后通常还要经过一次线性输出投影。它的作用是把多个头的结果重新混合，并投影回 Transformer 块所需要的隐藏维度。只说“多头结果拼接”还没有完整结束一次多头注意力计算。</p>
-<h4 id="Bahdanau-注意力、自注意力与交叉注意力"><a href="#Bahdanau-注意力、自注意力与交叉注意力" class="headerlink" title="Bahdanau 注意力、自注意力与交叉注意力"></a>Bahdanau 注意力、自注意力与交叉注意力</h4><p>早期 Seq2Seq 中的 Bahdanau 注意力主要让解码器在生成每个词时，从编码器的全部输出中选择相关信息；自注意力让同一序列内部的 Token 彼此建立联系；交叉注意力则让一组表示作为 Query，去读取另一组表示中的 Key 和 Value。</p>
+<h4 id="多头注意力之后还有输出投影">多头注意力之后还有输出投影</h4>
+<p>不同注意力头分别在不同子空间中汇总信息，拼接后通常还要经过一次线性输出投影。它的作用是把多个头的结果重新混合，并投影回 Transformer 块所需要的隐藏维度。只说“多头结果拼接”还没有完整结束一次多头注意力计算。</p>
+<h4 id="Bahdanau-注意力、自注意力与交叉注意力">Bahdanau 注意力、自注意力与交叉注意力</h4>
+<p>早期 Seq2Seq 中的 Bahdanau 注意力主要让解码器在生成每个词时，从编码器的全部输出中选择相关信息；自注意力让同一序列内部的 Token 彼此建立联系；交叉注意力则让一组表示作为 Query，去读取另一组表示中的 Key 和 Value。</p>
 <p>三者都在解决“从哪些信息中取出什么”，但信息来源和使用场景不同。多模态模型中让文本读取图像特征，也可以看作交叉注意力的一种应用。</p>
-<h4 id="仅编码器、仅解码器与编码器—解码器"><a href="#仅编码器、仅解码器与编码器—解码器" class="headerlink" title="仅编码器、仅解码器与编码器—解码器"></a>仅编码器、仅解码器与编码器—解码器</h4><p>仅编码器模型能同时利用左右两侧上下文，适合理解、分类和表示学习；仅解码器模型通过因果掩码逐 Token 生成，适合开放式文本生成；编码器—解码器模型先编码输入，再由解码器通过交叉注意力生成输出，适合翻译、摘要等输入到输出的转换任务。</p>
+<h4 id="仅编码器、仅解码器与编码器—解码器">仅编码器、仅解码器与编码器—解码器</h4>
+<p>仅编码器模型能同时利用左右两侧上下文，适合理解、分类和表示学习；仅解码器模型通过因果掩码逐 Token 生成，适合开放式文本生成；编码器—解码器模型先编码输入，再由解码器通过交叉注意力生成输出，适合翻译、摘要等输入到输出的转换任务。</p>
 <p>这三类结构共享 Transformer 组件，但注意力可见范围、训练目标和擅长任务并不相同。</p>
-<h4 id="自回归与非自回归生成"><a href="#自回归与非自回归生成" class="headerlink" title="自回归与非自回归生成"></a>自回归与非自回归生成</h4><p>自回归模型一次生成一个 Token，后一个 Token 依赖前面已经生成的结果，质量较高但难以完全并行；非自回归模型尝试同时或分阶段预测多个位置，速度更快，却要处理输出长度、多种合理排列以及位置之间依赖不足的问题。</p>
-<h4 id="梯度消失、梯度爆炸与激活函数"><a href="#梯度消失、梯度爆炸与激活函数" class="headerlink" title="梯度消失、梯度爆炸与激活函数"></a>梯度消失、梯度爆炸与激活函数</h4><p>深层网络反向传播时，梯度经过许多层的连乘，可能越来越小，也可能越来越大。残差连接、归一化、合理初始化和梯度裁剪等方法，都是为了让训练更稳定。</p>
+<h4 id="自回归与非自回归生成">自回归与非自回归生成</h4>
+<p>自回归模型一次生成一个 Token，后一个 Token 依赖前面已经生成的结果，质量较高但难以完全并行；非自回归模型尝试同时或分阶段预测多个位置，速度更快，却要处理输出长度、多种合理排列以及位置之间依赖不足的问题。</p>
+<h4 id="梯度消失、梯度爆炸与激活函数">梯度消失、梯度爆炸与激活函数</h4>
+<p>深层网络反向传播时，梯度经过许多层的连乘，可能越来越小，也可能越来越大。残差连接、归一化、合理初始化和梯度裁剪等方法，都是为了让训练更稳定。</p>
 <p>ReLU 计算简单，但负半轴梯度为零；GELU 不是直接把负值全部截断，而是以更平滑的方式调节输入。Transformer 中的前馈网络常使用 GELU 或其他平滑激活函数，而不只是传统 ReLU。</p>
-<h4 id="矩阵乘法、批量矩阵乘法与张量形状"><a href="#矩阵乘法、批量矩阵乘法与张量形状" class="headerlink" title="矩阵乘法、批量矩阵乘法与张量形状"></a>矩阵乘法、批量矩阵乘法与张量形状</h4><p>注意力公式背后真正执行的是大量矩阵运算。批量矩阵乘法允许模型同时处理多个样本、多个注意力头和多个位置。理解张量的阶数、形状和数据类型，能够把纸面公式对应到代码中的<code>batch × heads × sequence × dimension</code>，也能帮助定位维度不匹配和显存占用问题。</p>
-<h3 id="4-卷积网络、视觉-Transformer-与多模态"><a href="#4-卷积网络、视觉-Transformer-与多模态" class="headerlink" title="4. 卷积网络、视觉 Transformer 与多模态"></a>4. 卷积网络、视觉 Transformer 与多模态</h3><h4 id="全连接层与卷积层"><a href="#全连接层与卷积层" class="headerlink" title="全连接层与卷积层"></a>全连接层与卷积层</h4><p>全连接层让每个输出单元连接全部输入，表达灵活但参数较多；卷积层只在局部区域共享同一个卷积核，因此天然具有局部性和权重共享。随着网络逐层堆叠，低层可以识别边缘和纹理，高层再组合出形状和对象，形成层级特征。</p>
+<h4 id="矩阵乘法、批量矩阵乘法与张量形状">矩阵乘法、批量矩阵乘法与张量形状</h4>
+<p>注意力公式背后真正执行的是大量矩阵运算。批量矩阵乘法允许模型同时处理多个样本、多个注意力头和多个位置。理解张量的阶数、形状和数据类型，能够把纸面公式对应到代码中的<code>batch × heads × sequence × dimension</code>，也能帮助定位维度不匹配和显存占用问题。</p>
+<h3 id="4-卷积网络、视觉-Transformer-与多模态">4. 卷积网络、视觉 Transformer 与多模态</h3>
+<h4 id="全连接层与卷积层">全连接层与卷积层</h4>
+<p>全连接层让每个输出单元连接全部输入，表达灵活但参数较多；卷积层只在局部区域共享同一个卷积核，因此天然具有局部性和权重共享。随着网络逐层堆叠，低层可以识别边缘和纹理，高层再组合出形状和对象，形成层级特征。</p>
 <p>CNN 由此获得了若干适合图像的归纳偏置：局部性、权重共享、层级结构，以及对平移的等变性或一定程度的不变性。这些先验让 CNN 在数据有限时也能高效学习视觉规律。</p>
-<h4 id="ViT-的图像分块"><a href="#ViT-的图像分块" class="headerlink" title="ViT 的图像分块"></a>ViT 的图像分块</h4><p>视觉 Transformer 先把图像切成固定大小的 Patch，再把每个 Patch 映射成类似 Token 的向量。这样，原本用于文本序列的自注意力就可以处理图像序列。</p>
+<h4 id="ViT-的图像分块">ViT 的图像分块</h4>
+<p>视觉 Transformer 先把图像切成固定大小的 Patch，再把每个 Patch 映射成类似 Token 的向量。这样，原本用于文本序列的自注意力就可以处理图像序列。</p>
 <p>与 CNN 相比，ViT 预设的局部和空间归纳偏置更少，更容易直接建立远距离区域之间的关系，但通常也更依赖大规模训练数据。笔记还提供了一个高通—低通的直觉：卷积更容易关注边缘、纹理等高频局部信息，自注意力更容易整合形状和全局关系等低频信息。不过这只是理解倾向的类比，并不是每一层都固定充当某一种滤波器。</p>
-<h4 id="CLIP-与-OpenCLIP"><a href="#CLIP-与-OpenCLIP" class="headerlink" title="CLIP 与 OpenCLIP"></a>CLIP 与 OpenCLIP</h4><p>CLIP 用文本编码器和图像编码器分别生成向量，再通过对比学习把匹配的图文对拉近、把不匹配的组合推远，使图像和文本进入可比较的共享向量空间。这样可以支持零样本分类、图文检索和语义聚类。OpenCLIP 则提供了这一思路的开源实现路径。</p>
-<h4 id="BLIP-2-的视觉到语言投影"><a href="#BLIP-2-的视觉到语言投影" class="headerlink" title="BLIP-2 的视觉到语言投影"></a>BLIP-2 的视觉到语言投影</h4><p>BLIP-2 并不是简单把图片文件直接交给语言模型，而是先由视觉编码器提取图像特征，再通过中间模块把视觉表示投影到语言模型能够读取的表示空间。这个过程说明，多模态的关键问题之一是如何让不同模态的表示对齐并建立接口。</p>
-<h3 id="5-嵌入模型与对比学习"><a href="#5-嵌入模型与对比学习" class="headerlink" title="5. 嵌入模型与对比学习"></a>5. 嵌入模型与对比学习</h3><h4 id="正样本、负样本与困难负样本"><a href="#正样本、负样本与困难负样本" class="headerlink" title="正样本、负样本与困难负样本"></a>正样本、负样本与困难负样本</h4><p>训练语义嵌入模型时，语义相同或相关的文本构成正样本，不相关文本构成负样本。困难负样本在表面或主题上很相似，却不是正确匹配，能够迫使模型学习更细的语义边界，但错误的困难负样本也可能给训练引入矛盾信号。</p>
-<h4 id="对比损失"><a href="#对比损失" class="headerlink" title="对比损失"></a>对比损失</h4><p>余弦相似度损失可以直接约束两个向量的方向；Multiple Negatives Ranking Loss、InfoNCE 和 NT-Xent 等目标，则会在一个批次中同时比较正样本与多个负样本，让正确配对的相似度相对更高。批次中的其他样本可以充当负样本，因此批次构造会直接影响训练效果。</p>
-<h4 id="领域适配与-TSDAE"><a href="#领域适配与-TSDAE" class="headerlink" title="领域适配与 TSDAE"></a>领域适配与 TSDAE</h4><p>通用嵌入模型未必理解某个垂直领域中的特殊语义。领域适配可以使用领域内的正负样本继续训练，也可以借助 TSDAE 这类无监督方法：先破坏句子，再训练模型从受损输入重建原句，从无标签领域文本中学习更适合该领域的句子表示。</p>
-<h4 id="聚类与主题建模"><a href="#聚类与主题建模" class="headerlink" title="聚类与主题建模"></a>聚类与主题建模</h4><p>嵌入不仅可以服务于检索，也可以把语义相近的文本聚在一起，用于发现主题、整理语料和分析用户反馈。检索回答“哪个文档与查询最相近”，聚类和主题建模则尝试回答“这些文本自然形成了哪些群组”。</p>
-<h3 id="6-微调、压缩与偏好对齐的其他路线"><a href="#6-微调、压缩与偏好对齐的其他路线" class="headerlink" title="6. 微调、压缩与偏好对齐的其他路线"></a>6. 微调、压缩与偏好对齐的其他路线</h3><h4 id="Adapter-与-AdapterHub"><a href="#Adapter-与-AdapterHub" class="headerlink" title="Adapter 与 AdapterHub"></a>Adapter 与 AdapterHub</h4><p>Adapter 方法在 Transformer 层中插入小型可训练模块，冻结大部分原始参数，只训练新增模块。不同任务可以加载不同 Adapter，而不必保存多份完整模型。AdapterHub 则围绕 Adapter 的共享、复用和组合形成工具与模型生态。</p>
-<h4 id="内在维度与-LoRA-直觉"><a href="#内在维度与-LoRA-直觉" class="headerlink" title="内在维度与 LoRA 直觉"></a>内在维度与 LoRA 直觉</h4><p>LoRA 背后的另一个直觉是“内在维度”：一个拥有海量参数的模型，在适应具体任务时，真正需要探索的有效变化方向可能远少于参数总数。低秩矩阵正是在尝试用较少自由度描述这些关键变化。</p>
-<h4 id="剪枝与知识蒸馏"><a href="#剪枝与知识蒸馏" class="headerlink" title="剪枝与知识蒸馏"></a>剪枝与知识蒸馏</h4><p>剪枝删除不重要的权重、通道或结构，使模型更小；知识蒸馏让学生模型学习教师模型输出的概率分布，而不只学习硬标签。教师给出的软分布包含类别之间的相对关系，常用 KL 散度等方式衡量教师与学生分布的差异。</p>
+<h4 id="CLIP-与-OpenCLIP">CLIP 与 OpenCLIP</h4>
+<p>CLIP 用文本编码器和图像编码器分别生成向量，再通过对比学习把匹配的图文对拉近、把不匹配的组合推远，使图像和文本进入可比较的共享向量空间。这样可以支持零样本分类、图文检索和语义聚类。OpenCLIP 则提供了这一思路的开源实现路径。</p>
+<h4 id="BLIP-2-的视觉到语言投影">BLIP-2 的视觉到语言投影</h4>
+<p>BLIP-2 并不是简单把图片文件直接交给语言模型，而是先由视觉编码器提取图像特征，再通过中间模块把视觉表示投影到语言模型能够读取的表示空间。这个过程说明，多模态的关键问题之一是如何让不同模态的表示对齐并建立接口。</p>
+<h3 id="5-嵌入模型与对比学习">5. 嵌入模型与对比学习</h3>
+<h4 id="正样本、负样本与困难负样本">正样本、负样本与困难负样本</h4>
+<p>训练语义嵌入模型时，语义相同或相关的文本构成正样本，不相关文本构成负样本。困难负样本在表面或主题上很相似，却不是正确匹配，能够迫使模型学习更细的语义边界，但错误的困难负样本也可能给训练引入矛盾信号。</p>
+<h4 id="对比损失">对比损失</h4>
+<p>余弦相似度损失可以直接约束两个向量的方向；Multiple Negatives Ranking Loss、InfoNCE 和 NT-Xent 等目标，则会在一个批次中同时比较正样本与多个负样本，让正确配对的相似度相对更高。批次中的其他样本可以充当负样本，因此批次构造会直接影响训练效果。</p>
+<h4 id="领域适配与-TSDAE">领域适配与 TSDAE</h4>
+<p>通用嵌入模型未必理解某个垂直领域中的特殊语义。领域适配可以使用领域内的正负样本继续训练，也可以借助 TSDAE 这类无监督方法：先破坏句子，再训练模型从受损输入重建原句，从无标签领域文本中学习更适合该领域的句子表示。</p>
+<h4 id="聚类与主题建模">聚类与主题建模</h4>
+<p>嵌入不仅可以服务于检索，也可以把语义相近的文本聚在一起，用于发现主题、整理语料和分析用户反馈。检索回答“哪个文档与查询最相近”，聚类和主题建模则尝试回答“这些文本自然形成了哪些群组”。</p>
+<h3 id="6-微调、压缩与偏好对齐的其他路线">6. 微调、压缩与偏好对齐的其他路线</h3>
+<h4 id="Adapter-与-AdapterHub">Adapter 与 AdapterHub</h4>
+<p>Adapter 方法在 Transformer 层中插入小型可训练模块，冻结大部分原始参数，只训练新增模块。不同任务可以加载不同 Adapter，而不必保存多份完整模型。AdapterHub 则围绕 Adapter 的共享、复用和组合形成工具与模型生态。</p>
+<h4 id="内在维度与-LoRA-直觉">内在维度与 LoRA 直觉</h4>
+<p>LoRA 背后的另一个直觉是“内在维度”：一个拥有海量参数的模型，在适应具体任务时，真正需要探索的有效变化方向可能远少于参数总数。低秩矩阵正是在尝试用较少自由度描述这些关键变化。</p>
+<h4 id="剪枝与知识蒸馏">剪枝与知识蒸馏</h4>
+<p>剪枝删除不重要的权重、通道或结构，使模型更小；知识蒸馏让学生模型学习教师模型输出的概率分布，而不只学习硬标签。教师给出的软分布包含类别之间的相对关系，常用 KL 散度等方式衡量教师与学生分布的差异。</p>
 <p>量化改变的是数值精度，剪枝改变的是参与计算的结构或参数，蒸馏改变的是训练小模型的知识来源。三者都能降低成本，但路径不同。</p>
-<h4 id="奖励模型与-PPO"><a href="#奖励模型与-PPO" class="headerlink" title="奖励模型与 PPO"></a>奖励模型与 PPO</h4><p>经典 RLHF 通常先收集人类偏好数据训练奖励模型，再使用 PPO 等强化学习算法更新语言模型。它把“人更喜欢哪个回答”转换成可优化的奖励信号，但需要维护策略模型、参考模型、奖励模型等多个组件，训练成本和稳定性要求都较高。</p>
-<h4 id="DPO-与参考模型"><a href="#DPO-与参考模型" class="headerlink" title="DPO 与参考模型"></a>DPO 与参考模型</h4><p>DPO 绕过显式奖励模型和在线强化学习，直接提高偏好回答相对于被拒绝回答的概率。参考模型用于约束可训练模型不要偏离原始行为过远，并为偏好差异提供比较基准。DPO 流程更简洁，但训练数据的偏好质量仍然决定最终行为。</p>
-<h4 id="ORPO"><a href="#ORPO" class="headerlink" title="ORPO"></a>ORPO</h4><p>ORPO 尝试把监督微调与偏好优化合并在同一训练过程中，不再先做一轮 SFT、再做一轮 DPO。它体现了偏好对齐的另一个方向：减少训练阶段和模型副本，在较低资源下完成行为调整。</p>
-<h4 id="长推理数据的生成成本"><a href="#长推理数据的生成成本" class="headerlink" title="长推理数据的生成成本"></a>长推理数据的生成成本</h4><p>笔记以 DeepSeek-R1 等推理模型为例，提到长链式推理数据的构造与筛选成本。模型表现出长推理能力，不只是因为提示词要求它“多想一步”，背后还涉及大规模推理轨迹的生成、验证、奖励设计和训练数据质量。</p>
-<h3 id="7-有限标注数据下的学习方法"><a href="#7-有限标注数据下的学习方法" class="headerlink" title="7. 有限标注数据下的学习方法"></a>7. 有限标注数据下的学习方法</h3><h4 id="少样本学习与元学习"><a href="#少样本学习与元学习" class="headerlink" title="少样本学习与元学习"></a>少样本学习与元学习</h4><p>少样本学习关注模型只看到少量标注样本时如何完成新任务；元学习则进一步尝试让模型“学会如何学习”，从多个任务中获得能够快速适应新任务的参数初始化、度量方式或更新策略。</p>
-<h4 id="半监督学习"><a href="#半监督学习" class="headerlink" title="半监督学习"></a>半监督学习</h4><p>半监督学习同时使用少量标注数据和大量未标注数据，利用数据结构、一致性约束或模型预测扩大监督信号。它的难点在于：模型早期的错误如果被当成真标签，可能不断自我强化。</p>
-<h4 id="弱监督学习"><a href="#弱监督学习" class="headerlink" title="弱监督学习"></a>弱监督学习</h4><p>弱监督通过规则、词典、启发式函数或外部系统为数据生成不完全可靠的标签。它解决的是人工逐条标注太贵的问题，但必须处理不同标签函数的覆盖率、冲突和噪声。</p>
-<h4 id="自训练与伪标签"><a href="#自训练与伪标签" class="headerlink" title="自训练与伪标签"></a>自训练与伪标签</h4><p>自训练先用已有标注数据训练模型，再让模型为未标注数据产生伪标签，并挑选高置信样本加入下一轮训练。它介于人工监督与完全无监督之间，关键是控制伪标签质量，避免错误反馈循环。</p>
-<h3 id="8-分布式训练与推理优化中尚未展开的实现概念"><a href="#8-分布式训练与推理优化中尚未展开的实现概念" class="headerlink" title="8. 分布式训练与推理优化中尚未展开的实现概念"></a>8. 分布式训练与推理优化中尚未展开的实现概念</h3><h4 id="参数量如何计算"><a href="#参数量如何计算" class="headerlink" title="参数量如何计算"></a>参数量如何计算</h4><p>模型参数主要来自嵌入矩阵、注意力中的 Q&#x2F;K&#x2F;V 与输出投影、前馈网络以及归一化等部分。参数量不仅决定模型文件大小，还会进一步影响训练时的权重、梯度、优化器状态和激活值所占显存。只看“多少 B 参数”，还不足以估算真实训练成本。</p>
-<h4 id="SIMD、向量化与-BLAS"><a href="#SIMD、向量化与-BLAS" class="headerlink" title="SIMD、向量化与 BLAS"></a>SIMD、向量化与 BLAS</h4><p>现代处理器和加速器擅长一次对多个数执行同一种操作。向量化把逐元素循环改写为批量张量运算，底层再交给 BLAS 等高度优化的线性代数库。深度学习代码中尽量避免 Python 层的小循环，本质上是在让计算进入更适合硬件的执行路径。</p>
-<h4 id="循环分块"><a href="#循环分块" class="headerlink" title="循环分块"></a>循环分块</h4><p>循环分块把大矩阵运算拆成能更好放入高速缓存的小块，使加载到缓存的数据在被替换前得到更多次利用。虽然 PyTorch 或 NumPy 用户通常不手写这类底层优化，但矩阵库和编译器的性能很大程度上来自这些技术。</p>
-<h4 id="算子融合与重参数化"><a href="#算子融合与重参数化" class="headerlink" title="算子融合与重参数化"></a>算子融合与重参数化</h4><p>算子融合把多个连续操作合并为一个内核，减少中间结果读写、循环控制和内核启动开销。重参数化则在训练后把多个分支或操作等价地折叠成更简单的推理结构。两者都说明：数学表达相同，不同执行形式的速度可能相差很大。</p>
-<h4 id="训练后量化与量化感知训练"><a href="#训练后量化与量化感知训练" class="headerlink" title="训练后量化与量化感知训练"></a>训练后量化与量化感知训练</h4><p>训练后量化直接对已经训练好的模型降低数值精度，成本低、实施快，但精度损失可能较明显；量化感知训练在训练过程中模拟低精度误差，让模型提前适应量化，通常能更好地保留质量，但训练流程更复杂。</p>
-<h4 id="批量推理"><a href="#批量推理" class="headerlink" title="批量推理"></a>批量推理</h4><p>把多个请求合并成批次，可以提高 GPU 矩阵计算的利用率和整体吞吐量，但也可能让某些请求等待凑批，并增加显存占用。因此，在线服务必须在单请求延迟、批次大小和总吞吐量之间取舍。</p>
-<h4 id="开放权重模型与闭源-API"><a href="#开放权重模型与闭源-API" class="headerlink" title="开放权重模型与闭源 API"></a>开放权重模型与闭源 API</h4><p>闭源 API 降低了部署门槛，却带来持续调用成本、数据隐私、供应商依赖，以及无法直接修改权重等限制；开放权重模型允许本地部署和深度定制，但需要自己承担硬件、推理优化、模型评估与安全治理。技术选型不仅是在比较榜单分数，也是在选择成本结构和控制边界。</p>
-<h4 id="Prefill、Decode-与-PD-分离不是同一件事"><a href="#Prefill、Decode-与-PD-分离不是同一件事" class="headerlink" title="Prefill、Decode 与 PD 分离不是同一件事"></a>Prefill、Decode 与 PD 分离不是同一件事</h4><p>Prefill 和 Decode 是一次自回归推理中的两个计算阶段；PD 分离则是部署架构，即把两个阶段放到不同实例或硬件资源上运行，并处理 KV Cache 传输与独立调度等问题。理解前两个概念，并不等于已经解释了 PD 分离，后者更适合单独讨论。</p>
-<h3 id="9-评估、分布变化与不确定性"><a href="#9-评估、分布变化与不确定性" class="headerlink" title="9. 评估、分布变化与不确定性"></a>9. 评估、分布变化与不确定性</h3><h4 id="分布偏移的细分"><a href="#分布偏移的细分" class="headerlink" title="分布偏移的细分"></a>分布偏移的细分</h4><p>协变量偏移表示输入分布发生变化，但输入到标签的关系基本不变；标签偏移表示不同类别所占比例变化；概念偏移表示同样输入所对应的目标关系发生变化；领域或联合分布变化则可能同时改变多个部分。</p>
+<h4 id="奖励模型与-PPO">奖励模型与 PPO</h4>
+<p>经典 RLHF 通常先收集人类偏好数据训练奖励模型，再使用 PPO 等强化学习算法更新语言模型。它把“人更喜欢哪个回答”转换成可优化的奖励信号，但需要维护策略模型、参考模型、奖励模型等多个组件，训练成本和稳定性要求都较高。</p>
+<h4 id="DPO-与参考模型">DPO 与参考模型</h4>
+<p>DPO 绕过显式奖励模型和在线强化学习，直接提高偏好回答相对于被拒绝回答的概率。参考模型用于约束可训练模型不要偏离原始行为过远，并为偏好差异提供比较基准。DPO 流程更简洁，但训练数据的偏好质量仍然决定最终行为。</p>
+<h4 id="ORPO">ORPO</h4>
+<p>ORPO 尝试把监督微调与偏好优化合并在同一训练过程中，不再先做一轮 SFT、再做一轮 DPO。它体现了偏好对齐的另一个方向：减少训练阶段和模型副本，在较低资源下完成行为调整。</p>
+<h4 id="长推理数据的生成成本">长推理数据的生成成本</h4>
+<p>笔记以 DeepSeek-R1 等推理模型为例，提到长链式推理数据的构造与筛选成本。模型表现出长推理能力，不只是因为提示词要求它“多想一步”，背后还涉及大规模推理轨迹的生成、验证、奖励设计和训练数据质量。</p>
+<h3 id="7-有限标注数据下的学习方法">7. 有限标注数据下的学习方法</h3>
+<h4 id="少样本学习与元学习">少样本学习与元学习</h4>
+<p>少样本学习关注模型只看到少量标注样本时如何完成新任务；元学习则进一步尝试让模型“学会如何学习”，从多个任务中获得能够快速适应新任务的参数初始化、度量方式或更新策略。</p>
+<h4 id="半监督学习">半监督学习</h4>
+<p>半监督学习同时使用少量标注数据和大量未标注数据，利用数据结构、一致性约束或模型预测扩大监督信号。它的难点在于：模型早期的错误如果被当成真标签，可能不断自我强化。</p>
+<h4 id="弱监督学习">弱监督学习</h4>
+<p>弱监督通过规则、词典、启发式函数或外部系统为数据生成不完全可靠的标签。它解决的是人工逐条标注太贵的问题，但必须处理不同标签函数的覆盖率、冲突和噪声。</p>
+<h4 id="自训练与伪标签">自训练与伪标签</h4>
+<p>自训练先用已有标注数据训练模型，再让模型为未标注数据产生伪标签，并挑选高置信样本加入下一轮训练。它介于人工监督与完全无监督之间，关键是控制伪标签质量，避免错误反馈循环。</p>
+<h3 id="8-分布式训练与推理优化中尚未展开的实现概念">8. 分布式训练与推理优化中尚未展开的实现概念</h3>
+<h4 id="参数量如何计算">参数量如何计算</h4>
+<p>模型参数主要来自嵌入矩阵、注意力中的 Q/K/V 与输出投影、前馈网络以及归一化等部分。参数量不仅决定模型文件大小，还会进一步影响训练时的权重、梯度、优化器状态和激活值所占显存。只看“多少 B 参数”，还不足以估算真实训练成本。</p>
+<h4 id="SIMD、向量化与-BLAS">SIMD、向量化与 BLAS</h4>
+<p>现代处理器和加速器擅长一次对多个数执行同一种操作。向量化把逐元素循环改写为批量张量运算，底层再交给 BLAS 等高度优化的线性代数库。深度学习代码中尽量避免 Python 层的小循环，本质上是在让计算进入更适合硬件的执行路径。</p>
+<h4 id="循环分块">循环分块</h4>
+<p>循环分块把大矩阵运算拆成能更好放入高速缓存的小块，使加载到缓存的数据在被替换前得到更多次利用。虽然 PyTorch 或 NumPy 用户通常不手写这类底层优化，但矩阵库和编译器的性能很大程度上来自这些技术。</p>
+<h4 id="算子融合与重参数化">算子融合与重参数化</h4>
+<p>算子融合把多个连续操作合并为一个内核，减少中间结果读写、循环控制和内核启动开销。重参数化则在训练后把多个分支或操作等价地折叠成更简单的推理结构。两者都说明：数学表达相同，不同执行形式的速度可能相差很大。</p>
+<h4 id="训练后量化与量化感知训练">训练后量化与量化感知训练</h4>
+<p>训练后量化直接对已经训练好的模型降低数值精度，成本低、实施快，但精度损失可能较明显；量化感知训练在训练过程中模拟低精度误差，让模型提前适应量化，通常能更好地保留质量，但训练流程更复杂。</p>
+<h4 id="批量推理">批量推理</h4>
+<p>把多个请求合并成批次，可以提高 GPU 矩阵计算的利用率和整体吞吐量，但也可能让某些请求等待凑批，并增加显存占用。因此，在线服务必须在单请求延迟、批次大小和总吞吐量之间取舍。</p>
+<h4 id="开放权重模型与闭源-API">开放权重模型与闭源 API</h4>
+<p>闭源 API 降低了部署门槛，却带来持续调用成本、数据隐私、供应商依赖，以及无法直接修改权重等限制；开放权重模型允许本地部署和深度定制，但需要自己承担硬件、推理优化、模型评估与安全治理。技术选型不仅是在比较榜单分数，也是在选择成本结构和控制边界。</p>
+<h4 id="Prefill、Decode-与-PD-分离不是同一件事">Prefill、Decode 与 PD 分离不是同一件事</h4>
+<p>Prefill 和 Decode 是一次自回归推理中的两个计算阶段；PD 分离则是部署架构，即把两个阶段放到不同实例或硬件资源上运行，并处理 KV Cache 传输与独立调度等问题。理解前两个概念，并不等于已经解释了 PD 分离，后者更适合单独讨论。</p>
+<h3 id="9-评估、分布变化与不确定性">9. 评估、分布变化与不确定性</h3>
+<h4 id="分布偏移的细分">分布偏移的细分</h4>
+<p>协变量偏移表示输入分布发生变化，但输入到标签的关系基本不变；标签偏移表示不同类别所占比例变化；概念偏移表示同样输入所对应的目标关系发生变化；领域或联合分布变化则可能同时改变多个部分。</p>
 <p>区分偏移类型很重要，因为不同问题需要不同处理方式。对抗验证可以训练一个分类器判断样本来自训练集还是线上数据，从而发现两者差异；重要性加权则尝试让训练过程更重视那些与目标分布相似的样本。</p>
-<h4 id="置信区间与预测区间"><a href="#置信区间与预测区间" class="headerlink" title="置信区间与预测区间"></a>置信区间与预测区间</h4><p>置信区间描述的是总体参数或平均估计的不确定范围；预测区间描述的是未来单个观测值可能落入的范围。后者通常更宽，因为它既包含参数估计的不确定性，也包含单个样本自身的随机变化。</p>
-<h4 id="共形预测与非一致性分数"><a href="#共形预测与非一致性分数" class="headerlink" title="共形预测与非一致性分数"></a>共形预测与非一致性分数</h4><p>共形预测使用一个独立校准集，为样本计算“有多异常”的非一致性分数，再根据期望覆盖率构造预测集合或区间。它不只是输出一个最可能类别，而是尝试在有限假设下给出具有覆盖保证的候选范围。</p>
-<h4 id="交叉熵不仅是一个训练按钮"><a href="#交叉熵不仅是一个训练按钮" class="headerlink" title="交叉熵不仅是一个训练按钮"></a>交叉熵不仅是一个训练按钮</h4><p>交叉熵衡量目标分布与模型预测分布之间的差异。当正确类别获得的概率很低时，损失会显著增大。把它理解为“两个概率分布之间的距离式度量”，比只记住一个框架 API 更能解释模型为何这样更新参数。</p>
-<h3 id="10-《GPT图解》中暂未进入主线的概念"><a href="#10-《GPT图解》中暂未进入主线的概念" class="headerlink" title="10. 《GPT图解》中暂未进入主线的概念"></a>10. 《GPT图解》中暂未进入主线的概念</h3><p>下面几个概念来自《GPT图解：大模型是怎样构建的》已经读完的章节，暂时作为正文之外的补充。</p>
-<h4 id="Prompt-模式与-Instruct-模式"><a href="#Prompt-模式与-Instruct-模式" class="headerlink" title="Prompt 模式与 Instruct 模式"></a>Prompt 模式与 Instruct 模式</h4><p>Prompt 模式通常从一个词、短语或开头继续生成，重点是语言上的自然延续；Instruct 模式接收更明确的任务要求，重点是按照指令完成回答、解释或改写。两者的差异不仅是输入长短，也体现了基础续写模型与指令对齐模型在使用方式上的区别。</p>
-<h4 id="统计语言模型的价值"><a href="#统计语言模型的价值" class="headerlink" title="统计语言模型的价值"></a>统计语言模型的价值</h4><p>统计语言模型结构相对简单、结果更容易分析，在数据和计算资源有限时仍然有价值，也为理解“根据历史上下文估计下一个词的概率”提供了清晰起点。神经概率语言模型则用连续向量和神经网络替代稀疏的离散计数，使相似词能够共享统计信息，并缓解传统 N-Gram 的数据稀疏问题。</p>
-<h4 id="张量的阶数、形状与数据类型"><a href="#张量的阶数、形状与数据类型" class="headerlink" title="张量的阶数、形状与数据类型"></a>张量的阶数、形状与数据类型</h4><p>标量可以看作 0 阶张量，向量是 1 阶，矩阵是 2 阶，更高维数组则对应更高阶张量。形状说明每个维度有多大，数据类型决定每个元素使用多少存储空间以及支持怎样的计算精度。这些基础概念会直接影响模型代码是否能运行、一次能处理多少样本以及显存消耗。</p>
-<h4 id="深层网络的层级特征"><a href="#深层网络的层级特征" class="headerlink" title="深层网络的层级特征"></a>深层网络的层级特征</h4><p>深层网络不是每一层都重复做同一件事。较浅层往往学习更局部、更基础的模式，较深层再把它们组合成更抽象的特征。这个直觉既可以帮助理解视觉模型从边缘到物体的层级，也可以帮助理解语言模型从局部搭配到上下文语义的逐层变换。</p>
-<h4 id="注意力分数与归一化权重"><a href="#注意力分数与归一化权重" class="headerlink" title="注意力分数与归一化权重"></a>注意力分数与归一化权重</h4><p>原始注意力分数可以为任意实数，表示 Query 与各个 Key 之间未经归一化的匹配程度；Softmax 之后才变成可用于加权求和的注意力权重。区分二者，可以避免把“点积结果”“概率式权重”和“模型参数”混为一谈。</p>
-<h4 id="交叉注意力的直觉"><a href="#交叉注意力的直觉" class="headerlink" title="交叉注意力的直觉"></a>交叉注意力的直觉</h4><p>如果把一组对象当作 Query，另一组对象当作 Key 和 Value，模型就可以用前者去检索后者。书中用用户与电影等关系帮助建立直觉；同样的结构也能解释翻译模型中解码器读取源句，以及多模态模型中文本读取图像特征。</p>
-<h3 id="11-这份概念索引接下来可以怎样使用"><a href="#11-这份概念索引接下来可以怎样使用" class="headerlink" title="11. 这份概念索引接下来可以怎样使用"></a>11. 这份概念索引接下来可以怎样使用</h3><p>这些概念不适合全部塞回“一个 Token 如何变成答案”的因果链，否则文章会从解释主线变成术语百科。但它们可以继续发展成几条独立写作线索：</p>
+<h4 id="置信区间与预测区间">置信区间与预测区间</h4>
+<p>置信区间描述的是总体参数或平均估计的不确定范围；预测区间描述的是未来单个观测值可能落入的范围。后者通常更宽，因为它既包含参数估计的不确定性，也包含单个样本自身的随机变化。</p>
+<h4 id="共形预测与非一致性分数">共形预测与非一致性分数</h4>
+<p>共形预测使用一个独立校准集，为样本计算“有多异常”的非一致性分数，再根据期望覆盖率构造预测集合或区间。它不只是输出一个最可能类别，而是尝试在有限假设下给出具有覆盖保证的候选范围。</p>
+<h4 id="交叉熵不仅是一个训练按钮">交叉熵不仅是一个训练按钮</h4>
+<p>交叉熵衡量目标分布与模型预测分布之间的差异。当正确类别获得的概率很低时，损失会显著增大。把它理解为“两个概率分布之间的距离式度量”，比只记住一个框架 API 更能解释模型为何这样更新参数。</p>
+<h3 id="10-《GPT图解》中暂未进入主线的概念">10. 《GPT图解》中暂未进入主线的概念</h3>
+<p>下面几个概念来自《GPT图解：大模型是怎样构建的》已经读完的章节，暂时作为正文之外的补充。</p>
+<h4 id="Prompt-模式与-Instruct-模式">Prompt 模式与 Instruct 模式</h4>
+<p>Prompt 模式通常从一个词、短语或开头继续生成，重点是语言上的自然延续；Instruct 模式接收更明确的任务要求，重点是按照指令完成回答、解释或改写。两者的差异不仅是输入长短，也体现了基础续写模型与指令对齐模型在使用方式上的区别。</p>
+<h4 id="统计语言模型的价值">统计语言模型的价值</h4>
+<p>统计语言模型结构相对简单、结果更容易分析，在数据和计算资源有限时仍然有价值，也为理解“根据历史上下文估计下一个词的概率”提供了清晰起点。神经概率语言模型则用连续向量和神经网络替代稀疏的离散计数，使相似词能够共享统计信息，并缓解传统 N-Gram 的数据稀疏问题。</p>
+<h4 id="张量的阶数、形状与数据类型">张量的阶数、形状与数据类型</h4>
+<p>标量可以看作 0 阶张量，向量是 1 阶，矩阵是 2 阶，更高维数组则对应更高阶张量。形状说明每个维度有多大，数据类型决定每个元素使用多少存储空间以及支持怎样的计算精度。这些基础概念会直接影响模型代码是否能运行、一次能处理多少样本以及显存消耗。</p>
+<h4 id="深层网络的层级特征">深层网络的层级特征</h4>
+<p>深层网络不是每一层都重复做同一件事。较浅层往往学习更局部、更基础的模式，较深层再把它们组合成更抽象的特征。这个直觉既可以帮助理解视觉模型从边缘到物体的层级，也可以帮助理解语言模型从局部搭配到上下文语义的逐层变换。</p>
+<h4 id="注意力分数与归一化权重">注意力分数与归一化权重</h4>
+<p>原始注意力分数可以为任意实数，表示 Query 与各个 Key 之间未经归一化的匹配程度；Softmax 之后才变成可用于加权求和的注意力权重。区分二者，可以避免把“点积结果”“概率式权重”和“模型参数”混为一谈。</p>
+<h4 id="交叉注意力的直觉">交叉注意力的直觉</h4>
+<p>如果把一组对象当作 Query，另一组对象当作 Key 和 Value，模型就可以用前者去检索后者。书中用用户与电影等关系帮助建立直觉；同样的结构也能解释翻译模型中解码器读取源句，以及多模态模型中文本读取图像特征。</p>
+<h3 id="11-这份概念索引接下来可以怎样使用">11. 这份概念索引接下来可以怎样使用</h3>
+<p>这些概念不适合全部塞回“一个 Token 如何变成答案”的因果链，否则文章会从解释主线变成术语百科。但它们可以继续发展成几条独立写作线索：</p>
 <ol>
 <li><strong>分词器与数据工程</strong>：从滑动窗口、词表设计写到数据增强和数据中心 AI；</li>
 <li><strong>模型结构地图</strong>：比较编码器、解码器、交叉注意力、CNN 与 ViT；</li>
@@ -863,17 +933,24 @@
 <li><strong>模型评估与不确定性</strong>：从分布偏移写到共形预测和持续监控。</li>
 </ol>
 <p>这样处理以后，正文负责讲清楚一条主线，这一章负责保存六本书提供的其他路标。它既能提醒我还有哪些知识没有真正讲透，也为后续文章保留了可以继续展开的问题。</p>
-<h2 id="十六、沿着生成链路得到的几个结论"><a href="#十六、沿着生成链路得到的几个结论" class="headerlink" title="十六、沿着生成链路得到的几个结论"></a>十六、沿着生成链路得到的几个结论</h2><h3 id="判断一：大模型首先是一种表征系统，然后才是一种生成系统"><a href="#判断一：大模型首先是一种表征系统，然后才是一种生成系统" class="headerlink" title="判断一：大模型首先是一种表征系统，然后才是一种生成系统"></a>判断一：大模型首先是一种表征系统，然后才是一种生成系统</h3><p>模型之所以能够生成，是因为它先学会了把 Token、句子、知识和上下文映射成可以计算的内部表示。没有嵌入和上下文表征，后面的生成只是无源之水。</p>
-<h3 id="判断二：能力、知识和行为是三个不同问题"><a href="#判断二：能力、知识和行为是三个不同问题" class="headerlink" title="判断二：能力、知识和行为是三个不同问题"></a>判断二：能力、知识和行为是三个不同问题</h3><p>预训练主要形成基础能力和参数知识；RAG 补充当前需要的外部知识；指令微调和偏好对齐改变模型的行为方式。把这三者混在一起，就会在技术选型时不断用错工具。</p>
-<h3 id="判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力"><a href="#判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力" class="headerlink" title="判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力"></a>判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力</h3><p>注意力告诉模型应该从上下文的哪些位置汇总信息，但它不会自动判断这些信息是真是假。能关联信息和能验证事实，是两个不同层次的问题。</p>
-<h3 id="判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突"><a href="#判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突" class="headerlink" title="判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突"></a>判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突</h3><p>写作、头脑风暴和表达润色允许多种答案，概率生成是优势；金额计算、权限变更、医疗结论和数据库写入要求明确正确，仅靠自由生成就不够。越接近高风险操作，越需要工具、规则、验证和人工介入。</p>
-<h3 id="判断五：未来的大模型应用竞争，很可能不只发生在模型层"><a href="#判断五：未来的大模型应用竞争，很可能不只发生在模型层" class="headerlink" title="判断五：未来的大模型应用竞争，很可能不只发生在模型层"></a>判断五：未来的大模型应用竞争，很可能不只发生在模型层</h3><p>基座模型固然重要，但用户最终体验到的是整个系统：数据是否可靠、检索是否准确、上下文是否干净、工具是否稳定、结果是否经过验证、线上是否持续评估。很多应用的真正壁垒，可能来自这些环节的组合，而不是简单更换一个参数更多的模型。</p>
-<h3 id="判断六：理解模型规模，不能只看总参数量"><a href="#判断六：理解模型规模，不能只看总参数量" class="headerlink" title="判断六：理解模型规模，不能只看总参数量"></a>判断六：理解模型规模，不能只看总参数量</h3><p>缩放定律提醒我同时观察参数量、训练数据量和计算预算；MoE 又进一步把“总参数量”和“实际激活参数量”区分开来。因此，比较两个大模型时，只看多少 B 参数已经不够，还要继续追问：训练数据是否充足、一次计算激活多少参数、路由如何工作，以及这些设计最终换来了怎样的质量和成本。</p>
-<h2 id="结语：理解一条从文字到概率的链路"><a href="#结语：理解一条从文字到概率的链路" class="headerlink" title="结语：理解一条从文字到概率的链路"></a>结语：理解一条从文字到概率的链路</h2><p>现在，我们可以重新描述大模型的一次回答：</p>
+<h2 id="十六、沿着生成链路得到的几个结论">十六、沿着生成链路得到的几个结论</h2>
+<h3 id="判断一：大模型首先是一种表征系统，然后才是一种生成系统">判断一：大模型首先是一种表征系统，然后才是一种生成系统</h3>
+<p>模型之所以能够生成，是因为它先学会了把 Token、句子、知识和上下文映射成可以计算的内部表示。没有嵌入和上下文表征，后面的生成只是无源之水。</p>
+<h3 id="判断二：能力、知识和行为是三个不同问题">判断二：能力、知识和行为是三个不同问题</h3>
+<p>预训练主要形成基础能力和参数知识；RAG 补充当前需要的外部知识；指令微调和偏好对齐改变模型的行为方式。把这三者混在一起，就会在技术选型时不断用错工具。</p>
+<h3 id="判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力">判断三：注意力解决的是信息路由，不等于模型已经拥有事实判断能力</h3>
+<p>注意力告诉模型应该从上下文的哪些位置汇总信息，但它不会自动判断这些信息是真是假。能关联信息和能验证事实，是两个不同层次的问题。</p>
+<h3 id="判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突">判断四：大模型最重要的工程边界，是概率生成与确定性要求之间的冲突</h3>
+<p>写作、头脑风暴和表达润色允许多种答案，概率生成是优势；金额计算、权限变更、医疗结论和数据库写入要求明确正确，仅靠自由生成就不够。越接近高风险操作，越需要工具、规则、验证和人工介入。</p>
+<h3 id="判断五：未来的大模型应用竞争，很可能不只发生在模型层">判断五：未来的大模型应用竞争，很可能不只发生在模型层</h3>
+<p>基座模型固然重要，但用户最终体验到的是整个系统：数据是否可靠、检索是否准确、上下文是否干净、工具是否稳定、结果是否经过验证、线上是否持续评估。很多应用的真正壁垒，可能来自这些环节的组合，而不是简单更换一个参数更多的模型。</p>
+<h3 id="判断六：理解模型规模，不能只看总参数量">判断六：理解模型规模，不能只看总参数量</h3>
+<p>缩放定律提醒我同时观察参数量、训练数据量和计算预算；MoE 又进一步把“总参数量”和“实际激活参数量”区分开来。因此，比较两个大模型时，只看多少 B 参数已经不够，还要继续追问：训练数据是否充足、一次计算激活多少参数、路由如何工作，以及这些设计最终换来了怎样的质量和成本。</p>
+<h2 id="结语：理解一条从文字到概率的链路">结语：理解一条从文字到概率的链路</h2>
+<p>现在，我们可以重新描述大模型的一次回答：</p>
 <p>首先，分词器把文字拆成 Token 并转换成 ID；嵌入层把离散编号映射到连续向量；位置编码为模型补充顺序信息；多层自注意力让每个 Token 从上下文中提取相关信息；前馈网络继续加工这些表示；最后，模型把当前表示转换成整个词表上的概率分布，从中选出下一个 Token，再把它加入上下文，重复同样的过程。</p>
 <p>整个链路可以压缩成：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">文字</span><br><span class="line">→ Token</span><br><span class="line">→ 向量</span><br><span class="line">→ 上下文表示</span><br><span class="line">→ 概率分布</span><br><span class="line">→ 新 Token</span><br><span class="line">→ 答案</span><br></pre></td></tr></table></figure>
-
 <p>大模型的能力，来自它对海量语言模式的压缩；它的局限，也来自概率上合理的语言并不天然等于事实。</p>
 <p>它不是先想好一段话，再把答案逐字说出来。它是在高维向量空间中，根据已经出现的上下文，一步一步寻找接下来最可能、或者最合适出现的 Token。</p>
 <p>每一步看起来都很小。</p>
@@ -1003,7 +1080,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">830k</span>
+    <span title="站点总字数">838k</span>
   </span>
 </div>
 <div class="busuanzi-count">
