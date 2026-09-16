@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Hermes 核心对话流程</title>
+  <desc id="desc">用户请求经过入口层进入 Agent 引擎，组装系统提示词与记忆后进入迭代循环。模型流式响应若包含工具调用，则执行工具并把结果写回历史，再检查上下文并继续推理；若为纯文本，则退出循环、返回最终响应并同步持久化记忆。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#EEF4F8"/>
+    </linearGradient>
+    <linearGradient id="engine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7956D8"/>
+      <stop offset="1" stop-color="#6040BC"/>
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#36A572"/>
+      <stop offset="1" stop-color="#25825A"/>
+    </linearGradient>
+    <linearGradient id="memory" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#257653"/>
+      <stop offset="1" stop-color="#165A40"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#183047" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#3687B8"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#6F4AC7"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#299167"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#D77B27"/>
+    </marker>
+    <style>
+      .title { font: 700 34px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; fill:#17263A; }
+      .subtitle { font: 400 17px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; fill:#64748B; }
+      .label { font: 700 19px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; fill:#203247; }
+      .label-white { font: 700 19px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; fill:white; }
+      .small { font: 400 14px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; fill:#66778A; }
+      .small-white { font: 400 14px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; fill:#EAF7F0; }
+      .step { font: 700 15px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; fill:white; }
+      .edge { fill:none; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+      .edge-label { font: 600 14px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+      .legend { font: 500 14px -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; fill:#536477; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1040" rx="28" fill="url(#bg)"/>
+  <text x="800" y="54" text-anchor="middle" class="title">Hermes 核心对话流程</text>
+  <text x="800" y="84" text-anchor="middle" class="subtitle">入口适配 → Agent 初始化 → ReAct 迭代 → 工具执行 → 上下文与记忆治理</text>
+
+  <!-- Top-level flow -->
+  <g filter="url(#shadow)">
+    <rect x="54" y="126" width="205" height="84" rx="42" fill="#FFFFFF" stroke="#7B8794" stroke-width="2"/>
+    <circle cx="82" cy="168" r="15" fill="#3687B8"/>
+    <text x="82" y="173" text-anchor="middle" class="step">1</text>
+    <text x="160" y="174" text-anchor="middle" class="label">用户输入</text>
+
+    <rect x="326" y="126" width="270" height="84" rx="16" fill="#F1FAFD" stroke="#55A9C5" stroke-width="2.5"/>
+    <circle cx="354" cy="153" r="15" fill="#3687B8"/>
+    <text x="354" y="158" text-anchor="middle" class="step">2</text>
+    <text x="461" y="159" text-anchor="middle" class="label">入口层</text>
+    <text x="461" y="187" text-anchor="middle" class="small">CLI / Web / TUI / IDE 协议转换</text>
+
+    <rect x="660" y="126" width="260" height="84" rx="16" fill="url(#engine)"/>
+    <circle cx="689" cy="153" r="15" fill="#FFFFFF" fill-opacity="0.22"/>
+    <text x="689" y="158" text-anchor="middle" class="step">3</text>
+    <text x="790" y="176" text-anchor="middle" class="label-white">Agent 引擎启动</text>
+
+    <rect x="985" y="112" width="445" height="112" rx="16" fill="url(#core)"/>
+    <circle cx="1016" cy="144" r="15" fill="#FFFFFF" fill-opacity="0.22"/>
+    <text x="1016" y="149" text-anchor="middle" class="step">4</text>
+    <text x="1208" y="151" text-anchor="middle" class="label-white">组装系统提示词</text>
+    <text x="1208" y="183" text-anchor="middle" class="small-white">注入工具说明、运行规则与预取记忆</text>
+  </g>
+
+  <path d="M259 168 H326" class="edge" stroke="#3687B8" marker-end="url(#arrow-blue)"/>
+  <path d="M596 168 H660" class="edge" stroke="#6F4AC7" marker-end="url(#arrow-purple)"/>
+  <path d="M920 168 H985" class="edge" stroke="#299167" marker-end="url(#arrow-green)"/>
+
+  <!-- Iteration container -->
+  <rect x="54" y="280" width="1196" height="650" rx="26" fill="#FFFFFF" fill-opacity="0.58" stroke="#C98339" stroke-width="2.5" stroke-dasharray="11 9"/>
+  <rect x="82" y="258" width="250" height="44" rx="22" fill="#FFF8ED" stroke="#E1A562"/>
+  <text x="207" y="286" text-anchor="middle" class="label" fill="#B86720">迭代循环 · 上限保护</text>
+
+  <path d="M1208 224 V250 H146 V348" class="edge" stroke="#D77B27" marker-end="url(#arrow-orange)"/>
+  <text x="770" y="244" text-anchor="middle" class="edge-label" fill="#B86720">进入核心推理循环</text>
+
+  <!-- LLM -->
+  <g filter="url(#shadow)">
+    <rect x="102" y="348" width="285" height="110" rx="18" fill="#FFF9F1" stroke="#D68A3A" stroke-width="2.5"/>
+    <circle cx="134" cy="380" r="15" fill="#D77B27"/>
+    <text x="134" y="385" text-anchor="middle" class="step">5</text>
+    <text x="245" y="392" text-anchor="middle" class="label">流式调用 LLM API</text>
+    <text x="245" y="427" text-anchor="middle" class="small">持续解析文本片段与 tool_calls</text>
+  </g>
+
+  <!-- Decision -->
+  <g filter="url(#shadow)">
+    <polygon points="575,326 736,403 575,480 414,403" fill="#FFF5F5" stroke="#CF6470" stroke-width="2.5"/>
+    <circle cx="575" cy="366" r="15" fill="#CF5262"/>
+    <text x="575" y="371" text-anchor="middle" class="step">?</text>
+    <text x="575" y="405" text-anchor="middle" class="label" fill="#B33E4E">响应类型</text>
+    <text x="575" y="430" text-anchor="middle" class="small">工具调用 / 纯文本</text>
+  </g>
+
+  <path d="M387 403 H414" class="edge" stroke="#D77B27" marker-end="url(#arrow-orange)"/>
+
+  <!-- Tool execution -->
+  <g filter="url(#shadow)">
+    <rect x="753" y="326" width="345" height="118" rx="18" fill="#F2FBF7" stroke="#48A77C" stroke-width="2.5"/>
+    <circle cx="786" cy="360" r="15" fill="#299167"/>
+    <text x="786" y="365" text-anchor="middle" class="step">6</text>
+    <text x="926" y="370" text-anchor="middle" class="label">工具调度与执行</text>
+    <text x="926" y="404" text-anchor="middle" class="small">沙箱 · 权限审批 · 实际调用</text>
+  </g>
+  <path d="M736 403 H753" class="edge" stroke="#299167" marker-end="url(#arrow-green)"/>
+  <text x="746" y="386" text-anchor="middle" class="edge-label" fill="#287B5A">含工具调用</text>
+
+  <!-- Append result -->
+  <g filter="url(#shadow)">
+    <rect x="753" y="502" width="345" height="102" rx="18" fill="#F2FBF7" stroke="#48A77C" stroke-width="2.5"/>
+    <circle cx="786" cy="534" r="15" fill="#299167"/>
+    <text x="786" y="539" text-anchor="middle" class="step">7</text>
+    <text x="926" y="545" text-anchor="middle" class="label">结果写回消息历史</text>
+    <text x="926" y="576" text-anchor="middle" class="small">追加 tool_result，供下一轮模型读取</text>
+  </g>
+  <path d="M926 444 V502" class="edge" stroke="#299167" marker-end="url(#arrow-green)"/>
+
+  <!-- Context decision -->
+  <g filter="url(#shadow)">
+    <polygon points="926,652 1090,736 926,820 762,736" fill="#FFF5F5" stroke="#CF6470" stroke-width="2.5"/>
+    <circle cx="926" cy="696" r="15" fill="#CF5262"/>
+    <text x="926" y="701" text-anchor="middle" class="step">8</text>
+    <text x="926" y="739" text-anchor="middle" class="label" fill="#B33E4E">下一轮上下文接近上限？</text>
+    <text x="926" y="768" text-anchor="middle" class="small">仅检查 token 预算</text>
+  </g>
+  <path d="M926 604 V652" class="edge" stroke="#D77B27" marker-end="url(#arrow-orange)"/>
+
+  <!-- Compression -->
+  <g filter="url(#shadow)">
+    <rect x="1120" y="687" width="100" height="98" rx="16" fill="#E97719"/>
+    <text x="1170" y="726" text-anchor="middle" class="label-white">上下文</text>
+    <text x="1170" y="753" text-anchor="middle" class="label-white">压缩</text>
+  </g>
+  <path d="M1090 736 H1120" class="edge" stroke="#D77B27" marker-end="url(#arrow-orange)"/>
+  <text x="1102" y="716" class="edge-label" fill="#B86720">是</text>
+
+  <!-- Loopbacks -->
+  <path d="M1170 687 V306 H245 V348" class="edge" stroke="#C98339" stroke-dasharray="8 7" marker-end="url(#arrow-orange)"/>
+  <text x="690" y="324" text-anchor="middle" class="edge-label" fill="#A96023">压缩完成，进入下一轮调用</text>
+  <path d="M762 736 H650 C520 736 445 668 382 574 C340 512 294 487 245 487 V458" class="edge" stroke="#C98339" stroke-dasharray="8 7" marker-end="url(#arrow-orange)"/>
+  <text x="535" y="703" text-anchor="middle" class="edge-label" fill="#A96023">否，继续下一轮迭代</text>
+
+  <!-- Pure text exit -->
+  <path d="M575 480 V858 H1275 V500 H1310" class="edge" stroke="#299167" marker-end="url(#arrow-green)"/>
+  <text x="593" y="827" class="edge-label" fill="#287B5A">纯文本：结束迭代</text>
+
+  <!-- Final response & persistence -->
+  <g filter="url(#shadow)">
+    <rect x="1310" y="438" width="240" height="124" rx="20" fill="#DDF7E8" stroke="#2E9968" stroke-width="2.5"/>
+    <circle cx="1338" cy="472" r="15" fill="#299167"/>
+    <text x="1338" y="477" text-anchor="middle" class="step">9</text>
+    <text x="1440" y="486" text-anchor="middle" class="label">返回最终响应</text>
+    <text x="1430" y="520" text-anchor="middle" class="small">经入口层流式返回用户</text>
+
+    <rect x="1310" y="675" width="240" height="136" rx="20" fill="url(#memory)"/>
+    <circle cx="1338" cy="708" r="15" fill="#FFFFFF" fill-opacity="0.22"/>
+    <text x="1338" y="713" text-anchor="middle" class="step">10</text>
+    <text x="1448" y="720" text-anchor="middle" class="label-white">记忆与状态持久化</text>
+    <text x="1430" y="754" text-anchor="middle" class="small-white">消息 · Run · 业务状态 · 长期记忆</text>
+    <text x="1430" y="780" text-anchor="middle" class="small-white">为后续轮次提供可恢复上下文</text>
+  </g>
+  <path d="M1430 562 V675" class="edge" stroke="#299167" marker-end="url(#arrow-green)"/>
+  <path d="M1550 742 H1570 V168 H1430" class="edge" stroke="#299167" stroke-dasharray="7 7" marker-end="url(#arrow-green)"/>
+  <text x="1585" y="435" transform="rotate(-90 1585 435)" text-anchor="middle" class="edge-label" fill="#287B5A">下一轮恢复记忆与状态</text>
+
+  <!-- Legend -->
+  <rect x="54" y="963" width="1496" height="48" rx="14" fill="#FFFFFF" stroke="#D8E1E8"/>
+  <circle cx="91" cy="987" r="8" fill="#3687B8"/><text x="108" y="992" class="legend">入口</text>
+  <circle cx="194" cy="987" r="8" fill="#6F4AC7"/><text x="211" y="992" class="legend">编排</text>
+  <circle cx="310" cy="987" r="8" fill="#299167"/><text x="327" y="992" class="legend">核心 / 记忆</text>
+  <circle cx="454" cy="987" r="8" fill="#D77B27"/><text x="471" y="992" class="legend">LLM 交互</text>
+  <circle cx="596" cy="987" r="8" fill="#CF5262"/><text x="613" y="992" class="legend">判断节点</text>
+  <path d="M742 987 H792" class="edge" stroke="#C98339" stroke-dasharray="8 7"/><text x="807" y="992" class="legend">迭代 / 压缩回路</text>
+</svg>
