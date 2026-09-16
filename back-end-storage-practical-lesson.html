@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":true,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="《后端存储实战课》学习笔记，围绕海量数据分片、数据库与存储系统选型、数据组织方式及查询需求反推存储设计等核心观点展开。">
 <meta property="og:type" content="article">
@@ -323,15 +323,13 @@
     
     <div class="post-body" itemprop="articleBody"><p>《后端存储实战课》学习笔记，重点摘录关于海量数据分片、存储选型、数据组织方式等核心观点。</p>
 <span id="more"></span>
-<p>后端存储实战课<br>
-作者： 李玥</p>
+
+<p>后端存储实战课<br>作者： 李玥</p>
 <p>最近在读《后端存储实战课》，其中有几条对于我个人而言，感触很深，特此摘录一下：</p>
 <ul>
-<li>
-<p><font color=DeepPink><strong>解决海量数据导致存储系统慢的问题，思想非常简单，就是一个“拆”字，把一大坨数据拆分成 N 个小坨，学名叫“分片（Shard）”。</strong></font>拆开之后，每个分片里的数据就没那么多了，然后让查找尽量落在某一个分片上，这样来提升查找性能。所有分布式存储系统解决海量数据查找问题都是遵循的这个思想。</p>
+<li><p><font color=DeepPink><strong>解决海量数据导致存储系统慢的问题，思想非常简单，就是一个“拆”字，把一大坨数据拆分成 N 个小坨，学名叫“分片（Shard）”。</strong></font>拆开之后，每个分片里的数据就没那么多了，然后让查找尽量落在某一个分片上，这样来提升查找性能。所有分布式存储系统解决海量数据查找问题都是遵循的这个思想。</p>
 </li>
-<li>
-<p>同样一份商品数据，如果我们是按照关键字搜索，放在 ES 里就比放在 MySQL 快了几个数量级。原因是，数据组织方式、物理存储结构和查询方式，对查询性能的影响是巨大的，而且海量数据还会指数级地放大这个性能差距。</p>
+<li><p>同样一份商品数据，如果我们是按照关键字搜索，放在 ES 里就比放在 MySQL 快了几个数量级。原因是，数据组织方式、物理存储结构和查询方式，对查询性能的影响是巨大的，而且海量数据还会指数级地放大这个性能差距。</p>
 <p>所以，在大厂中，<font color=DeepPink><strong>对于海量数据的处理原则，都是根据业务对数据查询的需求，反过来确定选择什么数据库、如何组织数据结构、如何分片数据，这样才能达到最优的查询性能。同样一份订单数据，除了在订单库保存一份用于在线交易以外，还会在各种数据库中，以各种各样的组织方式存储，用于满足不同业务系统的查询需求。像 BAT 这种大厂，它的核心业务数据，存个几十上百份是非常正常的。</strong></font></p>
 </li>
 </ul>
@@ -431,7 +429,7 @@
 
 
 
-    <div class="comments gitalk-container"></div>
+    <div class="comments giscus-container"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
 </div>
   </main>
 
@@ -453,7 +451,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">839k</span>
+    <span title="站点总字数">837k</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -496,10 +494,6 @@
 <noscript>
   <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
 </noscript>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"jiankunking","repo":"blog-comments","client_id":"5e2e6dc5bd7af549261d","client_secret":"f37069692932676f0ad9fbfecb5164aee191fe23","admin_user":"jiankunking","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/gitalk/1.8.0/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"1f34a0fd68fd430f80fd3430c5010984"}</script>
-<script src="/js/third-party/comments/gitalk.js" defer></script>
 
 </body>
 </html>
