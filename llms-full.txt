@@ -9,10 +9,10 @@ Generated from 176 indexable articles. Each entry keeps its canonical URL and co
 
 ## Core topics
 
-- [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
-- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
-- [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
 - [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
+- [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
+- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
+- [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
 
 ## Articles
 ### 大模型网关限流新思路：从进程内漏桶到分布式漏桶矩阵
@@ -895,7 +895,7 @@ AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查�
 - URL: https://jiankunking.com/coding-agent-harness-landscape-and-selection.html
 - Content type: original
 - Published: 2026-09-05
-- Updated: 2026-09-05
+- Updated: 2026-09-18
 - Summary: 比较 OpenCode、Pi、DeepSeek Harness、Codex、Claude Agent SDK 和 OpenHands，并讨论独立运行、HTTP API、会话管理以及接入业务时的职责边界。
 - Categories: AI
 - Tags: AI Agent, Harness Engineering, OpenCode, Pi, DeepSeek Harness, Codex, MCP, Agent Runtime
@@ -903,7 +903,7 @@ AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查�
 Key takeaways:
 
 - “可以独立运行”“提供原生 HTTP API”和“具备会话管理”是三项不同能力，应该作为独立选型维度。
-- OpenCode 适合通过 HTTP/SSE 快速接入现有业务，Pi 适合嵌入自有产品，DeepSeek Harness 更适合围绕 DeepSeek 模型并关注轨迹、评测和训练闭环的团队。
+- OpenCode 适合通过 HTTP/SSE 快速接入现有业务，Pi 适合嵌入自有产品，DeepSeek Harness 更适合想验证插件化架构、或深度使用 DeepSeek 模型的团队，但它仍是 Developer Preview，接入…
 - Harness 负责一次任务怎样执行，业务系统仍要负责身份、任务状态、幂等、审批、审计和结果正确性。
 - 已有 CLI 可以先作为工具接入；稳定后应增加 Schema、权限和审计，核心能力再逐步封装成 Harness 原生工具，共享能力则放到 MCP。
 - 业务侧最好定义自己的 Task、Run、Event 和 Result，再通过 Adapter 接不同 Runtime。
@@ -916,7 +916,7 @@ Article text:
 
 所以这篇不比“谁写代码更聪明”，只看两件事：怎么选，以及选完以后怎么接。
 
-以下判断基于 2026 年 9 月 5 日 能查到的官方资料。这个领域变化很快，具体接口仍应以实际采用版本为准。
+以下判断基于 2026 年 9 月 能查到的官方资料，核对时的最新版本为 OpenCode v1.18.31、Pi v0.85.1、DeepSeek Harness v0.1.6-alpha.2、Codex v0.155.0、Claude Agent SDK Python v0.2.156 / TypeScript v0.3.276、OpenHands v1.20.0。这个领域变化很快，具体接口仍应以实际采用版本为准。
 
 先说结论
 
@@ -931,7 +931,7 @@ OpenCode |
 想把 Agent 内核嵌进自己的 Node.js 产品 |
 Pi |
 
-围绕 DeepSeek 模型，并关注轨迹、评测或训练闭环 |
+想验证插件化架构，或深度使用 DeepSeek 模型 |
 DeepSeek Harness |
 
 已经确定使用 OpenAI 或 Claude |
@@ -940,7 +940,7 @@ Codex / Claude Agent SDK |
 需要完整仓库、容器、浏览器和远程开发环境 |
 OpenHands |
 
-这不是产品能力排名。OpenCode 的优势是接入快，Pi 的优势是容易改，DeepSeek Harness 的吸引力在模型与训练方向，OpenHands 解决的是更重的执行环境。团队面对的问题不同，答案自然也不同。
+这不是产品能力排名。OpenCode 的优势是接入快，Pi 的优势是容易改，DeepSeek Harness 的吸引力在插件化架构，OpenHands 解决的是更重的执行环境。团队面对的问题不同，答案自然也不同。
 
 还有一个结论比较确定：不要因为某个工具恰好能执行 Shell，就直接把它当成业务后端。 能跑命令只能说明 Demo 能工作，离生产还差会话、取消、隔离、权限、审计和任务恢复。
 
@@ -1044,19 +1044,23 @@ Pi 的感觉和 OpenCode 不太一样。OpenCode 更像一个已经可以对外�
 
 - 以 RPC 模式运行长驻进程，通过 stdin/stdout 上的 JSONL 发送命令和接收事件。
 
+Session 方面，v0.85.0 起 SDK 提供 SessionManager.inMemory()，可以恢复由外部系统存储的会话条目，持久化策略因此更灵活。另一个值得注意的信号：0.85.0 曾把内部实验性的 client/server 代码一并发布出去，0.85.1 随即将其退回仅源码可用，并明确官方支持的程序化接口仍是本地 SDK 和 stdio RPC。也就是说，短期内不要指望 Pi 提供原生 HTTP API。
+
 Pi 的 Extension 可以注册工具、命令和事件钩子，Skill、Prompt Template、Package 也比较适合做产品级组合。如果团队想自己决定外部 API、UI、会话存储和任务状态，只复用 Agent Loop，Pi 会比较顺手。
 
 代价也很直接：它不会替我们提供完整的企业控制面。认证、租户、数据库、Worker 调度、配额和运维接口，基本都要自己做。对于 Go 或 Java 服务，JSONL RPC 虽然能接，但还要处理子进程退出、背压、重启和协议版本。
 
 所以我会把 Pi 放在“自由度更高，但建设量也更大”的位置。
 
-DeepSeek Harness：值得关注，但要给变化留空间
+DeepSeek Harness：插件化思路值得看，但要给变化留空间
 
-DeepSeek Harness 的特点不只是运行 Agent。它试图把 Harness、插件、部署、轨迹和模型训练放在同一条链路上，这一点和单纯面向个人使用的 Coding Agent 不太一样。
+DeepSeek Harness 给我的第一印象是“everything-is-a-plugin”。官方把它定位成插件化的 Agent Harness SDK，Session、工具、MCP、Sandbox、Plan、LLM 都是独立 package，可以按需替换或组合。从架构上就把“可替换”放在前面，这一点和 OpenCode、Pi 不太一样。
 
-从当前资料看，官方仓库主体是 TypeScript，同时提供 TypeScript 和 Python 两套进程外 SDK，并支持 CLI、Web、Plugin 和 ACP 等使用或扩展方式。因此 Python 项目确实可以接入，但这不等于它是“面向 Python 团队的 Harness”。选它更合理的理由，是团队关注 DeepSeek 模型适配、轨迹数据、持续评测，或者后续训练闭环。
+官方仓库主体是 TypeScript（MIT 协议，GitHub 上已有超过 20 万 star），同时提供 TypeScript 和 Python 两套进程外 SDK，并支持 CLI、Web、Plugin 和 ACP 等使用或扩展方式；v0.1.6-alpha.1 还新增了 Headless 模式，可以从标准输入接收任务，用 --session-id 继续已有会话，用 --json 逐行输出 JSON 运行事件，接入形态和 Pi 的 JSONL RPC 很接近。因此 Python 项目确实可以接入，但这不等于它是“面向 Python 团队的 Harness”。模型层面它默认偏向 DeepSeek，但也接了 Anthropic、OpenAI、Kimi、GLM 等多家 provider，不是 DeepSeek 专属。Session 支持持久化和回放，排查问题、恢复会话时比较有用。
 
-但它仍是较新的项目，官方也将当前阶段标为 Developer Preview。真正上生产前，需要自己验证：
+它目前就是 Agent 运行时，没有自带训练、评测或微调能力，不要指望它直接提供模型迭代闭环。
+
+它仍是较新的项目，官方也将当前阶段标为 Developer Preview，并明确说会有破坏性变更。这不是客套话：2026 年 9 月 17 日发布的 v0.1.6-alpha.2 就调整了客户端 Session 的相关 API 和 slot（以支持会话多实例共存），插件依赖也改为运行时解析并支持运行时卸载，官方直接要求开发者检查插件加载和卸载逻辑。真正上生产前，需要自己验证：
 
 - 并发任务和长任务是否稳定；
 
@@ -1068,7 +1072,7 @@ DeepSeek Harness 的特点不只是运行 Agent。它试图把 Harness、插件�
 
 - 多模型 Provider 是否满足实际需求；
 
-- 轨迹数据怎样落库和脱敏。
+- 会话事件日志怎样落库和脱敏。
 
 我的看法是可以尽早试，但不要让业务接口直接依赖它当前的 SDK 类型。外面包一层 Adapter，升级或切回其他 Runtime 都容易一些。
 
@@ -1076,7 +1080,9 @@ Codex 和 Claude Agent SDK：生态确定时更省事
 
 如果公司已经确定模型平台，就不一定非要追求“模型中立”。
 
-Codex 提供非交互执行、SDK 和 App Server 等方式，可以管理 Thread、Turn、事件、审批、结构化输出、MCP 和 Sandbox。Claude Agent SDK 则把 Claude Code 的 Agent Loop、工具、Session、Hook 和权限机制开放给 Python、TypeScript 应用。
+Codex 提供非交互执行、SDK 和 App Server 等方式，可以管理 Thread、Turn、事件、审批、结构化输出、MCP 和 Sandbox；App Server 还能通过 WebSocket 对外提供 JSON-RPC 接口，远程调用不必再自己封装一层。Claude Agent SDK 则把 Claude Code 的 Agent Loop、工具、Session、Hook 和权限机制开放给 Python、TypeScript 应用。如果只想要一个能远程调用的 Claude Agent 服务，可以看 Anthropic 另外的 Managed Agents，它是一个托管 REST API，和 Agent SDK 不是同一个产品。
+
+版本成熟度也要计入：Codex 稳定版目前是 v0.155.0（2026 年 9 月 17 日发布，次日就有 0.156.0 的 alpha），Claude Agent SDK 的 Python（v0.2.x）和 TypeScript（v0.3.x）包同样还在 0.x，发布节奏接近每天一版。这类 SDK 的能力更新快，但接口和行为的变动频率也高，升级回归要留出预算。
 
 这类厂商 Runtime 的优点是模型和 Harness 的配合通常更完整，官方能力出现后也更容易直接用上。缺点是迁移成本更高，账号、模型、协议和运行时会形成一组绑定。
 
@@ -1113,7 +1119,7 @@ TypeScript SDK |
 Pi |
 是，CLI / RPC 进程 |
 否 |
-提供 Agent Session，本地持久化和生命周期可由 SDK 控制 |
+提供 Agent Session，本地持久化和生命周期可由 SDK 控制，v0.85 起可恢复外部存储的会话 |
 TypeScript SDK、stdin/stdout JSONL RPC |
 需要自行封装 HTTP 服务 |
 
@@ -1121,15 +1127,15 @@ DeepSeek Harness |
 是，CLI / Web |
 有限，Web Host API 默认面向本机 |
 事件日志式 Session，支持持久化、回放和恢复 |
-TypeScript/Python SDK、ACP |
+TypeScript/Python SDK、ACP、Headless（stdin / JSONL 事件） |
 需要验证接口稳定性和远程暴露方式 |
 
 Codex |
 是，codex / codex exec |
-否 |
+是，App Server 支持 WebSocket（HTTP + JSON-RPC） |
 Thread / Turn，可保持、继续和管理对话生命周期 |
 SDK、App Server 进程协议 |
-可以作为进程运行，远程调用需要封装 |
+可以作为进程运行，App Server 可远程调用 |
 
 Claude Agent SDK |
 需要宿主程序 |
@@ -1156,7 +1162,7 @@ SDK |
 主要代价
 
 OpenCode |
-Bash、Custom Tool、Plugin、MCP、Skill |
+Custom Tool、Plugin、MCP |
 相对开放 |
 远程接入最快 |
 企业控制面和隔离要自己补 |
@@ -1169,15 +1175,15 @@ Extension、Tool、Skill、Package |
 
 DeepSeek Harness |
 Plugin、工具和协议扩展 |
-偏 DeepSeek 方向 |
-适合验证新方向 |
-项目较新，要控制版本风险 |
+DeepSeek 默认，多模型 |
+插件化思路清晰 |
+Developer Preview，要控制版本风险 |
 
 Codex |
 MCP、Skill、Sandbox、Approval |
-OpenAI |
-进程和 SDK 接口完整 |
-平台绑定较强，HTTP 层要自己补 |
+OpenAI 兼容（含 Bedrock、Ollama） |
+进程和 SDK 接口完整，App Server 支持 WebSocket |
+平台绑定较强，锁定 Responses 协议 |
 
 Claude Agent SDK |
 MCP、自定义 Tool、Hook、Permission |
@@ -1251,7 +1257,7 @@ TUI 好不好用和服务端好不好接是两回事。HTTP、SSE 或 WebSocket 
 
 我会重点看 Pi。它给的控制权更多，适合自己定义 API、会话和 UI，但要接受更多平台建设工作。
 
-围绕 DeepSeek，希望做持续评测或训练
+想验证插件化架构，或深度使用 DeepSeek 模型
 
 可以验证 DeepSeek Harness。建议固定版本，先跑离线任务或影子流量，再决定是否进入核心链路。
 
@@ -1443,81 +1449,7 @@ CLI：最快接入
 
 如果团队已经有成熟 CLI，先复用它最省时间。文件处理、本地脚本、一次性迁移任务也很适合 CLI。
 
-问题是模型需要理解命令行语法，参数转义、长输出和错误文本也容易带来不确定性。进入试生产后，最好在 CLI 外面加一层 Schema Wrapper：把命令包装成一个带 JSON Schema 的工具，用 Schema 描述工具名、用途和每个参数的类型、取值范围，模型只传结构化参数。
-
-例如先给 biz-ticket get 定义一份 Schema：
-
-1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-
- | &#123;
- "name": "get_ticket",
- "description": "查询单个工单的详情",
- "parameters": &#123;
- "type": "object",
- "properties": &#123;
- "ticket_id": &#123; "type": "string", "pattern": "^TICKET-[0-9]+$" &#125;
- &#125;,
- "required": ["ticket_id"]
- &#125;
-&#125;
-
- |
-
-模型调用的是：
-
-1
-2
-3
-4
-5
-6
-
- | &#123;
- "tool": "get_ticket",
- "arguments": &#123;
- "ticket_id": "TICKET-001"
- &#125;
-&#125;
-
- |
-
-Wrapper 校验 ticket_id 符合 Schema 后，再执行固定命令 biz-ticket get --id TICKET-001 --output json，而不是把一整段 Shell 交给模型生成；参数不合法时直接返回统一错误码，命令不会执行。
-
-写 Wrapper 有开发成本，所以这一层通常只加在 Agent 反复调用的高频命令上；偶尔用一次的命令，让模型直接走 Bash 就够了。
-
-Harness 原生工具：与当前 Runtime 集成最紧密
-
-这里的 Native Tool 不是指操作系统的原生程序，而是指通过某个 Harness 自己的 SDK、插件或扩展机制注册的工具。比如 OpenCode Custom Tool、Pi Extension，以及厂商 Agent SDK 中定义的自定义 Tool。
-
-这类工具通常会直接向模型提供名称、用途和参数 Schema。模型发起调用后，Harness 负责参数解析、执行、事件通知、权限确认和错误回传。工具的实现可以写在宿主进程里，也可以继续调用内部 API；关键不在于它是否和 Harness 运行在同一个进程，而在于它使用了该 Harness 专有的工具接口。
-
-对于调用频率高、需要复杂交互或细粒度权限控制的核心能力，原生工具通常比让模型拼 Shell 命令更稳。代价是它会绑定具体 Runtime：OpenCode Custom Tool 不能直接拿到 Pi 中使用，切换 Harness 时往往要重新写适配代码。
-
-MCP：更适合共享能力
-
-如果日志、订单、知识库、数据查询等能力要同时提供给多个 Agent 客户端，MCP 更合适。业务接口和凭证留在独立服务里，OpenCode、Pi、Codex 或 Claude 都通过同一套工具协议访问。
-
-1
-2
-3
-
- | OpenCode ─┐
-Pi ───────┼── MCP / Tool Gateway ── Business APIs
-Codex ────┘
-
- |
-
-MCP 解决连接方…
+问题是模型需要理解命令行语法，参数转义、长输出和错误文本也容易带来不确定性。进入试生产后，最好在 CLI 外面加一层 Schema Wrapper：把命令包装成一个带 JSON Schema 的工具，用 Schema 描述工具名、用途…
 
 ### 阅读六本大模型书的阶段性思考：一个 Token 如何变成答案
 
@@ -4651,7 +4583,7 @@ I. 扩展性与可运维性（5%）
 - Updated: 2026-08-17
 - Summary: 代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。
 - Categories: Debugging
-- Tags: CPU-Saturation, APISIX, AI Gateway, OpenResty, Lua, Coroutine, Backpressure, SSE, AI-Assisted-Debugging
+- Tags: APISIX, CPU-Saturation, AI Gateway, OpenResty, Lua, Coroutine, Backpressure, SSE, AI-Assisted-Debugging
 
 Article text:
 
@@ -8216,7 +8148,7 @@ https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/convers
 - Updated: 2025-01-18
 - Summary: 记录 Go HTTP Client 产生大量 TIME_WAIT 的排查过程，分析连接复用、响应体处理和 Transport 参数调优。
 - Categories: Go
-- Tags: TCP, Network, Go, Client, HTTP, IP, Settings, TIME_WAIT
+- Tags: TCP, Go, Network, Client, HTTP, IP, Settings, TIME_WAIT
 
 Article text:
 
