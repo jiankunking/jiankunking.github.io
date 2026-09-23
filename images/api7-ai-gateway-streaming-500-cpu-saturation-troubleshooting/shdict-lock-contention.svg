@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <rect x="0.5" y="0.5" width="879" height="459" rx="8" fill="#ffffff" stroke="#e3e8ec"/>
+
+  <text x="440" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#2b3a46">共享字典锁上的全量扫描</text>
+  <text x="440" y="55" text-anchor="middle" font-size="12" fill="#6b7885">一个 worker 持锁逐槽 get/ttl，其余 worker 在同一把锁上原地自旋</text>
+
+  <!-- shared dict -->
+  <rect x="30" y="78" width="270" height="288" rx="10" fill="#f4f8fb" stroke="#9db4cc"/>
+  <text x="48" y="104" font-size="13" font-weight="700" fill="#2b3a46">shared dict（历史槽 0..N）</text>
+  <text x="48" y="124" font-size="10.5" fill="#7a8894">key_count 只增不减：扫描成本取决于历史槽位</text>
+
+  <!-- slot grid: gray = dead (get only), green = alive (get + ttl) -->
+  <g>
+    <rect x="52"  y="142" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="86"  y="142" width="26" height="26" rx="4" fill="#7fc59a"/>
+    <rect x="120" y="142" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="154" y="142" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="188" y="142" width="26" height="26" rx="4" fill="#7fc59a"/>
+    <rect x="222" y="142" width="26" height="26" rx="4" fill="#d9dfe6"/>
+
+    <rect x="52"  y="176" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="86"  y="176" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="120" y="176" width="26" height="26" rx="4" fill="#7fc59a"/>
+    <rect x="154" y="176" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="188" y="176" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="222" y="176" width="26" height="26" rx="4" fill="#d9dfe6"/>
+
+    <rect x="52"  y="210" width="26" height="26" rx="4" fill="#7fc59a"/>
+    <rect x="86"  y="210" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="120" y="210" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="154" y="210" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="188" y="210" width="26" height="26" rx="4" fill="#7fc59a"/>
+    <rect x="222" y="210" width="26" height="26" rx="4" fill="#d9dfe6"/>
+
+    <rect x="52"  y="244" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="86"  y="244" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="120" y="244" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="154" y="244" width="26" height="26" rx="4" fill="#7fc59a"/>
+    <rect x="188" y="244" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="222" y="244" width="26" height="26" rx="4" fill="#d9dfe6"/>
+
+    <rect x="52"  y="278" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="86"  y="278" width="26" height="26" rx="4" fill="#7fc59a"/>
+    <rect x="120" y="278" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="154" y="278" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="188" y="278" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="222" y="278" width="26" height="26" rx="4" fill="#7fc59a"/>
+
+    <rect x="52"  y="312" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="86"  y="312" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="120" y="312" width="26" height="26" rx="4" fill="#7fc59a"/>
+    <rect x="154" y="312" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="188" y="312" width="26" height="26" rx="4" fill="#d9dfe6"/>
+    <rect x="222" y="312" width="26" height="26" rx="4" fill="#d9dfe6"/>
+  </g>
+
+  <!-- scan band: sweeps down and back = repeated full scans -->
+  <rect x="48" y="138" width="218" height="34" rx="6" fill="#ffd54f" opacity="0.42">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 194; 0 194; 0 0" keyTimes="0;0.45;0.6;1" dur="4.5s" repeatCount="indefinite"/>
+  </rect>
+
+  <text x="48" y="354" font-size="10" fill="#7a8894">灰＝已死槽：只 get ｜ 绿＝存活槽：get + ttl</text>
+
+  <!-- connections: all workers on one lock -->
+  <g stroke="#b9c4cf" stroke-width="1.2" opacity="0.5">
+    <line x1="376" y1="198" x2="470" y2="145"/>
+    <line x1="376" y1="198" x2="555" y2="145"/>
+    <line x1="376" y1="198" x2="640" y2="145"/>
+    <line x1="376" y1="198" x2="725" y2="145"/>
+    <line x1="376" y1="198" x2="810" y2="145"/>
+    <line x1="376" y1="198" x2="470" y2="255"/>
+    <line x1="376" y1="198" x2="555" y2="255"/>
+    <line x1="376" y1="198" x2="640" y2="255"/>
+    <line x1="376" y1="198" x2="725" y2="255"/>
+    <line x1="376" y1="198" x2="810" y2="255"/>
+  </g>
+
+  <!-- the one lock -->
+  <text x="354" y="134" text-anchor="middle" font-size="11" fill="#4a5a6a" font-family="Menlo, Consolas, monospace">ngx_shmtx_lock</text>
+  <path d="M342 182 v -12 a 12 12 0 0 1 24 0 v 12" fill="none" stroke="#4a5a6a" stroke-width="5"/>
+  <rect x="332" y="180" width="44" height="36" rx="6" fill="#e8a33d">
+    <animate attributeName="fill" values="#e8a33d;#c94f3f" calcMode="discrete" dur="0.55s" repeatCount="indefinite"/>
+  </rect>
+  <circle cx="354" cy="196" r="4" fill="#ffffff"/>
+  <rect x="352" y="198" width="4" height="9" fill="#ffffff"/>
+  <text x="354" y="242" text-anchor="middle" font-size="11" fill="#2b3a46">整个字典一把锁</text>
+  <text x="354" y="258" text-anchor="middle" font-size="10" fill="#8a97a3">每槽一次加解锁（读也不例外）</text>
+
+  <text x="655" y="98" text-anchor="middle" font-size="10.5" fill="#98a2ac" font-style="italic">其他请求（含流式响应）排队等待</text>
+
+  <!-- holder -->
+  <circle cx="470" cy="145" r="29" fill="#7fc59a" opacity="0.3">
+    <animate attributeName="opacity" values="0.2;0.5;0.2" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="470" cy="145" r="20" fill="#58b27a"/>
+  <text x="470" y="150" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">w1</text>
+  <text x="470" y="188" text-anchor="middle" font-size="10.5" fill="#2e7d43">持锁干活（lookup ≈6%）</text>
+
+  <!-- spinners -->
+  <g>
+    <circle cx="555" cy="145" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 555 145" to="360 555 145" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="555" cy="145" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="555" y="150" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w2</text>
+
+    <circle cx="640" cy="145" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 640 145" to="360 640 145" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="640" cy="145" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="640" y="150" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w3</text>
+
+    <circle cx="725" cy="145" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 725 145" to="360 725 145" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="725" cy="145" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="725" y="150" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w4</text>
+
+    <circle cx="810" cy="145" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 810 145" to="360 810 145" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="810" cy="145" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="810" y="150" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w5</text>
+
+    <circle cx="470" cy="255" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 470 255" to="360 470 255" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="470" cy="255" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="470" y="260" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w6</text>
+
+    <circle cx="555" cy="255" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 555 255" to="360 555 255" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="555" cy="255" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="555" y="260" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w7</text>
+
+    <circle cx="640" cy="255" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 640 255" to="360 640 255" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="640" cy="255" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="640" y="260" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w8</text>
+
+    <circle cx="725" cy="255" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 725 255" to="360 725 255" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="725" cy="255" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="725" y="260" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w9</text>
+
+    <circle cx="810" cy="255" r="28" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-dasharray="10 7">
+      <animateTransform attributeName="transform" type="rotate" from="0 810 255" to="360 810 255" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="810" cy="255" r="20" fill="#e08a7d" stroke="#c94f3f"/>
+    <text x="810" y="260" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w10</text>
+  </g>
+  <text x="640" y="312" text-anchor="middle" font-size="11" fill="#b4453a">其余 9 个 worker 原地自旋退避（约两千轮 pause），退避到底才阻塞睡眠</text>
+
+  <!-- CPU split -->
+  <text x="30" y="398" font-size="12" font-weight="700" fill="#2b3a46">单 worker 的 CPU 去向（perf）</text>
+  <rect x="240" y="390" width="500" height="10" rx="5" fill="#eef1f4"/>
+  <rect x="240" y="390" width="34" height="10" rx="5" fill="#58b27a"/>
+  <text x="240" y="384" font-size="10.5" fill="#2e7d43">干活（shdict lookup）≈6%</text>
+  <text x="240" y="414" font-size="10.5" fill="#b4453a">空转等锁（ngx_shmtx_lock self，35%~82%，中位 66.5%）≈82%</text>
+  <rect x="240" y="420" width="500" height="10" rx="5" fill="#eef1f4"/>
+  <rect x="240" y="420" width="410" height="10" rx="5" fill="#d9534f"/>
+</svg>
