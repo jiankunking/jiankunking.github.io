@@ -11,8 +11,8 @@ Generated from 177 indexable articles. Each entry keeps its canonical URL and co
 
 - [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
 - [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
-- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
 - [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
+- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
 
 ## Articles
 ### API7 AI 网关升级排障：流式 500 与低流量高 CPU
@@ -37,7 +37,7 @@ Article text:
 
 - 根因：SSE 消息分片暂存期间，旧逻辑仍标记“需要刷新”；后台定时器触发后发送接口返回 nothing to flush（只表示当前没有内容可刷新），代码却把它当成客户端断连，主动停止读取上游。错误发生在响应内容发出之前，所以客户端一个字都收不到。
 
-- 触发条件：分块到达与定时刷新的先后顺序，与长响应无关，因此时好时坏。
+- 触发条件：取决于分块到达与定时刷新的先后顺序，与响应长短无关，因此时好时坏。
 
 - 处理：临时把 streaming_flush_interval_ms 配为 0，绕开后台刷新路径；patch.3 修复状态判断后撤销临时配置。
 
@@ -47,9 +47,9 @@ Article text:
 
 - 触发条件：高基数标签加 expire: 1800 的指标不断生成、过期、重新注册；worker 越多，竞争越明显。
 
-- 处理：重建 Pod 清零累计索引只是止血；最终把 Prometheus 相关实现与依赖回到 3.9.14 所带的版本，随新 patch 交付。
+- 处理：重建 Pod 清零累计索引只是止血；最终把 nginx-lua-prometheus-api7 回退到 3.9.14 所带的 0.20250302-1，随新 patch 交付，网关保持 3.9.19。
 
-- 影响：业务侧没有出现 5xx，可感知的主要是响应时间略有增加，幅度没有单独量化。
+- 影响：除问题一的流式 500 外，CPU 异常时段没有观察到 5xx 增长；可感知的主要是响应时间略有增加，幅度没有单独量化。
 
 一句话教训：重启只清状态，不修 bug。软件 bug 也解释不了“只有一台机器告警”，那是另一层要查的基础设施差异。
 
@@ -85,7 +85,7 @@ Article text:
 
 问题一：流式请求返回 500
 
-先说结论：公共流式路径改造加上消息拼接与定时刷新的配合缺陷，把“没有内容可刷新”误判成了客户端断连，从而中止上游读取；错误发生在响应发出之前，所以表现为客户端收不到内容、日志记 500。
+先说结论：patch.1 改造了公共流式路径，消息拼接与定时刷新的配合又有缺陷，两者叠加，把“没有内容可刷新”误判成了客户端断连，从而中止上游读取；错误发生在响应发出之前，所以表现为客户端收不到内容、日志记 500。
 
 现象与三组对照
 
@@ -107,13 +107,13 @@ Article text:
 正常 |
 优先检查流式处理路径 |
 
-这里我绕了个弯：第二组让我怀疑了半天，以为是 tools 里某个非标准参数的问题，后来才知道它只是绕开了触发条件。对照实验能缩小范围，根因还得靠复现和代码确认。
+这里我绕了个弯：第二组让我怀疑了半天，以为是 tools 里某个非标准参数的问题，后来才知道它只是绕开了触发条件：请求形态一变，分片到达与定时刷新的先后顺序也跟着变，是否踩中纯看时序，tools 本身并不非法。对照实验能缩小范围，根因还得靠复现和代码确认。
 
 复现
 
 最初换上游测试没有复现。拿到完整 curl、网关日志、路由配置和 Azure 流式响应，再放进相同版本镜像（3.9.19-patch.1），问题随即出现。关键是保留原始请求与环境，缺一样都可能复现不出来。
 
-根因：两层改动叠加
+根因：新改动踩中旧缺陷
 
 原因分两块。
 
@@ -125,7 +125,7 @@ Article text:
 
 是否触发，取决于分块到达与定时刷新的先后顺序，并不以长响应为前提，所以表现为时好时坏。
 
-还有一个放大排查成本的坑：误判断连的记录是 INFO 级别，生产却配了 WARN，所以看不到对应日志。没有错误日志，不等于错误路径没有发生。
+还有一个放大排查成本的坑：误判断连的记录是 INFO 级别，生产却配了 WARN，所以看不到对应日志；最后能定位，靠的是复现结果与流式路径的代码对照，而不是日志。没有错误日志，不等于错误路径没有发生。
 
 缓解与修复
 
@@ -145,46 +145,84 @@ Article text:
 
 问题二：多个 worker 跑满，流量却不高
 
-问题二的根因是 nginx-lua-prometheus-api7 1.0.0-1 的索引同步回归，让 delete_count 变化触发了 O(key_count) 的全量槽位扫描，扫描中的 get、ttl 争抢 shared dict 全局锁，烧掉 user CPU。key_count 是历史累计值，生产上一度达到 57 万，所以与当前流量无关。每小时的 flush_expired() 是另一条路径，只解释小时级短尖峰。重建 Pod 清零索引状态算止血，根治靠回退 Prometheus 实现与依赖。
+问题二的根因是 nginx-lua-prometheus-api7 1.0.0-1 的索引同步回归，让 delete_count 变化触发了 O(key_count) 的全量槽位扫描，扫描中的 get、ttl 争抢 shared dict 全局锁，烧掉 user CPU。key_count 是历史累计值，生产上一度达到 57 万，所以与当前流量无关。
+
+每小时的 flush_expired() 是另一条路径。监控里的反例（17.07 MiB 的回收只有 1.35 核，5.30 MiB 的回收却伴随 7.35 核，数据见下文表格）说明回收量大小与 CPU 无关，它更像触发小时级短尖峰的扳机，而不是 CPU 本身。重建 Pod 清零索引状态算止血，根治靠回退 Prometheus 实现与依赖。
 
 现象与排除
 
-升级 patch.1 后，56 节点开始频繁出现每小时一两分钟的 CPU 尖峰，后来又出现多 worker 反复满载的密集尖峰。现场 9 个 OpenResty worker 都在 99% 以上，第 10 个约 38%，合计消耗约 9.3 核——不是单个 worker 的短暂毛刺，也不是整台 16 核节点全部跑满。
+升级 patch.1 后，56 节点开始频繁出现每小时一两分钟的 CPU 尖峰，后来又出现多 worker 反复满载的密集尖峰。现场 9 个 OpenResty worker 都在 99% 以上，第 10 个约 38%，合计消耗约 9.3 核——不是单个 worker 的短暂毛刺，而是 10 个 worker 里 9 个同时跑满，总量几乎顶到 license 允许的 10 核上限。
 
-最先想到的是流量洪峰。但峰值时三个节点的 QPS 分别是 77.5、74.6、52.3，56 的流量最低，CPU 却占了约 10 核，另外两台只有 1.1 到 1.4 核。ES 日志里的请求数、流式请求数、进出字节和 Token 也都没有洪峰。
+最先想到的是流量洪峰。但峰值时三个节点的 QPS 分别是 77.5、74.6、52.3，56 的流量最低，CPU 却冲到约 9 核（上图红线）、逼近 license 允许的 10 核上限，另外两台只有 1.1 到 1.4 核。ES 日志里的请求数、流式请求数、进出字节和 Token 也都没有洪峰。
 
 网络、内存和磁盘没有对应异常：软中断很低，没有丢包和队列溢出，内存充足、没有 swap，iowait 接近 0。异常时段 CPU 消耗中约 97%～98% 在 user mode，排查因此转向 OpenResty 的用户态执行路径。
 
-业务侧倒是没有跟着出事：这段时间没有出现 5xx 异常，客户端可感知的影响主要是响应时间略有增加，幅度没有单独量化。症状落在延迟上、不落在错误率上，也正因为不报错，发现它基本只能靠 CPU 告警和延迟曲线。
+业务侧倒是没有跟着出事：除问题一的流式 500 外，CPU 尖峰时段没有观察到 5xx 增长，客户端可感知的影响主要是响应时间略有增加，幅度没有单独量化。症状落在延迟上、不落在错误率上，也正因为不报错，发现这类问题基本只能靠 CPU 告警和延迟曲线。
 
-到这里只能说，当前请求量不足以解释节点间的 CPU 差异。还不能把它扩大成“与业务负载完全无关”。
+到这里只能说，当前请求量不足以解释节点间的 CPU 差异，但还不能据此断言“与业务负载完全无关”。
 
-监控反例：每小时清理解释不了全部尖峰
+监控反例：回收量大小和 CPU 对不上
 
 最直观的嫌疑就是那个每小时一次的清理 timer。先检验它：CPU 飙高到底是不是 flush_expired() 造成的？
 
 把两天的监控按分钟聚合，CPU 曲线其实有两种形态：
 
-形态①：小时相位短尖峰
+对比项
+形态①：每小时固定时刻的短尖峰
 形态②：密集尖峰群
 
 形状 |
-每小时相位上的短尖峰，每次一两分钟 |
+每小时固定时刻上的短尖峰，每次一两分钟 |
 不是持续不降的高原，而是多 worker 高 CPU 尖峰密集连发，单次几秒到几十秒，中间回落 |
 
 出现时刻 |
-与共享字典空间回收（LRU 淘汰过期条目、释放内存）完全重合，落在清理 timer 的时刻表上 |
-一波接一波，成片时段的起止落在两次 timer 之间，和空间回收没有固定对应 |
+和每小时一次的清理同一时刻；细看曲线，尖峰在清理后 30～60 秒达到峰值，约 90 秒落回 |
+一波接一波，成片时段的起止落在两次 timer 之间 |
 
-定时清理解释得了吗 |
-能 |
-不能 |
+定时清理说得清吗 |
+只说得清“为什么在这个时刻”，说不清幅度 |
+说不清 |
 
-所谓“相位”，是说每个 worker 从进程启动那一刻起每 3600 秒跑一次清理，等于一张固定时刻表。CPU 尖峰只有同样落在这张表上，才能说两者相关；那片密集尖峰明显不在。
+清理时刻为什么固定？每个 worker 从进程启动那一刻起，每 3600 秒跑一次清理，于是每小时都固定在同一秒触发，比如 25 分 30 秒。CPU 尖峰只有同样出现在这个时刻上，才能说和清理相关；那片密集尖峰明显对不上。
 
-反过来也有一个反例。12:25:30 的小时清理如期执行，一次回收 17.07 MiB 共享字典空间，那一小时节点 CPU 最高却只有 1.35 核，没有 worker 达到 0.7。和 9 月 16 日对比更明显：当时每小时 5.5～21.8 MiB 的同类回收都伴随 2.4～4.7 核的小时峰值，且只有约 5 个 worker；这次 worker 已增至约 10 个，回收量在同一量级，CPU 反而平缓。清理这个“因”动了，CPU 这个“果”没跟着动。
+再把回收量和 CPU 对照起来看，两个方向都对不上。回收量取共享字典占用空间的单次下降量，CPU 取回收时刻前后十分钟的节点峰值（rate 取 1 分钟窗口、30 秒步长，用更细的步长重算结果相同，不是平滑抹掉了尖峰）：
 
-所以定时清理最多解释落在 timer 上的短尖峰，解释不了那片密集连发的尖峰；后者才是这次的主要症状。还得找第二条触发路径。
+时刻（56 节点）
+回收量
+节点 CPU 峰值
+同期单 worker 最高
+
+09-16 14:18（清理时刻） |
+8.63 MiB |
+4.74 核 |
+0.99 核，4 个 worker 同时接近满载 |
+
+09-16 23:22（清理时刻） |
+12.53 MiB |
+0.78 核 |
+0.12 核 |
+
+09-20 12:25（清理时刻） |
+17.07 MiB |
+1.35 核 |
+0.15 核 |
+
+09-20 14:45（不在清理时刻） |
+5.30 MiB |
+7.35 核 |
+0.75 核，10 个 worker 同时在 0.5 核以上 |
+
+前两行的数据来自 5 worker 时代；9 月 17 日晚上每个节点的 license 从 5 核调整为 10 核，worker 也增到 10 个，后两行都在 10 worker 时代。
+
+大量回收可以几乎不消耗 CPU。12:25:30 的小时清理如期执行，共享字典占用空间掉了一个台阶，单次回收 17.07 MiB，是全程最大的一次定时清理回收，节点 CPU 峰值却只有 1.35 核，全部 worker 没有一个超过 0.15 核。同一天 12:22、12:29，另外两台节点各自回收 19.75、18.82 MiB，CPU 峰值也只有 0.96、0.72 核。小量回收反而可以很贵：14:45:00 只回收 5.30 MiB，节点 CPU 却冲到 7.35 核。
+
+把 9 月 16 日白天“每小时 5.5～21.8 MiB 的回收伴随 2.4～4.7 核”当成规律，是把同一时刻上的共现当了因果：同一天夜里 22:22、23:22 两次 8.14、12.53 MiB 的同类回收，CPU 只有 0.75、0.78 核。
+
+光看表格容易觉得是挑出来的个例，那就把 9 月 20 日 56 节点一整天的 CPU 和回收画到同一条时间线上：上面是节点 CPU，下面是每次回收的时间和大小。回收从 1 MiB 到 18 MiB 什么量级都有，除凌晨 3 点到 9 点的空档外，几乎每小时都有；但密集尖峰群只出现在上午 10 点后和下午 1 点后那两段，中午 12:25 那次 17.07 MiB 的大回收正好落在平静段里，晚上的 8～18 MiB 回收也都没掀起尖峰。图里橙色的回收发生在清理时刻之外，反倒全部压在尖峰群下面。再把 9&#x2F;14～9&#x2F;22 三个节点全部 522 次回收事件放到一起算，回收量与回收前后 10 分钟 CPU 峰值的相关系数只有 0.18。
+
+顺带把来源也分开：监控里的“空间回收”并非来自同一条路径。和清理落在同一时刻的，是 flush_expired() 的批量清理；不在这个时刻上的回收（如 14:45:00 那次）更可能来自写路径的 LRU 淘汰，它和密集尖峰是同一股 churn 的两个侧面。混在一个口径里比较，才会出现“回收量相同、CPU 完全不同”的怪相。
+
+所以“回收了多少”不是自变量。定时清理最多解释短尖峰为什么落在那个时刻，既解释不了它的幅度，也解释不了那片密集连发的尖峰；后者才是这次的主要症状。还得找第二条触发路径。
 
 依赖 diff：两个提交，两条路径
 
@@ -194,11 +232,11 @@ Article text:
 2
 
  | 3.9.14 nginx-lua-prometheus-api7 0.20250302-1
-3.9.19-patch.1/.3 nginx-lua-prometheus-api7 1.0.0-1
+3.9.19-patch.1 与 patch.3 nginx-lua-prometheus-api7 1.0.0-1
 
  |
 
-线索落在 LuaRocks 依赖中的两个提交：
+线索落在该依赖两个版本之间的两个提交：
 
 1
 2
@@ -266,10 +304,11 @@ end
 
  |
 
-该调用持有 shared dict 的 mutex 遍历 LRU 队列。每个 worker 各建一份清理 timer，间隔取库内 remove_expired_keys_interval 的默认值 3600 秒，这个版本的 APISIX 没有覆盖。因此它可以解释多个 worker 在接近的小时相位上一起受影响。
+该调用持有 shared dict 的 mutex 遍历 LRU 队列。每个 worker 各建一份清理 timer，间隔取库内 remove_expired_keys_interval 的默认值 3600 秒，这个版本的 APISIX 没有覆盖。因此它有能力把多个 worker 在每小时的同一时刻附近一起牵扯进来。
 
 两条路径放在一起对比：
 
+对比项
 路径 A：delete_count 变化后的全量扫描
 路径 B：每小时 flush_expired()
 
@@ -279,19 +318,25 @@ end
 
 CPU 形态 |
 形态②：密集尖峰群 |
-形态①：小时相位短尖峰 |
+形态①落在它的时间表上，但归因见下 |
 
 perf 证据 |
 23 份中 17 份 shared-dict 锁热点 |
 23 份都没采到 flush_expired |
 
-监控反例 |
-—— |
-回收 17.07 MiB 时 CPU 仅 1.35 核 |
+监控证据 |
+受控复现的 worker 签名（signature，指各 worker CPU 占用的特征分布形状，可用来反推故障机制；此处为发起方低、其余同时高）与两种形态一致 |
+同量级回收多次全程平缓（17.07 MiB → 1.35 核、12.53 MiB → 0.78 核），清理自身几乎不耗 CPU |
 
 定位 |
-本批密集尖峰的主因 |
-保留为小时级尖峰风险，非主因 |
+本批尖峰的主因 |
+扳机与放大器，独立 CPU 来源证据不足 |
+
+形态① 的归因还得再核一遍。它虽然和清理落在同一时刻，但有三个细节对不上“清理自身烧 CPU”：尖峰在清理后 30～60 秒才到峰值、约 90 秒落回；幅度与回收量无关；worker 分布是 4 个接近单核满载、其余偏低，这正是后文受控复现里路径 A 的签名（即 CPU 分布形态：发起重新注册的 worker 保持低 CPU，其余 worker 同时接近满载）。
+
+更一致的读法是：timer 批量回收槽位只是扣下扳机，CPU 实际花在随后的“过期指标重新注册 → delete_count 变化 → 其他 worker 全量扫描”上。白天有请求持续访问过期指标，清理一结束就有重新注册跟上；夜里没有请求，同样量级的回收就几乎不消耗 CPU。
+
+边界也要说清：perf 的 23 份报告都取自单 worker 持续 ≥80% 的密集尖峰段，形态① 没有独立 perf 实证，这层归因是时序与签名的推断。
 
 生产配置让问题更容易出现：http_status、http_latency、bandwidth 都配置了 expire: 1800，部分指标带有 app、project、request_host 等高基数标签；histogram 又会把每组标签展开成多个 bucket。大量时序不断生成、过期和重新注册。排障期间新增的 pid 只用于一个指标，额外时序有限，不是主要因素。
 
@@ -303,7 +348,7 @@ perf 实证：热点在共享字典锁上
 
 其中 17 份呈现 shared-dict 锁热点：ngx_shmtx_lock 的 Self CPU 中位数 66.47%，ngx_meta_lua_ffi_shdict_get 的 Children CPU 中位数 73.99%，get_ttl 占比明显更低。Self 和 Children 口径不同，不能相加。
 
-23 份报告都没采到 flush_expired 符号。未采到不等于从未执行，但结合尖峰成片出现、与 timer 相位不一致，它作为这批尖峰主因的可能性明显降低；每小时清理的风险仍保留。
+23 份报告都没采到 flush_expired 符号。未采到不等于从未执行，但结合尖峰成片出现、与 timer 的固定时刻对不上，它作为这批尖峰主因的可能性明显降低；每小时清理的风险仍保留。
 
 perf 里的 ngx_meta_lua_ffi_shdict_get、ngx_meta_lua_shdict_lookup、ngx_meta_lua_ffi_shdict_get_ttl 分别对应 get、字典查找和 ttl。get、ttl 各自需要竞争同一把锁，获取失败时的自旋退避会消耗 CPU。这里不是一个 worker 持锁扫完整张索引，而是多个 worker 各自扫描，在反复访问共享字典时竞争同一把锁。这与 flush_expired() 在一次清理中持锁遍历，是两种不同的竞争形态。
 
@@ -315,7 +360,7 @@ key_count 和 delete_count 当时没有暴露成指标，我通过仅限运维�
 
 56 节点重建前的 key_count 已经达到 57 万，实例重建后降到 1 万多。前者意味着一次全量同步要扫数十万个历史槽位。key_count 表示扫描规模，delete_count 的变化则提示后续同步可能走全量路径。
 
-受控实验使用同版本镜像，起 5 个 worker，先构造出已回收的槽位，再触发一次计数变化。结果复现了生产中的形态：发起变更的 worker 保持低 CPU，其余 4 个同时接近单核满载。去掉外部指标抓取后仍能复现，说明外部抓取不是必要条件。
+受控实验使用同版本镜像，起 5 个 worker，先构造出已回收的槽位，再触发一次计数变化。结果复现了生产中的形态：发起变更的 worker 保持低 CPU，其余 4 个同时接近单核满载（发起方为什么低，没有继续拆解）。去掉外部指标抓取后仍能复现，说明外部抓取不是必要条件。
 
 浓缩成最小复现步骤（描述的是必要条件与顺序，具体命令和配置随版本略有差异）：
 
@@ -331,7 +376,7 @@ key_count 和 delete_count 当时没有暴露成指标，我通过仅限运维�
 
 - 去掉外部 Prometheus 抓取后仍可复现。
 
-依赖变更给出触发机制，perf 指向锁竞争，内部计数解释扫描规模，受控实验复现多 worker 高 CPU。厂商最终报告也确认了根因，几组证据到这里才真正对上。
+依赖变更给出触发机制，perf 指向锁竞争，内部计数解释扫描规模，受控实验复现多 worker 高 CPU。厂商（API7）的最终报告也确认了根因，几组证据到这里才真正对上。
 
 止血、配置缓解与代码修复
 
@@ -349,7 +394,7 @@ key_count 和 delete_count 当时没有暴露成指标，我通过仅限运维�
 
 修复选择：为什么是整体回退
 
-摆在桌面上的有三条路：在 1.0.0 上继续修这两个缺陷、只撤销两个相关提交、把 Prometheus 相关实现与依赖整体回到 3.9.14 所带的版本。最终选的是第三条，通过新 patch 交付，保留其他功能与修复，并非整套网关降级。
+摆在桌面上的有三条路：在 nginx-lua-prometheus-api7 1.0.0-1 上继续修这两个缺陷、只撤销那两个相关提交、把该依赖整体回退到 3.9.14 所带的 0.20250302-1。最终选的是第三条——网关保持 3.9.19，保留其他功能与修复，只把 Prometheus 依赖回退到 3.9.14 的版本，随新 patch 交付，并非整套网关降级。
 
 选回退，主要是图它的确定性：回退目标是 3.9.14 长期生产验证过的行为，属于回到已知状态；在 1.0.0 上继续修补，等于在新版本上叠加补丁，回归验证成本更高。改动面也是个考虑，两个缺陷都在 LuaRocks 依赖内部，一个在索引同步、一个在清理逻辑，只撤销单个提交能否干净回退，要看后续提交是否依赖前面的改动。代价同样清楚：放弃 1.0.0 相对 0.20250302-1 的其他改动，将来若要重新升级，这两个提交的问题必须先解决，验收也要覆盖索引状态重新积累的过程。
 
@@ -361,7 +406,7 @@ key_count 和 delete_count 当时没有暴露成指标，我通过仅限运维�
 
 软件缺陷解释了机制，但不足以解释节点间的严重程度差异。除了当前 QPS，还得比较进程运行时长、key_count、delete_count 变化速率和机器配置。
 
-机器侧确实发现了差异：三台跑的都是 Ubuntu 内核 5.4.0，但补丁级别不同——56 是 5.4.0-135-generic（2022 年 11 月构建），54&#x2F;55 都是 5.4.0-90-generic（2021 年 10 月构建），56 反而更新约一年。CPU 型号三台相同，都是 Xeon Silver 4110，但 56 在 lscpu 中显示的 CPU MHz 更低。再看调频策略：
+机器侧确实发现了差异：三台跑的都是 Ubuntu 内核 5.4.0，但补丁级别不同——56 是 5.4.0-135-generic（2022 年 11 月构建），54&#x2F;55 都是 5.4.0-90-generic（2021 年 10 月构建），56 的内核反而新了约一年。CPU 型号三台相同，都是 Xeon Silver 4110，但 56 在 lscpu 中显示的 CPU MHz 更低。再看调频策略：
 
 1
 2
@@ -369,83 +414,7 @@ key_count 和 delete_count 当时没有暴露成指标，我通过仅限运维�
 4
 5
 
- | cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-
-56：powersave
-55：performance
-54：performance
-
- |
-
-不同驱动和模式下，powersave 行为不同，不能据此断言 CPU 被固定在低频，参见 intel_pstate 文档。一次 lscpu 读数也不足以代表整个故障窗口。
-
-统一 governor 后效果比较明显：对比前后两天的相同时段，56 的 CPU 总消耗曲线下移显著，节点间的差距也缩小了。不过 56 仍比另外两台略高，调频解释不了全部差异。另外，历史索引状态与业务负载没有被单独控制，这不是受控实验。
-
-所以调频差异的定位是：生产对照中下降明显，是确有影响的放大因素；但它只解释节点差异的一部分，剩余的部分还得从内核小版本、累计索引状态和负载分布继续找。独立贡献仍未量化，已确认的 CPU 根因仍是 Prometheus 索引同步缺陷。
-
-处理结果与验证边界
-
-几个动作解决的层次不同，不能统一概括成“升级后好了”：
-
-问题
-已有处理与观察
-结论边界
-
-流式 500 |
-配 0 的临时方案在生产有效；patch.3 验证通过并升级后，撤销临时配置 |
-规避后台路径与修复状态判断，是两种不同措施 |
-
-多 worker 高 CPU |
-重建后累计计数下降、CPU 飙升暂未再出现；Prometheus 实现与依赖回退通过新 patch 交付 |
-重建清状态属于止血；代码回退针对回归路径 |
-
-节点差异 |
-governor 统一后 CPU 明显下移，节点间差距缩小，但 56 仍略高 |
-生产前后对照，不能单独量化调频贡献；剩余差异的原因未定位 |
-
-踩坑与经验
-
-这次最容易栽跟头的几个点，和几次值得保留的判断转向，放在一起说。
-
-- 没有错误日志不等于错误路径没发生。 误判断连的记录是 INFO 级，生产配 WARN 就完全看不到。
-
-- nothing to flush 不是断连信号，它只表示暂时无内容可刷。拿它推断网络状态，就会误杀上游读取。
-
-- 重启、重建实例只是清零状态，不修 bug。 shared dict 里的累计索引要重建实例才清得掉，但回归还在，状态重新积累后问题会回来。
-
-- CPU 消耗取决于历史累计槽位，不取决于当前流量或活跃指标数。 key_count 只增不减，57 万历史槽位足以让低 QPS 场景跑满 CPU。
-
-- shared dict 的读操作也要抢锁。 循环里的大量 get、ttl 一样能烧 user CPU，表现是 CPU 高而不是 iowait。
-
-- “只有一台机器告警”指向另一层问题。 软件 bug 解释不了节点间严重程度差异，要往下查内核版本、调频、电源策略；但找到一个配置差异，不等于解释了差异，不能就此停止比较其他变量。
-
-- 资源打满不等于业务报错。 CPU 尖峰密集出现期间没有 5xx，只有响应时间略有增加；只盯错误率会漏掉这类故障，资源告警和延迟曲线同样要看。
-
-- 把间接依赖纳入变更面。 只 diff 网关代码，会漏掉这次的 Prometheus 回归。
-
-- 让反例改变假设。 回收 17.07 MiB 却没有高 CPU，使“定时清理解释一切”站不住脚；perf 和受控复现再把范围收窄。
-
-下次要更早做两件事：多 worker 高 CPU 尖峰密集出现时立刻抓 perf；复现时一次备齐完整请求、原始响应和相同版本环境。
-
-AI 助手主要帮忙统计 perf、聚合监控和整理源码线索，判断仍要回到现场证据，不能让一个看似合理的解释盖过反例。工具怎样参与分析，见《运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘》。
-
-尚未验证与遗留问题
-
-这几项结论边界要留着，避免把“有嫌疑”读成“已证实”：
-
-- powersave 的独立贡献未量化：只确认 56 是 powersave、现象是频率更低；统一 governor 后 CPU 下降明显、节点差距缩小，但 56 仍略高，剩余差异的原因没有定位，也没有做受控对比（同一节点切到 performance 复现故障、对比告警阈值）。要验证需先控制版本、worker 数、索引状态和负载，再在同一节点上切换 governor，对比实际频率、CPU 与请求延迟，并切回复测。目前的处置是把内核版本、调频与电源策略加入节点基线巡检，同时保留对应用累计状态的检查。
-
-- 长期效果未量化：修复 CPU 问题的补丁上线后效果如何，本文拿不出量化证据——既没有记录补丁的完整构建号和观察时长，也没有修复前后的错误率、延迟对比。因此只能说修复已交付、短期未复发，不对长期效果下结论。
-
-- 验收未闭环：后续验收还需覆盖正常业务与指标抓取、小时级周期和索引状态重新积累，不能只看重建后的短暂平稳。
-
-相关文章
-
-- 15秒之谜：一次APISIX网关超时问题的排查记录
-
-- 运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘
-
-- 什么样的网关，才算好的 AI 网关？
+ | cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_go…
 
 ### 大模型网关限流新思路：从进程内漏桶到分布式漏桶矩阵
 
@@ -1322,7 +1291,7 @@ AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查�
 
 总的来说，这次体验让我对免费模型有了新认识。下次遇到类似问题，我还会用它。
 
-### Coding Agent Harness 选型与接入：OpenCode、Pi、DeepSeek Harness 等六款对比，兼谈一体化助手
+### Coding Agent Harness 选型与接入：OpenCode、Pi、DeepSeek Harness 等六款对比
 
 - URL: https://jiankunking.com/coding-agent-harness-landscape-and-selection.html
 - Content type: original
@@ -1340,23 +1309,23 @@ Key takeaways:
 - 已有 CLI 可以先作为工具接入；稳定后应增加 Schema、权限和审计，核心能力再逐步封装成 Harness 原生工具，共享能力则放到 MCP。
 - 业务侧最好定义自己的 Task、Run、Event 和 Result，再通过 Adapter 接不同 Runtime。
 - 接入 Runtime 和建成可生产的服务是两件事：不同路线的建设量能差出一个量级，数据脱敏、留存和审计要提前确认，不要留到上线前。
-- OpenClaw 和 Hermes Agent 代表另一条路线：一体化助手平台。适合给自己或团队部署一个长驻助手，但它们的会话模型和安全假设不是为多租户业务后端设计的。
+- OpenClaw、Hermes Agent 这类一体化助手适合自己部署长驻助手，但会话模型和安全假设不适合多租户业务后端。
 
 Article text:
 
-最近在看 OpenCode、Pi、DeepSeek Harness、Codex、Claude Agent SDK 和 OpenHands，顺带也关注了 OpenClaw、Hermes Agent 这类助手项目。起因不是想再找一个更好用的终端工具，而是要回答两个很具体的问题：它能不能作为一个进程部署？现有业务怎么调用它？
+最近在看 OpenCode、Pi、DeepSeek Harness、Codex、Claude Agent SDK 和 OpenHands，顺带翻了翻 OpenClaw、Hermes Agent 这类助手项目。起因很实际，我要回答两个问题：它能不能作为一个进程部署？现有业务怎么调用它？
 
-只看演示，这些工具都差不多：读文件、跑命令、改代码、调用工具。真正接入系统以后，差别才会暴露出来。比如有没有 HTTP 接口，Session 能不能恢复，任务怎么取消，多个用户之间怎么隔离，以及出了问题以后能不能查清一次运行到底做了什么。
+只看演示，这些工具长得都差不多：读文件、跑命令、改代码、调工具。接进系统以后差别才暴露出来——有没有 HTTP 接口，Session 能不能恢复，任务怎么取消，多个用户怎么隔离，出了问题能不能查清一次运行到底做了什么。
 
-所以这篇不比“谁写代码更聪明”，只看两件事：怎么选，以及选完以后怎么接。
+所以这篇不比“谁写代码更聪明”，只比两件事：怎么选，选完怎么接。
 
-以下判断基于 2026 年 9 月 能查到的官方资料，我核对的版本是 OpenCode v1.18.31、Pi v0.85.1、DeepSeek Harness v0.1.6-alpha.2、Codex v0.155.0、Claude Agent SDK Python v0.2.156 &#x2F; TypeScript v0.3.276、OpenHands v1.20.0、OpenClaw v2026.9.4、Hermes Agent v2026.9.14。这个领域变化很快，具体接口仍应以实际采用版本为准。
+先交代版本和边界。判断基于 2026 年 9 月的官方资料，核对版本是 OpenCode v1.18.31、Pi v0.85.1、DeepSeek Harness v0.1.6-alpha.2、Codex v0.155.0、Claude Agent SDK Python v0.2.156 &#x2F; TypeScript v0.3.276、OpenHands v1.20.0、OpenClaw v2026.9.4、Hermes Agent v2026.9.14。领域变化快，接口以你实际采用的版本为准。
 
-先交代边界：这是一篇基于官方文档和发布说明的调研，不是实测对比。文中没有性能、并发上限或成本的实测数据；后文提到的”建设量”是工程量级估算，不是人月承诺。PoC 部分列的指标清单，是我建议大家用真实任务自己跑一遍的验证项。
+丑话说在前面：这是文档调研，不是实测。全文没有性能、并发、成本数据；“建设量”是量级判断，不是人月承诺。个别小节我只看过文档没跑过代码，会在文里直接标出来。
 
 先说结论
 
-如果只看目前比较常见的几种建设目标，我的选择会是：
+按常见的建设目标，我会这么选：
 
 建设目标
 优先看什么
@@ -1379,15 +1348,15 @@ OpenHands |
 想给自己或团队部署一个现成的 AI 助手 |
 OpenClaw &#x2F; Hermes Agent |
 
-这不是产品能力排名。OpenCode 的优势是接入快，Pi 的优势是容易改，DeepSeek Harness 的吸引力在插件化架构，OpenHands 解决的是更重的执行环境。OpenClaw 和 Hermes Agent 严格说不算 Harness，是架在 Harness 生态上的助手产品，后面单独聊。团队面对的问题不同，答案自然也不同。
+这不是能力排名。OpenCode 强在接入快，Pi 强在容易改，DeepSeek Harness 强在插件化架构，OpenHands 解决的是更重的执行环境。团队的问题不同，答案自然不同。
 
-还有一个结论比较确定：不要因为某个工具恰好能执行 Shell，就直接把它当成业务后端。 能跑命令只能说明 Demo 能工作，离生产还差会话、取消、隔离、权限、审计和任务恢复。
+还有一条我很确定：能跑 Shell 不等于能当业务后端。 Demo 能工作，离生产还差会话、取消、隔离、权限、审计和任务恢复。
 
 这些工具属于同一类吗
 
 不完全是。
 
-我这里把 Harness 理解为模型外部的执行环境。它负责组织上下文，让模型选择工具，把工具结果送回模型，并把这个循环持续到任务结束。
+我把 Harness 理解成模型外面的执行环境：组织上下文，让模型挑工具，把工具结果送回模型，循环到任务结束。
 
 1
 2
@@ -1413,7 +1382,7 @@ Harness =
 
  |
 
-按这个定义，常见项目大致可以分成四类：
+按这个定义，常见项目分四类：
 
 类型
 代表工具
@@ -1435,15 +1404,13 @@ OpenClaw、Hermes Agent |
 MCP、ACP、A2A、Sandbox |
 连接工具、Agent 或运行环境的标准 |
 
-LangGraph 和 OpenCode 经常会被放在一起比较，但它们不在同一层。用 LangGraph，任务状态、节点、路由和持久化大多由我们自己设计；用 OpenCode，现成的 Agent Loop、Session、工具和交互方式已经在那里了。
+LangGraph 和 OpenCode 经常被放在一起比，其实不在一层。用 LangGraph，任务状态、节点、路由、持久化都得自己设计；用 OpenCode，Agent Loop、Session、工具现成摆在那里。
 
-OpenCode：最像一个现成的 Agent Backend
+OpenCode：现成的 Agent Backend
 
-OpenCode 最吸引我的地方不是终端界面，而是它已经把 Server、SDK、Session、事件和扩展方式接到了一起。
+我对 OpenCode 的终端界面兴趣不大，真正有用的是它把 Server、SDK、Session、事件和扩展这几块接到了一起。
 
-官方提供 opencode serve，业务侧可以通过 HTTP 创建 Session、发送消息，通过 SSE 接收事件。工具侧既可以直接使用 Bash，也可以写 Custom Tool、Plugin，或者连接 MCP Server。Agent、Subagent 和 Skill 也有明确的配置方式。
-
-典型接法很直观：
+官方提供 opencode serve，业务侧通过 HTTP 创建 Session、发消息，SSE 收事件。工具可以用 Bash、Custom Tool、Plugin，或者接 MCP Server；Agent、Subagent、Skill 的配置方式也都现成。
 
 1
 2
@@ -1465,87 +1432,85 @@ OpenCode Server
 
  |
 
-它适合下面这种团队：
+适合这样的团队：业务服务已经存在、不想为 Agent 改成 Node.js；希望 Runtime 独立部署；想先把任务、过程、结果跑通；模型还没定下来。
 
-- 业务服务已经存在，不想为了 Agent 改成 Node.js；
+要留意它的边界。它解决的是“一次任务怎么执行”，多租户隔离、任务排队、跨实例存储、凭证管理、故障恢复都不在职责内。内部原型直接用没问题；要承载大量用户和并发任务，外面还得补调度、权限、存储和运行隔离。
 
-- 希望 Runtime 独立部署；
+Pi：可以嵌进产品的 Agent 内核
 
-- 想先用 HTTP&#x2F;SSE 把任务、过程和结果跑通；
+Pi 和 OpenCode 的手感不一样。OpenCode 像一个能对外提供服务的进程，Pi 像一组小而清晰的构件。实用的接法有两种：
 
-- 还没有决定长期绑定哪家模型。
+- 在 TypeScript&#x2F;JavaScript 服务里用 SDK，直接创建和控制 Agent Session；
 
-OpenCode 提供了 Server 接口，因此接到现有业务系统后面并不困难。但它主要解决的是一次 Agent 任务怎样执行，不会自动提供多租户隔离、任务排队、跨实例存储、凭证管理和故障恢复。内部原型可以直接使用；如果要承载大量用户和并发任务，还需要在它外面补充任务调度、权限、存储和运行隔离。
+- 以 RPC 模式跑长驻进程，stdin&#x2F;stdout 上用 JSONL 发命令、收事件。
 
-Pi：更像可以嵌入产品的 Agent 内核
+Session 这块有个小改动值得一提：v0.85.0 加了 SessionManager.inMemory()，能把外部系统存的会话条目恢复进来，自己做持久化省不少事。
 
-Pi 的感觉和 OpenCode 不太一样。OpenCode 更像一个已经可以对外提供服务的进程，Pi 更像一组小而清晰的可编程构件。
+还有个插曲很能说明 Pi 的现状：0.85.0 不小心把内部实验性的 client&#x2F;server 代码发了出去，0.85.1 马上退回到仅源码可用。官方支持的接口就两个，本地 SDK 和 stdio RPC，原生 HTTP API 至今没有时间表。做架构时按“不会有现成远程接口”来规划，比等它补齐靠谱。
 
-它有两种比较实用的接入方式：
+Extension 可以注册工具、命令和事件钩子，加上 Skill、Prompt Template、Package，做产品级组合比较顺手。想自己决定外部 API、UI、会话存储和任务状态、只复用 Agent Loop 的团队，Pi 是这几款里最合适的。
 
-- 在 TypeScript&#x2F;JavaScript 服务里使用 SDK，直接创建和控制 Agent Session；
+代价也直接，企业控制面一样不给：认证、租户、数据库、Worker 调度、配额、运维接口，全要自己做。Go 或 Java 服务走 JSONL RPC 能接，但子进程退出、背压、重启、协议版本这些都得自己处理。
 
-- 以 RPC 模式运行长驻进程，通过 stdin&#x2F;stdout 上的 JSONL 发送命令和接收事件。
+一句话定位：自由度最高，建设量也最大。
 
-Session 也有个小改动：v0.85.0 加了 SessionManager.inMemory()，可以把外部系统存的会话条目恢复进来，自己做持久化时省事一些。还有个细节很能说明问题：0.85.0 不小心把内部实验性的 client&#x2F;server 代码发了出去，0.85.1 马上退回到仅源码可用——官方支持的接口就两个，本地 SDK 和 stdio RPC。至于原生 HTTP API，官方目前没有给出时间表。做架构假设时，最好按”不会自动出现远程接口”来规划，而不是等它补齐。
+DeepSeek Harness：插件化值得看，变化也要留空间
 
-Pi 的 Extension 可以注册工具、命令和事件钩子，Skill、Prompt Template、Package 也比较适合做产品级组合。如果团队想自己决定外部 API、UI、会话存储和任务状态，只复用 Agent Loop，Pi 会比较顺手。
+第一印象是 everything-is-a-plugin。官方定位就是插件化的 Agent Harness SDK，Session、工具、MCP、Sandbox、Plan、LLM 全是独立 package，按需替换组合。把“可替换”放在架构第一位，这点跟 OpenCode、Pi 都不一样。
 
-代价也很直接：它不会替我们提供完整的企业控制面。认证、租户、数据库、Worker 调度、配额和运维接口，基本都要自己做。对于 Go 或 Java 服务，JSONL RPC 虽然能接，但还要处理子进程退出、背压、重启和协议版本。
+仓库主体 TypeScript，MIT 协议，9 月下旬 star 约 23 万。它同时提供 TypeScript 和 Python 两套进程外 SDK，CLI、Web、Plugin、ACP 都能用；v0.1.6-alpha.1 加了 Headless 模式，stdin 接任务、--session-id 续会话、--json 逐行输出运行事件，形态跟 Pi 的 JSONL RPC 很接近。Python 项目确实能接，但别把它理解成“面向 Python 团队的 Harness”。模型默认偏 DeepSeek，Anthropic、OpenAI、Kimi、GLM 也都接了。Session 支持持久化和回放，排查问题、恢复会话时好用。
 
-所以我会把 Pi 放在“自由度更高，但建设量也更大”的位置。
+它就是个 Agent 运行时。训练、评测、微调都没有，别指望它提供模型迭代闭环。
 
-DeepSeek Harness：插件化思路值得看，但要给变化留空间
+风险写在明面上：官方标着 Developer Preview，明说会有破坏性变更。9 月 17 日的 v0.1.6-alpha.2 为了支持会话多实例共存，改掉了客户端 Session 的 API 和 slot；插件依赖换成运行时解析、支持运行时卸载，发布说明干脆让开发者自查加载和卸载逻辑。上生产前，除了文末那张通用清单，还得单独验三件事：Plugin 和 SDK 升级的兼容性、多模型 Provider 够不够用、事件日志怎么落库和脱敏。
 
-DeepSeek Harness 给我的第一印象是“everything-is-a-plugin”。官方把它定位成插件化的 Agent Harness SDK，Session、工具、MCP、Sandbox、Plan、LLM 都是独立 package，可以按需替换或组合。从架构上就把“可替换”放在前面，这一点和 OpenCode、Pi 不太一样。
+我的建议是尽早试，但业务接口别直接依赖它当前的 SDK 类型。外面包一层 Adapter，升级或切回其他 Runtime 都从容得多。
 
-官方仓库主体是 TypeScript（MIT 协议，9 月下旬 GitHub star 约 23 万），同时提供 TypeScript 和 Python 两套进程外 SDK，并支持 CLI、Web、Plugin 和 ACP 等使用或扩展方式；v0.1.6-alpha.1 还新增了 Headless 模式，可以从标准输入接收任务，用 --session-id 继续已有会话，用 --json 逐行输出 JSON 运行事件，接入形态和 Pi 的 JSONL RPC 很接近。因此 Python 项目确实可以接入，但这不等于它是“面向 Python 团队的 Harness”。模型层面它默认偏向 DeepSeek，但也接了 Anthropic、OpenAI、Kimi、GLM 等多家 provider，不是 DeepSeek 专属。Session 支持持久化和回放，排查问题、恢复会话时比较有用。
+Codex 和 Claude Agent SDK：定了平台就别折腾
 
-它目前就是 Agent 运行时，没有自带训练、评测或微调能力，不要指望它直接提供模型迭代闭环。
+公司已经定了模型平台的话，“模型中立”就不是必选项。为了抽象而抽象，成本是真的。
 
-它仍是较新的项目，官方也将当前阶段标为 Developer Preview，并明确说会有破坏性变更。这不是客套话。9 月 17 日发布的 v0.1.6-alpha.2 就为了支持会话多实例共存，改掉了客户端 Session 的 API 和 slot；插件依赖也换成运行时解析、支持运行时卸载，发布说明直接让开发者自查插件加载和卸载逻辑。真正上生产前，除了文末那张通用检查清单，还要额外验证三件事：Plugin 和 SDK 升级是否兼容、多模型 Provider 是否满足实际需求、会话事件日志怎样落库和脱敏。
+Codex 有非交互执行、SDK 和 App Server 三种用法，Thread、Turn、事件、审批、结构化输出、MCP、Sandbox 都能管；App Server 走 WebSocket 对外给 JSON-RPC，远程调用不用自己再包一层。Claude Agent SDK 把 Claude Code 的 Agent Loop、工具、Session、Hook 和权限开放给 Python、TypeScript 应用。只想远程调一个 Claude Agent 的话，看 Anthropic 另外的 Managed Agents，托管 REST API，跟 Agent SDK 不是一个产品。
 
-我的看法是可以尽早试，但不要让业务接口直接依赖它当前的 SDK 类型。外面包一层 Adapter，升级或切回其他 Runtime 都容易一些。
+版本节奏要有心理准备。Codex 稳定版 v0.155.0 是 9 月 17 日发的，第二天 0.156.0 的 alpha 就出来了；Claude Agent SDK 的 Python 包还在 0.2.x，TypeScript 在 0.3.x，基本天天发版。迭代快是好事，接口也跟着频繁变，升级回归的时间别省。
 
-Codex 和 Claude Agent SDK：生态确定时更省事
+厂商 Runtime 的好处是模型和 Harness 配合完整，官方新能力出现后直接用得上。坏处是账号、模型、协议、运行时绑成一串。定了平台就用；想做多模型通用平台的，谨慎。
 
-如果公司已经确定模型平台，就不一定非要追求“模型中立”。
+OpenHands：要的是一台远程开发机时再看
 
-Codex 提供非交互执行、SDK 和 App Server 等方式，可以管理 Thread、Turn、事件、审批、结构化输出、MCP 和 Sandbox；App Server 还能通过 WebSocket 对外提供 JSON-RPC 接口，远程调用不必再自己封装一层。Claude Agent SDK 则把 Claude Code 的 Agent Loop、工具、Session、Hook 和权限机制开放给 Python、TypeScript 应用。如果只想要一个能远程调用的 Claude Agent 服务，可以看 Anthropic 另外的 Managed Agents，它是一个托管 REST API，和 Agent SDK 不是同一个产品。
+OpenHands 比上面几个都重：SDK、Agent Server、远程 Sandbox、Web UI，一套面向软件工程任务的完整执行环境。这块我看得最少，只翻了 SDK 和 Agent Server 的文档，没实测。
 
-还有一点是版本成熟度。Codex 稳定版 v0.155.0 是 9 月 17 日发的，第二天 0.156.0 的 alpha 就出来了；Claude Agent SDK 的 Python 包还在 0.2.x，TypeScript 包还在 0.3.x，基本天天发版。能力迭代快是好事，但接口和行为也跟着频繁变，升级回归的时间要留够。
+任务要拉仓库、装依赖、起服务、跑测试、开浏览器、跑很久，它的价值才显出来。只是读几项业务数据、生成一份结构化结果，这套平台太重了。
 
-这类厂商 Runtime 的优点是模型和 Harness 的配合通常更完整，官方能力出现后也更容易直接用上。缺点是迁移成本更高，账号、模型、协议和运行时会形成一组绑定。
+结论就一句：想清楚你要的是“一个循环”，还是“一台能远程用的开发机”。
 
-如果本来就确定使用对应平台，这种绑定未必是问题；如果目标是做一个可在多家模型间切换的通用 Agent 平台，就要谨慎一些。
+顺带说说一体化助手
 
-OpenHands：需要完整执行环境时再考虑
+OpenClaw 和 Hermes Agent 是另一个物种（9 月下旬 star 约 39 万和 25 万）：内核、聊天渠道、定时任务、会话管理全都建好，直接交付一个长驻助手。它们回答的是“怎么给自己或团队部署一个一直在线的助手”，跟本文“业务怎么程序化调用 Agent”不是一个问题。要在公司 IM 里放一个能干活的 Agent，部署它们改改配置更划算；想当多租户 Runtime 塞进业务系统，会话模型和安全假设都不支持。留一条旁证：OpenClaw 内核基于 Pi、接 Codex 用的 app-server 在 Codex 仓库里还标着 experimental——Pi 那条路走得通，集成的坑也有下游项目先替你踩了。
 
-OpenHands 比前几种更重。它不只是一个 Agent Loop，还包含 SDK、Agent Server、远程 Sandbox、Web UI，以及面向软件工程任务的完整执行环境。
+选型时我会重点看什么
 
-如果任务需要拉取仓库、安装依赖、启动服务、运行测试、操作浏览器，并持续执行较长时间，OpenHands 的价值会比较明显。如果只是读取几项业务数据，再生成一个结构化结果，这套平台可能有些重。
+先拆开三个常被混着说的能力，它们也是后面对比表的列口径。可独立运行：不必嵌进业务主进程就能跑完整 Agent Loop（不代表模型可以离线部署）。原生 HTTP API：官方直接提供远程可调的 HTTP、SSE 或 WebSocket，SDK、stdin&#x2F;stdout、JSONL RPC 属于程序化接口，不等于远程服务。会话管理：任务能否继续、恢复、查询、回收，跟进程怎么启动、用什么协议调用无关。
 
-这里不是说重不好，而是要看我们的任务到底需要“一个循环”，还是需要“一台可远程使用的开发机”。
+拆开之后，我会这样验：
 
-OpenClaw 和 Hermes Agent：一体化助手的另一条路线
+能不能独立运行。 部署方式先问清楚：能直接交给 Docker、Kubernetes、systemd 跑，还是必须嵌进某个宿主程序？这决定它怎么进你的发布流程。
 
-最近一年还有一类项目很火：它们不只做 Harness，而是把 Agent 内核、聊天渠道、定时任务和会话管理全都建好，直接交付一个能用的”个人助手”。最有代表性的两个是 OpenClaw 和 Hermes Agent，都是开源项目，9 月下旬 star 分别约 39 万和 25 万，热度上不输本文任何一个工具。
+有没有原生 HTTP API。 只能启动一次 CLI、等进程退出读 stdout 的话，取消、审批、进度展示、故障恢复都难做。有 HTTP API 也别急着放心：认证、会话、流式事件、取消和并发语义，逐个确认。
 
-OpenClaw 自己不写 Agent loop。它的内置内核基于 Pi，Codex（走 app-server）和 GitHub Copilot 则作为外部 Harness 接进来。整个系统围绕一个 Gateway 进程转：Gateway 管会话、工具、事件和渠道连接，Control UI、CLI、TUI 和手机客户端都连到它上面。Gateway 提供带类型的 WebSocket API，也有 inbound webhook 可以从外部触发一次 Agent 运行；消息侧接了 WhatsApp、Telegram、Slack、Discord、飞书等 20 多个渠道。换句话说，前面 Pi 那节说的“自己定 API 和会话层”这条路，已经有人替你走到头了，控制面、渠道、自动化全是现成的。但他们建出来的是助手，不是业务 Runtime：一台主机一个 Gateway，工具默认跑在宿主机上，想对外暴露或者接入更多用户之前，官方的安全 runbook 得先过一遍。
+Session 归谁管。 别只看有没有 Session ID。要问：能不能创建、查询、继续、删除；历史在内存还是能持久化重放；进程或容器重启能不能恢复；多用户、多任务、多实例怎么隔离；超时、过期、归档谁负责。还要分清 Harness Session 和业务任务，前者解决上下文延续，后者承担业务状态、重试和审计，映射办法后面讲。
 
-Hermes Agent 出自 Nous Research，做 Hermes 系列模型的那家，经常本地跑模型的人应该不陌生。内核是自己写的（Python），卖点是学习闭环：复杂任务做完会把经验沉淀成 Skill，用的过程中继续改进，还会定期提醒自己把该记的东西写进长期记忆，历史会话支持跨会话检索。模型侧可以在 Nous Portal、OpenRouter、OpenAI、Anthropic 或任意 OpenAI 兼容端点之间切换。运行环境是全文里给得最多的：本地、Docker、SSH、Singularity、Modal、Daytona、Vercel Sandbox 七种终端后端，后面两种还能 serverless 休眠、按需唤醒。
+工具有没有契约。 几乎所有 Coding Agent 都能跑 Shell，我更关心能不能把工具描述成带 Schema 的接口：参数什么类型、允许什么值、返回稳不稳定、哪些调用要审批。靠 Prompt 让模型“按这个格式拼命令”能跑，跑不久。
 
-形态上它和 OpenClaw 类似：一个 hermes gateway 进程接 Telegram、Discord、Slack、WhatsApp、钉钉等 20 多个渠道，带 cron 调度和 Web Dashboard。对外接口有两条路值得知道：webhook 可以用 GitHub、GitLab 这类事件触发一次运行；API Server 能把自己暴露成一个 OpenAI 兼容的 HTTP 接口（默认监听 127.0.0.1:8642，Bearer Token 认证），任何能对接 OpenAI 的前端都能拿它当后端。不过这个接口是无状态的 Chat Completions，不是 Run&#x2F;Session 式的 API，任务取消、审批和事件流不是它的强项。
+任务能不能停。 用户取消后不能只把页面状态改成 cancelled。模型请求、Shell 子进程、浏览器任务、远程工具要一起结束，不然后台继续烧钱，甚至继续执行有副作用的操作。
 
-我没把这两个放进后面的对比表，因为它们回答的是另一个问题。表里问的是“一次业务任务怎样被程序化地、可控地执行”，它们解决的是“怎样给自己或团队部署一个一直在线的助手”。如果需求恰好是后者——比如在公司 IM 里放一个能跑定时任务、也能和人聊的 Agent——直接部署一个现成的改改配置，通常比基于 OpenCode 自建控制面划算。反过来，想把它们当成多租户 Runtime 塞进业务系统，它们的会话模型和安全假设都不是为此设计的，还是回到前面说的分层方案更稳妥。
+隔离够不够。 工作目录不是安全边界。并发任务至少要考虑目录、进程、网络、凭证、缓存、Session 的隔离。涉及代码执行或不可信输入，看容器和 Sandbox。
 
-对这篇文章来说，它们还算是两个旁证。OpenClaw 说明 Pi 那条路真的走得通，也说明要走完需要多少建设量；它接 Codex 用的组件正是 app-server——一个在 Codex 仓库里还标着 experimental 的子命令，已经跑在 39 万 star 的助手项目里了。这既说明 experimental 标签不等于不可用，也带来一个实惠：这类下游项目会先替你踩完集成的坑，接 Codex 时可以直接复用它们的适配经验和问题清单。Hermes 则说明自己写内核、再把渠道化做起来，同样能攒下大量用户。内核和产品之间，这个生态开始出现分工了。
+结果能不能被程序用。 业务系统要 JSON，不要一段“看起来不错”的 Markdown。最好原生支持 JSON Schema 或结构化结果；其次用一个专门的 Tool 提交最终结果；最差才是从自由文本里解析。
 
 放在一起比较
 
-下面的表只比较作为业务 Runtime 时比较关心的部分，不比较代码补全体验。
-
-先把三个经常被放在一起的能力拆开：可独立运行指不必嵌入业务主进程，就能启动完整的 Agent Loop；这不代表模型可以离线部署。原生 HTTP API指官方直接提供可供外部系统远程调用的 HTTP、SSE 或 WebSocket 接口。SDK、stdin&#x2F;stdout、JSONL RPC 和本地 App Server 都属于程序化接口，但不能直接等同于远程 HTTP 服务。会话管理则关注任务能否继续、恢复、查询和回收，它和进程怎样启动、通过什么协议调用也不是同一件事。
+只比作为业务 Runtime 关心的部分，不比代码补全体验。
 
 工具
 可独立运行
@@ -1596,101 +1561,60 @@ Conversation 支持持久化、暂停和恢复 |
 SDK |
 原生支持远程 Agent 服务 |
 
-这里的“会话管理”表示 Harness 是否提供会话标识、历史记录和恢复能力，不代表已经具备生产级的多租户会话服务。数据存在哪里、多实例能否共享、进程崩溃后怎样恢复，以及由谁负责过期和删除，仍然需要单独确认。
+表里的会话管理只表示有没有会话标识、历史和恢复能力。数据存哪、多实例能不能共享、崩溃后怎么恢复、谁负责过期删除，都要单独确认。
 
-再看工具扩展、模型选择和服务化路径：
+工具扩展、模型、服务化路径和建设量放在一起看。相对建设量按“已有业务服务、先做内部工具”的口径估算，不是人月承诺；要做到多租户生产级，每一行都要显著上浮：
 
 工具
 工具扩展
 模型选择
 服务化路径
+相对建设量
 主要代价
 
 OpenCode |
 Custom Tool、Plugin、MCP |
 多 Provider 可配置，不绑定单一模型 |
 自带 HTTP&#x2F;SSE Server，接入链路最短 |
+小：认证、结果校验、任务队列 |
 认证、隔离、调度等控制面要自己补 |
 
 Pi |
 Extension、Tool、Skill、Package |
 多 Provider |
 要自己包一层 HTTP 服务和会话存储 |
+中到大：HTTP 服务、会话存储、任务调度、认证、配额、运维接口 |
 外部服务层基本要自己建 |
 
 DeepSeek Harness |
 Plugin、工具和协议扩展 |
 默认 DeepSeek，已接 Anthropic、OpenAI、Kimi、GLM 等 |
 Web Host API 面向本机，远程暴露方式要自行验证 |
+小到中：版本隔离层、远程暴露方案、升级回归 |
 Developer Preview，接口可能破坏性变更 |
 
 Codex |
 MCP、Skill、Sandbox、Approval |
 可扩展到 Bedrock、Ollama 等，但协议层是 OpenAI Responses 格式 |
 CLI &#x2F; SDK &#x2F; App Server（WebSocket）都可以远程化 |
+中：服务封装、审批流、发版回归 |
 平台绑定较强，迁出需要做协议转换 |
 
 Claude Agent SDK |
 MCP、自定义 Tool、Hook、Permission |
 Claude |
 需要用宿主程序把 SDK 包成服务 |
+中：服务封装、审批流、发版回归 |
 平台绑定较强，服务层要自己建 |
 
 OpenHands |
 Tool、MCP、Remote Sandbox |
 可配置 |
 Agent Server 本身就是远程服务 |
+中：部署、Sandbox 和资源管理 |
 部署和资源成本较高 |
 
-“提供 HTTP API”也不等于“已经可以直接承担生产业务”。还要继续检查认证、并发、Session 持久化、任务取消、资源隔离和故障恢复。
-
-选型时我会重点看什么
-
-1. 能不能独立运行
-
-先确认 Harness 能不能作为独立进程启动完整的 Agent Loop。只能通过 SDK 嵌入宿主程序，和可以直接交给 Docker、Kubernetes、systemd 或任务调度器运行，部署方式并不一样。
-
-这里的“独立运行”只描述 Harness 的运行形态，不代表模型权重在本地，也不代表它天然支持多用户和并发任务。
-
-2. 有没有原生 HTTP API
-
-TUI 好不好用和服务端好不好接是两回事。HTTP、SSE 或 WebSocket 可以直接跨进程、跨语言和跨机器调用；stdin&#x2F;stdout、JSONL RPC、App Server 和 SDK 虽然也能程序化控制，但通常还需要自己补一层远程服务。
-
-如果只能启动一次 CLI、等进程退出后读取 stdout，那么任务取消、审批、进度展示和故障恢复都会比较难做。即使已经提供 HTTP API，也要继续确认认证、会话、流式事件、取消和并发语义是否完整。
-
-3. Session 到底归谁管理
-
-会话管理不能只看有没有一个 Session ID。至少要确认：
-
-- 能不能创建、查询、继续和删除 Session；
-
-- 历史与事件是只在内存中，还是可以持久化和重放；
-
-- 进程或容器重启后能不能恢复；
-
-- 多用户、多个任务和多个实例之间怎样隔离；
-
-- 谁负责超时、过期、归档和资源回收。
-
-还要区分 Harness Session 和业务任务：前者解决上下文延续，后者承担业务状态、重试和审计。具体的 Task、Run、Session 映射会在后面的业务架构部分展开。
-
-4. 工具是不是有明确契约
-
-所有 Coding Agent 几乎都能执行 Shell，但我更关心能否把工具描述成带 Schema 的接口：参数有什么类型，哪些值允许传，返回值是否稳定，哪些调用需要审批。
-
-只靠 Prompt 告诉模型“请按这个格式拼命令”，能跑，但不适合作为长期方案。
-
-5. 任务能不能停下来
-
-用户取消以后，不能只把页面状态改成 cancelled。模型请求、Shell 子进程、浏览器任务和远程工具都要一起结束，否则后台仍会继续花钱，甚至继续执行有副作用的操作。
-
-6. 隔离是不是足够
-
-工作目录不是安全边界。并发任务至少要考虑目录、进程、网络、凭证、缓存和 Session 的隔离。涉及代码执行或不可信输入时，还要看容器或 Sandbox 能力。
-
-7. 最终结果能不能被程序使用
-
-业务系统通常需要 JSON，而不是一段“看起来不错”的 Markdown。最好直接支持 JSON Schema 或结构化结果；其次可以通过一个专门的 Tool 提交最终结果；最差才是从自由文本里解析。
+同样，有 HTTP API 不等于能承担生产业务。认证、并发、Session 持久化、取消、隔离、故障恢复，还得逐项过。
 
 按团队情况怎么选
 
@@ -1730,57 +1654,185 @@ TUI 好不好用和服务端好不好接是两回事。HTTP、SSE 或 WebSocket 
 
  |
 
-选定路线后，推进重点并不一样：
+分述之外补充两点：DeepSeek Harness 值得固定版本跑一批影子任务，用数据判断插件化架构是否值得投入；OpenCode 上手先只跑只读任务，把认证、结果校验、并发限制补上，再放写操作。
 
-- OpenCode：先用 HTTP&#x2F;SSE 把只读任务跑通，优先补认证、结果校验和并发限制；
-
-- Pi：先定接口、会话存储和任务状态，接受更大的平台建设量；
-
-- DeepSeek Harness：固定版本，先跑离线任务或影子流量，再决定是否进入核心链路；
-
-- Codex &#x2F; Claude Agent SDK：省下的选型时间要留给升级回归，它们发版很频繁。所谓中立不是免费的，没有真实多模型需求就不必为了抽象而抽象；
-
-- OpenHands：先评估运行环境和资源成本，此时 Sandbox 能力可能比 Agent Loop 本身更关键。
-
-建设量怎么估
-
-“接入 Runtime”和”建成可生产的服务”是两件事。下表按”已有业务服务、先做内部工具”的口径给出量级估算，不是人月承诺；要做到多租户生产级，每一行都要显著上浮。
-
-路线
-相对建设量
-Runtime 之外还要建什么
-
-OpenCode |
-小 |
-认证、结果校验、任务队列 |
-
-DeepSeek Harness（带 Adapter） |
-小到中 |
-版本隔离层、远程暴露方案、升级回归 |
-
-Codex &#x2F; Claude Agent SDK |
-中 |
-服务封装、审批流、发版回归 |
-
-OpenHands |
-中 |
-部署、Sandbox 和资源管理 |
-
-Pi |
-中到大 |
-HTTP 服务、会话存储、任务调度、认证、配额、运维接口 |
-
-建设量按路线能差出一个量级，这比”哪个模型更聪明”是更现实的选型变量。如果团队没有专人补控制面，选建设量小的路线通常更划算。
+最后看建设量。上面合并表里的相对建设量是选型里最现实的变量，按路线能差出一个量级，比“哪个模型更聪明”重要得多。团队没有专人补控制面的话，选建设量小的路线通常更划算。
 
 为什么不从头写一套
 
-自己写一个最小的 Agent Loop 并不难：拼上下文、调用模型、解析 Tool Call、执行工具，再把结果送回模型。麻烦的是后面的细节——超时、中断、权限确认、上下文过长、子进程残留、Session 恢复。每一项都不复杂，叠在一起却很耗时间。
+自己写一个最小 Agent Loop 不难：拼上下文、调模型、解析 Tool Call、执行工具、把结果送回去。麻烦的是后面的细节——超时、中断、权限确认、上下文过长、子进程残留、Session 恢复。每一项都不复杂，叠在一起很耗时间。
 
-现成 Harness 的价值就在这里。它先把执行循环搭好，业务团队可以把时间花在更实际的问题上：现有 API 和 CLI 是否足够清楚，模型拿到这些工具后能不能完成任务，哪些步骤必须人工确认，最终结果怎样验收。
+现成 Harness 的价值就在这里：执行循环它搭好了，业务团队的时间花在更实际的问题上。现有 API 和 CLI 够不够清楚，模型拿到工具能不能完成任务，哪些步骤必须人工确认，最终结果怎么验收。
 
-这也是一个检验内部工具质量的机会。很多 CLI 原本是给人用的，错误全是文本，参数命名不一致，输出格式也会变化。Agent 连续调用几次，问题很快就会暴露。把参数、错误码和 JSON 输出补齐后，受益的不只是 Agent，普通自动化脚本也会更可靠。
+顺带说一句，这是检验内部工具质量的好机会。很多 CLI 是给人用的，错误全是文本，参数命名不一致，输出格式还会变。Agent 连续调几次，问题很快暴露。把参数、错误码、JSON 输出补齐后，受益的不只是 Agent，普通自动化脚本也更可靠。
 
-业务经验也不必全部塞进一段长 Prompt。操作…
+业务经验也不必全塞进一段长 Prompt。操作步骤写成 Skill，真实动作交给 Tool，权限放进 Policy，判断结果交给固定的评测集。以后换模型或者换 Runtime，这些东西大多还能接着用。
+
+Harness 能替我们做什么
+
+把 OpenCode、Pi 或 DeepSeek Harness 放在业务系统后面，我把它们当执行面。一次 Run 内部的事情，尽量交给 Harness：
+
+- 调用模型并维护 Agent Loop；
+
+- 保存本轮会话上下文；
+
+- 注册和调用工具；
+
+- 载入 Skill、Agent 或扩展；
+
+- 处理文件、Shell 和工作目录；
+
+- 发送消息、工具和错误事件；
+
+- 做基础的权限确认和任务取消；
+
+- 在支持的情况下约束结构化输出。
+
+这些够把一个业务想法跑起来了。客服助手先查订单和历史工单再组织回复，数据助手先查指标、发现异常继续查明细，研发助手改代码跑测试，都是这么起步的。
+
+别把业务控制面也交给 Harness
+
+Harness 只负责“怎么执行”。下面这些，还得留在自己的业务系统里。
+
+业务任务状态
+
+Harness 认识的是 Session 和 Message，业务认识的是工单、审核单、报表任务、订单、代码变更。两者画不了等号。
+
+一次业务任务可能超时重跑两次，也可能先由 OpenCode 执行、后来交给 Pi 复核。更合适的关系：
+
+1
+
+ | BusinessTask 1 ── N AgentRun 1 ── N HarnessSession
+
+ |
+
+我会保留三个 ID：
+
+- task_id：业务任务；
+
+- run_id：一次执行尝试；
+
+- session_id：具体 Runtime 内的会话。
+
+这样以后做重试、回放、替换 Runtime，业务数据模型不用动。
+
+身份和权限
+
+Harness 不知道用户属于哪个部门，也不知道他能不能看某个客户、数据集、项目。它提供的工具权限只是第一层，资源级授权要在业务系统或 Tool Gateway 里做。
+
+每次 Run 签发短期身份，让工具按租户、用户、任务检查权限。别把长期管理员 Token 放进 Agent 容器。
+
+幂等、重试和审批
+
+模型调用失败可以重试，查询工具超时也可以重试，但“提交退款”“发布内容”“修改配置”不能简单重放。
+
+业务侧要清楚一个操作有没有执行过、能不能再执行、谁审批的。Harness 的确认弹窗可以承载交互，审批规则和最终状态存在业务系统。
+
+结果是否正确
+
+Harness 能让模型输出一份报告，不知道这份报告符不符合公司的业务定义。
+
+数据分析结果可能必须带统计周期、数据口径、样本量；审核结果要有规则编号和证据；代码修改必须过指定测试。最终结果过 Schema 和业务规则校验，别只看文字通不通顺。
+
+调度、容量和高可用
+
+任务队列、Worker、限流、优先级、失败补偿、成本配额、跨机房部署，通常也不属于单个 Harness。把 Harness 当 Worker 用比较清楚，别让业务请求同步等一个 CLI 进程退出。
+
+数据合规和审计
+
+一次 Run 的上下文、工具输出、结果里往往带着业务数据，几件事提前确认，别等上线前才补：
+
+- 数据发给哪个模型供应商，留不留存、训不训练，合同和模型配置里是否明确；
+
+- 事件日志和工具输出落库前脱敏，凭证、个人信息、客户数据不能原样进日志；
+
+- 高风险动作能否追溯到人、run_id 和审批记录，审计记录留多久、能不能防篡改；
+
+- 跨境部署时，模型调用和日志存储的数据出境合规。
+
+接入时怎么分层
+
+我倾向拆成四层：
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+
+ | ┌───────────────────────────────────────────┐
+│ Business Control Plane │
+│ API / Tenant / Task / Retry / Approval │
+│ Result / Notification / Billing │
+└──────────────────┬────────────────────────┘
+ │ internal API
+┌──────────────────▼────────────────────────┐
+│ Harness Adapter │
+│ OpenCode / Pi / DeepSeek / Codex │
+│ event normalize / capability / routing │
+└──────────────────┬────────────────────────┘
+ │ run
+┌──────────────────▼────────────────────────┐
+│ Execution Runtime │
+│ Session / Context / Skill / Workspace │
+└──────────────────┬────────────────────────┘
+ │ tool call
+┌──────────────────▼────────────────────────┐
+│ Tool Plane │
+│ CLI / Harness Tool / MCP / Workflow API │
+│ Auth / Schema / Timeout / Audit │
+└───────────────────────────────────────────┘
+
+ |
+
+控制面保存业务事实；Adapter 屏蔽 Runtime 差异；Harness 完成一次执行；工具层访问真实系统。
+
+工具怎么接：CLI、原生工具和 MCP
+
+三种方式不互斥，通常并存。已有成熟 CLI 的话先复用，尤其适合 PoC；文件处理、本地脚本、一次性迁移任务也适合 CLI。
+
+已有 CLI：最快接入
+
+最简单的做法，把 CLI 固化到 Runtime 镜像并加入 PATH：
+
+1
+2
+3
+
+ | biz-ticket get --id TICKET-001 --output json
+biz-data query --dataset sales --range 7d --output json
+biz-content inspect --content-id C-1001 --output json
+
+ |
+
+再写一份 Skill，说明每个命令什么时候用、要哪些参数、返回什么。OpenCode、Pi 这类工具都能通过 Shell 执行它们。
+
+但别把二进制临时复制到每个任务目录，让模型自由组合命令。目录只是文件位置，不是权限边界。至少处理这几件事：
+
+- CLI 版本固定，镜像可追溯；
+
+- 只开放允许执行的命令，参数经校验，不直接拼 Shell；
+
+- 默认只读，写操作走独立入口，用短期凭证；
+
+- 统一 JSON 输出和错误码，并设超时、输出大小、资源上限；…
 
 ### 阅读六本大模型书的阶段性思考：一个 Token 如何变成答案
 
@@ -5803,7 +5855,7 @@ AI 可以快速生成假设、解释机制和设计实验，但必须用准确�
 - Updated: 2026-04-16
 - Summary: APISIX Anthropic 与 OpenAI 协议互转插件：支持流式、思考、工具调用与多模态。
 - Categories: AI
-- Tags: APISIX, AI Gateway, AI, Plugin, Anthropic, OpenAI, Protocol Translation
+- Tags: APISIX, AI Gateway, Plugin, AI, Anthropic, OpenAI, Protocol Translation
 
 Article text:
 
@@ -9259,7 +9311,7 @@ ES适合的场景都有哪些？
 - Updated: 2025-01-08
 - Summary: 复盘 Elasticsearch 集群因索引和分片数量失控、mmap 与本地内存压力导致写入超时和集群变红的事故。
 - Categories: Debugging
-- Tags: Elasticsearch, Shard, mmap, Native-Memory, Production-Incident
+- Tags: Elasticsearch, Shard, Production-Incident, mmap, Native-Memory
 
 Article text:
 
@@ -14650,7 +14702,7 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-state.ht
 - Updated: 2023-10-27
 - Summary: 复盘一次 Elasticsearch 7 节点集群磁盘与分片问题引发的生产事故，记录分析、排查和恢复过程。
 - Categories: Debugging
-- Tags: Elasticsearch, Shard, Production-Incident, Disk
+- Tags: Elasticsearch, Shard, Disk, Production-Incident
 
 Article text:
 
@@ -15652,7 +15704,7 @@ Redis 的 MONITOR 命令在执行后，会持续输出监测到的各个命令�
 - Updated: 2023-06-03
 - Summary: 分析Elasticsearch Index文件是如何存储的？ 主要是想看一下FST文件是以什么粒度创建的？
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Storage, Lucene
+- Tags: Elasticsearch, Lucene, Storage
 
 Article text:
 
@@ -21110,7 +21162,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2021-06-13
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析节点关闭流程、资源释放顺序和相关生命周期管理。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Node, 源码
+- Tags: Elasticsearch, 源码, Node
 
 Article text:
 
@@ -21620,7 +21672,7 @@ kill -15&#x2F;-2 ElasticSearch是可以正常退出的。
 - Updated: 2021-06-12
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析节点启动流程、核心组件初始化和服务启动顺序。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Node, 源码
+- Tags: Elasticsearch, 源码, Node
 
 Article text:
 
@@ -23035,7 +23087,7 @@ static void init(
 - Updated: 2021-04-11
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析 GET 请求的处理链路、节点路由与文档读取过程。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, 源码, GET
+- Tags: Elasticsearch, GET, 源码
 
 Article text:
 
@@ -25967,7 +26019,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2020-11-10
 - Summary: 将容器管理平台（Compass）的能力集成到内部控制台，实现日志、打包、权限等功能的统一管理，提升开发者体验。
 - Categories: Kubernetes
-- Tags: Kubernetes, Design, Architecture
+- Tags: Kubernetes, Architecture, Design
 
 Article text:
 
@@ -37834,7 +37886,7 @@ RentrantReadWriteLock的具体流程梳理完了，回过头来想一下前言�
 - Updated: 2018-10-27
 - Summary: 基于《Java并发编程的艺术》分析 AQS Condition 的等待队列、await、signal 及线程重新竞争锁的过程。
 - Categories: Java
-- Tags: Concurrent, AQS, Lock, Condition
+- Tags: AQS, Concurrent, Lock, Condition
 
 Article text:
 
@@ -39695,7 +39747,7 @@ BootstrapMethods:
 - Updated: 2018-03-03
 - Summary: 通过图文和源码分析 Java AQS 的实现原理，包括 FIFO 同步队列、独占模式、共享模式和线程唤醒机制。
 - Categories: Java
-- Tags: Concurrent, AQS, Lock
+- Tags: AQS, Concurrent, Lock
 
 Article text:
 
