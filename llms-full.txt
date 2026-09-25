@@ -15,7 +15,7 @@ Generated from 177 indexable articles. Each entry keeps its canonical URL and co
 - [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
 
 ## Articles
-### 流式500、多个worker跑满，还有一行powersave：一次API7 AI网关的排查记录
+### 流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录
 
 - URL: https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html
 - Content type: original
@@ -69,9 +69,21 @@ Article text:
 
 缓解与修复
 
-临时缓解配了streaming_flush_interval_ms: 0，把后台定时刷新关掉，改成有输出时同步刷新，在生产上验证有效。不用删tools，也不用关流式。
+临时缓解配了streaming_flush_interval_ms: 0，在生产上验证有效。不用删tools，也不用关流式。
 
-根治版本改了两处：只在内容已经交给下游响应处理之后才安排刷新；后台刷新返回“没有内容可刷新”时继续等待后续数据，不再把它当作断连依据。为内容审核增加的SSE拼接逻辑仍然保留，生产最终升级到patch.3。
+先把这个参数说清楚。它是ai-proxy插件的属性（ai-proxy-multi里同样暴露），按官方文档，默认值10，取值范围是大于等于0，两档语义完全不同：
+
+- 大于0（默认10）：后台定时器每N毫秒调用一次ngx.flush(false)，把上游突发到达的小分块攒批写出，适合吞吐优先的场景。APISIX 3.17.0的release notes把这个参数定位为流式输出的延迟控制（latency control）。
+
+- 等于0：后台定时器整个不启用，每收到一个分块就同步ngx.flush(true)，保证立即送到客户端。
+
+这次的bug正好落在第一条路径上：后台定时器在SSE消息还没拼齐的时候触发，nothing to flush被误判成断连。配0等于把这条出问题的后台路径整个关掉，让刷新只发生在确实有数据可发的时候。
+
+代价也来自语义变化，不是配置上的“无副作用开关”。0意味着放弃攒批，写向客户端的次数随上游分块数线性增长，系统调用和CPU开销都会上去；按OpenResty的语义，ngx.flush(true)还要等数据真正送出才返回，客户端读得慢时，这份压力会传回上游读取路径。默认的10毫秒本身就是“攒批省开销”和“首字延迟”之间的折中，所以0只适合当短期规避，不应被理解成“流式场景永远应该配0”。
+
+上线时我按临时变更处理：只改受影响路由，观察5xx、499、客户端首字延迟、worker CPU和上游耗时；等包含代码修复的patch.3验证通过后就撤掉，回到默认的10毫秒，把攒批收益拿回来。
+
+根治版本改了两处：只在内容已经交给下游响应处理之后才安排刷新；后台刷新返回“没有内容可刷新”时继续等待后续数据，不再把它当作断连依据。为内容审核增加的SSE拼接逻辑仍然保留，生产最终升级到patch.3。也就是说，最终修复不是关闭流式缓冲，而是把“没有可刷内容”和“客户端已经断开”这两类状态重新分开。
 
 问题二：多个worker跑满，但流量不高
 
@@ -191,6 +203,78 @@ get占比极高而ttl占比较低，与“大量历史槽已经失效、只有�
 
 key_count和delete_count没有暴露成指标，只能通过专用测试路由读取。一个生产节点重启前的key_count已经达到57万，意味着每次全量同步都要扫描这个量级；实例重建后则降到1万多。
 
+这里的“专用测试路由”不是业务接口，也不建议长期保留。我当时的做法是临时加一个只允许内网访问的诊断入口，在worker里读取Prometheus key index对象的两个内部计数并返回JSON，大致形态如下：
+
+1
+2
+3
+4
+5
+6
+7
+
+ | -- 伪代码：不同版本里模块名和对象路径可能不同，只表达观测思路
+local idx = prometheus_metric_key_index
+
+return &#123;
+ key_count = idx.key_count, -- 历史累计分配过的槽位上界
+ delete_count = idx.delete_count, -- 触发各worker全量同步的版本号
+&#125;
+
+ |
+
+这里补上实操部分：路由怎么挂、怎么读、怎么对上时间线。
+
+路由只匹配一个GET，用client_ip白名单锁到运维网段，handler就放上面那段Lua，形状大致是：
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+
+ | curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -H "X-API-KEY: $&#123;admin_key&#125;" -d &#x27;&#123;
+ "uri": "/diag/prom-key-index",
+ "methods": ["GET"],
+ "vars": [["remote_addr", "in", "10.200.76.0/24"]],
+ "plugins": &#123;
+ "serverless-pre-function": &#123;
+ "phase": "rewrite",
+ "functions": ["<上面那段读取key_count/delete_count的Lua>"]
+ &#125;
+ &#125;
+&#125;&#x27;
+
+ |
+
+读的时候跟着worker CPU一起采，一行就够：
+
+1
+2
+3
+4
+5
+6
+
+ | while true; do
+ printf &#x27;%s &#x27; "$(date +%T)"
+ curl -s http://10.200.76.56/diag/prom-key-index
+ echo
+ sleep 5
+done
+
+ |
+
+要看的形态就两种：key_count持续上涨，说明历史槽位在不停分配，扫描成本在积累；delete_count跳一次，紧接着几个worker的CPU同时抬起来，就是全量同步被触发了。这次56节点重启前读到57万，重启后1万多，key_count的量级差异直接对应了扫描耗时。
+
+使用时只做三件事：第一，限制来源IP或只在排障Pod里临时打开；第二，把读数和worker CPU、shared dict剩余空间放在同一时间线上看；第三，读完就删除路由。真正适合长期暴露的是库或插件自身把这两个计数做成受控metrics，而不是在业务面挂一个永久调试接口。
+
 重启只是把状态清零，不是修复。
 
 受控实验在同版本镜像上做：起5个worker，先构造出已回收的槽位，再触发一次计数变化，结果复现出了那个熟悉的形态——发起变更的worker保持低CPU，其余4个同时接近单核满载。还补了一组去掉外部指标抓取的对照，一样能复现，说明外部抓取不是必要条件。
@@ -201,7 +285,21 @@ key_count和delete_count没有暴露成指标，只能通过专用测试路由�
 
 先止血。读完三节点的计数后，逐个删除并重建3个gateway Pod。reload会保留shared dict，只有重建实例才能把key_count清零。重建后CPU飙升暂时没有再出现。
 
+如果短时间内还不能升级或替换依赖，能动的配置就这么几处，思路都是“别让指标槽位频繁过期再重新注册”：
+
+- expire: 1800：http_status、http_latency、bandwidth都配了它。能关就关掉过期，关不掉就调大，别让槽位在半小时尺度上反复回收重建——delete_count正是在“重新注册”那一步递增的。
+
+- remove_expired_keys_interval（默认3600秒）：APISIX没显式传，取的库内默认值。调大它只能降低每小时无上限清理的频率，救不了全量扫描，别指望靠它过关。
+
+- 高基数标签：把app、project、request_host这类容易膨胀的维度从带expire的指标上撤掉，顺带清掉排障期间临时加的pid之类的标签。
+
+- 滚动重建实例：把已经膨胀的key_count先清掉。
+
+这些只能降低触发概率或缩短影响时间，不能修掉delete_count变化后全量扫描的算法问题。
+
 修复路线有三条：继续开发修复、只撤销单个PR、回退整套Prometheus实现。最终选了第三种：把Prometheus相关实现和依赖恢复到3.9.14所带的版本，用新patch交付，其他功能和修复都保留——并不是把整套网关降回3.9.14。
+
+这也是为什么我把“重建实例”只归类为止血，而不是修复：它能把历史槽位清零，但只要高基数指标继续创建、过期、重新注册，key_count还会重新长起来，delete_count变化仍然会把其他worker带进全量扫描。
 
 节点差异：为什么总是56这台
 
@@ -231,9 +329,11 @@ key_count和delete_count没有暴露成指标，只能通过专用测试路由�
 
 scaling_governor决定CPU在scaling_min_freq ~ scaling_max_freq之间怎么升降频。不同驱动下，powersave的行为不完全一样，光看这个名字还不能断言CPU被固定在低频；不过56节点在lscpu里显示的频率确实更低，这能解释它为什么更容易越过告警阈值。
 
+这部分证据要诚实分级：我确认了三台节点的governor和频率读数不同，也观察到56更容易先报警；把56的governor统一之后，再做同时间段的日同比，CPU总消耗曲线整体下移，说明调频策略确实会影响这台机器的CPU表现。但这仍然是生产日同比，不是严格闭环实验：比如在同一台节点上切换governor、施加相同负载、复现告警阈值差异，再切回验证。因此它是“放大因素”的强线索，不是CPU满载根因本身。
+
 所以，多个worker跑满的根因还是Prometheus缺陷，调频差异只是让56节点更容易先报警。
 
-处理时先把三台的governor统一，再检查BIOS和OS的电源设置。后续如果要把这件事验证得更扎实，还得继续对比scaling_driver、最小&#x2F;最大频率、Turbo状态，以及相同负载下的实际频率。之后我把内核小版本、scaling_governor和电源策略放进了节点基线巡检。这些配置不在应用监控里，却会直接改变CPU曲线。
+处理时先把三台的governor统一，再检查BIOS和OS的电源设置。后续如果要把这件事验证得更扎实，还得继续对比scaling_driver、最小&#x2F;最大频率、Turbo状态，以及相同负载下的实际频率。更完整的实验应该至少包含四步：统一代码和流量；记录切换前的scaling_cur_freq、worker CPU和请求延迟；只切换governor或电源策略；再用同一压测负载比较曲线。之后我把内核小版本、scaling_governor和电源策略放进了节点基线巡检。这些配置不在应用监控里，却会直接改变CPU曲线。
 
 AI工具用在哪了
 
