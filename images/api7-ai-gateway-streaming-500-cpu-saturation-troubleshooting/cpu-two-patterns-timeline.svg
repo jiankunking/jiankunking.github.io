@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 442" role="img" aria-labelledby="pat-title pat-desc" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <title id="pat-title">监控里的两种 CPU 形态</title>
+  <desc id="pat-desc">时间轴上每 3600 秒一个清理 timer 触发时刻。形态一：落在 timer 时刻上的短尖峰，可用定时清理解释；形态二：多 worker 高 CPU 尖峰密集连发，单次几秒到几十秒、中间回落，成片时段起止对不上 timer 时刻表，定时清理解释不了。反例：有一次定时清理回收了 17.07 MiB，但节点 CPU 最高只有 1.35 核，说明清理动作大不等于 CPU 高。</desc>
+  <defs>
+    <marker id="pat-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#58b27a"/>
+    </marker>
+  </defs>
+  <rect x="0.5" y="0.5" width="879" height="441" rx="8" fill="#ffffff" stroke="#e3e8ec"/>
+
+  <text x="440" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#2b3a46">监控里的两种 CPU 形态：定时清理只能解释其中一种</text>
+  <text x="440" y="55" text-anchor="middle" font-size="12" fill="#6b7885">按真实监控形态简化：时间轴非等比，只表达“是否落在 timer 时刻表上”这一层关系</text>
+
+  <!-- timer ticks: fixed schedule every 3600s -->
+  <g stroke="#b9c4cf" stroke-width="1.2" stroke-dasharray="4 4">
+    <line x1="120" y1="112" x2="120" y2="348"/>
+    <line x1="258" y1="112" x2="258" y2="348"/>
+    <line x1="396" y1="112" x2="396" y2="348"/>
+    <line x1="534" y1="112" x2="534" y2="348"/>
+    <line x1="672" y1="112" x2="672" y2="348"/>
+    <line x1="810" y1="112" x2="810" y2="348"/>
+  </g>
+  <line x1="70" y1="348" x2="840" y2="348" stroke="#c7d2dc" stroke-width="1.4"/>
+
+  <!-- 3600s interval marker -->
+  <line x1="120" y1="332" x2="258" y2="332" stroke="#8a97a3" stroke-width="1.2"/>
+  <path d="M120 328 l0 8 M258 328 l0 8" stroke="#8a97a3" stroke-width="1.2"/>
+  <text x="189" y="324" text-anchor="middle" font-size="10.5" fill="#6b7885">3600s</text>
+
+  <!-- pattern 1: short spikes aligned with timer ticks -->
+  <g fill="#e8a33d" opacity="0.85">
+    <path d="M108 348 L120 302 L132 348 Z"/>
+    <path d="M246 348 L258 302 L270 348 Z"/>
+    <path d="M384 348 L396 302 L408 348 Z"/>
+    <path d="M522 348 L534 302 L546 348 Z"/>
+    <path d="M798 348 L810 302 L822 348 Z"/>
+  </g>
+  <text x="120" y="284" text-anchor="middle" font-size="11" font-weight="700" fill="#8a5a12">形态①</text>
+
+  <!-- pattern 2: dense burst of high-CPU spikes between two timer ticks, with dips in between -->
+  <g fill="#d9534f" opacity="0.85">
+    <path d="M406 348 L414 218 L422 348 Z"/>
+    <path d="M428 348 L436 268 L444 348 Z"/>
+    <path d="M450 348 L458 202 L466 348 Z"/>
+    <path d="M472 348 L480 258 L488 348 Z"/>
+    <path d="M494 348 L502 232 L510 348 Z"/>
+    <path d="M514 348 L520 288 L526 348 Z"/>
+  </g>
+  <!-- baseline dips back down between spikes -->
+  <path d="M414 218 L436 268 L458 202 L480 258 L502 232 L520 288" fill="none" stroke="#b4453a" stroke-width="1.6" opacity="0.6"/>
+  <text x="464" y="176" text-anchor="middle" font-size="11" font-weight="700" fill="#b4453a">形态②：多 worker 高 CPU 尖峰密集连发（单次几秒到几十秒，中间回落）</text>
+  <text x="464" y="316" text-anchor="middle" font-size="10" fill="#b4453a">一波接一波</text>
+
+  <!-- counter-example: a big cleanup at a tick, but CPU stays low -->
+  <circle cx="672" cy="312" r="21" fill="#7fc59a" opacity="0.25" stroke="#58b27a" stroke-width="2"/>
+  <path d="M660 348 L672 318 L684 348 Z" fill="#e8a33d" opacity="0.85"/>
+  <line x1="672" y1="291" x2="672" y2="152" stroke="#58b27a" stroke-width="1.4" stroke-dasharray="3 3" marker-end="url(#pat-arr)"/>
+  <rect x="545" y="92" width="290" height="58" rx="8" fill="#eef8f1" stroke="#58b27a" stroke-width="1.4"/>
+  <text x="562" y="116" font-size="11.5" font-weight="700" fill="#2e7d43">反例：这次定时清理回收了 17.07 MiB</text>
+  <text x="562" y="136" font-size="11.5" fill="#2e7d43">但节点 CPU 最高只有 1.35 核：清理大 ≠ CPU 高</text>
+
+  <!-- legend -->
+  <path d="M40 384 L51 366 L62 384 Z" fill="#e8a33d" opacity="0.85"/>
+  <text x="74" y="384" font-size="11" fill="#4a5a6a">形态①：落在 timer 时刻上的短尖峰（每次一两分钟），与共享字典空间回收同时出现，可用清理 timer 解释</text>
+  <path d="M40 406 L46 388 L52 406 Z M56 406 L62 392 L68 406 Z" fill="#d9534f" opacity="0.85"/>
+  <text x="74" y="406" font-size="11" fill="#4a5a6a">形态②：多 worker 高 CPU 尖峰密集连发，单次几秒到几十秒、中间回落，成片时段起止对不上 timer 时刻表</text>
+  <line x1="40" y1="424" x2="62" y2="424" stroke="#b9c4cf" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <text x="74" y="428" font-size="11" fill="#4a5a6a">竖虚线：每 3600 秒一次的清理 timer 触发时刻（自进程启动起固定排布，即“相位”）</text>
+</svg>

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 736" role="img" aria-labelledby="sse-title sse-desc" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <title id="sse-title">流式 500 的错误链</title>
+  <desc id="sse-desc">SSE 一条消息分多片到达网关，不完整分片先暂存却仍标记需要刷新；后台刷新定时器触发后，发送接口返回 nothing to flush，只表示当前没有内容可刷新；旧逻辑把它误判为客户端断连并主动停止读取 Azure 上游。错误发生在响应内容发出之前，客户端一个字都收不到，访问日志记 500。</desc>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6a"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#d9534f"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2e7d43"/>
+    </marker>
+  </defs>
+  <rect x="0.5" y="0.5" width="879" height="735" rx="8" fill="#ffffff" stroke="#e3e8ec"/>
+
+  <text x="440" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#2b3a46">流式 500：「没有内容可刷」被误判为客户端断连</text>
+  <text x="440" y="55" text-anchor="middle" font-size="12" fill="#6b7885">是否触发取决于分片到达与定时刷新的先后顺序，与响应长短无关，因此表现为时好时坏</text>
+
+  <!-- lane chips -->
+  <rect x="50" y="76" width="120" height="30" rx="15" fill="#f4f8fb" stroke="#9db4cc"/>
+  <text x="110" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#2b3a46">客户端</text>
+  <rect x="255" y="76" width="180" height="30" rx="15" fill="#f4f8fb" stroke="#9db4cc"/>
+  <text x="345" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#2b3a46">API7 网关（流式路径）</text>
+  <rect x="505" y="76" width="140" height="30" rx="15" fill="#f4f8fb" stroke="#9db4cc"/>
+  <text x="575" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#2b3a46">后台刷新 timer</text>
+  <rect x="710" y="76" width="160" height="30" rx="15" fill="#f4f8fb" stroke="#9db4cc"/>
+  <text x="790" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#2b3a46">Azure（GPT 上游）</text>
+
+  <!-- lifelines -->
+  <g stroke="#c7d2dc" stroke-width="1.2" stroke-dasharray="4 4">
+    <line x1="110" y1="112" x2="110" y2="600"/>
+    <line x1="345" y1="112" x2="345" y2="600"/>
+    <line x1="575" y1="112" x2="575" y2="600"/>
+    <line x1="790" y1="112" x2="790" y2="600"/>
+  </g>
+
+  <!-- 1. client -> gateway -->
+  <line x1="110" y1="148" x2="341" y2="148" stroke="#4a5a6a" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="225" y="140" text-anchor="middle" font-size="11.5" fill="#2b3a46">① stream=true 请求（Codex、curl、业务程序）</text>
+
+  <!-- 2. gateway -> azure -->
+  <line x1="345" y1="202" x2="781" y2="202" stroke="#4a5a6a" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="563" y="194" text-anchor="middle" font-size="11.5" fill="#2b3a46">② 转发并读取 SSE 流</text>
+
+  <!-- 3. azure -> gateway -->
+  <line x1="790" y1="256" x2="354" y2="256" stroke="#4a5a6a" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="567" y="248" text-anchor="middle" font-size="11.5" fill="#2b3a46">③ 一条 SSE 消息分多片到达（chunk 1 / 2 …）</text>
+
+  <!-- 4. gateway self: buffer but mark flush needed -->
+  <path d="M345 288 h 62 v 24 h -62" fill="none" stroke="#e8a33d" stroke-width="1.8" marker-end="url(#arr)"/>
+  <rect x="170" y="322" width="540" height="36" rx="8" fill="#fff6e3" stroke="#e8a33d"/>
+  <text x="440" y="345" text-anchor="middle" font-size="11.5" fill="#8a5a12">④ 不完整分片先暂存，<tspan font-weight="700">但仍标记「需要刷新」</tspan>（缺陷埋点）</text>
+
+  <!-- 5. timer -> gateway -->
+  <line x1="575" y1="392" x2="354" y2="392" stroke="#4a5a6a" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="465" y="384" text-anchor="middle" font-size="11.5" fill="#2b3a46">⑤ 定时器触发 flush</text>
+
+  <!-- 6. gateway self: nothing to flush -->
+  <path d="M345 406 h 62 v 24 h -62" fill="none" stroke="#4a5a6a" stroke-width="1.8" marker-end="url(#arr)"/>
+  <rect x="150" y="440" width="580" height="36" rx="8" fill="#f4f6f8" stroke="#b9c4cf"/>
+  <text x="440" y="463" text-anchor="middle" font-size="11.5" fill="#4a5a6a">⑥ 发送接口返回 <tspan font-family="Menlo, Consolas, monospace">nothing to flush</tspan> —— 只表示「当前没有内容可刷新」</text>
+
+  <!-- 7. the misjudgement -->
+  <rect x="130" y="502" width="620" height="46" rx="8" fill="#fdeceb" stroke="#d9534f" stroke-width="1.6"/>
+  <circle cx="158" cy="525" r="11" fill="#d9534f"/>
+  <path d="M153 520 l10 10 M163 520 l-10 10" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
+  <text x="452" y="521" text-anchor="middle" font-size="12" font-weight="700" fill="#b4453a">⑦ 旧逻辑误判：「无内容可刷」＝「客户端已断连」</text>
+  <text x="452" y="539" text-anchor="middle" font-size="11" fill="#b4453a">于是主动停止读取 Azure —— 但此时客户端并没有断开</text>
+  <text x="440" y="568" text-anchor="middle" font-size="10.5" fill="#8a97a3" font-style="italic">误判断连的记录是 INFO 级，生产配 WARN：日志里看不到这条线索</text>
+
+  <!-- 8. nothing reaches the client -->
+  <line x1="345" y1="592" x2="119" y2="592" stroke="#d9534f" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arr-red)"/>
+  <text x="232" y="584" text-anchor="middle" font-size="11.5" fill="#b4453a">⑧ 响应内容尚未发出，链路在此中断</text>
+  <text x="440" y="616" text-anchor="middle" font-size="12" font-weight="700" fill="#b4453a">结果：客户端一个字都收不到，访问日志最终记成 500</text>
+
+  <!-- fix panel -->
+  <rect x="40" y="632" width="800" height="64" rx="8" fill="#eef8f1" stroke="#58b27a" stroke-width="1.4"/>
+  <text x="60" y="656" font-size="12" font-weight="700" fill="#2e7d43">修复（patch.3）</text>
+  <text x="182" y="656" font-size="11.5" fill="#2e7d43">返回「没有内容可刷新」时继续等待，不再据此判断断连；内容交给下游响应处理后才安排刷新</text>
+  <text x="60" y="681" font-size="12" font-weight="700" fill="#2e7d43">临时缓解</text>
+  <text x="182" y="681" font-size="11.5" fill="#2e7d43">streaming_flush_interval_ms = 0：不启用后台刷新定时器，改走 ngx.flush(true) 同步刷新</text>
+  <path d="M200 602 v 28" stroke="#58b27a" stroke-width="1.6" stroke-dasharray="4 4" marker-end="url(#arr-green)"/>
+
+  <text x="440" y="718" text-anchor="middle" font-size="10.5" fill="#6b7885">②③ 之间的真实时序是交错的：分片何时到、定时器何时触发，决定这条链是否被踩中</text>
+</svg>
