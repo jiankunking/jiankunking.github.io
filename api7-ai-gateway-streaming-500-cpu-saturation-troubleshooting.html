@@ -19,12 +19,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="生产 AI 网关升级后出现流式请求偶发 500、单节点多个 worker 接近满载但流量不高。通过对照实验、监控相位分析、依赖 diff 与 perf 热点交叉验证，最终定位到 SSE 刷新误判断连和 Prometheus key-index 回归，并发现 56 节点存在 powersave 调频差异。">
+    <meta name="description" content="API7 AI 网关升级后出现流式请求偶发 500、低流量下多 worker 高 CPU。本文记录如何通过对照实验、监控反例、依赖 diff、perf 与受控复现，定位 SSE 刷新误判和 Prometheus 索引扫描回归，并区分临时止血、最终修复与节点调频差异。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录">
+<meta property="og:title" content="API7 AI 网关升级排障：流式 500 与低流量高 CPU">
 <meta property="og:url" content="https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html">
 <meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="生产 AI 网关升级后出现流式请求偶发 500、单节点多个 worker 接近满载但流量不高。通过对照实验、监控相位分析、依赖 diff 与 perf 热点交叉验证，最终定位到 SSE 刷新误判断连和 Prometheus key-index 回归，并发现 56 节点存在 powersave 调频差异。">
+<meta property="og:description" content="API7 AI 网关升级后出现流式请求偶发 500、低流量下多 worker 高 CPU。本文记录如何通过对照实验、监控反例、依赖 diff、perf 与受控复现，定位 SSE 刷新误判和 Prometheus 索引扫描回归，并区分临时止血、最终修复与节点调频差异。">
 <meta property="og:locale" content="zh_CN">
 
 
@@ -47,10 +47,10 @@
 <link rel="canonical" href="https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html","path":"api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html","title":"流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html","path":"api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html","title":"API7 AI 网关升级排障：流式 500 与低流量高 CPU"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录 | 衣舞晨风</title>
+<title>API7 AI 网关升级排障：流式 500 与低流量高 CPU | 衣舞晨风</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
   <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
@@ -86,16 +86,16 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html#article","url":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html"},"headline":"流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录","description":"生产 AI 网关升级后出现流式请求偶发 500、单节点多个 worker 接近满载但流量不高。通过对照实验、监控相位分析、依赖 diff 与 perf 热点交叉验证，最终定位到 SSE 刷新误判断连和 Prometheus key-index 回归，并发现 56 节点存在 powersave 调频差异。","abstract":"生产 AI 网关升级后出现流式请求偶发 500、单节点多个 worker 接近满载但流量不高。通过对照实验、监控相位分析、依赖 diff 与 perf 热点交叉验证，最终定位到 SSE 刷新误判断连和 Prometheus key-index 回归，并发现 56 节点存在 powersave 调频差异。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-09-21T13:00:00.000Z","dateModified":"2026-09-21T13:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Debugging","keywords":"APISIX, Troubleshooting, AI Gateway, API7, OpenResty, Lua, SSE, Prometheus, perf","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Debugging","item":"https://jiankunking.com/categories/debugging/"},{"@type":"ListItem","position":3,"name":"流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录","item":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html#article","url":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html"},"headline":"API7 AI 网关升级排障：流式 500 与低流量高 CPU","description":"API7 AI 网关升级后出现流式请求偶发 500、低流量下多 worker 高 CPU。本文记录如何通过对照实验、监控反例、依赖 diff、perf 与受控复现，定位 SSE 刷新误判和 Prometheus 索引扫描回归，并区分临时止血、最终修复与节点调频差异。","abstract":"API7 AI 网关升级后出现流式请求偶发 500、低流量下多 worker 高 CPU。本文记录如何通过对照实验、监控反例、依赖 diff、perf 与受控复现，定位 SSE 刷新误判和 Prometheus 索引扫描回归，并区分临时止血、最终修复与节点调频差异。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-09-21T13:00:00.000Z","dateModified":"2026-09-21T13:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Debugging","keywords":"APISIX, Troubleshooting, AI Gateway, API7, OpenResty, Lua, SSE, Prometheus, perf","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Debugging","item":"https://jiankunking.com/categories/debugging/"},{"@type":"ListItem","position":3,"name":"API7 AI 网关升级排障：流式 500 与低流量高 CPU","item":"https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
 <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
 <meta property="og:image" content="https://jiankunking.com/images/og-default.png">
-<meta property="og:image:alt" content="流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录">
+<meta property="og:image:alt" content="API7 AI 网关升级排障：流式 500 与低流量高 CPU">
 <meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
-<meta name="twitter:image:alt" content="流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录">
+<meta name="twitter:image:alt" content="API7 AI 网关升级排障：流式 500 与低流量高 CPU">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -183,7 +183,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B5%B7%E5%9B%A0"><span class="nav-number">1.</span> <span class="nav-text">起因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E4%B8%80%EF%BC%9A%E6%B5%81%E5%BC%8F%E8%AF%B7%E6%B1%82%E8%BF%94%E5%9B%9E500"><span class="nav-number">2.</span> <span class="nav-text">问题一：流式请求返回500</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E7%8E%B0%E4%B8%8E%E6%A0%B9%E5%9B%A0"><span class="nav-number">2.1.</span> <span class="nav-text">复现与根因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%93%E8%A7%A3%E4%B8%8E%E4%BF%AE%E5%A4%8D"><span class="nav-number">2.2.</span> <span class="nav-text">缓解与修复</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E4%BA%8C%EF%BC%9A%E5%A4%9A%E4%B8%AAworker%E8%B7%91%E6%BB%A1%EF%BC%8C%E4%BD%86%E6%B5%81%E9%87%8F%E4%B8%8D%E9%AB%98"><span class="nav-number">3.</span> <span class="nav-text">问题二：多个worker跑满，但流量不高</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%8E%B0%E8%B1%A1%E4%B8%8E%E6%8E%92%E9%99%A4"><span class="nav-number">3.1.</span> <span class="nav-text">现象与排除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%91%E6%8E%A7%E9%87%8C%E7%9A%84%E8%A7%84%E5%BE%8B"><span class="nav-number">3.2.</span> <span class="nav-text">监控里的规律</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%9D%E8%B5%96diff%EF%BC%9A%E4%B8%A4%E6%9D%A1%E5%80%99%E9%80%89%E8%B7%AF%E5%BE%84"><span class="nav-number">3.3.</span> <span class="nav-text">依赖diff：两条候选路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#perf%E5%AE%9E%E8%AF%81"><span class="nav-number">3.4.</span> <span class="nav-text">perf实证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A1%E6%95%B0%E4%B8%8E%E5%8F%97%E6%8E%A7%E5%A4%8D%E7%8E%B0"><span class="nav-number">3.5.</span> <span class="nav-text">计数与受控复现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E5%A4%8D"><span class="nav-number">3.6.</span> <span class="nav-text">修复</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E5%B7%AE%E5%BC%82%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%80%BB%E6%98%AF56%E8%BF%99%E5%8F%B0"><span class="nav-number">4.</span> <span class="nav-text">节点差异：为什么总是56这台</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI%E5%B7%A5%E5%85%B7%E7%94%A8%E5%9C%A8%E5%93%AA%E4%BA%86"><span class="nav-number">5.</span> <span class="nav-text">AI工具用在哪了</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%92%E6%9F%A5%E6%96%B9%E6%B3%95%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">排查方法总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E6%96%87%E7%AB%A0"><span class="nav-number">7.</span> <span class="nav-text">相关文章</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B5%B7%E5%9B%A0"><span class="nav-number">1.</span> <span class="nav-text">起因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E4%B8%80%EF%BC%9A%E6%B5%81%E5%BC%8F%E8%AF%B7%E6%B1%82%E8%BF%94%E5%9B%9E-500"><span class="nav-number">2.</span> <span class="nav-text">问题一：流式请求返回 500</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E7%BB%84%E5%AF%B9%E7%85%A7%EF%BC%8C%E6%8A%8A%E8%8C%83%E5%9B%B4%E7%BC%A9%E5%88%B0%E6%B5%81%E5%BC%8F%E8%B7%AF%E5%BE%84"><span class="nav-number">2.1.</span> <span class="nav-text">三组对照，把范围缩到流式路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E7%8E%B0%E4%B8%8E%E6%A0%B9%E5%9B%A0"><span class="nav-number">2.2.</span> <span class="nav-text">复现与根因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%93%E8%A7%A3%E4%B8%8E%E4%BF%AE%E5%A4%8D"><span class="nav-number">2.3.</span> <span class="nav-text">缓解与修复</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E4%BA%8C%EF%BC%9A%E5%A4%9A%E4%B8%AA-worker-%E8%B7%91%E6%BB%A1%EF%BC%8C%E6%B5%81%E9%87%8F%E5%8D%B4%E4%B8%8D%E9%AB%98"><span class="nav-number">3.</span> <span class="nav-text">问题二：多个 worker 跑满，流量却不高</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%8E%B0%E8%B1%A1%E4%B8%8E%E6%8E%92%E9%99%A4"><span class="nav-number">3.1.</span> <span class="nav-text">现象与排除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%91%E6%8E%A7%E5%8F%8D%E4%BE%8B%EF%BC%9A%E6%AF%8F%E5%B0%8F%E6%97%B6%E6%B8%85%E7%90%86%E8%A7%A3%E9%87%8A%E4%B8%8D%E4%BA%86%E5%85%A8%E9%83%A8%E5%B3%B0%E5%80%BC"><span class="nav-number">3.2.</span> <span class="nav-text">监控反例：每小时清理解释不了全部峰值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%9D%E8%B5%96-diff%EF%BC%9A%E6%89%BE%E5%88%B0%E4%B8%A4%E6%9D%A1%E5%80%99%E9%80%89%E8%B7%AF%E5%BE%84"><span class="nav-number">3.3.</span> <span class="nav-text">依赖 diff：找到两条候选路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#perf-%E5%AE%9E%E8%AF%81%EF%BC%9A%E7%83%AD%E7%82%B9%E5%9C%A8%E5%85%B1%E4%BA%AB%E5%AD%97%E5%85%B8%E9%94%81%E4%B8%8A"><span class="nav-number">3.4.</span> <span class="nav-text">perf 实证：热点在共享字典锁上</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E9%83%A8%E8%AE%A1%E6%95%B0%E4%B8%8E%E5%8F%97%E6%8E%A7%E5%A4%8D%E7%8E%B0"><span class="nav-number">3.5.</span> <span class="nav-text">内部计数与受控复现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A2%E8%A1%80%E4%B8%8E%E4%BB%A3%E7%A0%81%E4%BF%AE%E5%A4%8D"><span class="nav-number">3.6.</span> <span class="nav-text">止血与代码修复</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E5%B7%AE%E5%BC%82%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%80%BB%E6%98%AF-56-%E8%BF%99%E5%8F%B0"><span class="nav-number">4.</span> <span class="nav-text">节点差异：为什么总是 56 这台</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E7%BB%93%E6%9E%9C%E4%B8%8E%E9%AA%8C%E8%AF%81%E8%BE%B9%E7%95%8C"><span class="nav-number">5.</span> <span class="nav-text">处理结果与验证边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%99%E6%AC%A1%E6%8E%92%E6%9F%A5%E7%95%99%E4%B8%8B%E7%9A%84%E7%BB%8F%E9%AA%8C"><span class="nav-number">6.</span> <span class="nav-text">这次排查留下的经验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E6%96%87%E7%AB%A0"><span class="nav-number">7.</span> <span class="nav-text">相关文章</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -272,12 +272,12 @@
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录 | 衣舞晨风">
-      <meta itemprop="description" content="生产 AI 网关升级后出现流式请求偶发 500、单节点多个 worker 接近满载但流量不高。通过对照实验、监控相位分析、依赖 diff 与 perf 热点交叉验证，最终定位到 SSE 刷新误判断连和 Prometheus key-index 回归，并发现 56 节点存在 powersave 调频差异。">
+      <meta itemprop="name" content="API7 AI 网关升级排障：流式 500 与低流量高 CPU | 衣舞晨风">
+      <meta itemprop="description" content="API7 AI 网关升级后出现流式请求偶发 500、低流量下多 worker 高 CPU。本文记录如何通过对照实验、监控反例、依赖 diff、perf 与受控复现，定位 SSE 刷新误判和 Prometheus 索引扫描回归，并区分临时止血、最终修复与节点调频差异。">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录
+          API7 AI 网关升级排障：流式 500 与低流量高 CPU
         </h1>
 
         <div class="post-meta-container">
@@ -314,132 +314,167 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>7.7k</span>
+      <span>6k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>7 分钟</span>
+      <span>5 分钟</span>
     </span>
 </div>
 
-            <div class="post-description">生产 AI 网关升级后出现流式请求偶发 500、单节点多个 worker 接近满载但流量不高。通过对照实验、监控相位分析、依赖 diff 与 perf 热点交叉验证，最终定位到 SSE 刷新误判断连和 Prometheus key-index 回归，并发现 56 节点存在 powersave 调频差异。</div>
+            <div class="post-description">API7 AI 网关升级后出现流式请求偶发 500、低流量下多 worker 高 CPU。本文记录如何通过对照实验、监控反例、依赖 diff、perf 与受控复现，定位 SSE 刷新误判和 Prometheus 索引扫描回归，并区分临时止血、最终修复与节点调频差异。</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>生产AI网关从API7 3.9.14升级到3.9.19-patch.1后，陆续冒出两个问题：流式请求偶尔返回500，客户端一个字都收不到；56节点的多个OpenResty worker反复接近100% CPU，可流量并不高。</p>
-<p>后来确认，流式500和CPU异常各有根因，56节点还叠加了一项机器差异。</p>
+    <div class="post-body" itemprop="articleBody"><p>生产 AI 网关从 API7 3.9.14 升级到 3.9.19-patch.1 后，陆续出现两个问题：流式请求偶发 500，客户端收不到任何内容；56 节点的多个 OpenResty worker 反复接近 100% CPU，流量却没有明显增长。</p>
+<p>排查最终指向两条不同的故障链：流式路径把“没有内容可刷新”误判为客户端断连；Prometheus 依赖中的索引同步逻辑，则让历史槽位积累演变成全量扫描和共享字典锁竞争。异常最明显的节点还存在调频策略差异，但它与已经确认的软件根因不是同一层级的结论。</p>
 <span id="more"></span>
 
-<blockquote>
-<p><strong>标记</strong>：✅／❌／⚠️ 表示排查中提出的假设最后站没站住：✅ 被证实，❌ 被否掉，⚠️ 部分成立。</p>
-</blockquote>
 <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>链路很短：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">客户端（Codex、curl、业务程序） → API7网关（3个节点） → Azure（GPT系列模型）</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">客户端（Codex、curl、业务程序） → API7 网关（3 个节点） → Azure（GPT 系列模型）</span><br></pre></td></tr></table></figure>
 
-<p>三个节点是10.200.76.54、55、56，各16核。流式500和worker CPU异常，都出现在版本升级之后。</p>
-<h2 id="问题一：流式请求返回500"><a href="#问题一：流式请求返回500" class="headerlink" title="问题一：流式请求返回500"></a>问题一：流式请求返回500</h2><p>把API7代理的GPT系列模型配到Codex里之后，用着用着就报错，客户端什么都收不到。翻网关访问日志，对应请求记的是500。非流式请求没有问题，只有流式会坏。</p>
-<p>先自己试了三组对照。同样的请求体直连Azure，正常。原请求去掉<code>tools</code>字段再过网关，正常。<code>&quot;stream&quot;: true</code>改成<code>false</code>，也正常。</p>
-<p>第一组说明上游和请求体本身没问题。第二组让我怀疑了半天，以为是tools里某个非标准参数的事 ❌，后来证明它只是绕开了问题，而不是原因。第三组比较关键，问题锁在网关的流式处理路径上 ✅。</p>
-<h3 id="复现与根因"><a href="#复现与根因" class="headerlink" title="复现与根因"></a>复现与根因</h3><p>最初换上游测试没有复现；拿到完整curl、网关日志、路由配置和Azure流式响应后，再放进相同版本镜像（3.9.19-patch.1），问题随即出现。复现的关键是保留原始请求和版本环境，代码级根因也与对照实验锁定的流式路径一致。</p>
+<p>三个节点是 10.200.76.54、55、56，各 16 核。两个问题都出现在升级后，下面分别排查，再看节点差异。</p>
+<h2 id="问题一：流式请求返回-500"><a href="#问题一：流式请求返回-500" class="headerlink" title="问题一：流式请求返回 500"></a>问题一：流式请求返回 500</h2><h3 id="三组对照，把范围缩到流式路径"><a href="#三组对照，把范围缩到流式路径" class="headerlink" title="三组对照，把范围缩到流式路径"></a>三组对照，把范围缩到流式路径</h3><p>把 API7 代理的 GPT 系列模型配到 Codex 后，用着用着就报错，客户端什么都收不到。翻网关访问日志，对应请求记的是 500。最初做了三组对照：</p>
+<table>
+<thead>
+<tr>
+<th>对照方式</th>
+<th>结果</th>
+<th>当时能缩小的范围</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>同样的请求体直连 Azure</td>
+<td>正常</td>
+<td>降低上游异常和请求格式问题的嫌疑，优先检查网关</td>
+</tr>
+<tr>
+<td>原请求去掉 <code>tools</code>，仍经过网关</td>
+<td>正常</td>
+<td>说明请求形态影响触发条件，但不能据此认定 <code>tools</code> 不合法</td>
+</tr>
+<tr>
+<td>保留原请求，将 <code>stream</code> 改为 <code>false</code></td>
+<td>正常</td>
+<td>优先检查流式处理路径</td>
+</tr>
+</tbody></table>
+<p>第二组让我怀疑了半天，以为是 <code>tools</code> 里某个非标准参数的问题。后来才知道，它只是绕开了触发条件。对照缩小了范围，根因还得靠复现和代码确认。</p>
+<h3 id="复现与根因"><a href="#复现与根因" class="headerlink" title="复现与根因"></a>复现与根因</h3><p>最初换上游测试没有复现。拿到完整 curl、网关日志、路由配置和 Azure 流式响应，再放进相同版本镜像（3.9.19-patch.1），问题随即出现。关键是保留原始请求与环境。</p>
 <p>原因分两块。</p>
-<p>一块是patch.1为了修内容审核改了流式处理。有些模型的流式回答不带usage，可能导致完整回答没被审核，所以网关改成先把一条完整的SSE消息收齐，再交给后面的插件处理和发送。这段逻辑在公共流式路径上，没开内容审核的请求也跟着一起受影响。</p>
-<p>另一块是消息拼接和定时刷新配合出了问题。一条SSE消息分几次到网关，不完整的内容先暂存，可旧逻辑仍然标记”需要刷新”。这时候后台定时刷新一跑，发送接口返回一个<code>&quot;nothing to flush&quot;</code>。这个返回值的意思只是当前没东西可发，不是异常，更不是网络断了。但旧代码没区分刷新失败的原因，把它也按客户端断连处理，主动停止读Azure。错误路径发生在响应内容发出之前，所以客户端一个字都收不到，请求最终在访问日志里记成500。</p>
-<p>会不会踩到，取决于分块到达和定时刷新的先后顺序，跟响应长度没有关系。表现就是时好时坏。</p>
-<p>日志里之所以看不到报错，是因为这条误判断连的记录是INFO级别，而生产日志级别配的是WARN。日志里没有错误，不等于错误路径没有发生。</p>
-<h3 id="缓解与修复"><a href="#缓解与修复" class="headerlink" title="缓解与修复"></a>缓解与修复</h3><p>临时缓解配了<code>streaming_flush_interval_ms: 0</code>，在生产上验证有效。不用删tools，也不用关流式。</p>
-<p>先把这个参数说清楚。它是<code>ai-proxy</code>插件的属性（<code>ai-proxy-multi</code>里同样暴露），按<a href="https://apisix.apache.org/docs/apisix/plugins/ai-proxy/">官方文档</a>，默认值<code>10</code>，取值范围是大于等于0，两档语义完全不同：</p>
+<p>一块是 patch.1 为了修内容审核，改了公共流式路径。有些模型的流式回答不带 usage，可能导致完整回答没被审核，于是网关改成先收齐一条完整的 SSE 消息，再交给后面的插件处理和发送。没开内容审核的请求，也会经过这段逻辑。</p>
+<p>另一块是消息拼接与定时刷新配合出了问题。一条 SSE 消息分几次到网关，不完整的内容先暂存，但旧逻辑仍然标记“需要刷新”。后台定时器此时触发，发送接口返回 <code>nothing to flush</code>。这只表示当前没有内容可刷新，不足以判断网络已经断开；旧代码却把它按客户端断连处理，主动停止读取 Azure。</p>
+<p>错误路径发生在响应内容发出之前，所以客户端一个字都收不到，访问日志最终记成 500。是否触发取决于分块到达与定时刷新的先后顺序，并不以长响应为前提，因此表现为时好时坏。</p>
+<p>误判断连的记录是 INFO 级别，生产却配了 WARN，所以看不到对应日志。没有错误日志，不等于错误路径没有发生。</p>
+<h3 id="缓解与修复"><a href="#缓解与修复" class="headerlink" title="缓解与修复"></a>缓解与修复</h3><p>临时缓解是将受影响路由的 <code>streaming_flush_interval_ms</code> 配为 <code>0</code>，生产验证有效，不需要删 <code>tools</code> 或关闭流式。</p>
+<p>这个参数属于 <code>ai-proxy</code> 插件，<code>ai-proxy-multi</code> 也暴露了它。<a href="https://apisix.apache.org/docs/apisix/plugins/ai-proxy/">官方文档</a>中的默认值是 <code>10</code>，取值大于等于 0；这次涉及的两条刷新路径是：</p>
 <ul>
-<li><strong>大于0（默认10）</strong>：后台定时器每N毫秒调用一次<code>ngx.flush(false)</code>，把上游突发到达的小分块攒批写出，适合吞吐优先的场景。APISIX 3.17.0的release notes把这个参数定位为流式输出的延迟控制（latency control）。</li>
-<li><strong>等于0</strong>：后台定时器整个不启用，每收到一个分块就同步<code>ngx.flush(true)</code>，保证立即送到客户端。</li>
+<li><strong>大于 0</strong>：后台定时器每 N 毫秒调用 <code>ngx.flush(false)</code>，将已准备好的输出攒批刷新。</li>
+<li><strong>等于 0</strong>：不启用后台刷新定时器，改走 <code>ngx.flush(true)</code> 的同步刷新路径。</li>
 </ul>
-<p>这次的bug正好落在第一条路径上：后台定时器在SSE消息还没拼齐的时候触发，<code>nothing to flush</code>被误判成断连。配0等于把这条出问题的后台路径整个关掉，让刷新只发生在确实有数据可发的时候。</p>
-<p>代价也来自语义变化，不是配置上的“无副作用开关”。0意味着放弃攒批，写向客户端的次数随上游分块数线性增长，系统调用和CPU开销都会上去；按OpenResty的语义，<code>ngx.flush(true)</code>还要等数据真正送出才返回，客户端读得慢时，这份压力会传回上游读取路径。默认的10毫秒本身就是“攒批省开销”和“首字延迟”之间的折中，所以0只适合当短期规避，不应被理解成“流式场景永远应该配0”。</p>
-<p>上线时我按临时变更处理：只改受影响路由，观察5xx、499、客户端首字延迟、worker CPU和上游耗时；等包含代码修复的patch.3验证通过后就撤掉，回到默认的10毫秒，把攒批收益拿回来。</p>
-<p>根治版本改了两处：只在内容已经交给下游响应处理之后才安排刷新；后台刷新返回“没有内容可刷新”时继续等待后续数据，不再把它当作断连依据。为内容审核增加的SSE拼接逻辑仍然保留，生产最终升级到patch.3。也就是说，最终修复不是关闭流式缓冲，而是把“没有可刷内容”和“客户端已经断开”这两类状态重新分开。</p>
-<h2 id="问题二：多个worker跑满，但流量不高"><a href="#问题二：多个worker跑满，但流量不高" class="headerlink" title="问题二：多个worker跑满，但流量不高"></a>问题二：多个worker跑满，但流量不高</h2><h3 id="现象与排除"><a href="#现象与排除" class="headerlink" title="现象与排除"></a>现象与排除</h3><p>升级patch.1之后，56节点开始频繁出现每小时一两分钟的CPU尖峰，后来又出现多个worker持续满载。现场9个OpenResty worker都在99%以上，第10个约38%，合计消耗约9.3核——不是单个worker的短暂毛刺，更不是整台16核节点全部跑满。</p>
-<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/node-cpu-comparison-20260920.png" alt="node56与另外两节点的OpenResty CPU对比（2026-09-20，红线为node56）" loading="eager" fetchpriority="high" decoding="async" width="3840" height="1554"></p>
-<p>最先想到的是流量洪峰 ❌。峰值时三个节点的QPS分别是77.5、74.6、52.3，56的流量最低，CPU却占了约10核，另外两台只有1.1到1.4核。ES日志里的请求数、流式请求数、进出字节和Token也都没有洪峰。</p>
-<p>网络、内存和磁盘都没有异常：软中断很低，没有丢包和队列溢出，内存充足、没有swap，iowait也接近0 ❌。异常时段97%~98%的CPU都花在user mode，排查方向因此转向OpenResty的用户态执行路径。</p>
-<h3 id="监控里的规律"><a href="#监控里的规律" class="headerlink" title="监控里的规律"></a>监控里的规律</h3><p>把两天的监控数据做分钟级聚合，看到两种不同形态。第一种严格跟随进程启动相位：每隔3600秒，worker CPU和<code>prometheus-metrics-advanced</code>共享字典的空间回收同步出现变化，对应每小时一次的清理timer。</p>
-<p>第二种却是持续几十分钟的多worker高CPU，开始和结束都对不上timer相位。最有力的反例是一次定时清理回收了17.07MiB，但当时节点CPU最高只有1.35核。由此可以判断：小时级清理是固定相位尖峰的来源 ⚠️，却解释不了持续满载，后面还有另一条高频路径。</p>
-<h3 id="依赖diff：两条候选路径"><a href="#依赖diff：两条候选路径" class="headerlink" title="依赖diff：两条候选路径"></a>依赖diff：两条候选路径</h3><p>既然问题跟流量无关、跟进程内部状态有关，那就把升级的变更面完整diff一遍，间接依赖也算上：</p>
+<p>配 0 绕开了出问题的后台路径，但放弃攒批也可能增加发送开销，需要观察实际 CPU 变化。<code>ngx.flush(true)</code> 等待时挂起的是当前请求协程，<strong>不是阻塞整个 Nginx worker</strong>；慢客户端仍可能推迟当前请求的后续上游读取，参见 <a href="https://blog.openresty.com/en/stream-resp/">OpenResty 的流式响应说明</a>。</p>
+<p>上线时只改受影响路由，观察 5xx、499、客户端首字延迟、worker CPU 和上游耗时。包含代码修复的 patch.3 验证通过后，撤掉临时配置，恢复默认的 10 毫秒。</p>
+<p>代码修复有两处：只在内容交给下游响应处理后才安排刷新；返回“没有内容可刷新”时继续等待，不再据此判断断连。SSE 拼接逻辑仍然保留，修复的关键是区分“暂时无内容可刷”和“客户端断开”。</p>
+<h2 id="问题二：多个-worker-跑满，流量却不高"><a href="#问题二：多个-worker-跑满，流量却不高" class="headerlink" title="问题二：多个 worker 跑满，流量却不高"></a>问题二：多个 worker 跑满，流量却不高</h2><h3 id="现象与排除"><a href="#现象与排除" class="headerlink" title="现象与排除"></a>现象与排除</h3><p>升级 patch.1 后，56 节点开始频繁出现每小时一两分钟的 CPU 尖峰，后来又出现多个 worker 持续满载。现场 9 个 OpenResty worker 都在 99% 以上，第 10 个约 38%，合计消耗约 9.3 核——不是单个 worker 的短暂毛刺，也不是整台 16 核节点全部跑满。</p>
+<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/node-cpu-comparison-20260920.png" alt="node56 与另外两节点的 OpenResty CPU 对比（2026-09-20，红线为 node56）" loading="eager" fetchpriority="high" decoding="async" width="3840" height="1554"></p>
+<p>最先想到的是流量洪峰。但峰值时三个节点的 QPS 分别是 77.5、74.6、52.3，56 的流量最低，CPU 却占了约 10 核，另外两台只有 1.1 到 1.4 核。ES 日志里的请求数、流式请求数、进出字节和 Token 也都没有洪峰。</p>
+<p>网络、内存和磁盘没有对应异常：软中断很低，没有丢包和队列溢出，内存充足、没有 swap，iowait 接近 0。异常时段 CPU 消耗中约 97%～98% 在 user mode，排查因此转向 OpenResty 的用户态执行路径。</p>
+<p><strong>当前请求量不足以解释节点间的 CPU 差异</strong>，但这还不能扩大成“与业务负载完全无关”。</p>
+<h3 id="监控反例：每小时清理解释不了全部峰值"><a href="#监控反例：每小时清理解释不了全部峰值" class="headerlink" title="监控反例：每小时清理解释不了全部峰值"></a>监控反例：每小时清理解释不了全部峰值</h3><p>把两天的监控做分钟级聚合，看到两种形态。</p>
+<p>第一种跟随进程启动相位：每隔 3600 秒，worker CPU 和 <code>prometheus-metrics-advanced</code> 共享字典的空间回收同步出现变化，指向每小时一次的清理 timer。</p>
+<p>第二种是持续几十分钟的多 worker 高 CPU 时段，起止时间对不上 timer 相位。最有力的反例是：<strong>一次定时清理回收了 17.07 MiB，但节点 CPU 最高只有 1.35 核。</strong></p>
+<p>空间回收不等于严重 CPU 峰值。每小时清理不足以解释全部现象，还得找另一条触发路径。</p>
+<h3 id="依赖-diff：找到两条候选路径"><a href="#依赖-diff：找到两条候选路径" class="headerlink" title="依赖 diff：找到两条候选路径"></a>依赖 diff：找到两条候选路径</h3><p>接下来把升级的变更面完整 diff 一遍，间接依赖也算上：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">3.9.14              nginx-lua-prometheus-api7 0.20250302-1</span><br><span class="line">3.9.19-patch.1/.3   nginx-lua-prometheus-api7 1.0.0-1</span><br></pre></td></tr></table></figure>
 
-<p>根因不在网关代码里，而在一个LuaRocks依赖的版本变化中。<code>1.0.0</code>里正好有两个提交，跟两条候选路径一一对上：</p>
+<p>线索落在 LuaRocks 依赖中的两个提交：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">845084f 2026-06-23  过期指标重新出现时 KeyIndex:add() 增加全局 delete_count</span><br><span class="line">5f68f6c 2026-07-27  remove_expired_keys() 末尾新增 self.dict:flush_expired()</span><br></pre></td></tr></table></figure>
 
-<p><strong>第一条是高频全量扫描 ✅。</strong> <code>KeyIndex:sync()</code>里有个分支：</p>
+<p><strong>第一条是计数变化后的全量扫描。</strong> <code>KeyIndex:sync()</code> 的关键分支如下，省略无关代码：</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">self</span>.deleted ~= delete_count <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:sync_range(<span class="number">0</span>, N)         <span class="comment">-- 重扫全部历史槽位，O(key_count)</span></span><br><span class="line">    <span class="built_in">self</span>.deleted = delete_count</span><br><span class="line"><span class="keyword">elseif</span> N ~= <span class="built_in">self</span>.last <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:sync_range(<span class="built_in">self</span>.last, N) <span class="comment">-- 只同步新增槽位</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
 
-<p>触发链是这样的：配了<code>expire: 1800</code>的指标槽位过期并被物理回收，某个worker的本地索引里还留着这个槽位，后续请求来续期的时候<code>dict:expire()</code>返回<code>not found</code>，于是走<code>add()</code>重新注册，全局<code>delete_count</code>加一。别的worker下次<code>sync()</code>发现本地<code>self.deleted</code>对不上，就执行一次<code>sync_range(0, N)</code>：</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i = <span class="number">0</span>, N <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> v = <span class="built_in">self</span>.dict:get(<span class="built_in">self</span>.key_prefix .. i)</span><br><span class="line">    <span class="keyword">if</span> v <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">local</span> ttl = <span class="built_in">self</span>.dict:ttl(<span class="built_in">self</span>.key_prefix .. i)</span><br><span class="line">        ...</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>触发链是：配置了 <code>expire: 1800</code> 的指标槽位过期并被物理回收，但某个 worker 的本地索引还保留着它；后续请求尝试续期时，<code>dict:expire()</code> 返回 <code>not found</code>，于是走 <code>add()</code> 重新注册，全局 <code>delete_count</code> 加一。其他 worker 下次 <code>sync()</code> 发现本地 <code>self.deleted</code> 对不上，就执行 <code>sync_range(0, N)</code>：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i = <span class="number">0</span>, N <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> v = <span class="built_in">self</span>.dict:get(<span class="built_in">self</span>.key_prefix .. i)</span><br><span class="line">    <span class="keyword">if</span> v <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">local</span> ttl = <span class="built_in">self</span>.dict:ttl(<span class="built_in">self</span>.key_prefix .. i)</span><br><span class="line">        <span class="comment">-- 后续同步逻辑略</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
 
-<p>每个历史槽至少一次shared dict get，还活着的槽要再查一次ttl，整个循环里没有任何让出执行权的操作。Nginx worker是单线程事件循环，扫的这段时间里，别的请求（包括正在往外吐的流式响应）全都得等着。</p>
-<p>这里有个容易忽略的点：<code>key_count</code>是历史累计分配过的槽位上界，只增不减。扫描成本取决于历史上创建过多少槽，不是当前<code>/metrics</code>有多少samples。所以流量不高，也能让worker跑满。</p>
-<p><strong>第二条是每小时的无上限清理 ⚠️：</strong></p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">KeyIndex:remove_expired_keys</span><span class="params">()</span></span></span><br><span class="line">    <span class="keyword">for</span> i, _ <span class="keyword">in</span> <span class="built_in">pairs</span>(<span class="built_in">self</span>.expire_keys) <span class="keyword">do</span> ... <span class="keyword">end</span></span><br><span class="line">    <span class="built_in">self</span>.dict:flush_expired()   <span class="comment">-- 不传参 = 无上限</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>每个历史槽至少需要一次 shared dict <code>get</code>，仍有值的槽还要查一次 <code>ttl</code>。循环里没有让出执行权的操作，同一 worker 上的其他请求，包括正在输出的流式响应，都得等待这段扫描结束。</p>
+<p><strong><code>key_count</code> 是历史累计分配过的槽位上界，在这版实现中只增不减。扫描成本取决于历史槽位，而不是当前 <code>/metrics</code> 的 samples 数。</strong> 所以低流量也能让 worker 跑满。</p>
+<p><strong>第二条是每小时的无上限清理。</strong> 相关逻辑可以简化为：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">KeyIndex:remove_expired_keys</span><span class="params">()</span></span></span><br><span class="line">    <span class="comment">-- 处理 self.expire_keys 的逻辑略</span></span><br><span class="line">    <span class="built_in">self</span>.dict:flush_expired()   <span class="comment">-- 不传 max_count，清理数量不设上限</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
 
-<p>OpenResty的<code>flush_expired(max_count?)</code>不传参就是无上限，C实现全程持有shared dict的全局mutex遍历LRU队列。执行清理的timer默认每3600秒一次（<code>remove_expired_keys_interval</code>，APISIX没传，取库内默认值）——别和指标的<code>expire: 1800</code>搞混：1800是条目活多久，3600是清理跑多勤，监控上字典空间每小时跳一次就是它的痕迹。这个timer是<code>http_init_worker → plugin.init_prometheus → ... → ngx.timer.every(3600, ...)</code>每个worker各建一份，这就解释了为什么好几个请求worker会在同一分钟一起高CPU。</p>
-<p>生产配置让这个缺陷更容易被触发。<code>http_status</code>、<code>http_latency</code>、<code>bandwidth</code>都配置了<code>expire: 1800</code>，部分指标还带有<code>app</code>、<code>project</code>、<code>request_host</code>等高基数标签；对于histogram，每组标签又会展开成多个bucket。大量时序不断生成、过期和重新注册，而重新注册正是触发全量扫描的导火索。排障期间新增的<code>pid</code>只用于一个指标，额外增加的时序有限，不是主要因素。</p>
-<p>worker从5个增加到10个后，参与扫描和清理的worker也翻了一倍。它不是问题出现的原因，但会放大CPU峰值。</p>
-<h3 id="perf实证"><a href="#perf实证" class="headerlink" title="perf实证"></a>perf实证</h3><p>监控只能确认timer不是持续峰值的主因，依赖diff也还停留在代码推演，接下来必须在现场抓到CPU热点。</p>
-<p>现场脚本每秒采集worker CPU，一旦发现worker持续≥80%，就自动记录系统快照并运行<code>perf record</code>，最终拿到23份perf报告。</p>
-<p>其中17份落在shared-dict锁热点上：<code>ngx_shmtx_lock</code>的Self CPU中位数为66.47%，<code>ngx_meta_lua_ffi_shdict_get</code>的Children CPU中位数为73.99%，而<code>get_ttl</code>占比明显更低。</p>
-<p>反过来看，23份报告里没有一份采到<code>flush_expired</code>这个符号。结合这些峰值与timer相位不一致，可以基本排除无上限清理是这批持续峰值的主要来源；它仍然是每小时固定相位尖峰的风险。</p>
-<p>perf里的符号和Lua代码能一一对上：<code>dict:get(...)</code>对应<code>ngx_meta_lua_ffi_shdict_get</code>，shared dict查找对应<code>ngx_meta_lua_shdict_lookup</code>，<code>dict:ttl(...)</code>对应<code>ngx_meta_lua_ffi_shdict_get_ttl</code>，而整个字典就一把锁，每次shared dict操作都要过它（读也不例外），这就是占了大半Self CPU的<code>ngx_shmtx_lock</code>。这把锁抢不到会先原地空转退避（约两千轮<code>pause</code>），退避到底才阻塞睡眠；可扫描里每个槽都要过一次锁，等待方大多耗在空转上，所以烧出来的基本是user态CPU。</p>
-<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/shdict-lock-contention.svg" alt="共享字典锁竞争：一个 worker 持锁逐槽扫描，其余 worker 在同一把锁上自旋空转" loading="lazy" decoding="async" width="880" height="460"></p>
-<p><code>get</code>占比极高而<code>ttl</code>占比较低，与“大量历史槽已经失效、只有一部分仍然存活”的情况一致；9到10个worker又会同步进入同一个热点，持续几秒到几十秒。这两条特征都符合<code>delete_count</code>变化后，各worker分别执行一次<code>sync_range(0, key_count)</code>的模型。</p>
-<h3 id="计数与受控复现"><a href="#计数与受控复现" class="headerlink" title="计数与受控复现"></a>计数与受控复现</h3><p><code>key_count</code>和<code>delete_count</code>没有暴露成指标，只能通过专用测试路由读取。一个生产节点重启前的<code>key_count</code>已经达到57万，意味着每次全量同步都要扫描这个量级；实例重建后则降到1万多。</p>
-<p>这里的“专用测试路由”不是业务接口，也不建议长期保留。我当时的做法是临时加一个只允许内网访问的诊断入口，在worker里读取Prometheus key index对象的两个内部计数并返回JSON，大致形态如下：</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 伪代码：不同版本里模块名和对象路径可能不同，只表达观测思路</span></span><br><span class="line"><span class="keyword">local</span> idx = prometheus_metric_key_index</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> &#123;</span><br><span class="line">    key_count = idx.key_count,       <span class="comment">-- 历史累计分配过的槽位上界</span></span><br><span class="line">    delete_count = idx.delete_count, <span class="comment">-- 触发各worker全量同步的版本号</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里补上实操部分：路由怎么挂、怎么读、怎么对上时间线。</p>
-<p>路由只匹配一个GET，用<code>client_ip</code>白名单锁到运维网段，handler就放上面那段Lua，形状大致是：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">curl <span class="string">&quot;http://127.0.0.1:9180/apisix/admin/routes&quot;</span> -X PUT -H <span class="string">&quot;X-API-KEY: <span class="variable">$&#123;admin_key&#125;</span>&quot;</span> -d <span class="string">&#x27;&#123;</span></span><br><span class="line"><span class="string">  &quot;uri&quot;: &quot;/diag/prom-key-index&quot;,</span></span><br><span class="line"><span class="string">  &quot;methods&quot;: [&quot;GET&quot;],</span></span><br><span class="line"><span class="string">  &quot;vars&quot;: [[&quot;remote_addr&quot;, &quot;in&quot;, &quot;10.200.76.0/24&quot;]],</span></span><br><span class="line"><span class="string">  &quot;plugins&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;serverless-pre-function&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;phase&quot;: &quot;rewrite&quot;,</span></span><br><span class="line"><span class="string">      &quot;functions&quot;: [&quot;&lt;上面那段读取key_count/delete_count的Lua&gt;&quot;]</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">&#125;&#x27;</span></span><br></pre></td></tr></table></figure>
-
-<p>读的时候跟着worker CPU一起采，一行就够：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> <span class="literal">true</span>; <span class="keyword">do</span></span><br><span class="line">  <span class="built_in">printf</span> <span class="string">&#x27;%s &#x27;</span> <span class="string">&quot;<span class="subst">$(date +%T)</span>&quot;</span></span><br><span class="line">  curl -s http://10.200.76.56/diag/prom-key-index</span><br><span class="line">  <span class="built_in">echo</span></span><br><span class="line">  <span class="built_in">sleep</span> 5</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-
-<p>要看的形态就两种：<code>key_count</code>持续上涨，说明历史槽位在不停分配，扫描成本在积累；<code>delete_count</code>跳一次，紧接着几个worker的CPU同时抬起来，就是全量同步被触发了。这次56节点重启前读到57万，重启后1万多，<code>key_count</code>的量级差异直接对应了扫描耗时。</p>
-<p>使用时只做三件事：第一，限制来源IP或只在排障Pod里临时打开；第二，把读数和worker CPU、shared dict剩余空间放在同一时间线上看；第三，读完就删除路由。真正适合长期暴露的是库或插件自身把这两个计数做成受控metrics，而不是在业务面挂一个永久调试接口。</p>
-<p>重启只是把状态清零，不是修复。</p>
-<p>受控实验在同版本镜像上做：起5个worker，先构造出已回收的槽位，再触发一次计数变化，结果复现出了那个熟悉的形态——发起变更的worker保持低CPU，其余4个同时接近单核满载。还补了一组去掉外部指标抓取的对照，一样能复现，说明外部抓取不是必要条件。</p>
-<p>厂商的最终报告确认了根因，和此前两条路径的分析一致。到这儿几个方向的数据也全对上了。</p>
-<h3 id="修复"><a href="#修复" class="headerlink" title="修复"></a>修复</h3><p>先止血。读完三节点的计数后，逐个删除并重建3个gateway Pod。reload会保留shared dict，只有重建实例才能把<code>key_count</code>清零。重建后CPU飙升暂时没有再出现。</p>
-<p>如果短时间内还不能升级或替换依赖，能动的配置就这么几处，思路都是“别让指标槽位频繁过期再重新注册”：</p>
+<p>该调用持有 shared dict 的 mutex 遍历 LRU 队列。每个 worker 各建一份清理 timer，间隔取库内 <code>remove_expired_keys_interval</code> 的默认值 3600 秒，这个版本的 APISIX 没有覆盖。因此它可以解释多个 worker 在接近的小时相位上一起受影响。</p>
+<p>别混淆两个时间：<code>expire: 1800</code> 是条目活多久，参与“过期后重新注册”的触发链；<code>remove_expired_keys_interval: 3600</code> 是清理跑多勤。</p>
+<p>生产配置让问题更容易出现：<code>http_status</code>、<code>http_latency</code>、<code>bandwidth</code> 都配置了 <code>expire: 1800</code>，部分指标带有 <code>app</code>、<code>project</code>、<code>request_host</code> 等高基数标签；histogram 又会把每组标签展开成多个 bucket。大量时序不断生成、过期和重新注册。排障期间新增的 <code>pid</code> 只用于一个指标，额外时序有限，不是主要因素。</p>
+<p>worker 从 5 个增至 10 个，还可能放大并发竞争。到这一步，需要现场证据判断两条路径的权重。</p>
+<h3 id="perf-实证：热点在共享字典锁上"><a href="#perf-实证：热点在共享字典锁上" class="headerlink" title="perf 实证：热点在共享字典锁上"></a>perf 实证：热点在共享字典锁上</h3><p>现场脚本每秒采集 worker CPU，发现持续 ≥80% 后，自动记录系统快照并运行 <code>perf record</code>，最终拿到 23 份报告。</p>
+<p>其中 17 份呈现 shared-dict 锁热点：<code>ngx_shmtx_lock</code> 的 Self CPU 中位数为 66.47%，<code>ngx_meta_lua_ffi_shdict_get</code> 的 Children CPU 中位数为 73.99%，<code>get_ttl</code> 占比明显更低。Self 和 Children 口径不同，不能相加。</p>
+<p>23 份报告都没采到 <code>flush_expired</code> 符号。<strong>未采到不等于从未执行</strong>，但结合持续峰值与 timer 相位不一致，它作为这批峰值主因的可能性明显降低；每小时清理的风险仍保留。</p>
+<p>perf 中的 <code>ngx_meta_lua_ffi_shdict_get</code>、<code>ngx_meta_lua_shdict_lookup</code>、<code>ngx_meta_lua_ffi_shdict_get_ttl</code> 分别对应 <code>get</code>、字典查找和 <code>ttl</code>。<code>get</code>、<code>ttl</code> 各自需要竞争同一把锁，获取失败时的自旋退避会消耗 CPU。</p>
+<p>这里不是一个 worker 持锁扫完整张索引，而是多个 worker 各自扫描，在反复访问共享字典时竞争同一把锁。这与前面 <code>flush_expired()</code> 在一次清理中持锁遍历，是两种不同的竞争形态。</p>
+<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/shdict-lock-contention.svg" alt="多个 worker 分别扫描历史槽位，在共享字典访问时反复竞争同一把锁；图中仅示意某一时刻的持锁者与等待者" loading="lazy" decoding="async" width="880" height="460"></p>
+<p><code>get</code> 高、<code>ttl</code> 低，与“大量历史槽已失效”的模型一致，但还不能据此反推槽位数量。持续高 CPU 时段内，9 到 10 个 worker 会反复同时落入热点，单次持续几秒到几十秒。接下来需要内部计数与受控复现。</p>
+<h3 id="内部计数与受控复现"><a href="#内部计数与受控复现" class="headerlink" title="内部计数与受控复现"></a>内部计数与受控复现</h3><p><code>key_count</code> 和 <code>delete_count</code> 当时没有暴露成指标，我通过仅限运维来源访问的临时诊断入口读取。读取时需要区分共享计数与 worker 本地缓存，并将读数与各 worker CPU、共享字典剩余空间对齐到同一时间线。这类入口应在排查结束后删除。</p>
+<p>56 节点重建前的 <code>key_count</code> 已达到 57 万，实例重建后降到 1 万多：前者意味着一次全量同步需要扫描数十万个历史槽位。<code>key_count</code> 表示扫描规模，<code>delete_count</code> 的变化则提示后续同步可能走全量路径。</p>
+<p>受控实验使用同版本镜像，起 5 个 worker，先构造出已回收的槽位，再触发一次计数变化。结果复现了生产中的形态：<strong>发起变更的 worker 保持低 CPU，其余 4 个同时接近单核满载。</strong> 去掉外部指标抓取后仍能复现，说明外部抓取不是必要条件。</p>
+<p>依赖变更给出触发机制，perf 指向锁竞争，内部计数解释扫描规模，受控实验复现多 worker 高 CPU。厂商最终报告也确认了根因，几组证据到这里才真正对上。</p>
+<h3 id="止血与代码修复"><a href="#止血与代码修复" class="headerlink" title="止血与代码修复"></a>止血与代码修复</h3><p>先止血：读取三个节点的计数后，逐个删除并重建 gateway Pod。普通 reload 会保留 shared dict，这次通过重建实例清掉了累计索引状态，CPU 飙升暂时没有再出现。</p>
+<p>如果暂时不能交付代码修复，配置层面可以减少触发和放大条件：</p>
 <ul>
-<li><strong><code>expire: 1800</code></strong>：<code>http_status</code>、<code>http_latency</code>、<code>bandwidth</code>都配了它。能关就关掉过期，关不掉就调大，别让槽位在半小时尺度上反复回收重建——<code>delete_count</code>正是在“重新注册”那一步递增的。</li>
-<li><strong><code>remove_expired_keys_interval</code></strong>（默认3600秒）：APISIX没显式传，取的库内默认值。调大它只能降低每小时无上限清理的频率，救不了全量扫描，别指望靠它过关。</li>
-<li><strong>高基数标签</strong>：把<code>app</code>、<code>project</code>、<code>request_host</code>这类容易膨胀的维度从带<code>expire</code>的指标上撤掉，顺带清掉排障期间临时加的<code>pid</code>之类的标签。</li>
-<li><strong>滚动重建实例</strong>：把已经膨胀的<code>key_count</code>先清掉。</li>
+<li><strong>收敛高基数标签</strong>：优先检查带过期时间的指标，移除非必要的 <code>app</code>、<code>project</code>、<code>request_host</code> 维度及临时排障标签。</li>
+<li><strong>评估过期策略</strong>：延长过期时间可以减少短周期回收与重新注册；关闭过期则要先评估时序数量和共享字典容量，不能把状态增长问题换成容量问题。</li>
+<li><strong>区分两条路径</strong>：调大 <code>remove_expired_keys_interval</code> 只能降低定时清理频率，不能修复 <code>delete_count</code> 变化后的全量扫描；是否能调整还取决于对应版本有没有暴露配置入口。</li>
+<li><strong>滚动重建实例</strong>：清掉已经膨胀的历史状态，但不能代替算法修复。</li>
 </ul>
-<p>这些只能降低触发概率或缩短影响时间，不能修掉<code>delete_count</code>变化后全量扫描的算法问题。</p>
-<p>修复路线有三条：继续开发修复、只撤销单个PR、回退整套Prometheus实现。最终选了第三种：把Prometheus相关实现和依赖恢复到3.9.14所带的版本，用新patch交付，其他功能和修复都保留——并不是把整套网关降回3.9.14。</p>
-<p>这也是为什么我把“重建实例”只归类为止血，而不是修复：它能把历史槽位清零，但只要高基数指标继续创建、过期、重新注册，<code>key_count</code>还会重新长起来，<code>delete_count</code>变化仍然会把其他worker带进全量扫描。</p>
-<h2 id="节点差异：为什么总是56这台"><a href="#节点差异：为什么总是56这台" class="headerlink" title="节点差异：为什么总是56这台"></a>节点差异：为什么总是56这台</h2><p>查问题二的过程中有件事一直让我不舒服：同样的代码、基本均衡的流量，告警几乎全落在10.200.76.56，而且它的CPU曲线抖得特别厉害。增加可用核数之后，多个worker仍然会迅速跑满，只是持续时间不长。</p>
-<p>软件缺陷能解释为什么多个worker会跑满，却解释不了为什么告警总是先落到它身上。答案得往节点之间的差异上找 ✅。</p>
-<p>把三个节点拉出来比，发现56的内核小版本与另外两台不同；三台CPU型号相同，都是Xeon Silver 4110、16核，但<code>lscpu</code>里56的CPU MHz明显更低。</p>
-<p>再往下看一层：</p>
+<p>最终没有继续开发修复或只撤销单个 PR，而是<strong>将 Prometheus 相关实现与依赖恢复到 3.9.14 所带版本，通过新 patch 交付，保留其他功能与修复，并非整套网关降级。</strong></p>
+<h2 id="节点差异：为什么总是-56-这台"><a href="#节点差异：为什么总是-56-这台" class="headerlink" title="节点差异：为什么总是 56 这台"></a>节点差异：为什么总是 56 这台</h2><p>查 CPU 问题时还有一件事：同样的代码、没有明显流量洪峰，告警却几乎都落在 56 节点。</p>
+<p>软件缺陷解释了机制，但不足以解释节点间的严重程度差异。除了当前 QPS，还得比较进程运行时长、<code>key_count</code>、<code>delete_count</code> 变化速率和机器配置。</p>
+<p>机器侧确实发现了差异：56 的内核小版本与另外两台不同；三台 CPU 型号相同，都是 Xeon Silver 4110，但 56 在 <code>lscpu</code> 中显示的 CPU MHz 更低。再看调频策略：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor</span><br><span class="line"></span><br><span class="line">56：powersave</span><br><span class="line">55：performance</span><br><span class="line">54：performance</span><br></pre></td></tr></table></figure>
 
-<p>这是当时找到的最显著节点差异。</p>
-<p><code>scaling_governor</code>决定CPU在<code>scaling_min_freq ~ scaling_max_freq</code>之间怎么升降频。不同驱动下，<code>powersave</code>的行为不完全一样，光看这个名字还不能断言CPU被固定在低频；不过56节点在<code>lscpu</code>里显示的频率确实更低，这能解释它为什么更容易越过告警阈值。</p>
-<p>这部分证据要诚实分级：我确认了三台节点的governor和频率读数不同，也观察到56更容易先报警；把56的governor统一之后，再做同时间段的日同比，CPU总消耗曲线整体下移，说明调频策略确实会影响这台机器的CPU表现。但这仍然是生产日同比，不是严格闭环实验：比如在同一台节点上切换governor、施加相同负载、复现告警阈值差异，再切回验证。因此它是“放大因素”的强线索，不是CPU满载根因本身。</p>
-<p>所以，多个worker跑满的根因还是Prometheus缺陷，调频差异只是让56节点更容易先报警。</p>
-<p>处理时先把三台的governor统一，再检查BIOS和OS的电源设置。后续如果要把这件事验证得更扎实，还得继续对比<code>scaling_driver</code>、最小&#x2F;最大频率、Turbo状态，以及相同负载下的实际频率。更完整的实验应该至少包含四步：统一代码和流量；记录切换前的<code>scaling_cur_freq</code>、worker CPU和请求延迟；只切换governor或电源策略；再用同一压测负载比较曲线。之后我把内核小版本、<code>scaling_governor</code>和电源策略放进了节点基线巡检。这些配置不在应用监控里，却会直接改变CPU曲线。</p>
-<h2 id="AI工具用在哪了"><a href="#AI工具用在哪了" class="headerlink" title="AI工具用在哪了"></a>AI工具用在哪了</h2><p>AI助手主要承担体力活：统计23份perf报告、聚合监控数据、按提交号和依赖版本查源码，再整理成文档。方向判断仍然得自己来，例如diff间接依赖、利用定时清理的反例调整假设，以及继续追查56节点的差异。</p>
-<p>AI给出的代码级结论也必须和现场证据互相验证。perf没有采到<code>flush_expired</code>，就要把这条原本权重很高的假设降级，而不是继续围绕它解释所有现象。</p>
-<h2 id="排查方法总结"><a href="#排查方法总结" class="headerlink" title="排查方法总结"></a>排查方法总结</h2><p>大部分故障都来自变更。排障第一问应该是最近改了什么，而且要把间接依赖和节点基础配置都算进去：这次的CPU根因不在网关代码里，节点差异甚至可能从装机时就已存在。</p>
-<p>排除法比灵感可靠。QPS对照排除了流量洪峰，定时清理释放17MiB但CPU平静的反例排除了单一timer假设，问题一的三组低成本对照则迅速把范围锁在流式路径。监控规律、依赖diff、perf热点、内部计数和受控复现最终指向同一个结论，才能称为根因。</p>
-<p>留意累计状态，善用时间规律。<code>key_count</code>这种只增不减的累计状态，看到”重启之后好了”得多想一层，重启只是清零不是修复。反过来，时间规律是个好路标：小时相位能对齐进程启动时间，基本就能锁定是timer；对不上，就说明还有别的路径在跑——这个判断直接把后面perf的方向定住了。</p>
-<p>两件事下次要更早动手：多个worker持续满载时马上抓perf；复现时一次备齐完整请求、原始响应和相同版本环境。前者保住偶发故障的现场，后者减少无效复现。</p>
-<p>“为什么只有这一台”同样值得追查。软件解释不了分布差异时，就应该比较基础设施；这次最关键的节点差异线索，就藏在一行<code>scaling_governor</code>里。</p>
+<p>不同驱动和模式下，<code>powersave</code> 行为不同，不能据此断言 CPU 被固定在低频，参见 <a href="https://www.kernel.org/doc/html/latest/admin-guide/pm/intel_pstate.html">intel_pstate 文档</a>。一次 <code>lscpu</code> 读数也不足以代表整个故障窗口。</p>
+<p>统一 governor 后，对比前后两天的相同时段，CPU 总消耗曲线整体下移。但历史索引状态与业务负载没有被单独控制，这不是受控实验。</p>
+<p><strong>调频差异是有生产对照支持的放大因素候选，独立贡献尚未量化；已确认的 CPU 根因仍是 Prometheus 索引同步缺陷。</strong></p>
+<p>要进一步验证，需要先控制版本、worker 数、索引状态和负载，再在同一节点上切换 governor，对比实际频率、CPU 与请求延迟，并切回复测。后续我把内核小版本、调频与电源策略加入节点基线巡检，同时也保留对应用累计状态的检查。</p>
+<h2 id="处理结果与验证边界"><a href="#处理结果与验证边界" class="headerlink" title="处理结果与验证边界"></a>处理结果与验证边界</h2><p>几个动作解决的层次不同，不能统一概括成“升级后好了”：</p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>已有处理与观察</th>
+<th>结论边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>流式 500</td>
+<td>配 0 的临时方案在生产有效；patch.3 验证通过并升级后，撤销临时配置</td>
+<td>规避后台路径与修复状态判断，是两种不同措施</td>
+</tr>
+<tr>
+<td>多 worker 高 CPU</td>
+<td>重建后累计计数下降、CPU 飙升暂未再出现；Prometheus 实现与依赖回退通过新 patch 交付</td>
+<td>重建清状态属于止血；代码回退针对回归路径</td>
+</tr>
+<tr>
+<td>节点差异</td>
+<td>governor 统一后，相同时段的 CPU 曲线下移</td>
+<td>生产前后对照，不能单独量化调频贡献</td>
+</tr>
+</tbody></table>
+<p>本文未列出 CPU 修复 patch 的完整构建号、连续观察时长及错误率和延迟对照，不作长期效果的量化结论。后续验收还需覆盖正常业务与指标抓取、小时级周期和索引状态重新积累，不能只看重建后的短暂平稳。</p>
+<h2 id="这次排查留下的经验"><a href="#这次排查留下的经验" class="headerlink" title="这次排查留下的经验"></a>这次排查留下的经验</h2><p>最值得保留的不是某个参数值，而是几次判断转向：</p>
+<ul>
+<li><strong>把间接依赖纳入变更面。</strong> 只 diff 网关代码，会漏掉这次的 Prometheus 回归。</li>
+<li><strong>让反例改变假设。</strong> 回收 17.07 MiB 却没有高 CPU，使“定时清理解释一切”站不住脚；perf 和受控复现再把范围收窄。</li>
+<li><strong>区分当前负载与历史状态。</strong> 57 万历史槽位，解释了为什么低 QPS 也能带来高扫描成本。重建清零不是修复。</li>
+<li><strong>同时检查节点配置与应用状态。</strong> “为什么只有这一台”值得追查，但不能找到一个配置差异就停止比较其他变量。</li>
+</ul>
+<p>下次要更早做两件事：多 worker 持续高 CPU 时立刻抓 perf；复现时一次备齐完整请求、原始响应和相同版本环境。</p>
+<p>AI 助手主要帮忙统计 perf、聚合监控和整理源码线索，判断仍要回到现场证据，不能让一个看似合理的解释盖过反例。工具怎样参与分析，另见文末的 AI 辅助复盘。</p>
 <h2 id="相关文章"><a href="#相关文章" class="headerlink" title="相关文章"></a>相关文章</h2><ul>
 <li><a href="https://jiankunking.com/APISIX-504-troubleshooting.html">15秒之谜：一次APISIX网关超时问题的排查记录</a></li>
 <li><a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘</a></li>
@@ -476,7 +511,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html" title="流式500、worker跑满、一行powersave：一次API7 AI网关的排查记录">https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html</a>
+      <a href="https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html" title="API7 AI 网关升级排障：流式 500 与低流量高 CPU">https://jiankunking.com/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting.html</a>
   </li>
   <li class="post-copyright-license">
       <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -567,7 +602,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">848k</span>
+    <span title="站点总字数">846k</span>
   </span>
 </div>
 <div class="busuanzi-count">

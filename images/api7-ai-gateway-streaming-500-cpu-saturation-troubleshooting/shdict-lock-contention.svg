@@ -1,8 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" role="img" aria-labelledby="chart-title chart-description" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <title id="chart-title">全量扫描中的共享字典锁竞争</title>
+  <desc id="chart-description">多个 worker 各自扫描历史槽位，get 与 ttl 访问分别竞争同一把锁。图中仅示意某一时刻的持锁者与等待者，不表示单个 worker 持锁完成全部扫描。下方独立条形显示 17 份锁热点报告中 ngx_shmtx_lock 的 Self CPU 中位数 66.47%，不是与其他调用占比相加的 CPU 构成图。</desc>
   <rect x="0.5" y="0.5" width="879" height="459" rx="8" fill="#ffffff" stroke="#e3e8ec"/>
 
   <text x="440" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#2b3a46">共享字典锁上的全量扫描</text>
-  <text x="440" y="55" text-anchor="middle" font-size="12" fill="#6b7885">一个 worker 持锁逐槽 get/ttl，其余 worker 在同一把锁上原地自旋</text>
+  <text x="440" y="55" text-anchor="middle" font-size="12" fill="#6b7885">多个 worker 各自扫描历史槽位，每次共享字典访问都竞争同一把锁</text>
 
   <!-- shared dict -->
   <rect x="30" y="78" width="270" height="288" rx="10" fill="#f4f8fb" stroke="#9db4cc"/>
@@ -84,9 +86,9 @@
   <circle cx="354" cy="196" r="4" fill="#ffffff"/>
   <rect x="352" y="198" width="4" height="9" fill="#ffffff"/>
   <text x="354" y="242" text-anchor="middle" font-size="11" fill="#2b3a46">整个字典一把锁</text>
-  <text x="354" y="258" text-anchor="middle" font-size="10" fill="#8a97a3">每槽一次加解锁（读也不例外）</text>
+  <text x="354" y="258" text-anchor="middle" font-size="10" fill="#8a97a3">get、ttl 分别加解锁</text>
 
-  <text x="655" y="98" text-anchor="middle" font-size="10.5" fill="#98a2ac" font-style="italic">其他请求（含流式响应）排队等待</text>
+  <text x="655" y="98" text-anchor="middle" font-size="10.5" fill="#98a2ac" font-style="italic">扫描期间，同 worker 的其他请求等待</text>
 
   <!-- holder -->
   <circle cx="470" cy="145" r="29" fill="#7fc59a" opacity="0.3">
@@ -94,7 +96,7 @@
   </circle>
   <circle cx="470" cy="145" r="20" fill="#58b27a"/>
   <text x="470" y="150" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">w1</text>
-  <text x="470" y="188" text-anchor="middle" font-size="10.5" fill="#2e7d43">持锁干活（lookup ≈6%）</text>
+  <text x="470" y="188" text-anchor="middle" font-size="10.5" fill="#2e7d43">此刻持锁访问</text>
 
   <!-- spinners -->
   <g>
@@ -152,14 +154,13 @@
     <circle cx="810" cy="255" r="20" fill="#e08a7d" stroke="#c94f3f"/>
     <text x="810" y="260" text-anchor="middle" font-size="10" font-weight="700" fill="#5f2016">w10</text>
   </g>
-  <text x="640" y="312" text-anchor="middle" font-size="11" fill="#b4453a">其余 9 个 worker 原地自旋退避（约两千轮 pause），退避到底才阻塞睡眠</text>
+  <text x="640" y="312" text-anchor="middle" font-size="11" fill="#b4453a">仅示意此刻的竞争状态：等待方可能自旋退避或阻塞等待</text>
 
-  <!-- CPU split -->
-  <text x="30" y="398" font-size="12" font-weight="700" fill="#2b3a46">单 worker 的 CPU 去向（perf）</text>
-  <rect x="240" y="390" width="500" height="10" rx="5" fill="#eef1f4"/>
-  <rect x="240" y="390" width="34" height="10" rx="5" fill="#58b27a"/>
-  <text x="240" y="384" font-size="10.5" fill="#2e7d43">干活（shdict lookup）≈6%</text>
-  <text x="240" y="414" font-size="10.5" fill="#b4453a">空转等锁（ngx_shmtx_lock self，35%~82%，中位 66.5%）≈82%</text>
-  <rect x="240" y="420" width="500" height="10" rx="5" fill="#eef1f4"/>
-  <rect x="240" y="420" width="410" height="10" rx="5" fill="#d9534f"/>
+  <!-- Independent sample statistic; not a stacked CPU composition chart. -->
+  <text x="30" y="391" font-size="12" font-weight="700" fill="#2b3a46">perf 锁热点样本</text>
+  <text x="240" y="384" font-size="11" fill="#b4453a">ngx_shmtx_lock Self CPU 中位数：66.47%（17 份报告）</text>
+  <rect x="240" y="398" width="500" height="12" rx="6" fill="#eef1f4"/>
+  <rect x="240" y="398" width="332.35" height="12" rx="6" fill="#d9534f"/>
+  <text x="240" y="434" font-size="10.5" fill="#6b7885">图示为 Self CPU 中位数，不与 get 的 Children CPU 相加</text>
+  <text x="749" y="408" font-size="10" fill="#6b7885">100%</text>
 </svg>
