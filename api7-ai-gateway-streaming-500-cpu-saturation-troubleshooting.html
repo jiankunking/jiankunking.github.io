@@ -317,14 +317,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>12k</span>
+      <span>11k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>11 分钟</span>
+      <span>10 分钟</span>
     </span>
 </div>
 
@@ -340,7 +340,7 @@
 <span id="more"></span>
 
 <blockquote>
-<p><strong>太长不看</strong></p>
+<p><strong>结论摘要</strong></p>
 <p><strong>问题一：流式请求偶发 500</strong></p>
 <ul>
 <li>根因：SSE 消息分片暂存期间，旧逻辑仍标记“需要刷新”；后台定时器触发后发送接口返回 <code>nothing to flush</code>（只表示当前没有内容可刷新），代码却把它当成客户端断连，主动停止读取上游。错误发生在响应内容发出之前，所以客户端一个字都收不到。</li>
@@ -417,7 +417,7 @@
 <p>上线时只改受影响路由，观察 5xx、499、客户端首字延迟、worker CPU 和上游耗时。包含代码修复的 patch.3 验证通过后，撤掉临时配置，恢复默认的 10 毫秒。</p>
 <p>代码修复有两处：只在内容交给下游响应处理后才安排刷新；返回“没有内容可刷新”时继续等待，不再据此判断断连。SSE 拼接逻辑仍然保留，修复的关键是<strong>区分“暂时无内容可刷”和“客户端断开”</strong>。</p>
 <h2 id="问题二：多个-worker-跑满，流量却不高"><a href="#问题二：多个-worker-跑满，流量却不高" class="headerlink" title="问题二：多个 worker 跑满，流量却不高"></a>问题二：多个 worker 跑满，流量却不高</h2><p>问题二的根因是 <code>nginx-lua-prometheus-api7</code> 1.0.0-1 的索引同步回归，让 <code>delete_count</code> 变化触发了 O(key_count) 的全量槽位扫描，扫描中的 <code>get</code>、<code>ttl</code> 争抢 shared dict 全局锁，烧掉 user CPU。<code>key_count</code> 是历史累计值，<strong>生产上一度达到 57 万，所以与当前流量无关</strong>。</p>
-<p>每小时的 <code>flush_expired()</code> 是另一条路径。监控里的反例（17.07 MiB 的回收只有 1.35 核，5.30 MiB 的回收却伴随 7.35 核，数据见下文表格）说明回收量大小与 CPU 无关，它更像触发小时级短尖峰的扳机，而不是 CPU 本身。重建 Pod 清零索引状态算止血，根治靠回退 Prometheus 实现与依赖。</p>
+<p>每小时的 <code>flush_expired()</code> 是另一条路径。监控里的反例（见下文）说明回收量大小与 CPU 无关，它更像触发小时级短尖峰的扳机，而不是 CPU 本身。重建 Pod 清零索引状态算止血，根治靠回退该依赖。</p>
 <h3 id="现象与排除"><a href="#现象与排除" class="headerlink" title="现象与排除"></a>现象与排除</h3><p>升级 patch.1 后，56 节点开始频繁出现每小时一两分钟的 CPU 尖峰，后来又出现多 worker 反复满载的密集尖峰。现场 9 个 OpenResty worker 都在 99% 以上，第 10 个约 38%，合计消耗约 9.3 核——不是单个 worker 的短暂毛刺，而是 10 个 worker 里 9 个同时跑满，总量几乎顶到 license 允许的 10 核上限。</p>
 <p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/node-cpu-comparison-20260920.png" alt="node56 与另外两节点的 OpenResty CPU 对比（2026-09-20 08:45–11:45；红线为 node56，黄、浅蓝分别为 54、55）" loading="lazy" decoding="async" width="1900" height="1035"></p>
 <p>最先想到的是流量洪峰。但峰值时三个节点的 QPS 分别是 77.5、74.6、52.3，56 的流量最低，CPU 却冲到约 9 核（上图红线）、逼近 license 允许的 10 核上限，另外两台只有 1.1 到 1.4 核。ES 日志里的请求数、流式请求数、进出字节和 Token 也都没有洪峰。</p>
@@ -466,34 +466,34 @@
 <td>09-16 14:18（清理时刻）</td>
 <td>8.63 MiB</td>
 <td>4.74 核</td>
-<td>0.99 核，4 个 worker 同时接近满载</td>
+<td>1.00 核，4 个 worker 同时接近满载</td>
 </tr>
 <tr>
 <td>09-16 23:22（清理时刻）</td>
 <td>12.53 MiB</td>
 <td>0.78 核</td>
-<td>0.12 核</td>
+<td>0.14 核</td>
 </tr>
 <tr>
 <td>09-20 12:25（清理时刻）</td>
 <td>17.07 MiB</td>
 <td>1.35 核</td>
-<td>0.15 核</td>
+<td>0.18 核</td>
 </tr>
 <tr>
 <td>09-20 14:45（不在清理时刻）</td>
 <td>5.30 MiB</td>
 <td>7.35 核</td>
-<td>0.75 核，10 个 worker 同时在 0.5 核以上</td>
+<td>0.76 核，10 个 worker 同时在 0.5 核以上</td>
 </tr>
 </tbody></table>
 <p>前两行的数据来自 5 worker 时代；9 月 17 日晚上每个节点的 license 从 5 核调整为 10 核，worker 也增到 10 个，后两行都在 10 worker 时代。</p>
-<p>大量回收可以几乎不消耗 CPU。12:25:30 的小时清理如期执行，共享字典占用空间掉了一个台阶，<strong>单次回收 17.07 MiB，是全程最大的一次定时清理回收，节点 CPU 峰值却只有 1.35 核</strong>，全部 worker 没有一个超过 0.15 核。同一天 12:22、12:29，另外两台节点各自回收 19.75、18.82 MiB，CPU 峰值也只有 0.96、0.72 核。小量回收反而可以很贵：14:45:00 只回收 5.30 MiB，节点 CPU 却冲到 7.35 核。</p>
+<p>大量回收可以几乎不消耗 CPU。12:25:30 的小时清理如期执行，共享字典占用空间掉了一个台阶，<strong>单次回收 17.07 MiB，是白天最大的一次定时清理回收，节点 CPU 峰值却只有 1.35 核</strong>，全部 worker 都在 0.2 核以下。同一天 12:22、12:29，另外两台节点各自回收 19.75、18.82 MiB，CPU 峰值也只有 0.96、0.72 核。小量回收反而可以很贵：14:45:00 只回收 5.30 MiB，节点 CPU 却冲到 7.35 核。</p>
 <p>把 9 月 16 日白天“每小时 5.5～21.8 MiB 的回收伴随 2.4～4.7 核”当成规律，是把同一时刻上的共现当了因果：同一天夜里 22:22、23:22 两次 8.14、12.53 MiB 的同类回收，CPU 只有 0.75、0.78 核。</p>
-<p>光看表格容易觉得是挑出来的个例，那就把 9 月 20 日 56 节点一整天的 CPU 和回收画到同一条时间线上：上面是节点 CPU，下面是每次回收的时间和大小。回收从 1 MiB 到 18 MiB 什么量级都有，除凌晨 3 点到 9 点的空档外，几乎每小时都有；但密集尖峰群只出现在上午 10 点后和下午 1 点后那两段，中午 12:25 那次 17.07 MiB 的大回收正好落在平静段里，晚上的 8～18 MiB 回收也都没掀起尖峰。图里橙色的回收发生在清理时刻之外，反倒全部压在尖峰群下面。再把 9&#x2F;14～9&#x2F;22 三个节点全部 522 次回收事件放到一起算，回收量与回收前后 10 分钟 CPU 峰值的相关系数只有 0.18。</p>
-<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-vs-reclaim-timeline-20260920.png" alt="9&#x2F;20 56 节点时间线：上为节点 CPU，下为每次回收的时间与大小；大回收落在平静段，清理时刻之外的回收（橙色）集中在密集尖峰群时段" loading="lazy" decoding="async" width="2000" height="1120"></p>
+<p>光看表格容易觉得是挑出来的个例，那就把 9 月 20 日 56 节点一整天的 CPU 和回收画到同一条时间线上：上面是节点 CPU，下面是每次回收的时间和大小。回收从 1 MiB 到 18 MiB 什么量级都有，除凌晨 3 点到 9 点的空档外，几乎每小时都有；但密集尖峰群只出现在上午 10 点后和下午 1 点后那两段，中午 12:25 那次 17.07 MiB 的大回收正好落在平静段里，晚上的 8～18 MiB 回收也都没掀起尖峰。图里橙色的回收发生在清理时刻之外，反倒全部压在尖峰群下面。再把 9&#x2F;14～9&#x2F;22 三个节点全部 522 次 ≥1 MiB 的回收事件放到一起算，回收量与回收前后 10 分钟 CPU 峰值的相关系数只有 0.18。</p>
+<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-vs-reclaim-timeline-20260920.png" alt="9&#x2F;20 56 节点时间线：上为节点 CPU，下为每次回收的时间与大小；大回收落在平静段，清理时刻之外的回收（橙色）集中在密集尖峰群时段" loading="lazy" decoding="async" width="1711" height="1036"></p>
 <p>顺带把来源也分开：监控里的“空间回收”并非来自同一条路径。和清理落在同一时刻的，是 <code>flush_expired()</code> 的批量清理；不在这个时刻上的回收（如 14:45:00 那次）更可能来自写路径的 LRU 淘汰，它和密集尖峰是同一股 churn 的两个侧面。混在一个口径里比较，才会出现“回收量相同、CPU 完全不同”的怪相。</p>
-<p>所以“回收了多少”不是自变量。定时清理最多解释短尖峰为什么落在那个时刻，既解释不了它的幅度，也解释不了那片密集连发的尖峰；后者才是这次的主要症状。还得找第二条触发路径。</p>
+<p>所以“回收了多少”不是自变量：定时清理最多解释短尖峰的时刻，解释不了它的幅度，更解释不了那片密集连发的尖峰。还得找第二条触发路径。</p>
 <h3 id="依赖-diff：两个提交，两条路径"><a href="#依赖-diff：两个提交，两条路径" class="headerlink" title="依赖 diff：两个提交，两条路径"></a>依赖 diff：两个提交，两条路径</h3><p>接下来把升级的变更面完整 diff 一遍，间接依赖也算上：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">3.9.14              nginx-lua-prometheus-api7 0.20250302-1</span><br><span class="line">3.9.19-patch.1 与 patch.3   nginx-lua-prometheus-api7 1.0.0-1</span><br></pre></td></tr></table></figure>
 
@@ -538,7 +538,7 @@
 </tr>
 <tr>
 <td>监控证据</td>
-<td>受控复现的 worker 签名（signature，指各 worker CPU 占用的特征分布形状，可用来反推故障机制；此处为发起方低、其余同时高）与两种形态一致</td>
+<td>受控复现的 worker 签名与两种形态一致</td>
 <td>同量级回收多次全程平缓（17.07 MiB → 1.35 核、12.53 MiB → 0.78 核），清理自身几乎不耗 CPU</td>
 </tr>
 <tr>
@@ -547,7 +547,7 @@
 <td>扳机与放大器，独立 CPU 来源证据不足</td>
 </tr>
 </tbody></table>
-<p>形态① 的归因还得再核一遍。它虽然和清理落在同一时刻，但有三个细节对不上“清理自身烧 CPU”：尖峰在清理后 30～60 秒才到峰值、约 90 秒落回；幅度与回收量无关；worker 分布是 4 个接近单核满载、其余偏低，这正是后文受控复现里路径 A 的签名（即 CPU 分布形态：发起重新注册的 worker 保持低 CPU，其余 worker 同时接近满载）。</p>
+<p>形态① 的归因还得再核一遍。它虽然和清理落在同一时刻，但有三个细节对不上“清理自身烧 CPU”：尖峰在清理后 30～60 秒才到峰值、约 90 秒落回；幅度与回收量无关；worker 分布是 4 个接近单核满载、其余偏低，这正是后文受控复现里路径 A 的签名（签名指各 worker CPU 占用的特征分布，可用来反推故障机制）。</p>
 <p>更一致的读法是：timer 批量回收槽位只是扣下扳机，CPU 实际花在随后的“过期指标重新注册 → <code>delete_count</code> 变化 → 其他 worker 全量扫描”上。白天有请求持续访问过期指标，清理一结束就有重新注册跟上；夜里没有请求，同样量级的回收就几乎不消耗 CPU。</p>
 <p>边界也要说清：perf 的 23 份报告都取自单 worker 持续 ≥80% 的密集尖峰段，形态① 没有独立 perf 实证，这层归因是时序与签名的推断。</p>
 <p>生产配置让问题更容易出现：<code>http_status</code>、<code>http_latency</code>、<code>bandwidth</code> 都配置了 <code>expire: 1800</code>，部分指标带有 <code>app</code>、<code>project</code>、<code>request_host</code> 等高基数标签；histogram 又会把每组标签展开成多个 bucket。大量时序不断生成、过期和重新注册。排障期间新增的 <code>pid</code> 只用于一个指标，额外时序有限，不是主要因素。</p>
@@ -582,8 +582,7 @@
 <h3 id="修复选择：为什么是整体回退"><a href="#修复选择：为什么是整体回退" class="headerlink" title="修复选择：为什么是整体回退"></a>修复选择：为什么是整体回退</h3><p>摆在桌面上的有三条路：在 <code>nginx-lua-prometheus-api7</code> 1.0.0-1 上继续修这两个缺陷、只撤销那两个相关提交、把该依赖整体回退到 3.9.14 所带的 0.20250302-1。最终选的是第三条——网关保持 3.9.19，保留其他功能与修复，只把 Prometheus 依赖回退到 3.9.14 的版本，随新 patch 交付，<strong>并非整套网关降级</strong>。</p>
 <p>选回退，主要是图它的确定性：回退目标是 3.9.14 长期生产验证过的行为，属于回到已知状态；在 1.0.0 上继续修补，等于在新版本上叠加补丁，回归验证成本更高。改动面也是个考虑，两个缺陷都在 LuaRocks 依赖内部，一个在索引同步、一个在清理逻辑，只撤销单个提交能否干净回退，要看后续提交是否依赖前面的改动。代价同样清楚：放弃 1.0.0 相对 0.20250302-1 的其他改动，将来若要重新升级，这两个提交的问题必须先解决，验收也要覆盖索引状态重新积累的过程。</p>
 <p>说白了，取舍的不是哪个方案更优雅，是哪个能最快回到已验证的行为。</p>
-<h2 id="节点差异：为什么总是-56-这台"><a href="#节点差异：为什么总是-56-这台" class="headerlink" title="节点差异：为什么总是 56 这台"></a>节点差异：为什么总是 56 这台</h2><p>查 CPU 问题时还有一件事：同样的代码、没有明显流量洪峰，告警却几乎都落在 56 节点。</p>
-<p>软件缺陷解释了机制，但不足以解释节点间的严重程度差异。除了当前 QPS，还得比较进程运行时长、<code>key_count</code>、<code>delete_count</code> 变化速率和机器配置。</p>
+<h2 id="节点差异：为什么总是-56-这台"><a href="#节点差异：为什么总是-56-这台" class="headerlink" title="节点差异：为什么总是 56 这台"></a>节点差异：为什么总是 56 这台</h2><p>查 CPU 问题时还有一件事：同样的代码、没有明显流量洪峰，告警却几乎都落在 56 节点。软件缺陷解释不了这种严重程度差异；除了当前 QPS，还得比较进程运行时长、<code>key_count</code>、<code>delete_count</code> 变化速率和机器配置。</p>
 <p>机器侧确实发现了差异：三台跑的都是 Ubuntu 内核 5.4.0，但补丁级别不同——56 是 <code>5.4.0-135-generic</code>（2022 年 11 月构建），54&#x2F;55 都是 <code>5.4.0-90-generic</code>（2021 年 10 月构建），56 的内核反而新了约一年。CPU 型号三台相同，都是 Xeon Silver 4110，但 56 在 <code>lscpu</code> 中显示的 CPU MHz 更低。再看调频策略：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor</span><br><span class="line"></span><br><span class="line">56：powersave</span><br><span class="line">55：performance</span><br><span class="line">54：performance</span><br></pre></td></tr></table></figure>
 
@@ -625,13 +624,14 @@
 <li><strong>“只有一台机器告警”指向另一层问题。</strong> 软件 bug 解释不了节点间严重程度差异，要往下查内核版本、调频、电源策略；但找到一个配置差异，不等于解释了差异，不能就此停止比较其他变量。</li>
 <li><strong>资源打满不等于业务报错。</strong> CPU 尖峰密集出现期间没有 5xx，只有响应时间略有增加；只盯错误率会漏掉这类故障，资源告警和延迟曲线同样要看。</li>
 <li><strong>把间接依赖纳入变更面。</strong> 只 diff 网关代码，会漏掉这次的 Prometheus 回归。</li>
-<li><strong>让反例改变假设，也复查对照的口径。</strong> 回收 17.07 MiB 只有 1.35 核、5.30 MiB 却伴随 7.35 核，说明“回收量”从来不是 CPU 的自变量；把“9 月 16 日白天回收都伴随高 CPU”当成规律，是把同一时刻上的共现当了因果。perf 和受控复现再把范围收窄。</li>
+<li><strong>让反例改变假设，也复查对照的口径。</strong> 回收 17.07 MiB 只有 1.35 核、5.30 MiB 却伴随 7.35 核，说明“回收量”从来不是 CPU 的自变量，9 月 16 日白天看到的只是共现不是因果。perf 和受控复现再把范围收窄。</li>
 </ul>
 <p>下次要更早做两件事：多 worker 高 CPU 尖峰密集出现时立刻抓 perf；复现时一次备齐完整请求、原始响应和相同版本环境。</p>
 <p>AI 助手主要帮忙统计 perf、聚合监控和整理源码线索，判断仍要回到现场证据，不能让一个看似合理的解释盖过反例。工具怎样参与分析，见<a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">《运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘》</a>。</p>
+<p>本文的书写及润色来自于 mimo-v2.6-pro。</p>
 <h2 id="尚未验证与遗留问题"><a href="#尚未验证与遗留问题" class="headerlink" title="尚未验证与遗留问题"></a>尚未验证与遗留问题</h2><p>这几项结论边界要留着，避免把“有嫌疑”读成“已证实”：</p>
 <ul>
-<li><strong>powersave 的独立贡献未量化</strong>：只确认 56 是 powersave、现象是频率更低；统一 governor 后 CPU 下降明显、节点差距缩小，但 56 仍略高，剩余差异的原因没有定位，也没有做受控对比（同一节点切到 performance 复现故障、对比告警阈值）。要验证需先控制版本、worker 数、索引状态和负载，再在同一节点上切换 governor，对比实际频率、CPU 与请求延迟，并切回复测。目前的处置是把内核版本、调频与电源策略加入节点基线巡检，同时保留对应用累计状态的检查。</li>
+<li><strong>powersave 的独立贡献未量化</strong>：只确认 56 是 powersave、频率更低；统一 governor 后 CPU 下降明显、节点差距缩小，但 56 仍略高，剩余差异未定位，也没有做受控对比。要验证需先控制版本、worker 数、索引状态和负载，再在同一节点切换 governor 对比频率、CPU 与请求延迟。目前的处置是把内核版本、调频与电源策略加入节点基线巡检，同时保留对应用累计状态的检查。</li>
 <li><strong>长期效果未量化</strong>：修复 CPU 问题的补丁上线后效果如何，本文拿不出量化证据——既没有记录补丁的完整构建号和观察时长，也没有修复前后的错误率、延迟对比。因此只能说修复已交付、短期未复发，不对长期效果下结论。</li>
 <li><strong>验收未闭环</strong>：后续验收还需覆盖正常业务与指标抓取、小时级周期和索引状态重新积累，不能只看重建后的短暂平稳。</li>
 </ul>
