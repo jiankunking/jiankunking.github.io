@@ -1036,17 +1036,17 @@ func (g *Gateway) HandleReq…
 - Content type: original
 - Published: 2026-09-08
 - Updated: 2026-09-08
-- Summary: 线上AI网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 tcp_syn_retries=3 导致的SYN重传超时。
+- Summary: 线上 API7 网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 tcp_syn_retries=3 导致的SYN重传超时。
 - Categories: Debugging
-- Tags: APISIX, Gateway, Troubleshooting, Linux Kernel, TCP
+- Tags: APISIX, Gateway, Troubleshooting, Linux Kernel, TCP, API7
 
 Article text:
 
-线上AI网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 tcp_syn_retries=3 导致的SYN重传超时。
+线上 API7 网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 tcp_syn_retries=3 导致的SYN重传超时。
 
 起因
 
-线上反馈说AI网关偶尔会报504，我看了下监控，确实有，但不多。点进去一看，发现一个很诡异的现象：这些504请求的耗时全部精确卡在15秒。
+线上反馈说API7网关偶尔会报504，我看了下监控，确实有，但不多。点进去一看，发现一个很诡异的现象：这些504请求的耗时全部精确卡在15秒。
 
 不是14秒，不是16秒，就是15秒。
 
@@ -1084,7 +1084,7 @@ ngx_add_timer(c->write, op->connect_timeout)
 
 15秒这个数字很特殊，我怀疑可能是内核的TCP SYN重传超时。
 
-查了一下APISIX pod的内核参数：
+查了一下API7网关所在pod的内核参数：
 
 1
 2
@@ -1242,7 +1242,7 @@ SYN重传间隔的分布：
 结论
 
 应用层 |
-ES数据：717条504，request_time=15s |
+ES数据：717条504，request_time&#x3D;15s |
 超时精确卡在15秒 |
 
 代码层 |
@@ -1263,7 +1263,7 @@ PCAP：SYN重传间隔1s,3s,7s |
 
 问题在于：
 
-- 根因没解决 — SYN包为什么发不出去/收不到响应？网络链路有问题
+- 根因没解决 — SYN包为什么发不出去&#x2F;收不到响应？网络链路有问题
 
 - 只是延长失败时间 — 从15秒变成63秒，用户体验更差
 
@@ -1273,7 +1273,7 @@ PCAP：SYN重传间隔1s,3s,7s |
 
 - 网络层面解决连通性问题
 
-- 或者在应用层做重试/降级，而不是依赖内核重试
+- 或者在应用层做重试&#x2F;降级，而不是依赖内核重试
 
 后续拉通集团深入排查网络层面的问题。
 
@@ -1281,7 +1281,7 @@ PCAP：SYN重传间隔1s,3s,7s |
 
 这次排查大概花了大半天时间。如果是以前，可能要花更久，甚至可能方向都找不到。
 
-AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查询、PCAP解析，这些事情它都能做。但方向判断还是得人来，比如"怀疑是内核参数"这个思路，是我提出来的，AI只是帮我验证了计算。
+AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查询、PCAP解析，这些事情它都能做。但方向判断还是得人来，比如”怀疑是内核参数”这个思路，是我提出来的，AI只是帮我验证了计算。
 
 最后的三层证据链也是这样：ES数据、源码分析、PCAP抓包，三个维度交叉验证，才能确认根因。单一维度的证据可能有误导，比如DNS错误看起来也是超时，但耗时完全不同。
 
@@ -1291,7 +1291,7 @@ AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查�
 
 这次用的是OpenCode + MiMo V2.5 Free，一个免费模型。说实话，效果超出预期。
 
-以前觉得免费模型也就做做简单问答，这次拿来排查问题，发现还真能打。让它追代码，它能把整条链路串起来，不需要我一步步喂。让它分析数据，它能自己判断"DNS错误和15秒超时是两个独立问题"，这个结论是它自己得出的，我没告诉它。
+以前觉得免费模型也就做做简单问答，这次拿来排查问题，发现还真能打。让它追代码，它能把整条链路串起来，不需要我一步步喂。让它分析数据，它能自己判断”DNS错误和15秒超时是两个独立问题”，这个结论是它自己得出的，我没告诉它。
 
 写Python脚本也能直接跑，不用我调试半天。
 
@@ -4980,7 +4980,7 @@ I. 扩展性与可运维性（5%）
 - Updated: 2026-08-17
 - Summary: 代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。
 - Categories: Debugging
-- Tags: CPU-Saturation, APISIX, AI Gateway, OpenResty, Lua, SSE, Coroutine, Backpressure, AI-Assisted-Debugging
+- Tags: CPU-Saturation, APISIX, AI Gateway, API7, OpenResty, Lua, SSE, Coroutine, Backpressure, AI-Assisted-Debugging
 
 Article text:
 
@@ -4988,7 +4988,7 @@ Article text:
 
 一、问题背景
 
-最近在使用 API7 AI 网关时，我反复遇到 worker CPU 打满的问题。相关修复分散在多个 APISIX PR 中：
+最近在使用 API7 AI 网关时，我反复遇到 worker CPU 打满的问题。API7 是基于 Apache APISIX 的商业发行版，相关修复最终都提交到了上游 APISIX，分散在多个 PR 中：
 
  问题状态说明
 
@@ -5106,7 +5106,7 @@ end
 
 调用了网络 API |
 ≠ |
-本轮一定发生 I/O 等待 |
+本轮一定发生 I&#x2F;O 等待 |
 
 调用了 flush |
 ≠ |
@@ -5148,7 +5148,7 @@ AI 网关位于客户端与大模型之间：
 
 - 尝试向下游输出。
 
-只有当下游关闭事件被 Nginx/OpenResty 观察到，并传播到当前 Lua 请求处理逻辑后，代码才有机会停止上游工作。
+只有当下游关闭事件被 Nginx&#x2F;OpenResty 观察到，并传播到当前 Lua 请求处理逻辑后，代码才有机会停止上游工作。
 
 3.2 ngx.flush(true) 到底保证什么
 
@@ -5156,7 +5156,7 @@ OpenResty 对 ngx.flush(wait?) 的定义是：
 
 - ngx.flush(false)：发起异步 flush，不等待输出写入系统发送缓冲区；
 
-- ngx.flush(true)：等待输出写入系统发送缓冲区，或等待到 send_timeout/错误发生。
+- ngx.flush(true)：等待输出写入系统发送缓冲区，或等待到 send_timeout&#x2F;错误发生。
 
 这里必须避免一个常见误解：
 
@@ -5276,7 +5276,7 @@ PR #13255 在每轮流式处理后加入了：
 
 它不能解决的是：
 
-- 减少 JSON/SSE 解析次数；
+- 减少 JSON&#x2F;SSE 解析次数；
 
 - 减少每个 chunk 的字符串分配；
 
@@ -5407,7 +5407,7 @@ lua-resty-http 的 chunked body reader 会维护 HTTP chunk framing 状态，并
 
 但核心风险仍然成立：
 
-即使代码调用了 sock:receive()，只要 cosocket/Nginx 接收缓冲区里已经有足够数据，它仍可能立即返回，不发生 I/O 等待。
+即使代码调用了 sock:receive()，只要 cosocket&#x2F;Nginx 接收缓冲区里已经有足够数据，它仍可能立即返回，不发生 I&#x2F;O 等待。
 
 这也是为什么评估循环时不能只数“网络 API 调用了几次”，而要判断这些调用在目标负载下是否真的等待。
 
@@ -5583,7 +5583,7 @@ abort propagation、关闭上游 |
 
 资源上界 |
 异常长流或大响应无限消耗资源 |
-duration/bytes/buffer limit |
+duration&#x2F;bytes&#x2F;buffer limit |
 
 背压 |
 上游长期快于下游 |
@@ -5637,13 +5637,13 @@ AI 的价值首先是快速扩展假设空间：
 
 第一步：让 AI 生成候选假设
 
-要求 AI 尽量列全：调度、I/O、缓冲、序列化、生命周期、超时、限流和可观测性。
+要求 AI 尽量列全：调度、I&#x2F;O、缓冲、序列化、生命周期、超时、限流和可观测性。
 
 第二步：固定准确版本
 
 记录并提供：
 
-- API7/APISIX commit；
+- API7&#x2F;APISIX commit；
 
 - OpenResty 版本；
 
@@ -5707,19 +5707,19 @@ PR、源码和 benchmark 可以证明问题存在，但要把它称为某次生�
 观察指标
 目标
 
-保留/移除 ngx.sleep(0) |
+保留&#x2F;移除 ngx.sleep(0) |
 其他请求 P99、worker event loop 延迟 |
 验证公平性 |
 
-缓存/重复 JSON decode |
+缓存&#x2F;重复 JSON decode |
 CPU profile、单请求 CPU time |
 验证解析成本 |
 
-逐 chunk/周期 flush |
+逐 chunk&#x2F;周期 flush |
 CPU、首 token 延迟、token 间延迟 |
 量化实时性与吞吐取舍 |
 
-大/小 chunk，相同总字节数 |
+大&#x2F;小 chunk，相同总字节数 |
 循环次数、分配量、CPU |
 验证 per-chunk 固定成本 |
 
@@ -5737,85 +5737,85 @@ AI 最适合帮助设计这些实验、解释结果和发现遗漏，而不是�
 
 9.1 循环与调度
 
-- [ ] 循环单轮在最坏情况下做多少 CPU 工作？
+- 循环单轮在最坏情况下做多少 CPU 工作？
 
-- [ ] 循环中的 I/O 是否可能因为缓冲区已有数据而立即返回？
+- 循环中的 I&#x2F;O 是否可能因为缓冲区已有数据而立即返回？
 
-- [ ] 是否存在明确且可验证的 yield 点？
+- 是否存在明确且可验证的 yield 点？
 
-- [ ] yield 是为了公平性，还是错误地被当成了限流？
+- yield 是为了公平性，还是错误地被当成了限流？
 
-- [ ] 一个请求是否可能连续处理大量 ready data？
+- 一个请求是否可能连续处理大量 ready data？
 
-- [ ] 是否监控 worker event loop latency 和请求尾延迟？
+- 是否监控 worker event loop latency 和请求尾延迟？
 
 9.2 取消与资源生命周期
 
-- [ ] 下游断开后，如何通知上游停止？
+- 下游断开后，如何通知上游停止？
 
-- [ ] 上游连接、light thread、timer 是否都会被清理？
+- 上游连接、light thread、timer 是否都会被清理？
 
-- [ ] flush/write 错误是否完整传播？
+- flush&#x2F;write 错误是否完整传播？
 
-- [ ] 是否需要 lua_check_client_abort / ngx.on_abort？
+- 是否需要 lua_check_client_abort &#x2F; ngx.on_abort？
 
-- [ ] 客户端取消后最多还会读取多少上游数据？
+- 客户端取消后最多还会读取多少上游数据？
 
-- [ ] 是否有取消传播耗时指标？
+- 是否有取消传播耗时指标？
 
 9.3 缓冲与背压
 
-- [ ] 上游和下游分别有哪些缓冲层？
+- 上游和下游分别有哪些缓冲层？
 
-- [ ] 上游比下游快时，数据会积累在哪里？
+- 上游比下游快时，数据会积累在哪里？
 
-- [ ] 缓冲区是否有上限？
+- 缓冲区是否有上限？
 
-- [ ] 是否能暂停或降低上游读取速度？
+- 是否能暂停或降低上游读取速度？
 
-- [ ] flush 策略是逐 chunk、按字节还是按时间窗口？
+- flush 策略是逐 chunk、按字节还是按时间窗口？
 
-- [ ] 实时性目标是否有明确数值，而不是默认“越快越好”？
+- 实时性目标是否有明确数值，而不是默认“越快越好”？
 
 9.4 编解码与内存分配
 
-- [ ] 同一请求体被 decode 了几次？
+- 同一请求体被 decode 了几次？
 
-- [ ] 解析结果能否在 request context 中复用？
+- 解析结果能否在 request context 中复用？
 
-- [ ] 是否存在 .. 循环拼接导致大量临时字符串？
+- 是否存在 .. 循环拼接导致大量临时字符串？
 
-- [ ] SSE 边界扫描是否重复遍历相同数据？
+- SSE 边界扫描是否重复遍历相同数据？
 
-- [ ] encode 是否只在最终边界发生？
+- encode 是否只在最终边界发生？
 
-- [ ] 是否按请求体大小和 chunk 数量做过 benchmark？
+- 是否按请求体大小和 chunk 数量做过 benchmark？
 
 9.5 资源上界
 
-- [ ] 单条流是否有最大持续时间？
+- 单条流是否有最大持续时间？
 
-- [ ] 是否限制最大响应字节数？
+- 是否限制最大响应字节数？
 
-- [ ] 是否限制最大事件数或未发送缓冲量？
+- 是否限制最大事件数或未发送缓冲量？
 
-- [ ] 超限后是否取消上游并记录原因？
+- 超限后是否取消上游并记录原因？
 
-- [ ] 超时、取消、上游错误是否可以在指标中区分？
+- 超时、取消、上游错误是否可以在指标中区分？
 
 9.6 证据与可观测性
 
-- [ ] 是否记录精确版本和 commit？
+- 是否记录精确版本和 commit？
 
-- [ ] 是否有 worker 维度的 CPU 和延迟指标？
+- 是否有 worker 维度的 CPU 和延迟指标？
 
-- [ ] 是否采集过 flame graph / CPU profile？
+- 是否采集过 flame graph &#x2F; CPU profile？
 
-- [ ] 是否记录请求体大小、响应字节数、chunk 数和流持续时间？
+- 是否记录请求体大小、响应字节数、chunk 数和流持续时间？
 
-- [ ] 是否有修复前后的同负载对照实验？
+- 是否有修复前后的同负载对照实验？
 
-- [ ] 文章中的每个“根因”是否都有对应证据？
+- 文章中的每个“根因”是否都有对应证据？
 
 十、最终总结
 
@@ -5841,7 +5841,7 @@ AI 最适合帮助设计这些实验、解释结果和发现遗漏，而不是�
 
 10.4 网络 API 不一定等待
 
-cosocket receive()、flush 等 API 的运行时行为取决于缓冲区、socket readiness 和调用参数。看见 I/O 调用，不能默认已经发生 yield。
+cosocket receive()、flush 等 API 的运行时行为取决于缓冲区、socket readiness 和调用参数。看见 I&#x2F;O 调用，不能默认已经发生 yield。
 
 10.5 AI 负责扩大搜索空间，证据负责收敛结论
 
@@ -8097,9 +8097,8 @@ func NewGatewayProvider(provider model.CloudProvider) (CloudGatewayProvider, err
 
 Article text:
 
-大家从网上肯定看到过关于Apisix性能高的文章,那么到底是如何实现的呢？
-
-本文是分析也是自己学习《OpenResty从入门到实战》及Apisix官方文档的一个笔记
+大家从网上肯定看到过关于APISIX性能高的文章,那么到底是如何实现的呢？
+本文是分析也是自己学习《OpenResty从入门到实战》及APISIX官方文档的一个笔记
 
 简单分析
 
@@ -8177,7 +8176,7 @@ Article text:
 
 协程+事件
 
-在OpenResty层面，Lua的协程会与Nginx的事件机制相互配合。如果Lua代码中出现类似查询 MySQL 数据库这样的 I/O 操作，就会先调用Lua协程的 yield 把自己挂起，然后在Nginx中注册回调；在 I/O 操作完成（也可能是超时或者出错）后，再由Nginx回调 resume 来唤醒Lua协程。这样就完成了Lua协程和Nginx事件驱动的配合，避免在Lua代码中写回调。
+在OpenResty层面，Lua的协程会与Nginx的事件机制相互配合。如果Lua代码中出现类似查询 MySQL 数据库这样的 I&#x2F;O 操作，就会先调用Lua协程的 yield 把自己挂起，然后在Nginx中注册回调；在 I&#x2F;O 操作完成（也可能是超时或者出错）后，再由Nginx回调 resume 来唤醒Lua协程。这样就完成了Lua协程和Nginx事件驱动的配合，避免在Lua代码中写回调。
 
 LuaJIT
 
@@ -8222,7 +8221,6 @@ OpenResty vs Envoy 底座比对
 随着云原生的普及，Kubernetes技术栈的南北向流量网关也开始普及:南北入口网关选型
 
 虽然从目前的南北向网关功能来看还不如以OpenResty为底座的Kong或者APISIX，但云原生社区明显更加活跃。
-
 下面从Contributors、Star、Commits、Releases四方面来分析比对(数据取值时间:2025.03.22):
 
 - Contributors
