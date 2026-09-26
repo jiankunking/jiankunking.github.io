@@ -326,35 +326,31 @@
     
     <div class="post-body" itemprop="articleBody"><p>线上AI网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 <code>tcp_syn_retries=3</code> 导致的SYN重传超时。</p>
 <span id="more"></span>
-
-<h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>线上反馈说AI网关偶尔会报504，我看了下监控，确实有，但不多。点进去一看，发现一个很诡异的现象：这些504请求的耗时全部精确卡在15秒。</p>
+<h2 id="起因">起因</h2>
+<p>线上反馈说AI网关偶尔会报504，我看了下监控，确实有，但不多。点进去一看，发现一个很诡异的现象：这些504请求的耗时全部精确卡在15秒。</p>
 <p>不是14秒，不是16秒，就是15秒。</p>
 <p>我们的插件配置的超时是600秒，按理说不应该这么快超时。这个15秒到底是从哪来的？</p>
-<h2 id="第一步：追代码"><a href="#第一步：追代码" class="headerlink" title="第一步：追代码"></a>第一步：追代码</h2><p>让AI助手帮我追了一下超时的传递链路。从插件配置开始，经过Lua层、FFI层，最终到C模块，600秒的超时确实正确传递下去了，C模块也确实设置了600秒的定时器。</p>
+<h2 id="第一步：追代码">第一步：追代码</h2>
+<p>让AI助手帮我追了一下超时的传递链路。从插件配置开始，经过Lua层、FFI层，最终到C模块，600秒的超时确实正确传递下去了，C模块也确实设置了600秒的定时器。</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- ai-transport/http.lua:145</span></span><br><span class="line">httpc:set_timeout(timeout)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- resty/ngx_http_ffi_client.lua</span></span><br><span class="line">client.set_timeouts(<span class="built_in">self</span>, <span class="number">600000</span>, <span class="number">600000</span>, <span class="number">600000</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- ngx_http_ffi_client_request.c:2238</span></span><br><span class="line">op-&gt;connect_timeout = <span class="number">600000</span></span><br><span class="line">ngx_add_timer(c-&gt;<span class="built_in">write</span>, op-&gt;connect_timeout)</span><br></pre></td></tr></table></figure>
-
 <p>代码没问题，那15秒从哪来的？</p>
-<h2 id="第二步：怀疑内核"><a href="#第二步：怀疑内核" class="headerlink" title="第二步：怀疑内核"></a>第二步：怀疑内核</h2><p>15秒这个数字很特殊，我怀疑可能是内核的TCP SYN重传超时。</p>
+<h2 id="第二步：怀疑内核">第二步：怀疑内核</h2>
+<p>15秒这个数字很特殊，我怀疑可能是内核的TCP SYN重传超时。</p>
 <p>查了一下APISIX pod的内核参数：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sysctl net.ipv4.tcp_syn_retries</span><br><span class="line"><span class="comment"># 输出: net.ipv4.tcp_syn_retries = 3</span></span><br></pre></td></tr></table></figure>
-
 <p>Linux内核SYN超时的计算公式是：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">timeout = ((2 &lt;&lt; boundary) - 1) * rto_base</span><br></pre></td></tr></table></figure>
-
 <p><code>tcp_syn_retries=3</code>时：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">timeout = ((2 &lt;&lt; 3) - 1) * 1 = 15秒</span><br></pre></td></tr></table></figure>
-
 <p>完美匹配。</p>
 <p>SYN重传的时间线是这样的：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">第1次SYN:     t=0s发送,  超时t=1s     (累计1s)</span><br><span class="line">第2次SYN重传: t=1s发送,  超时t=3s     (累计3s)</span><br><span class="line">第3次SYN重传: t=3s发送,  超时t=7s     (累计7s)</span><br><span class="line">第4次SYN尝试: t=7s发送,  超时t=15s    (累计15s) ← 内核放弃</span><br></pre></td></tr></table></figure>
-
 <p>不会发第5次。<code>tcp_syn_retries=3</code>表示最多重传3次，总共4次尝试。</p>
-<h2 id="第三步：排除DNS"><a href="#第三步：排除DNS" class="headerlink" title="第三步：排除DNS"></a>第三步：排除DNS</h2><p>会不会是DNS解析失败导致的？分析了一下APISIX的DNS解析代码，找到了错误日志的格式：</p>
+<h2 id="第三步：排除DNS">第三步：排除DNS</h2>
+<p>会不会是DNS解析失败导致的？分析了一下APISIX的DNS解析代码，找到了错误日志的格式：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-- resolver.lua:83</span><br><span class="line">log.error(&quot;failed to parse domain: &quot;, host, &quot;, error: &quot;, err)</span><br><span class="line"></span><br><span class="line">-- resty/ngx_http_ffi_client.lua</span><br><span class="line">return nil, host .. &quot; could not be resolved (&quot; .. (err or &quot;no address&quot;) .. &quot;)&quot;</span><br></pre></td></tr></table></figure>
-
 <p>去网关日志里搜了一下，确实找到了DNS错误：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2026/09/07 08:59:15 [warn] base.lua:255: failed to send request to LLM server: </span><br><span class="line">connect: failed to parse domain: failed to query the DNS server: </span><br><span class="line">dns server error: 2 server failure</span><br></pre></td></tr></table></figure>
-
 <p>用这些DNS错误的request_id去ES里查了一下，发现了区别：</p>
 <table>
 <thead>
@@ -364,7 +360,8 @@
 <th>TCP SYN超时</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>数量</td>
 <td>21条</td>
 <td>750条</td>
@@ -379,14 +376,14 @@
 <td>500</td>
 <td>504</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>DNS错误是立即返回的，不会卡15秒。这是两个完全独立的问题。</p>
-<h2 id="第四步：抓包验证"><a href="#第四步：抓包验证" class="headerlink" title="第四步：抓包验证"></a>第四步：抓包验证</h2><p>通过流量仪抓包，用tcpdump分析了一下：</p>
+<h2 id="第四步：抓包验证">第四步：抓包验证</h2>
+<p>通过流量仪抓包，用tcpdump分析了一下：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 找SYN包</span></span><br><span class="line">tcpdump -r capture.pcap <span class="string">&#x27;tcp[tcpflags] &amp; (tcp-syn) != 0&#x27;</span> -nn</span><br><span class="line"></span><br><span class="line"><span class="comment"># 找SYN重传（同一端口发多次SYN）</span></span><br><span class="line">tcpdump -r capture.pcap <span class="string">&#x27;tcp[tcpflags] &amp; (tcp-syn) != 0&#x27;</span> -nn | \</span><br><span class="line">  awk <span class="string">&#x27;&#123;print $3, $5&#125;&#x27;</span> | <span class="built_in">sort</span> | <span class="built_in">uniq</span> -c | <span class="built_in">sort</span> -rn</span><br></pre></td></tr></table></figure>
-
 <p>找到了完整的SYN重传序列：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">10.200.76.55.18494 -&gt; 39.96.198.249.443:</span><br><span class="line">  首次SYN:  15:27:20.096</span><br><span class="line">  第1次重传: 15:27:21.117 (间隔1.0s)</span><br><span class="line">  第2次重传: 15:27:23.133 (间隔3.0s)</span><br><span class="line">  第3次重传: 15:27:27.229 (间隔7.1s)</span><br><span class="line">  → 内核放弃，连接失败</span><br></pre></td></tr></table></figure>
-
 <p>SYN重传间隔的分布：</p>
 <table>
 <thead>
@@ -396,7 +393,8 @@
 <th>理论值</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>1.0s</td>
 <td>2</td>
 <td>✓</td>
@@ -411,9 +409,11 @@
 <td>2</td>
 <td>✓</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>网络层的证据和内核参数的理论计算完全吻合。</p>
-<h2 id="三层证据"><a href="#三层证据" class="headerlink" title="三层证据"></a>三层证据</h2><table>
+<h2 id="三层证据">三层证据</h2>
+<table>
 <thead>
 <tr>
 <th>层级</th>
@@ -421,9 +421,10 @@
 <th>结论</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>应用层</td>
-<td>ES数据：717条504，request_time&#x3D;15s</td>
+<td>ES数据：717条504，request_time=15s</td>
 <td>超时精确卡在15秒</td>
 </tr>
 <tr>
@@ -436,28 +437,32 @@
 <td>PCAP：SYN重传间隔1s,3s,7s</td>
 <td>内核SYN重传超时</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>三层证据指向同一个结论：根因是<code>tcp_syn_retries=3</code>。</p>
-<h2 id="修复"><a href="#修复" class="headerlink" title="修复"></a>修复</h2><p>这个修复其实没有采用。</p>
+<h2 id="修复">修复</h2>
+<p>这个修复其实没有采用。</p>
 <p>原因是：单纯调 <code>tcp_syn_retries=5</code> 只是治标不治本，总超时从15秒变成63秒，用户体验更差，而且掩盖了真正的问题。</p>
 <p><strong>问题在于：</strong></p>
 <ol>
-<li>根因没解决 — SYN包为什么发不出去&#x2F;收不到响应？网络链路有问题</li>
+<li>根因没解决 — SYN包为什么发不出去/收不到响应？网络链路有问题</li>
 <li>只是延长失败时间 — 从15秒变成63秒，用户体验更差</li>
 <li>掩盖了真正的问题 — 应该查的是网络层面</li>
 </ol>
 <p><strong>正确的修复方向：</strong></p>
 <ul>
 <li>网络层面解决连通性问题</li>
-<li>或者在应用层做重试&#x2F;降级，而不是依赖内核重试</li>
+<li>或者在应用层做重试/降级，而不是依赖内核重试</li>
 </ul>
 <p>后续拉通集团深入排查网络层面的问题。</p>
-<h2 id="一点感想"><a href="#一点感想" class="headerlink" title="一点感想"></a>一点感想</h2><p>这次排查大概花了大半天时间。如果是以前，可能要花更久，甚至可能方向都找不到。</p>
-<p>AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查询、PCAP解析，这些事情它都能做。但方向判断还是得人来，比如”怀疑是内核参数”这个思路，是我提出来的，AI只是帮我验证了计算。</p>
+<h2 id="一点感想">一点感想</h2>
+<p>这次排查大概花了大半天时间。如果是以前，可能要花更久，甚至可能方向都找不到。</p>
+<p>AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查询、PCAP解析，这些事情它都能做。但方向判断还是得人来，比如&quot;怀疑是内核参数&quot;这个思路，是我提出来的，AI只是帮我验证了计算。</p>
 <p>最后的三层证据链也是这样：ES数据、源码分析、PCAP抓包，三个维度交叉验证，才能确认根因。单一维度的证据可能有误导，比如DNS错误看起来也是超时，但耗时完全不同。</p>
 <p>记录下来，下次遇到类似问题可以参考。</p>
-<h2 id="关于MiMo-V2-5-Free"><a href="#关于MiMo-V2-5-Free" class="headerlink" title="关于MiMo V2.5 Free"></a>关于MiMo V2.5 Free</h2><p>这次用的是OpenCode + MiMo V2.5 Free，一个免费模型。说实话，效果超出预期。</p>
-<p>以前觉得免费模型也就做做简单问答，这次拿来排查问题，发现还真能打。让它追代码，它能把整条链路串起来，不需要我一步步喂。让它分析数据，它能自己判断”DNS错误和15秒超时是两个独立问题”，这个结论是它自己得出的，我没告诉它。</p>
+<h2 id="关于MiMo-V2-5-Free">关于MiMo V2.5 Free</h2>
+<p>这次用的是OpenCode + MiMo V2.5 Free，一个免费模型。说实话，效果超出预期。</p>
+<p>以前觉得免费模型也就做做简单问答，这次拿来排查问题，发现还真能打。让它追代码，它能把整条链路串起来，不需要我一步步喂。让它分析数据，它能自己判断&quot;DNS错误和15秒超时是两个独立问题&quot;，这个结论是它自己得出的，我没告诉它。</p>
 <p>写Python脚本也能直接跑，不用我调试半天。</p>
 <p>在这个问题上，MiMo V2.5 Free给我的体感比GPT 5.6 sol还要好。</p>
 <p>总的来说，这次体验让我对免费模型有了新认识。下次遇到类似问题，我还会用它。</p>
@@ -582,7 +587,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">850k</span>
+    <span title="站点总字数">851k</span>
   </span>
 </div>
 <div class="busuanzi-count">
