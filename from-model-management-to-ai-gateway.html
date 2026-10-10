@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="模型管理产生权限、配额和路由规则，AI 网关在每一次请求中执行这些规则，再将真实用量与运行状态送回业务侧。本文通过模型生命周期与请求生命周期，说明两套系统如何协同。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从模型管理到 AI 网关：权限、流量与成本如何形成闭环">
+<meta property="og:url" content="https://jiankunking.com/from-model-management-to-ai-gateway.html">
+<meta property="og:site_name" content="衣舞晨风">
+<meta property="og:description" content="模型管理产生权限、配额和路由规则，AI 网关在每一次请求中执行这些规则，再将真实用量与运行状态送回业务侧。本文通过模型生命周期与请求生命周期，说明两套系统如何协同。">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+
+<meta property="article:published_time" content="2026-10-05T13:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-05T13:00:00.000Z">
+<meta property="article:author" content="衣舞晨风 (jiankunking)">
+<meta property="article:tag" content="AI Gateway">
+<meta property="article:tag" content="Architecture">
+<meta property="article:tag" content="Gateway">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="LLMOps">
+<meta property="article:tag" content="Rate Limiting">
+<meta name="twitter:card" content="summary_large_image">
+
+
+
+<link rel="canonical" href="https://jiankunking.com/from-model-management-to-ai-gateway.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/from-model-management-to-ai-gateway.html","path":"from-model-management-to-ai-gateway.html","title":"从模型管理到 AI 网关：权限、流量与成本如何形成闭环"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>从模型管理到 AI 网关：权限、流量与成本如何形成闭环 | 衣舞晨风</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/from-model-management-to-ai-gateway.html#article","url":"https://jiankunking.com/from-model-management-to-ai-gateway.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/from-model-management-to-ai-gateway.html"},"headline":"从模型管理到 AI 网关：权限、流量与成本如何形成闭环","description":"模型管理产生权限、配额和路由规则，AI 网关在每一次请求中执行这些规则，再将真实用量与运行状态送回业务侧。本文通过模型生命周期与请求生命周期，说明两套系统如何协同。","abstract":"模型管理产生权限、配额和路由规则，AI 网关在每一次请求中执行这些规则，再将真实用量与运行状态送回业务侧。本文通过模型生命周期与请求生命周期，说明两套系统如何协同。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-10-05T13:00:00.000Z","dateModified":"2026-10-05T13:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"AI","keywords":"Gateway, Architecture, AI Gateway, Rate Limiting, LLM, LLMOps","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/from-model-management-to-ai-gateway.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/from-model-management-to-ai-gateway.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"AI","item":"https://jiankunking.com/categories/ai/"},{"@type":"ListItem","position":3,"name":"从模型管理到 AI 网关：权限、流量与成本如何形成闭环","item":"https://jiankunking.com/from-model-management-to-ai-gateway.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/og-default.png">
+<meta property="og:image:alt" content="从模型管理到 AI 网关：权限、流量与成本如何形成闭环">
+<meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
+<meta name="twitter:image:alt" content="从模型管理到 AI 网关：权限、流量与成本如何形成闭环">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">衣舞晨风</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">AI Gateway、Elasticsearch 与后端架构实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%AE%A1%E6%89%B9%E9%80%9A%E8%BF%87%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AF%B7%E6%B1%82%E4%BB%8D%E7%84%B6%E8%B0%83%E4%B8%8D%E9%80%9A"><span class="nav-number">1.</span> <span class="nav-text">一、审批通过，为什么请求仍然调不通</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%85%88%E5%88%92%E6%B8%85%E8%BE%B9%E7%95%8C%EF%BC%9A%E8%B0%81%E5%81%9A%E5%86%B3%E5%AE%9A%EF%BC%8C%E8%B0%81%E6%89%A7%E8%A1%8C%E5%86%B3%E5%AE%9A"><span class="nav-number">2.</span> <span class="nav-text">二、先划清边界：谁做决定，谁执行决定</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E4%B8%9A%E5%8A%A1%E9%9D%A2%EF%BC%9A%E4%BA%A7%E7%94%9F%E8%A7%84%E5%88%99"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 业务面：产生规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E9%85%8D%E7%BD%AE%E9%9D%A2%EF%BC%9A%E7%BF%BB%E8%AF%91%E5%B9%B6%E4%BA%A4%E4%BB%98%E8%A7%84%E5%88%99"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 配置面：翻译并交付规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E6%95%B0%E6%8D%AE%E9%9D%A2%EF%BC%9A%E6%89%A7%E8%A1%8C%E8%A7%84%E5%88%99%E5%B9%B6%E8%AE%B0%E5%BD%95%E7%BB%93%E6%9E%9C"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 数据面：执行规则并记录结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%A8%A1%E5%9E%8B%E6%B6%88%E8%B4%B9%E4%B8%8E%E6%B2%BB%E7%90%86%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="nav-number">3.</span> <span class="nav-text">三、模型消费与治理生命周期</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E9%80%89%E5%9E%8B%EF%BC%9A%E7%A1%AE%E8%AE%A4%E6%A8%A1%E5%9E%8B%E6%98%AF%E5%90%A6%E9%80%82%E5%90%88%E5%9C%BA%E6%99%AF"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 选型：确认模型是否适合场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E7%94%B3%E8%AF%B7%EF%BC%9A%E5%85%88%E7%A1%AE%E5%AE%9A%E7%94%A8%E9%80%94%E4%B8%8E%E6%88%90%E6%9C%AC%E5%BD%92%E5%B1%9E"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 申请：先确定用途与成本归属</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%8E%88%E6%9D%83%EF%BC%9A%E8%AE%A9%E5%AE%A1%E6%89%B9%E7%BB%93%E6%9E%9C%E8%BF%9B%E5%85%A5%E8%AF%B7%E6%B1%82%E9%93%BE%E8%B7%AF"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 授权：让审批结果进入请求链路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E8%B0%83%E7%94%A8%EF%BC%9A%E6%8A%8A%E5%9C%BA%E6%99%AF%E4%BF%A1%E6%81%AF%E5%B8%A6%E8%BF%9B%E8%AF%B7%E6%B1%82"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 调用：把场景信息带进请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E8%AE%A1%E9%87%8F%EF%BC%9A%E6%8A%8A-Token-%E7%94%A8%E9%87%8F%E5%BD%92%E8%BF%98%E7%BB%99%E8%B0%83%E7%94%A8%E6%96%B9"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 计量：把 Token 用量归还给调用方</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E4%B8%8B%E7%BA%BF%EF%BC%9A%E5%85%88%E5%88%87%E6%96%AD%E8%B0%83%E7%94%A8%E5%85%B3%E7%B3%BB%EF%BC%8C%E5%86%8D%E5%88%A0%E9%99%A4%E8%B5%84%E4%BA%A7"><span class="nav-number">3.6.</span> <span class="nav-text">3.6 下线：先切断调用关系，再删除资产</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E4%B8%80%E6%AC%A1%E8%AF%B7%E6%B1%82%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E8%BF%99%E4%BA%9B%E8%A7%84%E5%88%99"><span class="nav-number">4.</span> <span class="nav-text">四、一次请求如何执行这些规则</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E4%B8%8D%E5%90%8C%E8%BA%AB%E4%BB%BD%E6%9D%A5%E6%BA%90%E5%8F%AF%E4%BB%A5%E8%B5%B0%E4%B8%8D%E5%90%8C%E9%89%B4%E6%9D%83%E8%B7%AF%E5%BE%84"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 不同身份来源可以走不同鉴权路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E4%B8%80%E4%BB%BD-usage%EF%BC%8C%E7%BB%9F%E4%B8%80%E6%89%80%E6%9C%89%E8%AE%A1%E9%87%8F%E5%8F%A3%E5%BE%84"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 一份 usage，统一所有计量口径</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E9%97%AD%E7%8E%AF%E4%B8%AD%E7%9A%84%E4%B8%89%E4%B8%AA%E5%85%B3%E9%94%AE%E6%9C%BA%E5%88%B6"><span class="nav-number">5.</span> <span class="nav-text">五、闭环中的三个关键机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E9%85%8D%E9%A2%9D%EF%BC%9A%E4%B8%9A%E5%8A%A1%E4%BE%A7%E8%AE%A1%E7%AE%97%EF%BC%8C%E6%95%B0%E6%8D%AE%E9%9D%A2%E6%89%A7%E8%A1%8C"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 配额：业务侧计算，数据面执行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%8F%AF%E7%94%A8%E6%80%A7%EF%BC%9A%E8%AE%A9%E6%89%80%E6%9C%89%E6%95%85%E9%9A%9C%E4%BF%A1%E5%8F%B7%E8%BF%9B%E5%85%A5%E5%90%8C%E4%B8%80%E6%9D%A1%E9%80%89%E8%B7%AF%E9%93%BE%E8%B7%AF"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 可用性：让所有故障信号进入同一条选路链路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E9%85%8D%E7%BD%AE%EF%BC%9A%E6%98%8E%E7%A1%AE%E7%9C%9F%E6%BA%90%EF%BC%8C%E8%AE%A9%E6%95%B0%E6%8D%AE%E9%9D%A2%E6%9C%80%E7%BB%88%E6%94%B6%E6%95%9B"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 配置：明确真源，让数据面最终收敛</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C%E5%A6%82%E4%BD%95%E6%94%B9%E5%8F%98%E4%B8%8B%E4%B8%80%E6%AC%A1%E5%86%B3%E5%AE%9A"><span class="nav-number">6.</span> <span class="nav-text">六、运行结果如何改变下一次决定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">7.</span> <span class="nav-text">结语</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">8.</span> <span class="nav-text">延伸阅读</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
+  <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
+  <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">286</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/from-model-management-to-ai-gateway.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="衣舞晨风 (jiankunking)">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风">
+      <meta itemprop="description" content="专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="从模型管理到 AI 网关：权限、流量与成本如何形成闭环 | 衣舞晨风">
+      <meta itemprop="description" content="模型管理产生权限、配额和路由规则，AI 网关在每一次请求中执行这些规则，再将真实用量与运行状态送回业务侧。本文通过模型生命周期与请求生命周期，说明两套系统如何协同。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从模型管理到 AI 网关：权限、流量与成本如何形成闭环
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-05 21:00:00" itemprop="dateCreated datePublished" datetime="2026-10-05T21:00:00+08:00">2026-10-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ai/" itemprop="url" rel="index"><span itemprop="name">AI</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">模型管理产生权限、配额和路由规则，AI 网关在每一次请求中执行这些规则，再将真实用量与运行状态送回业务侧。本文通过模型生命周期与请求生命周期，说明两套系统如何协同。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>模型管理负责产生权限、配额和路由规则，AI 网关负责在每一次请求中执行这些规则。请求结束后，真实用量与运行状态再回到业务侧，成为分账、扩容和模型下线的依据。</p>
+</blockquote>
+<hr>
+<h2 id="一、审批通过，为什么请求仍然调不通"><a href="#一、审批通过，为什么请求仍然调不通" class="headerlink" title="一、审批通过，为什么请求仍然调不通"></a>一、审批通过，为什么请求仍然调不通</h2><p>假设应用 A 申请调用模型 M，审批已经通过，也拿到了令牌，但请求到达网关后仍然被拒绝。另一边，模型 M 已经从模型市场下线，旧路由却还在继续接收流量。</p>
+<p>这不是模型本身的问题，而是业务系统与请求链路没有接好：</p>
+<ul>
+<li>审批通过，只说明业务侧同意了申请；权限、凭证和配额还要正确下发到网关；</li>
+<li>模型下线，只说明资产状态发生了变化；路由、令牌和调用关系也要同步回收。</li>
+</ul>
+<p>模型管理和 AI 网关各自只解决了一半问题。前者知道谁可以使用哪个模型、额度是多少、成本归到哪里；后者看得到每一次真实请求，却天然不知道这些业务规则从何而来。</p>
+<p>因此，两者之间需要两条稳定的链路：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">业务决定向下：模型、权限、配额、路由规则 → AI 网关</span><br><span class="line">运行结果向上：Token 用量、调用状态、实例健康 → 业务系统</span><br></pre></td></tr></table></figure>
+
+<p>本文讨论的就是这套协作关系。为了避免陷入功能清单，下面只沿两条主线展开：<strong>一个模型如何进入和退出系统，以及一次请求如何执行模型规则。</strong></p>
+<hr>
+<h2 id="二、先划清边界：谁做决定，谁执行决定"><a href="#二、先划清边界：谁做决定，谁执行决定" class="headerlink" title="二、先划清边界：谁做决定，谁执行决定"></a>二、先划清边界：谁做决定，谁执行决定</h2><p>模型平台涉及资产、权限、流量、可用性和成本等多类能力。如果按照产品菜单罗列，很容易得到一张庞大却无法落地的功能清单。更有效的划分方式，是追问每项能力由谁执行、输入是什么、结果流向哪里。</p>
+<p>按这个标准，整套能力可以归入 8 个域：</p>
+<p><img src="/images/from-model-management-to-ai-gateway/capability-map-8-domains-v2.png" alt="图 1 · 能力图谱全景（8 域）" loading="eager" fetchpriority="high" decoding="async" width="2352" height="1078"></p>
+<p>A–G 覆盖请求执行及其运行保障，H 则管理模型从上架、授权到下线的资产关系。前者回答“请求如何执行”，后者回答“为什么这样执行”。</p>
+<p>落实到系统中，可以进一步拆成三个平面：</p>
+<p><img src="/images/from-model-management-to-ai-gateway/three-planes.png" alt="图 2 · 三平面分工" loading="lazy" decoding="async" width="2352" height="1666"></p>
+<h3 id="2-1-业务面：产生规则"><a href="#2-1-业务面：产生规则" class="headerlink" title="2.1 业务面：产生规则"></a>2.1 业务面：产生规则</h3><p>业务面管理模型资产与使用规则：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>回答的问题</th>
+<th>主要职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>模型资产层</td>
+<td>谁能用什么</td>
+<td>模型注册与上下架、市场与选型、申请审批、令牌权限、下线迁移</td>
+</tr>
+<tr>
+<td>配额与分析层</td>
+<td>能用多少、用了多少</td>
+<td>配额编排、调用明细、成本分账与看板</td>
+</tr>
+</tbody></table>
+<p>它不直接处理推理流量，而是输出结构化规则：某个令牌可以调用哪些模型、适用什么配额、费用归到哪个应用或用户。</p>
+<h3 id="2-2-配置面：翻译并交付规则"><a href="#2-2-配置面：翻译并交付规则" class="headerlink" title="2.2 配置面：翻译并交付规则"></a>2.2 配置面：翻译并交付规则</h3><p>业务对象不能直接被网关执行。配置面要把申请、权限和配额翻译成路由模板、模型实例、策略配置、调用方身份和凭证，再交付给数据面。</p>
+<p>如果业务面负责托管配置，可以将数据库中的“期望状态”作为真源。业务和运维变更都先写入期望状态，再由配置面完成版本校验、增量下发和回读；非受管字段则保留数据面现状，避免一次业务变更覆盖独立的运维配置。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">数据库真源 → 受管范围校验 → 增量下发 → 回读校验</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-数据面：执行规则并记录结果"><a href="#2-3-数据面：执行规则并记录结果" class="headerlink" title="2.3 数据面：执行规则并记录结果"></a>2.3 数据面：执行规则并记录结果</h3><p>数据面以成熟 API 网关为底座，不维护模型资产，也不计算业务套餐。它只在请求链路中执行鉴权、限流、选路、改写和转发，并记录真实用量。</p>
+<p>三个平面并不是三套孤立系统：配置面把业务规则送到数据面，数据面再把用量和状态送回业务面。</p>
+<hr>
+<h2 id="三、模型消费与治理生命周期"><a href="#三、模型消费与治理生命周期" class="headerlink" title="三、模型消费与治理生命周期"></a>三、模型消费与治理生命周期</h2><p>回到应用 A 和模型 M。这里讨论的不是模型训练和版本生产，而是一个模型从进入服务目录，到被申请、调用、计量和退出的治理过程：</p>
+<p><img src="/images/from-model-management-to-ai-gateway/model-consumption-governance-lifecycle.png" alt="图 3 · 模型消费与治理生命周期" loading="lazy" decoding="async" width="2352" height="396"></p>
+<h3 id="3-1-选型：确认模型是否适合场景"><a href="#3-1-选型：确认模型是否适合场景" class="headerlink" title="3.1 选型：确认模型是否适合场景"></a>3.1 选型：确认模型是否适合场景</h3><p>模型市场提供体验与对比入口。用户可以并排比较多个模型，调整 <code>Temperature</code>、<code>Top_p</code>、<code>Max_tokens</code>，也可以保持参数不变后更换模型重跑。</p>
+<p>选型不只是比较模型名称和效果，还要考虑推理能力、安全风险、部署方式和成本。使用私有化实例还是云服务，也会影响后续申请和路由方式。</p>
+<h3 id="3-2-申请：先确定用途与成本归属"><a href="#3-2-申请：先确定用途与成本归属" class="headerlink" title="3.2 申请：先确定用途与成本归属"></a>3.2 申请：先确定用途与成本归属</h3><p>申请由使用方式和环境共同决定：低代码智能体平台、微服务调用或个人办公，以及测试或生产环境。</p>
+<p>生产权限必须绑定明确场景。否则，即使请求可以成功，也无法完成审计、分账和问题定位。申请的本质，是建立模型、调用方和成本中心之间的关系。</p>
+<h3 id="3-3-授权：让审批结果进入请求链路"><a href="#3-3-授权：让审批结果进入请求链路" class="headerlink" title="3.3 授权：让审批结果进入请求链路"></a>3.3 授权：让审批结果进入请求链路</h3><p>一个令牌可以关联多个模型权限，不必为每个模型重复申请 Key。令牌回收时，需要同时检查模型权限和应用引用，避免留下“仍然有效，却找不到使用方”的凭证。</p>
+<p>申请通过后，授权还要继续下沉。对于身份稳定的应用调用，可以签发令牌、创建调用方身份对象（有些网关称为 Consumer）、写入模型权限与配额，并加入路由白名单；对于临时或动态身份，也可以由运行时策略服务实时完成鉴权和额度判断。</p>
+<p>只有对应调用路径所需的凭证、权限和策略都已生效，业务系统中的“已授权”才真正变成请求链路中的“可以调用”。</p>
+<h3 id="3-4-调用：把场景信息带进请求"><a href="#3-4-调用：把场景信息带进请求" class="headerlink" title="3.4 调用：把场景信息带进请求"></a>3.4 调用：把场景信息带进请求</h3><p>调用约定不是单纯的 SDK 说明，而是模型管理规则在请求侧的表达：</p>
+<table>
+<thead>
+<tr>
+<th>用户侧约定</th>
+<th>背后的系统含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RPM &#x2F; TPM 任一超限即拒绝</td>
+<td>同时保护请求频率、模型吞吐与成本预算</td>
+</tr>
+<tr>
+<td>同一对话携带稳定的会话标识</td>
+<td>为会话亲和以及后端支持的前缀或会话缓存提供复用机会</td>
+</tr>
+<tr>
+<td>通过链路上下文传递用户信息</td>
+<td>将调用关联到用户和成本中心，支持端到端归因</td>
+</tr>
+</tbody></table>
+<p>具体实现可以使用自定义请求头，也可以使用 OpenTelemetry <code>baggage</code> 等标准机制。关键不在字段名称，而在于会话、用户和成本归属能够稳定进入数据面。</p>
+<h3 id="3-5-计量：把-Token-用量归还给调用方"><a href="#3-5-计量：把-Token-用量归还给调用方" class="headerlink" title="3.5 计量：把 Token 用量归还给调用方"></a>3.5 计量：把 Token 用量归还给调用方</h3><p>一次用户交互可能触发多次模型调用，只按交互次数或请求数无法描述实际消耗，因此容量和成本需要统一到 Token 口径。压测可以得到单次交互的平均用量，分账也可以按调用方归集到应用。成本估算还要区分输入、输出和缓存 Token，例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">日成本 ≈ DAU × 单人日均交互次数</span><br><span class="line">       ×（单次平均输入 Token × 输入单价</span><br><span class="line">        + 单次平均输出 Token × 输出单价</span><br><span class="line">        + 单次平均缓存用量 × 对应单价）</span><br></pre></td></tr></table></figure>
+
+<p>网关在这里承担反馈入口：把不同上游的 usage 归一化，记录输入、输出与缓存 Token、模型实例、调用者和链路信息，再交给配额结算、明细查询与成本分账使用。如果调用失败、流式连接中断或上游没有返回 usage，还需要定义估算、补偿或对账策略。</p>
+<h3 id="3-6-下线：先切断调用关系，再删除资产"><a href="#3-6-下线：先切断调用关系，再删除资产" class="headerlink" title="3.6 下线：先切断调用关系，再删除资产"></a>3.6 下线：先切断调用关系，再删除资产</h3><p>模型下线不能只从模型列表中删除。已发布路由、已签发令牌、智能体引用和在途迁移都要同步处理。</p>
+<p>一种常见做法是先把模型标记为“迁移中”，阻止它继续创建新路由，同时检查替代模型与现有调用方式是否兼容。无论具体实现如何，正确顺序都是：先切换调用关系，再回收令牌和路由，最后下架模型资产。只删除模型列表中的记录，无法真正停止流量。</p>
+<p>模型下线后，替代模型会重新进入选型流程；运行期间积累的用量和健康数据，也会持续影响配额、扩容和供应商选择。</p>
+<hr>
+<h2 id="四、一次请求如何执行这些规则"><a href="#四、一次请求如何执行这些规则" class="headerlink" title="四、一次请求如何执行这些规则"></a>四、一次请求如何执行这些规则</h2><p>模型消费与治理生命周期建立了资产关系，请求链路则负责执行这些关系。</p>
+<p><img src="/images/from-model-management-to-ai-gateway/request-pipeline-eight-stages.png" alt="图 4 · 请求执行链路" loading="lazy" decoding="async" width="2352" height="628"></p>
+<p>图中的主链路可以拆成八个阶段：</p>
+<ol>
+<li><strong>身份与模型权限</strong>：确认调用方身份，以及是否允许调用目标模型。</li>
+<li><strong>安全与请求校验</strong>：执行内容安全、参数约束和请求体保护等策略。</li>
+<li><strong>调用方与模型级准入</strong>：检查 RPM、并发和可提前确定的输入 Token。</li>
+<li><strong>候选过滤与选路</strong>：排除不健康、熔断或供应商额度耗尽的实例。</li>
+<li><strong>实例级检查</strong>：检查选中实例的额度和并发限制。</li>
+<li><strong>请求适配</strong>：注入上游凭证，映射模型名并完成协议转换。</li>
+<li><strong>转发与流式处理</strong>：把请求交给上游，并处理普通或流式响应。</li>
+<li><strong>响应归一化与结算</strong>：解析 usage，更新配额、日志、指标和调用明细。</li>
+</ol>
+<p>这里需要把两类限流分开：调用方、模型和全局准入可以发生在选路前；依赖具体实例的额度和并发检查则要在选路时或选路后完成。真实输出用量只能在响应结束后结算。</p>
+<h3 id="4-1-不同身份来源可以走不同鉴权路径"><a href="#4-1-不同身份来源可以走不同鉴权路径" class="headerlink" title="4.1 不同身份来源可以走不同鉴权路径"></a>4.1 不同身份来源可以走不同鉴权路径</h3><p>固定应用和动态用户的身份、权限及配额来源不同，因此不必强行使用同一套鉴权模型：</p>
+<p><img src="/images/from-model-management-to-ai-gateway/fixed-vs-dynamic-identity-paths.png" alt="图 5 · 固定应用与动态用户的两条调用路径" loading="lazy" decoding="async" width="2352" height="440"></p>
+<ul>
+<li><strong>固定应用路径</strong>：令牌绑定固定调用方，网关可以在本地完成身份、模型权限和配额检查。</li>
+<li><strong>动态用户路径</strong>：不必为每个用户创建固定消费者对象，可以调用独立的运行时策略服务实时校验身份与额度，并在请求结束后结算实际用量。</li>
+</ul>
+<p>两条路径既可以通过不同域名隔离，也可以通过独立路由或认证策略区分。域名或路由负责分流，业务标签只作为策略属性，不能同时承担隐式分流。动态鉴权一旦进入请求关键路径，就应由高可用、低延迟的运行时服务承担，而不是直接依赖管理后台。</p>
+<h3 id="4-2-一份-usage，统一所有计量口径"><a href="#4-2-一份-usage，统一所有计量口径" class="headerlink" title="4.2 一份 usage，统一所有计量口径"></a>4.2 一份 usage，统一所有计量口径</h3><p>网关把上游 usage 解析为一份标准化用量对象，再将它同时用于 Token 配额结算、业务侧用量上报、日志和指标，避免多个模块分别解释供应商字段造成口径不一致。</p>
+<p>这一步把”请求成功”变成了可运营信息：不仅知道调用是否完成，还知道用了哪个实例、消耗多少 Token、归属于谁。</p>
+<p>请求体和响应体可能包含提示词、业务数据甚至个人信息，”能够记录”不等于”默认全量留存”。生产环境还需要按场景决定是否采样，并配套字段脱敏、访问控制和保留周期。</p>
+<hr>
+<h2 id="五、闭环中的三个关键机制"><a href="#五、闭环中的三个关键机制" class="headerlink" title="五、闭环中的三个关键机制"></a>五、闭环中的三个关键机制</h2><p>两条生命周期接通之后，还有三个实现问题需要处理：配额如何结算、故障如何绕开，以及配置失败后如何恢复一致。</p>
+<h3 id="5-1-配额：业务侧计算，数据面执行"><a href="#5-1-配额：业务侧计算，数据面执行" class="headerlink" title="5.1 配额：业务侧计算，数据面执行"></a>5.1 配额：业务侧计算，数据面执行</h3><p>业务侧掌握模型权限、套餐和成本规则，适合回答”应该给多少”；数据面看到每一次真实请求，适合回答”已经用了多少”。两者不能互换。</p>
+<p>以固定应用路径为例，可以通过五步链路连接二者：</p>
+<p><img src="/images/from-model-management-to-ai-gateway/quota-five-step-loop.png" alt="图 6 · 配额生成与执行的五步链路" loading="lazy" decoding="async" width="2352" height="1060"></p>
+<p>在这种模式下，网关不维护套餐等业务规则，只接收经过可信链路交付的配额结果。如果调用方身份是动态的，鉴权和额度判断也可以由运行时策略服务实时完成。</p>
+<p>这里要区分三类口径：RPM &#x2F; TPM 是时间窗口内的速率限制，Token 预算是日或月维度的可消费额度，账单则按输入、输出和缓存 Token 的价格结算。它们可以复用同一份标准化 usage，但不能共用一个“余额”概念。</p>
+<p>Token 控制通常分两段：请求前检查 RPM、并发、输入 Token 和预算余量，响应后再按真实 usage 更新 TPM、预算和账单。对于输出 Token，可以选择按 <code>max_tokens</code> 预留后结算，也可以不预留并接受并发请求造成的短时超额。</p>
+<p>对用户而言，这些实现最终表现为 RPM &#x2F; TPM 等限制。具体数值可以由模型目录或管理控制台展示，不必固化在调用文档中。</p>
+<p>如果配额需要区分忙时与闲时，更适合在请求到来时根据时段计算当前额度，而不是每天定时批量修改线上配置。</p>
+<h3 id="5-2-可用性：让所有故障信号进入同一条选路链路"><a href="#5-2-可用性：让所有故障信号进入同一条选路链路" class="headerlink" title="5.2 可用性：让所有故障信号进入同一条选路链路"></a>5.2 可用性：让所有故障信号进入同一条选路链路</h3><p>一个模型可能同时对应自建实例、云服务和备用供应商。转发前，启用状态、健康状态、供应商额度、熔断状态和本轮已尝试集合共同决定实例能否进入候选；转发后，只有满足明确条件的失败才能触发候选切换。</p>
+<p>这些信号需要汇入同一条选路链路。否则，刚被健康检查摘除的实例可能又被另一套逻辑选中，额度耗尽的高优先级实例也可能继续收到流量。</p>
+<p><img src="/images/from-model-management-to-ai-gateway/fallback-selection-retry-v2.png" alt="图 7 · Fallback 的筛选与重试链路" loading="lazy" decoding="async" width="2352" height="382"></p>
+<p>当高优先级实例不可用时，请求可以自动落到低优先级实例。完整时间顺序如下：</p>
+<p><img src="/images/from-model-management-to-ai-gateway/ai-request-complete-journey-diagram-hd-v2.gif" alt="图 8 · 一次请求的完整链路：从进门到交账" loading="lazy" decoding="async" width="4320" height="2852"></p>
+<p>实例 C 因主动健康检查失败被移出候选；实例 A 返回可重试错误后，先进入本次请求的“已尝试集合”，必要时也可以进入短时冷却或被动熔断。只有尚未向客户端输出响应、请求可以安全重试、失败类型匹配且时间与次数预算都未耗尽时，选路器才继续选择实例 B。对于已经输出部分内容的流式响应，网关通常不能透明切换实例，只能结束响应并返回可识别的错误。如果候选全部耗尽，则返回明确错误，不能无限循环或重新启用不健康实例。</p>
+<h3 id="5-3-配置：明确真源，让数据面最终收敛"><a href="#5-3-配置：明确真源，让数据面最终收敛" class="headerlink" title="5.3 配置：明确真源，让数据面最终收敛"></a>5.3 配置：明确真源，让数据面最终收敛</h3><p>模型权限、配额和实例状态都会变化，但需要先区分两类状态：启用、禁用、权重和优先级属于控制面下发的期望状态；健康、延迟、错误率和熔断属于数据面产生的运行状态。运行状态不应被当作普通配置反复覆盖，期望状态也不应通过全量下发覆盖数据面的独立配置。</p>
+<p>当业务系统托管网关配置时，需要守住两条边界：</p>
+<ul>
+<li><strong>真源边界</strong>：受管配置以业务数据库为真源，非受管配置保留数据面现状；数据库事务提交后再调用网关，外部 IO 不进入事务。</li>
+<li><strong>失败边界</strong>：下发失败后记录状态、告警并重试，或按既定一致性策略执行补偿，不能让一次双写失败变成无法识别的中间状态。</li>
+</ul>
+<p>配置面只修改目标字段，并在下发后回读确认。目标不是保证每次调用都不失败，而是在失败后仍然知道正确状态在哪里，并让数据面最终恢复一致。</p>
+<hr>
+<h2 id="六、运行结果如何改变下一次决定"><a href="#六、运行结果如何改变下一次决定" class="headerlink" title="六、运行结果如何改变下一次决定"></a>六、运行结果如何改变下一次决定</h2><p>运行结果会从三个地方往回走：</p>
+<table>
+<thead>
+<tr>
+<th>回流的触发</th>
+<th>谁接住</th>
+<th>改变什么决定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>可重试错误持续出现并达到告警或熔断阈值</td>
+<td>数据面降权或熔断机制</td>
+<td>实例的候选资格或选路优先级，直接影响后续选路</td>
+</tr>
+<tr>
+<td>Token 用量与调用明细</td>
+<td>配额与分析层</td>
+<td>分账到应用或成本中心，并支撑容量与成本分析</td>
+</tr>
+<tr>
+<td>实例健康状态与用量趋势</td>
+<td>运维与模型运营</td>
+<td>扩容、降级、补充供应商，或启动模型迁移与下线</td>
+</tr>
+</tbody></table>
+<p>第一类反馈可以自动影响后续选路；后两类通常先进入账单和看板，再由运营或运维决定扩容、切换供应商或下线。</p>
+<p>这里要区分两个问题：审批通过后调不通、模型下线后仍有流量，属于配置交付与状态一致性问题；用量能否支撑分账和扩容，则属于运行反馈问题。前者保证业务规则能够真正生效，后者让规则可以根据实际运行持续调整。两者同时成立，系统才形成完整闭环。</p>
+<hr>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>模型管理负责建立和改变资产关系，AI 网关负责在每一次请求中执行这些关系。配置面把权限、配额和路由规则送到网关，用量与运行状态再沿反方向返回业务侧。</p>
+<p>少了配置交付，审批和下线只是业务系统中的状态；少了运行反馈，网关完成的也只是转发，无法支撑分账、扩容和供应商治理。</p>
+<p>因此，能力图谱的价值不在于功能数量，而在于让每项能力都能找到明确的执行位置、输入、输出和反馈路径。只有这些关系真正接通，模型资产、流量治理和成本管理才会成为一套系统。</p>
+<hr>
+<h2 id="延伸阅读"><a href="#延伸阅读" class="headerlink" title="延伸阅读"></a>延伸阅读</h2><ul>
+<li>选型标准：<a href="https://jiankunking.com/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html">《什么样的网关，才算好的 AI 网关？》</a></li>
+<li>另一种限流形态：<a href="https://jiankunking.com/llm-gateway-rate-limiting-with-litetopic.html">《大模型网关限流新思路：从进程内漏桶到分布式漏桶矩阵》</a></li>
+<li>协议转换：<a href="https://jiankunking.com/efficient-design-and-development-in-the-ai-era-practice-of-plugin-development-for-converting-anthropic-requests-to-an-openai-compatible-backend.html">《AI 时代高效设计开发：Anthropic → OpenAI 协议转换插件实战》</a></li>
+<li>生产排查：<a href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html">《一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查》</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>请我喝杯啤酒吧！</div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风 (jiankunking) 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <span>微信</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>衣舞晨风 (jiankunking)
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://jiankunking.com/from-model-management-to-ai-gateway.html" title="从模型管理到 AI 网关：权限、流量与成本如何形成闭环">https://jiankunking.com/from-model-management-to-ai-gateway.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/gateway/" rel="tag"># Gateway</a>
+              <a href="/tags/architecture/" rel="tag"># Architecture</a>
+              <a href="/tags/ai-gateway/" rel="tag"># AI Gateway</a>
+              <a href="/tags/rate-limiting/" rel="tag"># Rate Limiting</a>
+              <a href="/tags/llm/" rel="tag"># LLM</a>
+              <a href="/tags/llmops/" rel="tag"># LLMOps</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/one-upgrade-two-independent-bugs-api7-gateway.html" rel="prev" title="一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查">
+                  <i class="fa fa-angle-left"></i> 一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风 (jiankunking)</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">861k</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

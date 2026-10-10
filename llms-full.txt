@@ -5,16 +5,294 @@
 Canonical site: https://jiankunking.com/
 Author: 衣舞晨风 (jiankunking)
 Author profile: https://jiankunking.com/about/
-Generated from 177 indexable articles. Each entry keeps its canonical URL and content provenance.
+Generated from 178 indexable articles. Each entry keeps its canonical URL and content provenance.
 
 ## Core topics
 
-- [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
-- [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
 - [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
+- [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
+- [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
 - [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
 
 ## Articles
+### 从模型管理到 AI 网关：权限、流量与成本如何形成闭环
+
+- URL: https://jiankunking.com/from-model-management-to-ai-gateway.html
+- Content type: original
+- Published: 2026-10-05
+- Updated: 2026-10-05
+- Summary: 模型管理产生权限、配额和路由规则，AI 网关在每一次请求中执行这些规则，再将真实用量与运行状态送回业务侧。本文通过模型生命周期与请求生命周期，说明两套系统如何协同。
+- Categories: AI
+- Tags: Gateway, Architecture, AI Gateway, Rate Limiting, LLM, LLMOps
+
+Article text:
+
+模型管理负责产生权限、配额和路由规则，AI 网关负责在每一次请求中执行这些规则。请求结束后，真实用量与运行状态再回到业务侧，成为分账、扩容和模型下线的依据。
+
+一、审批通过，为什么请求仍然调不通
+
+假设应用 A 申请调用模型 M，审批已经通过，也拿到了令牌，但请求到达网关后仍然被拒绝。另一边，模型 M 已经从模型市场下线，旧路由却还在继续接收流量。
+
+这不是模型本身的问题，而是业务系统与请求链路没有接好：
+
+- 审批通过，只说明业务侧同意了申请；权限、凭证和配额还要正确下发到网关；
+
+- 模型下线，只说明资产状态发生了变化；路由、令牌和调用关系也要同步回收。
+
+模型管理和 AI 网关各自只解决了一半问题。前者知道谁可以使用哪个模型、额度是多少、成本归到哪里；后者看得到每一次真实请求，却天然不知道这些业务规则从何而来。
+
+因此，两者之间需要两条稳定的链路：
+
+1
+2
+
+ | 业务决定向下：模型、权限、配额、路由规则 → AI 网关
+运行结果向上：Token 用量、调用状态、实例健康 → 业务系统
+
+ |
+
+本文讨论的就是这套协作关系。为了避免陷入功能清单，下面只沿两条主线展开：一个模型如何进入和退出系统，以及一次请求如何执行模型规则。
+
+二、先划清边界：谁做决定，谁执行决定
+
+模型平台涉及资产、权限、流量、可用性和成本等多类能力。如果按照产品菜单罗列，很容易得到一张庞大却无法落地的功能清单。更有效的划分方式，是追问每项能力由谁执行、输入是什么、结果流向哪里。
+
+按这个标准，整套能力可以归入 8 个域：
+
+A–G 覆盖请求执行及其运行保障，H 则管理模型从上架、授权到下线的资产关系。前者回答“请求如何执行”，后者回答“为什么这样执行”。
+
+落实到系统中，可以进一步拆成三个平面：
+
+2.1 业务面：产生规则
+
+业务面管理模型资产与使用规则：
+
+层
+回答的问题
+主要职责
+
+模型资产层 |
+谁能用什么 |
+模型注册与上下架、市场与选型、申请审批、令牌权限、下线迁移 |
+
+配额与分析层 |
+能用多少、用了多少 |
+配额编排、调用明细、成本分账与看板 |
+
+它不直接处理推理流量，而是输出结构化规则：某个令牌可以调用哪些模型、适用什么配额、费用归到哪个应用或用户。
+
+2.2 配置面：翻译并交付规则
+
+业务对象不能直接被网关执行。配置面要把申请、权限和配额翻译成路由模板、模型实例、策略配置、调用方身份和凭证，再交付给数据面。
+
+如果业务面负责托管配置，可以将数据库中的“期望状态”作为真源。业务和运维变更都先写入期望状态，再由配置面完成版本校验、增量下发和回读；非受管字段则保留数据面现状，避免一次业务变更覆盖独立的运维配置。
+
+1
+
+ | 数据库真源 → 受管范围校验 → 增量下发 → 回读校验
+
+ |
+
+2.3 数据面：执行规则并记录结果
+
+数据面以成熟 API 网关为底座，不维护模型资产，也不计算业务套餐。它只在请求链路中执行鉴权、限流、选路、改写和转发，并记录真实用量。
+
+三个平面并不是三套孤立系统：配置面把业务规则送到数据面，数据面再把用量和状态送回业务面。
+
+三、模型消费与治理生命周期
+
+回到应用 A 和模型 M。这里讨论的不是模型训练和版本生产，而是一个模型从进入服务目录，到被申请、调用、计量和退出的治理过程：
+
+3.1 选型：确认模型是否适合场景
+
+模型市场提供体验与对比入口。用户可以并排比较多个模型，调整 Temperature、Top_p、Max_tokens，也可以保持参数不变后更换模型重跑。
+
+选型不只是比较模型名称和效果，还要考虑推理能力、安全风险、部署方式和成本。使用私有化实例还是云服务，也会影响后续申请和路由方式。
+
+3.2 申请：先确定用途与成本归属
+
+申请由使用方式和环境共同决定：低代码智能体平台、微服务调用或个人办公，以及测试或生产环境。
+
+生产权限必须绑定明确场景。否则，即使请求可以成功，也无法完成审计、分账和问题定位。申请的本质，是建立模型、调用方和成本中心之间的关系。
+
+3.3 授权：让审批结果进入请求链路
+
+一个令牌可以关联多个模型权限，不必为每个模型重复申请 Key。令牌回收时，需要同时检查模型权限和应用引用，避免留下“仍然有效，却找不到使用方”的凭证。
+
+申请通过后，授权还要继续下沉。对于身份稳定的应用调用，可以签发令牌、创建调用方身份对象（有些网关称为 Consumer）、写入模型权限与配额，并加入路由白名单；对于临时或动态身份，也可以由运行时策略服务实时完成鉴权和额度判断。
+
+只有对应调用路径所需的凭证、权限和策略都已生效，业务系统中的“已授权”才真正变成请求链路中的“可以调用”。
+
+3.4 调用：把场景信息带进请求
+
+调用约定不是单纯的 SDK 说明，而是模型管理规则在请求侧的表达：
+
+用户侧约定
+背后的系统含义
+
+RPM &#x2F; TPM 任一超限即拒绝 |
+同时保护请求频率、模型吞吐与成本预算 |
+
+同一对话携带稳定的会话标识 |
+为会话亲和以及后端支持的前缀或会话缓存提供复用机会 |
+
+通过链路上下文传递用户信息 |
+将调用关联到用户和成本中心，支持端到端归因 |
+
+具体实现可以使用自定义请求头，也可以使用 OpenTelemetry baggage 等标准机制。关键不在字段名称，而在于会话、用户和成本归属能够稳定进入数据面。
+
+3.5 计量：把 Token 用量归还给调用方
+
+一次用户交互可能触发多次模型调用，只按交互次数或请求数无法描述实际消耗，因此容量和成本需要统一到 Token 口径。压测可以得到单次交互的平均用量，分账也可以按调用方归集到应用。成本估算还要区分输入、输出和缓存 Token，例如：
+
+1
+2
+3
+4
+
+ | 日成本 ≈ DAU × 单人日均交互次数
+ ×（单次平均输入 Token × 输入单价
+ + 单次平均输出 Token × 输出单价
+ + 单次平均缓存用量 × 对应单价）
+
+ |
+
+网关在这里承担反馈入口：把不同上游的 usage 归一化，记录输入、输出与缓存 Token、模型实例、调用者和链路信息，再交给配额结算、明细查询与成本分账使用。如果调用失败、流式连接中断或上游没有返回 usage，还需要定义估算、补偿或对账策略。
+
+3.6 下线：先切断调用关系，再删除资产
+
+模型下线不能只从模型列表中删除。已发布路由、已签发令牌、智能体引用和在途迁移都要同步处理。
+
+一种常见做法是先把模型标记为“迁移中”，阻止它继续创建新路由，同时检查替代模型与现有调用方式是否兼容。无论具体实现如何，正确顺序都是：先切换调用关系，再回收令牌和路由，最后下架模型资产。只删除模型列表中的记录，无法真正停止流量。
+
+模型下线后，替代模型会重新进入选型流程；运行期间积累的用量和健康数据，也会持续影响配额、扩容和供应商选择。
+
+四、一次请求如何执行这些规则
+
+模型消费与治理生命周期建立了资产关系，请求链路则负责执行这些关系。
+
+图中的主链路可以拆成八个阶段：
+
+- 身份与模型权限：确认调用方身份，以及是否允许调用目标模型。
+
+- 安全与请求校验：执行内容安全、参数约束和请求体保护等策略。
+
+- 调用方与模型级准入：检查 RPM、并发和可提前确定的输入 Token。
+
+- 候选过滤与选路：排除不健康、熔断或供应商额度耗尽的实例。
+
+- 实例级检查：检查选中实例的额度和并发限制。
+
+- 请求适配：注入上游凭证，映射模型名并完成协议转换。
+
+- 转发与流式处理：把请求交给上游，并处理普通或流式响应。
+
+- 响应归一化与结算：解析 usage，更新配额、日志、指标和调用明细。
+
+这里需要把两类限流分开：调用方、模型和全局准入可以发生在选路前；依赖具体实例的额度和并发检查则要在选路时或选路后完成。真实输出用量只能在响应结束后结算。
+
+4.1 不同身份来源可以走不同鉴权路径
+
+固定应用和动态用户的身份、权限及配额来源不同，因此不必强行使用同一套鉴权模型：
+
+- 固定应用路径：令牌绑定固定调用方，网关可以在本地完成身份、模型权限和配额检查。
+
+- 动态用户路径：不必为每个用户创建固定消费者对象，可以调用独立的运行时策略服务实时校验身份与额度，并在请求结束后结算实际用量。
+
+两条路径既可以通过不同域名隔离，也可以通过独立路由或认证策略区分。域名或路由负责分流，业务标签只作为策略属性，不能同时承担隐式分流。动态鉴权一旦进入请求关键路径，就应由高可用、低延迟的运行时服务承担，而不是直接依赖管理后台。
+
+4.2 一份 usage，统一所有计量口径
+
+网关把上游 usage 解析为一份标准化用量对象，再将它同时用于 Token 配额结算、业务侧用量上报、日志和指标，避免多个模块分别解释供应商字段造成口径不一致。
+
+这一步把”请求成功”变成了可运营信息：不仅知道调用是否完成，还知道用了哪个实例、消耗多少 Token、归属于谁。
+
+请求体和响应体可能包含提示词、业务数据甚至个人信息，”能够记录”不等于”默认全量留存”。生产环境还需要按场景决定是否采样，并配套字段脱敏、访问控制和保留周期。
+
+五、闭环中的三个关键机制
+
+两条生命周期接通之后，还有三个实现问题需要处理：配额如何结算、故障如何绕开，以及配置失败后如何恢复一致。
+
+5.1 配额：业务侧计算，数据面执行
+
+业务侧掌握模型权限、套餐和成本规则，适合回答”应该给多少”；数据面看到每一次真实请求，适合回答”已经用了多少”。两者不能互换。
+
+以固定应用路径为例，可以通过五步链路连接二者：
+
+在这种模式下，网关不维护套餐等业务规则，只接收经过可信链路交付的配额结果。如果调用方身份是动态的，鉴权和额度判断也可以由运行时策略服务实时完成。
+
+这里要区分三类口径：RPM &#x2F; TPM 是时间窗口内的速率限制，Token 预算是日或月维度的可消费额度，账单则按输入、输出和缓存 Token 的价格结算。它们可以复用同一份标准化 usage，但不能共用一个“余额”概念。
+
+Token 控制通常分两段：请求前检查 RPM、并发、输入 Token 和预算余量，响应后再按真实 usage 更新 TPM、预算和账单。对于输出 Token，可以选择按 max_tokens 预留后结算，也可以不预留并接受并发请求造成的短时超额。
+
+对用户而言，这些实现最终表现为 RPM &#x2F; TPM 等限制。具体数值可以由模型目录或管理控制台展示，不必固化在调用文档中。
+
+如果配额需要区分忙时与闲时，更适合在请求到来时根据时段计算当前额度，而不是每天定时批量修改线上配置。
+
+5.2 可用性：让所有故障信号进入同一条选路链路
+
+一个模型可能同时对应自建实例、云服务和备用供应商。转发前，启用状态、健康状态、供应商额度、熔断状态和本轮已尝试集合共同决定实例能否进入候选；转发后，只有满足明确条件的失败才能触发候选切换。
+
+这些信号需要汇入同一条选路链路。否则，刚被健康检查摘除的实例可能又被另一套逻辑选中，额度耗尽的高优先级实例也可能继续收到流量。
+
+当高优先级实例不可用时，请求可以自动落到低优先级实例。完整时间顺序如下：
+
+实例 C 因主动健康检查失败被移出候选；实例 A 返回可重试错误后，先进入本次请求的“已尝试集合”，必要时也可以进入短时冷却或被动熔断。只有尚未向客户端输出响应、请求可以安全重试、失败类型匹配且时间与次数预算都未耗尽时，选路器才继续选择实例 B。对于已经输出部分内容的流式响应，网关通常不能透明切换实例，只能结束响应并返回可识别的错误。如果候选全部耗尽，则返回明确错误，不能无限循环或重新启用不健康实例。
+
+5.3 配置：明确真源，让数据面最终收敛
+
+模型权限、配额和实例状态都会变化，但需要先区分两类状态：启用、禁用、权重和优先级属于控制面下发的期望状态；健康、延迟、错误率和熔断属于数据面产生的运行状态。运行状态不应被当作普通配置反复覆盖，期望状态也不应通过全量下发覆盖数据面的独立配置。
+
+当业务系统托管网关配置时，需要守住两条边界：
+
+- 真源边界：受管配置以业务数据库为真源，非受管配置保留数据面现状；数据库事务提交后再调用网关，外部 IO 不进入事务。
+
+- 失败边界：下发失败后记录状态、告警并重试，或按既定一致性策略执行补偿，不能让一次双写失败变成无法识别的中间状态。
+
+配置面只修改目标字段，并在下发后回读确认。目标不是保证每次调用都不失败，而是在失败后仍然知道正确状态在哪里，并让数据面最终恢复一致。
+
+六、运行结果如何改变下一次决定
+
+运行结果会从三个地方往回走：
+
+回流的触发
+谁接住
+改变什么决定
+
+可重试错误持续出现并达到告警或熔断阈值 |
+数据面降权或熔断机制 |
+实例的候选资格或选路优先级，直接影响后续选路 |
+
+Token 用量与调用明细 |
+配额与分析层 |
+分账到应用或成本中心，并支撑容量与成本分析 |
+
+实例健康状态与用量趋势 |
+运维与模型运营 |
+扩容、降级、补充供应商，或启动模型迁移与下线 |
+
+第一类反馈可以自动影响后续选路；后两类通常先进入账单和看板，再由运营或运维决定扩容、切换供应商或下线。
+
+这里要区分两个问题：审批通过后调不通、模型下线后仍有流量，属于配置交付与状态一致性问题；用量能否支撑分账和扩容，则属于运行反馈问题。前者保证业务规则能够真正生效，后者让规则可以根据实际运行持续调整。两者同时成立，系统才形成完整闭环。
+
+结语
+
+模型管理负责建立和改变资产关系，AI 网关负责在每一次请求中执行这些关系。配置面把权限、配额和路由规则送到网关，用量与运行状态再沿反方向返回业务侧。
+
+少了配置交付，审批和下线只是业务系统中的状态；少了运行反馈，网关完成的也只是转发，无法支撑分账、扩容和供应商治理。
+
+因此，能力图谱的价值不在于功能数量，而在于让每项能力都能找到明确的执行位置、输入、输出和反馈路径。只有这些关系真正接通，模型资产、流量治理和成本管理才会成为一套系统。
+
+延伸阅读
+
+- 选型标准：《什么样的网关，才算好的 AI 网关？》
+
+- 另一种限流形态：《大模型网关限流新思路：从进程内漏桶到分布式漏桶矩阵》
+
+- 协议转换：《AI 时代高效设计开发：Anthropic → OpenAI 协议转换插件实战》
+
+- 生产排查：《一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查》
+
 ### 一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查
 
 - URL: https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html
@@ -23,7 +301,7 @@ Generated from 177 indexable articles. Each entry keeps its canonical URL and co
 - Updated: 2026-09-21
 - Summary: 生产 API7 AI 网关一次升级引出两个互相独立的缺陷：流式请求偶发 500、低流量下多 worker CPU 打满，最明显的节点还叠加调频策略差异。开头先给结论摘要，再回溯排查过程：对照实验、监控反例、依赖 diff、perf 与受控复现，以及临时止血、最终修复与节点调频差异。
 - Categories: Debugging
-- Tags: Performance, API7, APISIX, Troubleshooting, AI Gateway, OpenResty, Lua, SSE, Prometheus
+- Tags: API7, APISIX, Troubleshooting, Performance, AI Gateway, Lua, OpenResty, SSE, Prometheus
 
 Article text:
 
@@ -432,7 +710,7 @@ key_count 和 delete_count 当时没有暴露成指标，我通过仅限运维�
 - Updated: 2026-09-12
 - Summary: 读百炼网关用 RocketMQ LiteTopic 重构大模型限流的文章后，记录核心思路，并补上原文跳过的响应通道设计——消费端调模型后，流式响应怎么回到客户端。
 - Categories: Architecture
-- Tags: Gateway, Redis, LLM, RocketMQ, LiteTopic, Rate Limiting, Leaky Bucket
+- Tags: Gateway, Redis, Rate Limiting, LLM, RocketMQ, LiteTopic, Leaky Bucket
 
 Article text:
 
@@ -3229,7 +3507,7 @@ AI放大的，还是人本来的水平
 - Updated: 2026-07-22
 - Summary: 《Harness工程》读书笔记，梳理上下文管理、规划执行、反思记忆、Skills、多 Agent 协作与 Agent 产品设计。
 - Categories: AI
-- Tags: AI Agent, Harness Engineering, Context Engineering, LLM, Skills
+- Tags: LLM, AI Agent, Harness Engineering, Context Engineering, Skills
 
 Article text:
 
@@ -4456,7 +4734,7 @@ RRF 和 Reranker 都会影响排序，但解决的问题不同：
 - Updated: 2026-07-11
 - Summary: 从网关基本功、AI 流量理解、运行时性能和工程治理四个维度，建立可量化的 AI Gateway 选型评分框架。
 - Categories: AI
-- Tags: Performance, Gateway, AI Gateway, AI, LLM, LLMOps, Observability, Traffic Governance
+- Tags: Gateway, Performance, AI Gateway, AI, LLM, LLMOps, Observability, Traffic Governance
 
 Article text:
 
@@ -4966,6 +5244,8 @@ I. 扩展性与可运维性（5%）
 
 最终一句话：好的 AI 网关不是最厚的，也不是最炫的，而是在清晰职责边界内，功能、性能和生产稳定性都能闭环的那个。
 
+边界另一侧的模型平台怎么管模型——一个模型从选型、申请、令牌、调用、计费到下线的一生，见《从模型管理到 AI 网关：把资产、流量与成本串成闭环》。
+
 2026-07-11 ｜ 依据：主流 AI 网关源码 &#x2F; 文档核验 + 落地经验
 
 ### 运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘
@@ -4976,7 +5256,7 @@ I. 扩展性与可运维性（5%）
 - Updated: 2026-09-29
 - Summary: 代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。
 - Categories: Debugging
-- Tags: API7, APISIX, CPU-Saturation, AI Gateway, OpenResty, Lua, SSE, Coroutine, Backpressure, AI-Assisted-Debugging
+- Tags: API7, APISIX, CPU-Saturation, AI Gateway, Lua, OpenResty, SSE, Coroutine, Backpressure, AI-Assisted-Debugging
 
 Article text:
 
@@ -7739,7 +8019,7 @@ Article text:
 - Updated: 2025-11-01
 - Summary: 企业上云后，单一云厂商风险逐渐暴露。本文介绍如何设计云原生网关架构，实现跨云高可用，涵盖集群适配、流量隔离等关键设计。
 - Categories: Architecture
-- Tags: Gateway, Multi-Cloud, High Availability, Kubernetes, Istio, Envoy
+- Tags: Gateway, Kubernetes, Multi-Cloud, High Availability, Istio, Envoy
 
 Article text:
 
@@ -9335,7 +9615,7 @@ ES适合的场景都有哪些？
 - Updated: 2026-09-29
 - Summary: 复盘 Elasticsearch 集群因索引和分片数量失控、mmap 与本地内存压力导致写入超时和集群变红的事故。
 - Categories: Debugging
-- Tags: Elasticsearch, Shard, Production-Incident, mmap, Memory-Management
+- Tags: Elasticsearch, Shard, mmap, Memory-Management, Production-Incident
 
 Article text:
 
@@ -14733,7 +15013,7 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-state.ht
 - Updated: 2026-09-29
 - Summary: 复盘一次 Elasticsearch 7 节点集群磁盘与分片问题引发的生产事故，记录分析、排查和恢复过程。
 - Categories: Debugging
-- Tags: Elasticsearch, Shard, Disk, Production-Incident
+- Tags: Elasticsearch, Shard, Production-Incident, Disk
 
 Article text:
 
@@ -15004,7 +15284,7 @@ Java garbage collection_ The 10-release evolution from JDK 8 to JDK 18
 - Updated: 2023-07-02
 - Summary: 《SQL必知必会》课程资料索引与学习笔记，汇总索引、B+树、Hash索引、缓冲池、慢SQL分析、数据恢复和SQL注入等数据库主题。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL
+- Tags: MySQL, Reading Notes
 
 Article text:
 
@@ -15737,7 +16017,7 @@ Redis 的 MONITOR 命令在执行后，会持续输出监测到的各个命令�
 - Updated: 2026-09-29
 - Summary: 分析Elasticsearch Index文件是如何存储的？ 主要是想看一下FST文件是以什么粒度创建的？
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Lucene, Storage
+- Tags: Elasticsearch, Storage, Lucene
 
 Article text:
 
@@ -16637,7 +16917,7 @@ logstash-2023.05.30 0 p STARTED 1520024 410.6mb 10.138.204.193 10.138.204.193-no
 - Updated: 2026-09-29
 - Summary: 本文介绍腾讯ES团队如何通过FST OffHeap优化，将堆内存使用率降低80%，单节点存储量从5TB提升至50TB。重点分析FST内存占用问题及零拷贝内存OffHeap的实现方案。
 - Categories: Elasticsearch
-- Tags: Performance, Java, Elasticsearch, 源码
+- Tags: Java, Performance, Elasticsearch, 源码
 - Original source: https://cloud.tencent.com/developer/article/1636527
 
 The full copied/translated body is omitted from this machine-readable corpus; follow the canonical and original-source URLs above.
@@ -16778,7 +17058,7 @@ ZAB 选举算法的核心是“少数服从多数，ID 大的节点优先成为�
 - Updated: 2023-05-20
 - Summary: 《MySQL必知必会》学习笔记，整理字段类型、浮点数与定点数、索引设计、查询优化及常见数据库使用误区，便于系统复习核心知识。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL, InnoDB
+- Tags: MySQL, Reading Notes, InnoDB
 
 Article text:
 
@@ -20238,7 +20518,7 @@ func (i *Pod) Exec(ctx context.Context, client *kubernetes.Clientset, config *re
 - Updated: 2026-09-29
 - Summary: 基于MySQL 5.7事务实验分析可重复读隔离级别下的幻读现象，说明一致性读、当前读及不同操作顺序为何能大幅避免但不能完全消除幻读。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL, InnoDB
+- Tags: MySQL, Reading Notes, InnoDB
 
 Article text:
 
@@ -20395,7 +20675,7 @@ COMMIT; |
 - Updated: 2022-01-22
 - Summary: 《编程高手必学的内存知识》学习笔记，涵盖虚拟内存、页表、进程地址空间、内存映射等核心概念。
 - Categories: Java
-- Tags: Reading Notes, Java
+- Tags: Java, Reading Notes
 
 Article text:
 
@@ -20548,7 +20828,7 @@ GC实例：Python和Go的内存管理机制是怎样的？
 - Updated: 2026-09-29
 - Summary: 《系统性能调优必知必会》学习笔记，涵盖CPU缓存、内存管理、磁盘I/O、网络性能等核心知识点。
 - Categories: Performance
-- Tags: Performance, Reading Notes
+- Tags: Reading Notes, Performance
 
 Article text:
 
@@ -29059,7 +29339,7 @@ https://github.com/getsentry/onpremise/issues/747#issuecomment-729850059
 - Updated: 2020-02-06
 - Summary: 《MySQL实战45讲》学习笔记，涵盖MySQL基础架构、索引优化、事务机制、锁机制、主从复制等核心知识点。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL
+- Tags: MySQL, Reading Notes
 
 Article text:
 
@@ -30193,7 +30473,7 @@ Article text:
 - Updated: 2019-12-22
 - Summary: 2的幂次方与字节、KB、MB、GB、TB的换算关系速查表，可用于快速估算内存占用和存储空间。
 - Categories: Basic
-- Tags: Math, Performance, Bitwise, Reading Notes
+- Tags: Reading Notes, Math, Performance, Bitwise
 
 Article text:
 
@@ -31740,7 +32020,7 @@ union ? union all ? 取决于需求及where过滤后的数据量
 - Updated: 2019-09-21
 - Summary: 整理计算机系统中常见操作的时间量级，帮助理解 CPU、内存、磁盘和网络访问之间的性能差距。
 - Categories: Network
-- Tags: Performance, Reading Notes
+- Tags: Reading Notes, Performance
 
 Article text:
 
@@ -31839,7 +32119,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2019-09-16
 - Summary: 《垃圾回收算法手册》学习笔记，系统整理引用计数、标记清扫、复制、分代、并发与增量式垃圾回收算法的原理、权衡和实现思路。
 - Categories: Java
-- Tags: Reading Notes, Java, JVM
+- Tags: Java, Reading Notes, JVM
 
 Article text:
 
@@ -32074,7 +32354,7 @@ https://github.com/alibaba/p3c
 - Updated: 2019-09-05
 - Summary: 《TCP/IP详解 卷1》学习笔记，系统整理链路层、IP、ARP、ICMP、TCP、UDP 和常见应用协议。
 - Categories: Network
-- Tags: Reading Notes, TCP, Network, IP, Protocol
+- Tags: TCP, Reading Notes, Network, IP, Protocol
 
 Article text:
 
@@ -32762,7 +33042,7 @@ public class es &#123;
 - Updated: 2019-08-27
 - Summary: 《Web性能权威指南》学习笔记，系统整理 TCP、TLS、HTTP、浏览器网络机制和 Web 性能优化方法。
 - Categories: Network
-- Tags: Reading Notes, TCP, Network, HTTP, UDP, SSL
+- Tags: TCP, Reading Notes, Network, HTTP, UDP, SSL
 
 Article text:
 
@@ -34616,7 +34896,7 @@ http://mail.openjdk.java.net/pipermail/hotspot-dev/2012-November/007309.html
 - Updated: 2019-08-03
 - Summary: 《JRockit权威指南》学习笔记，整理 JVM 内存管理、垃圾回收、运行时机制和性能诊断等核心内容。
 - Categories: Java
-- Tags: Reading Notes, Java, JVM, JRockit
+- Tags: Java, Reading Notes, JVM, JRockit
 
 Article text:
 
@@ -34970,7 +35250,7 @@ Java内存模型
 - Updated: 2019-08-03
 - Summary: 《深入理解 JVM＆G1GC》学习笔记，整理 JVM 内存结构、垃圾回收原理、G1 算法与调优方法。
 - Categories: Java
-- Tags: Reading Notes, Java, JVM, G1
+- Tags: Java, Reading Notes, G1, JVM
 
 Article text:
 
@@ -35238,7 +35518,7 @@ G1的Full GC和Serial GC的Full GC采用的是同一种算法。Full GC会对整
 - Updated: 2019-08-03
 - Summary: 《数据库索引设计与优化》学习笔记，整理索引结构、SQL 处理、索引设计方法和常见认知误区。
 - Categories: Database
-- Tags: Reading Notes, MySQL, Design, Optimization, Index, Database, Oracle, SQL Server, DB2
+- Tags: MySQL, Reading Notes, Optimization, Design, Index, Database, Oracle, SQL Server, DB2
 
 Article text:
 
@@ -35729,7 +36009,7 @@ CUST 出售的客户
 - Updated: 2019-08-03
 - Summary: 《Java性能优化权威指南》学习笔记，整理 JVM、垃圾回收、性能监控、基准测试和应用调优方法。
 - Categories: Java
-- Tags: Performance, Reading Notes, Java, JVM
+- Tags: Java, Reading Notes, Performance, JVM
 
 Article text:
 
@@ -37178,7 +37458,7 @@ kubernates集群的确提供了很多优秀的特性，比如：RC、滚动更�
 - Updated: 2019-01-02
 - Summary: G1垃圾收集器详解：分区回收算法、Region划分、Mixed GC、调优参数等核心内容，附带官方文档和推荐阅读资料。
 - Categories: Java
-- Tags: JVM, G1, GC
+- Tags: G1, JVM, GC
 
 Article text:
 
@@ -38062,7 +38342,7 @@ RentrantReadWriteLock的具体流程梳理完了，回过头来想一下前言�
 - Updated: 2026-09-29
 - Summary: 基于《Java并发编程的艺术》分析 AQS Condition 的等待队列、await、signal 及线程重新竞争锁的过程。
 - Categories: Java
-- Tags: Concurrent, AQS, Lock, Condition
+- Tags: Concurrent, AQS, Condition, Lock
 
 Article text:
 
@@ -38214,7 +38494,7 @@ Condition的signalAll()方法，相当于对等待队列中的每个节点均执
 - Updated: 2026-09-29
 - Summary: 结合InnoDB外键检查过程说明索引选择与加锁机制，分析父表记录锁如何阻塞子表插入和更新，并给出排查外键锁等待问题的思路。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL, InnoDB
+- Tags: MySQL, Reading Notes, InnoDB
 
 Article text:
 
@@ -38252,7 +38532,7 @@ Article text:
 - Updated: 2026-09-29
 - Summary: 解析 InnoDB 的 Record Lock、Gap Lock 和 Next-Key Lock 三种行锁算法及其防止幻读的机制。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL, InnoDB
+- Tags: MySQL, Reading Notes, InnoDB
 
 Article text:
 
@@ -38489,7 +38769,7 @@ INSERT INTO table VALUES (...);
 - Updated: 2026-09-29
 - Summary: 系统介绍 MySQL 分区表的原理、水平分区特点、常见分区类型，以及分区设计的适用场景和风险。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL, InnoDB
+- Tags: MySQL, Reading Notes, InnoDB
 
 Article text:
 
@@ -38634,7 +38914,7 @@ MySQL 5.7对分区的改进
 - Updated: 2026-09-29
 - Summary: 介绍 InnoDB 一致性锁定读的两种方式：SELECT FOR UPDATE 与 LOCK IN SHARE MODE，以及共享锁、排他锁的使用场景。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL, InnoDB
+- Tags: MySQL, Reading Notes, InnoDB
 
 Article text:
 
@@ -38681,7 +38961,7 @@ SELECT…LOCK IN SHARE MODE对读取的行记录加一个S锁，其他事务可�
 - Updated: 2026-09-29
 - Summary: 解析 InnoDB 一致性非锁定读、MVCC 快照读取机制，以及不同事务隔离级别下快照数据的差异。
 - Categories: MySQL
-- Tags: Reading Notes, MySQL, InnoDB
+- Tags: MySQL, Reading Notes, InnoDB
 
 Article text:
 
@@ -40730,7 +41010,7 @@ protected final boolean compareAndSetState(int expect, int update) &#123;
 - Updated: 2018-02-13
 - Summary: 《图解 TCP/IP》学习笔记，整理 TCP、UDP、端口、连接管理、可靠传输和拥塞控制等传输层知识。
 - Categories: Network
-- Tags: Reading Notes, TCP, Network, UDP
+- Tags: TCP, Reading Notes, Network, UDP
 
 Article text:
 
