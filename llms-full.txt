@@ -10,9 +10,9 @@ Generated from 178 indexable articles. Each entry keeps its canonical URL and co
 ## Core topics
 
 - [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
-- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
 - [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
 - [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
+- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
 
 ## Articles
 ### 从模型管理到 AI 网关：把资产、流量与成本串成闭环
@@ -27,7 +27,7 @@ Generated from 178 indexable articles. Each entry keeps its canonical URL and co
 
 Article text:
 
-模型管理决定”谁能用什么、能用多少”，AI 网关把这些决定落实到每一次请求；调用结果再回流回来，成为分账、扩容和下线的依据。本文沿”一个模型的一生”和”一次请求的一生”两条线，看这个环怎么转。
+模型管理决定”谁能用什么、能用多少”，AI 网关把这些决定落实到每一次请求；调用结果再回流，成为分账、扩容和下线的依据。本文沿”一个模型的一生”和”一次请求的一生”两条线，看这个环怎么转。
 
 一、两种事故
 
@@ -112,7 +112,7 @@ Article text:
 
 一次用户交互可能触发多次模型调用，只按交互次数或请求数说不清真实消耗，容量和成本还得看 Token 口径。
 
-这会带来三类结果：压测得到单次交互的平均 Token 消耗；分账按令牌归集到应用或子产品；ROI 可以用 DAU × 单人日均交互次数 × 单次平均 Token 消耗 × 单价 估算日成本。
+按 Token 口径统计，能支撑三件事：压测得到单次交互的平均 Token 消耗；分账按令牌归集到应用或子产品；ROI 用 DAU × 单人日均交互次数 × 单次平均 Token 消耗 × 单价 估算日成本。
 
 网关在这里是反馈入口：解析上游 usage，记下输入输出 Token、模型实例、调用者和链路信息，交给配额结算、明细查询和成本分账使用。
 
@@ -120,15 +120,15 @@ Article text:
 
 模型下线不能从列表里一删了事。已发布路由、已签发令牌、智能体引用、在途迁移都要同步处理。系统用迁移保护名单挡住旧模型继续创建路由，创建时还会校验服务模板兼容性。完整顺序是：先切换调用关系，再回收令牌和路由，最后下架模型资产——反过来，就是开头那两种事故。
 
-六个阶段到这里并没有真正结束。图 3 的两条虚线就是回流：下线腾出的位置由替代模型补上，进入新一轮选型；用量与状态则持续修正配额、扩容与供应商取舍。
+六个阶段到这里并没有真正结束。图 3 的两条虚线就是回流：下线腾出的位置由替代模型补上，进入新一轮选型；用量与状态则持续修正配额、扩容计划与供应商取舍。
 
 三、一次请求的一生
 
 模型的一生负责建立和改变资产关系；一次请求的一生，是这些关系在毫秒到分钟级的链路里生效的过程。
 
-客服平台正式接入后，每个请求进网关要回答五个问题：
+低代码智能体平台正式接入后，企业路径的每个请求进网关，网关都要依次回答五个问题：
 
-- 你是谁：校验企业凭证或个人令牌。
+- 你是谁：校验企业凭证。
 
 - 你能否调用这个模型：检查模型权限与路由白名单。
 
@@ -144,13 +144,13 @@ Article text:
 
 3.1 两类调用方，两条链路
 
-客服平台走企业路径，个人办公走个人路径。两类调用方的数据来源不同，塞不进同一套鉴权模型：
+低代码智能体平台走企业路径，个人办公走个人路径。两类调用方的数据来源不同，塞不进同一套鉴权模型：
 
 - 企业 &#x2F; 应用路径：令牌绑定固定调用方，网关本地完成身份、模型权限和配额检查。
 
 - 个人路径：不创建固定消费者对象，由业务侧实时校验令牌与额度，请求结束后回收实际用量。
 
-两类调用用不同的场景域名。请求到达网关时，域名已经决定它命中企业路由还是个人路由，不是进门之后再由路由标签二选一。
+两类调用走不同的场景域名。请求到达网关时，域名已经决定它命中企业路由还是个人路由，不是进门之后再由路由标签二选一。
 
 3.2 用量只解析一次
 
@@ -158,11 +158,11 @@ Article text:
 
 这一步把”请求成功”变成了可运营信息：不光知道调用完没完成，还知道用了哪个实例、烧了多少 Token、算在谁头上。
 
-请求体和响应体可能带着提示词、业务数据甚至个人信息，”能记录”不等于”默认全量留存”。生产环境还要按场景决定是否采样，配套脱敏、访问控制和保留周期。
+请求体和响应体可能带着提示词、业务数据甚至个人信息，”能记录”不等于”默认全量留存”。生产环境还要按场景决定是否采样，并配套相应的脱敏、访问控制和保留周期。
 
 3.3 一次真实的请求
 
-图里实例 C 因为主动健康检查失败，已经移出候选。这次请求先到了实例 A，A 返回 429——它只在本次请求中被排除，不会写进健康检查状态。Fallback 开着、失败时间没超限、还有重试次数，选路器接着选了实例 B。客服平台全程无感：不用自己重试，也不用换地址换凭证。
+图里实例 C 因为主动健康检查失败，已经移出候选。这次请求先到了实例 A，A 返回 429——它只在本次请求中被排除，不会写进健康检查状态。Fallback 开着、距上次失败还没超过重试时间窗、重试次数也还有，选路器接着选了实例 B。低代码智能体平台全程无感：不用自己重试，也不用换地址换凭证。
 
 如果实例 A 持续异常触发告警，告警联动会把它的优先级置 0，后续流量不再选它，等告警恢复再还原。请求级排除、健康检查摘除、告警降权，三种机制互不干扰。这些机制怎么串起来的，是下一章的主题。
 
@@ -180,13 +180,13 @@ Article text:
 
 Token 限流分两段：转发前看还有没有余量，响应后按真实 usage 入账。这样调用前能拒绝、调用后能按实际结算；代价是并发在途的请求没有预留额度，实际用量可能短时超过阈值。
 
-对用户来说，这套实现最后只表现为两类信息：RPM &#x2F; TPM 两种维度，标准模式 &#x2F; 高性能模式等档位，具体数值以模型市场详情为准。时段限流也一样，时段是请求到来时读取的变量，不是每天定时批量改线上配置——这个能力已经上线，忙闲时额度按同一套规则运行时切换。
+对用户来说，这套实现最后只表现为两类信息：限流维度是 RPM &#x2F; TPM，性能档位有标准模式 &#x2F; 高性能模式等，具体数值以模型市场详情为准。时段限流也一样，时段是请求到来时读取的变量，不是每天定时批量改线上配置——这个能力已经上线，忙闲时额度在运行时按同一套规则切换。
 
 4.2 可用性：实例池自动绕开故障
 
 一个模型可能同时对应自建实例、云服务和备用供应商。转发前，健康状态、剩余额度、告警降权共同决定实例能不能进候选；转发后，上游 429&#x2F;5xx 按重试条件触发候选切换。这些条件必须收敛到同一条选路与重试链路，否则健康检查刚摘掉的实例可能被另一套逻辑重新选中，配额耗尽的高优先级实例也可能继续收到流量。
 
-上一章那条请求就是这么走的：高优先级的 A 不可用，请求落到 B；三种排除机制虽然独立，作用的却是同一个候选池。选路时同时检查健康、余量和告警降权，高优先级实例不可用，请求自然落到低优先级实例。
+上一章那条请求就是这么走的：三种排除机制虽然各自独立，作用的却是同一个候选池——高优先级的 A 不可用，请求就落到了 B。
 
 4.3 配置：数据库是真源，下发只是交付
 
@@ -255,7 +255,7 @@ Token 用量与调用明细 |
 
 第一行不需要人参与：状态一变，选路优先级跟着变。后两行要人拍板：数据先变成账单和看板，再决定扩容、换供应商或下线。
 
-回到开头那两种事故：模型下线了还有流量、审批通过了调不通，根子都是用量、健康和成本归属没有回到资产关系上。这两条线跑通之后，”谁能用什么、能用多少”才不是一次审批就锁死的台账，而是随运行结果不断修正的决定。
+回到开头那两种事故：模型下线了还有流量、审批通过了调不通，根子都是资产关系和真实流量脱节——决定传不下去，结果也回不来。这两条线跑通之后，”谁能用什么、能用多少”才不是一次审批就锁死的台账，而是随运行结果不断修正的决定。
 
 结语
 
@@ -267,7 +267,7 @@ Token 用量与调用明细 |
 
 作者的话
 
-这套系统从能力盘点、三平面架构设计，到自研插件、模型全生命周期、限流迁移与运维台，由我负责推进落地。把散在不同系统里的实现放到同一张图上后，一件事变得清楚：”管资产的””算配额的””数请求的”必须各守边界，又能通过控制与反馈两条链路相互闭合。
+这套系统从能力盘点、三平面架构设计，到自研插件、模型全生命周期、限流迁移与运维台，都由我负责推进落地。把散在不同系统里的实现放到同一张图上后，一件事变得清楚：”管资产的””算配额的””数请求的”必须各守边界，又能通过控制与反馈两条链路相互闭合。
 
 如果你也在做模型平台、AI 网关或 LLMOps，欢迎交流。
 
@@ -8007,7 +8007,7 @@ Article text:
 - Updated: 2025-11-01
 - Summary: 企业上云后，单一云厂商风险逐渐暴露。本文介绍如何设计云原生网关架构，实现跨云高可用，涵盖集群适配、流量隔离等关键设计。
 - Categories: Architecture
-- Tags: Gateway, Kubernetes, Multi-Cloud, High Availability, Istio, Envoy
+- Tags: Gateway, Multi-Cloud, High Availability, Kubernetes, Istio, Envoy
 
 Article text:
 
@@ -8805,7 +8805,7 @@ https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/convers
 - Updated: 2025-01-18
 - Summary: 记录 Go HTTP Client 产生大量 TIME_WAIT 的排查过程，分析连接复用、响应体处理和 Transport 参数调优。
 - Categories: Go
-- Tags: TCP, Network, Go, HTTP-Client, HTTP, IP, Settings, TIME_WAIT
+- Tags: TCP, Go, Network, HTTP-Client, HTTP, IP, Settings, TIME_WAIT
 
 Article text:
 
@@ -9603,7 +9603,7 @@ ES适合的场景都有哪些？
 - Updated: 2026-09-29
 - Summary: 复盘 Elasticsearch 集群因索引和分片数量失控、mmap 与本地内存压力导致写入超时和集群变红的事故。
 - Categories: Debugging
-- Tags: Elasticsearch, Shard, mmap, Memory-Management, Production-Incident
+- Tags: Elasticsearch, Shard, Production-Incident, mmap, Memory-Management
 
 Article text:
 
@@ -15001,7 +15001,7 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-state.ht
 - Updated: 2026-09-29
 - Summary: 复盘一次 Elasticsearch 7 节点集群磁盘与分片问题引发的生产事故，记录分析、排查和恢复过程。
 - Categories: Debugging
-- Tags: Elasticsearch, Shard, Production-Incident, Disk
+- Tags: Elasticsearch, Shard, Disk, Production-Incident
 
 Article text:
 
@@ -15329,7 +15329,7 @@ SQL注入：你的SQL是如何被注入的
 - Updated: 2023-06-23
 - Summary: SQL99和SQL92是两种不同的SQL标准，本文主要对比两者在JOIN语法方面的区别，建议多表连接使用SQL99标准，因为层次性更强，可读性更强。
 - Categories: SQL
-- Tags: SQL, SQL99, SQL92, Standards
+- Tags: SQL, Standards, SQL99, SQL92
 
 Article text:
 
@@ -21465,7 +21465,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2026-09-29
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析节点关闭流程、资源释放顺序和相关生命周期管理。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Node, 源码
+- Tags: Elasticsearch, 源码, Node
 
 Article text:
 
@@ -21991,7 +21991,7 @@ kill -15&#x2F;-2 ElasticSearch是可以正常退出的。
 - Updated: 2026-09-29
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析节点启动流程、核心组件初始化和服务启动顺序。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Node, 源码
+- Tags: Elasticsearch, 源码, Node
 
 Article text:
 
@@ -23406,7 +23406,7 @@ static void init(
 - Updated: 2026-09-29
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析 GET 请求的处理链路、节点路由与文档读取过程。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, 源码, GET
+- Tags: Elasticsearch, GET, 源码
 
 Article text:
 
@@ -35238,7 +35238,7 @@ Java内存模型
 - Updated: 2019-08-03
 - Summary: 《深入理解 JVM＆G1GC》学习笔记，整理 JVM 内存结构、垃圾回收原理、G1 算法与调优方法。
 - Categories: Java
-- Tags: Reading Notes, Java, JVM, G1
+- Tags: Reading Notes, Java, G1, JVM
 
 Article text:
 
@@ -37446,7 +37446,7 @@ kubernates集群的确提供了很多优秀的特性，比如：RC、滚动更�
 - Updated: 2019-01-02
 - Summary: G1垃圾收集器详解：分区回收算法、Region划分、Mixed GC、调优参数等核心内容，附带官方文档和推荐阅读资料。
 - Categories: Java
-- Tags: JVM, G1, GC
+- Tags: G1, JVM, GC
 
 Article text:
 
