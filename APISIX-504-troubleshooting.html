@@ -19,16 +19,16 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="线上 API7 网关偶发 504 且耗时精确卡在 15 秒，经代码追踪、内核参数分析与抓包验证，定位为 tcp_syn_retries&#x3D;3 导致的 SYN 重传超时。">
+    <meta name="description" content="线上 API7 &#x2F; APISIX 网关偶发 504，请求耗时精确卡在 15 秒。本文通过超时配置追踪、内核参数分析、DNS 排除和抓包交叉验证，定位一次 SYN 重传超时问题，并说明案例适用边界。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="15秒之谜：一次APISIX网关超时问题的排查记录">
+<meta property="og:title" content="APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查">
 <meta property="og:url" content="https://jiankunking.com/APISIX-504-troubleshooting.html">
-<meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="线上 API7 网关偶发 504 且耗时精确卡在 15 秒，经代码追踪、内核参数分析与抓包验证，定位为 tcp_syn_retries&#x3D;3 导致的 SYN 重传超时。">
+<meta property="og:site_name" content="衣舞晨风（jiankunking）">
+<meta property="og:description" content="线上 API7 &#x2F; APISIX 网关偶发 504，请求耗时精确卡在 15 秒。本文通过超时配置追踪、内核参数分析、DNS 排除和抓包交叉验证，定位一次 SYN 重传超时问题，并说明案例适用边界。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-09-08T04:00:00.000Z">
-<meta property="article:modified_time" content="2026-09-29T04:00:00.000Z">
-<meta property="article:author" content="衣舞晨风 (jiankunking)">
+<meta property="article:modified_time" content="2026-10-17T16:00:00.000Z">
+<meta property="article:author" content="衣舞晨风（jiankunking）">
 <meta property="article:tag" content="API7">
 <meta property="article:tag" content="APISIX">
 <meta property="article:tag" content="Gateway">
@@ -41,10 +41,10 @@
 <link rel="canonical" href="https://jiankunking.com/APISIX-504-troubleshooting.html">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/APISIX-504-troubleshooting.html","path":"APISIX-504-troubleshooting.html","title":"15秒之谜：一次APISIX网关超时问题的排查记录"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/APISIX-504-troubleshooting.html","path":"APISIX-504-troubleshooting.html","title":"APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>15秒之谜：一次APISIX网关超时问题的排查记录 | 衣舞晨风</title>
+<title>APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查 | 衣舞晨风（jiankunking）</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
   <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
@@ -80,16 +80,16 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/APISIX-504-troubleshooting.html#article","url":"https://jiankunking.com/APISIX-504-troubleshooting.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/APISIX-504-troubleshooting.html"},"headline":"15秒之谜：一次APISIX网关超时问题的排查记录","description":"线上 API7 网关偶发 504 且耗时精确卡在 15 秒，经代码追踪、内核参数分析与抓包验证，定位为 tcp_syn_retries=3 导致的 SYN 重传超时。","abstract":"线上 API7 网关偶发 504 且耗时精确卡在 15 秒，经代码追踪、内核参数分析与抓包验证，定位为 tcp_syn_retries=3 导致的 SYN 重传超时。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-09-08T04:00:00.000Z","dateModified":"2026-09-29T04:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Debugging","keywords":"API7, APISIX, Gateway, Troubleshooting, Linux Kernel, TCP","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/APISIX-504-troubleshooting.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/APISIX-504-troubleshooting.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Debugging","item":"https://jiankunking.com/categories/debugging/"},{"@type":"ListItem","position":3,"name":"15秒之谜：一次APISIX网关超时问题的排查记录","item":"https://jiankunking.com/APISIX-504-troubleshooting.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
-<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/APISIX-504-troubleshooting.html#article","url":"https://jiankunking.com/APISIX-504-troubleshooting.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/APISIX-504-troubleshooting.html"},"headline":"APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查","description":"线上 API7 / APISIX 网关偶发 504，请求耗时精确卡在 15 秒。本文通过超时配置追踪、内核参数分析、DNS 排除和抓包交叉验证，定位一次 SYN 重传超时问题，并说明案例适用边界。","abstract":"线上 API7 / APISIX 网关偶发 504，请求耗时精确卡在 15 秒。本文通过超时配置追踪、内核参数分析、DNS 排除和抓包交叉验证，定位一次 SYN 重传超时问题，并说明案例适用边界。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-09-08T04:00:00.000Z","dateModified":"2026-10-17T16:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Debugging","keywords":"API7, APISIX, Gateway, Troubleshooting, Linux Kernel, TCP","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/APISIX-504-troubleshooting.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/APISIX-504-troubleshooting.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Debugging","item":"https://jiankunking.com/categories/debugging/"},{"@type":"ListItem","position":3,"name":"APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查","item":"https://jiankunking.com/APISIX-504-troubleshooting.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
-<link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+<link rel="alternate" href="/atom.xml" title="衣舞晨风（jiankunking）" type="application/atom+xml">
 <meta property="og:image" content="https://jiankunking.com/images/og-default.png">
-<meta property="og:image:alt" content="15秒之谜：一次APISIX网关超时问题的排查记录">
+<meta property="og:image:alt" content="APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查">
 <meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
-<meta name="twitter:image:alt" content="15秒之谜：一次APISIX网关超时问题的排查记录">
+<meta name="twitter:image:alt" content="APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -97,28 +97,29 @@
 
   <main class="main">
     <div class="column">
-      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+<div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏" role="button">
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
+      <span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span>
     </div>
   </div>
-
   <div class="site-meta">
-
-    <a href="/" class="brand" rel="start">
-      <i class="logo-line"></i>
-      <p class="site-title">衣舞晨风</p>
-      <i class="logo-line"></i>
+    
+    <a href="/" class="brand" rel="start" aria-label="衣舞晨风（jiankunking）">
+      <i class="logo-line" aria-hidden="true"></i>
+      <p class="site-title">
+        <span class="site-title-name">衣舞晨风</span>
+        <span class="site-title-handle">jiankunking</span>
+      </p>
+      <i class="logo-line" aria-hidden="true"></i>
     </a>
-      <p class="site-subtitle" itemprop="description">AI Gateway、Elasticsearch 与后端架构实践</p>
+    <p class="site-subtitle" itemprop="description">AI 网关与后端稳定性实践</p>
+    
   </div>
-
   <div class="site-nav-right">
     <div class="toggle popup-trigger" aria-label="搜索" role="button">
-        <i class="fa fa-search fa-fw fa-lg"></i>
+      <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
 </div>
@@ -126,7 +127,7 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
       <li class="menu-item menu-item-search">
         <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
         </a>
@@ -159,6 +160,7 @@
     </div>
   </div>
 
+
 </header>
         
   
@@ -183,10 +185,10 @@
 
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风（jiankunking）"
       src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
-  <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
-  <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
+  <p class="site-author-name" itemprop="name">衣舞晨风（jiankunking）</p>
+  <div class="site-description" itemprop="description">衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。</div>
 </div>
 <div class="site-state-wrap animated">
   <nav class="site-state">
@@ -257,21 +259,21 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar/avatar.png">
-      <meta itemprop="name" content="衣舞晨风 (jiankunking)">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="衣舞晨风">
-      <meta itemprop="description" content="专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="15秒之谜：一次APISIX网关超时问题的排查记录 | 衣舞晨风">
-      <meta itemprop="description" content="线上 API7 网关偶发 504 且耗时精确卡在 15 秒，经代码追踪、内核参数分析与抓包验证，定位为 tcp_syn_retries&#x3D;3 导致的 SYN 重传超时。">
+      <meta itemprop="name" content="APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查 | 衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="线上 API7 &#x2F; APISIX 网关偶发 504，请求耗时精确卡在 15 秒。本文通过超时配置追踪、内核参数分析、DNS 排除和抓包交叉验证，定位一次 SYN 重传超时问题，并说明案例适用边界。">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          15秒之谜：一次APISIX网关超时问题的排查记录
+          APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查
         </h1>
 
         <div class="post-meta-container">
@@ -289,7 +291,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-09-29 12:00:00" itemprop="dateModified" datetime="2026-09-29T12:00:00+08:00">2026-09-29</time>
+      <time title="修改时间：2026-10-18 00:00:00" itemprop="dateModified" datetime="2026-10-18T00:00:00+08:00">2026-10-18</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -315,25 +317,33 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>1.7k</span>
+      <span>1.6k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>2 分钟</span>
+      <span>1 分钟</span>
     </span>
 </div>
 
-            <div class="post-description">线上 API7 网关偶发 504 且耗时精确卡在 15 秒，经代码追踪、内核参数分析与抓包验证，定位为 tcp_syn_retries=3 导致的 SYN 重传超时。</div>
+            <div class="post-description">线上 API7 / APISIX 网关偶发 504，请求耗时精确卡在 15 秒。本文通过超时配置追踪、内核参数分析、DNS 排除和抓包交叉验证，定位一次 SYN 重传超时问题，并说明案例适用边界。</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>线上 API7 网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 <code>tcp_syn_retries=3</code> 导致的SYN重传超时。</p>
+    <div class="post-body" itemprop="articleBody">
+
+<aside class="post-reading-context" aria-label="阅读提示">
+  <a class="post-reading-context__topic" href="/topics/ai-gateway/">AI 网关工程 <span aria-hidden="true">→</span></a>
+  <p><strong>阅读范围</strong> API7 / APISIX 的一次连接超时案例。内核重传参数和网络环境影响结果，不能把所有 504 都归因为同一个问题。</p>
+  <p><strong>先看结论</strong> 先区分连接超时与响应超时，再用源码、请求数据和抓包交叉验证；不要只改插件超时值。</p>
+</aside>
+
+<p>线上 API7 网关偶尔报504，请求耗时全部精确卡在15秒。通过代码追踪、内核参数分析、DNS排除和抓包验证，最终定位到根因是 <code>tcp_syn_retries=3</code> 导致的SYN重传超时。</p>
 <span id="more"></span>
 
 <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>线上反馈说API7网关偶尔会报504，我看了下监控，确实有，但不多。点进去一看，发现一个很诡异的现象：这些504请求的耗时全部精确卡在15秒。</p>
@@ -470,15 +480,6 @@
 <p>写Python脚本也能直接跑，不用我调试半天。</p>
 <p>在这个问题上，MiMo V2.5 Free给我的体感比GPT 5.6 sol还要好。</p>
 <p>总的来说，这次体验让我对免费模型有了新认识。下次遇到类似问题，我还会用它。</p>
-<hr>
-<blockquote>
-<p>📚 <strong>系列文章 · 网关故障复盘</strong></p>
-<ul>
-<li><strong><a href="/APISIX-504-troubleshooting.html">15秒之谜：一次APISIX网关超时问题的排查记录</a></strong></li>
-<li><a href="/one-upgrade-two-independent-bugs-api7-gateway.html">一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查</a></li>
-<li><a href="/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘</a></li>
-</ul>
-</blockquote>
 
     </div>
 
@@ -487,6 +488,25 @@
     
 
     <footer class="post-footer">
+
+<section class="post-discovery" aria-labelledby="post-discovery-title">
+  <div class="home-section-heading">
+    <h2 id="post-discovery-title">沿这个问题继续读</h2>
+    <a href="/topics/ai-gateway/">AI 网关工程专题 <span aria-hidden="true">→</span></a>
+  </div>
+  <ul class="post-discovery__list">
+    
+    <li><a href="/one-upgrade-two-independent-bugs-api7-gateway.html">API7 AI 网关升级故障复盘：流式 500 与低流量 CPU 打满</a><p>同样是请求失败，看看如何把流式 500 与 CPU 异常拆成两个独立问题。</p></li>
+    
+    <li><a href="/tuning-the-go-http-client-library.html">Go HTTP Client 大量 TIME_WAIT：连接复用与 Transport 调优实录</a><p>沿请求链路继续看客户端，排查连接复用与大量 TIME_WAIT。</p></li>
+    
+    <li><a href="/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘</a><p>从单次排障延伸到源码、实验和 AI 辅助分析的证据边界。</p></li>
+    
+  </ul>
+  <p class="post-discovery__contact">也在处理类似问题？<a href="/about/#contact">联系我交流</a>，可以附上脱敏后的版本、现象和排查过程。</p>
+</section>
+
+
           <div class="reward-container">
   <div>请我喝杯啤酒吧！</div>
   <button>
@@ -494,7 +514,7 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="衣舞晨风 (jiankunking) 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
 
@@ -506,11 +526,11 @@
 <div class="post-copyright">
 <ul>
   <li class="post-copyright-author">
-      <strong>本文作者： </strong>衣舞晨风 (jiankunking)
+      <strong>本文作者： </strong>衣舞晨风（jiankunking）
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="https://jiankunking.com/APISIX-504-troubleshooting.html" title="15秒之谜：一次APISIX网关超时问题的排查记录">https://jiankunking.com/APISIX-504-troubleshooting.html</a>
+      <a href="https://jiankunking.com/APISIX-504-troubleshooting.html" title="APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查">https://jiankunking.com/APISIX-504-troubleshooting.html</a>
   </li>
   <li class="post-copyright-license">
       <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -519,7 +539,7 @@
 </div>
 
           <div class="followme">
-  <span>欢迎关注我的其它发布渠道</span>
+  <span>持续记录 AI 网关、Elasticsearch 与后端稳定性实践，欢迎通过 RSS 或公众号订阅后续文章。</span>
 
   <div class="social-list">
 
@@ -594,7 +614,7 @@
     <span class="with-love">
       <i class="fa-solid fa-heart"></i>
     </span>
-    <span class="author" itemprop="copyrightHolder">衣舞晨风 (jiankunking)</span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风（jiankunking）</span>
   </div>
 <div class="wordcount">
   <span class="post-meta-item">

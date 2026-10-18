@@ -19,16 +19,16 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。">
+    <meta name="description" content="复盘 API7 &#x2F; APISIX AI 网关的 CPU 饱和问题，从协程、流式背压和运行时行为寻找代码逻辑之外的盲区。记录如何借助 AI 扩展排查假设，再用源码、PR、实验和监控约束结论。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘">
 <meta property="og:url" content="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">
-<meta property="og:site_name" content="衣舞晨风">
-<meta property="og:description" content="代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。">
+<meta property="og:site_name" content="衣舞晨风（jiankunking）">
+<meta property="og:description" content="复盘 API7 &#x2F; APISIX AI 网关的 CPU 饱和问题，从协程、流式背压和运行时行为寻找代码逻辑之外的盲区。记录如何借助 AI 扩展排查假设，再用源码、PR、实验和监控约束结论。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-05-16T14:00:06.000Z">
-<meta property="article:modified_time" content="2026-09-29T04:00:00.000Z">
-<meta property="article:author" content="衣舞晨风 (jiankunking)">
+<meta property="article:modified_time" content="2026-10-17T16:00:00.000Z">
+<meta property="article:author" content="衣舞晨风（jiankunking）">
 <meta property="article:tag" content="AI Gateway">
 <meta property="article:tag" content="AI-Assisted-Debugging">
 <meta property="article:tag" content="API7">
@@ -48,7 +48,7 @@
 <script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html","path":"runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html","title":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘 | 衣舞晨风</title>
+<title>运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘 | 衣舞晨风（jiankunking）</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
   <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
@@ -84,12 +84,12 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html#article","url":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html"},"headline":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘","description":"代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。","abstract":"代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-05-16T14:00:06.000Z","dateModified":"2026-09-29T04:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Debugging","keywords":"CPU-Saturation, API7, APISIX, AI Gateway, Lua, OpenResty, SSE, Coroutine, Backpressure, AI-Assisted-Debugging","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风 (jiankunking)"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Debugging","item":"https://jiankunking.com/categories/debugging/"},{"@type":"ListItem","position":3,"name":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘","item":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
-<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html#article","url":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html"},"headline":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘","description":"复盘 API7 / APISIX AI 网关的 CPU 饱和问题，从协程、流式背压和运行时行为寻找代码逻辑之外的盲区。记录如何借助 AI 扩展排查假设，再用源码、PR、实验和监控约束结论。","abstract":"复盘 API7 / APISIX AI 网关的 CPU 饱和问题，从协程、流式背压和运行时行为寻找代码逻辑之外的盲区。记录如何借助 AI 扩展排查假设，再用源码、PR、实验和监控约束结论。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-05-16T14:00:06.000Z","dateModified":"2026-10-17T16:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Debugging","keywords":"API7, APISIX, CPU-Saturation, AI Gateway, Lua, OpenResty, SSE, Coroutine, Backpressure, AI-Assisted-Debugging","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Debugging","item":"https://jiankunking.com/categories/debugging/"},{"@type":"ListItem","position":3,"name":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘","item":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
-<link rel="alternate" href="/atom.xml" title="衣舞晨风" type="application/atom+xml">
+<link rel="alternate" href="/atom.xml" title="衣舞晨风（jiankunking）" type="application/atom+xml">
 <meta property="og:image" content="https://jiankunking.com/images/og-default.png">
 <meta property="og:image:alt" content="运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘">
 <meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
@@ -101,28 +101,29 @@
 
   <main class="main">
     <div class="column">
-      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+<div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="切换导航栏" role="button">
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
+      <span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span>
     </div>
   </div>
-
   <div class="site-meta">
-
-    <a href="/" class="brand" rel="start">
-      <i class="logo-line"></i>
-      <p class="site-title">衣舞晨风</p>
-      <i class="logo-line"></i>
+    
+    <a href="/" class="brand" rel="start" aria-label="衣舞晨风（jiankunking）">
+      <i class="logo-line" aria-hidden="true"></i>
+      <p class="site-title">
+        <span class="site-title-name">衣舞晨风</span>
+        <span class="site-title-handle">jiankunking</span>
+      </p>
+      <i class="logo-line" aria-hidden="true"></i>
     </a>
-      <p class="site-subtitle" itemprop="description">AI Gateway、Elasticsearch 与后端架构实践</p>
+    <p class="site-subtitle" itemprop="description">AI 网关与后端稳定性实践</p>
+    
   </div>
-
   <div class="site-nav-right">
     <div class="toggle popup-trigger" aria-label="搜索" role="button">
-        <i class="fa fa-search fa-fw fa-lg"></i>
+      <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
 </div>
@@ -130,7 +131,7 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
       <li class="menu-item menu-item-search">
         <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
         </a>
@@ -163,6 +164,7 @@
     </div>
   </div>
 
+
 </header>
         
   
@@ -187,10 +189,10 @@
 
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="衣舞晨风 (jiankunking)"
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风（jiankunking）"
       src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
-  <p class="site-author-name" itemprop="name">衣舞晨风 (jiankunking)</p>
-  <div class="site-description" itemprop="description">专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。</div>
+  <p class="site-author-name" itemprop="name">衣舞晨风（jiankunking）</p>
+  <div class="site-description" itemprop="description">衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。</div>
 </div>
 <div class="site-state-wrap animated">
   <nav class="site-state">
@@ -261,17 +263,17 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar/avatar.png">
-      <meta itemprop="name" content="衣舞晨风 (jiankunking)">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="衣舞晨风">
-      <meta itemprop="description" content="专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘 | 衣舞晨风">
-      <meta itemprop="description" content="代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。">
+      <meta itemprop="name" content="运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘 | 衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="复盘 API7 &#x2F; APISIX AI 网关的 CPU 饱和问题，从协程、流式背压和运行时行为寻找代码逻辑之外的盲区。记录如何借助 AI 扩展排查假设，再用源码、PR、实验和监控约束结论。">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -293,7 +295,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-09-29 12:00:00" itemprop="dateModified" datetime="2026-09-29T12:00:00+08:00">2026-09-29</time>
+      <time title="修改时间：2026-10-18 00:00:00" itemprop="dateModified" datetime="2026-10-18T00:00:00+08:00">2026-10-18</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -319,7 +321,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>7.8k</span>
+      <span>7.7k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -330,14 +332,22 @@
     </span>
 </div>
 
-            <div class="post-description">代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。</div>
+            <div class="post-description">复盘 API7 / APISIX AI 网关的 CPU 饱和问题，从协程、流式背压和运行时行为寻找代码逻辑之外的盲区。记录如何借助 AI 扩展排查假设，再用源码、PR、实验和监控约束结论。</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。</p>
+    <div class="post-body" itemprop="articleBody">
+
+<aside class="post-reading-context" aria-label="阅读提示">
+  <a class="post-reading-context__topic" href="/topics/ai-gateway/">AI 网关工程 <span aria-hidden="true">→</span></a>
+  <p><strong>阅读范围</strong> API7 / APISIX CPU 饱和问题的复盘与排查方法总结；文中的具体修复应结合对应版本和 PR 阅读。</p>
+  <p><strong>先看结论</strong> AI 可以扩展排查假设，但结论仍要由源码、复现、监控与修复结果约束。</p>
+</aside>
+
+<p>代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。</p>
 <span id="more"></span>
 
 <h2 id="一、问题背景"><a href="#一、问题背景" class="headerlink" title="一、问题背景"></a>一、问题背景</h2><p>最近在使用 API7 AI 网关时，我反复遇到 <a href="/one-upgrade-two-independent-bugs-api7-gateway.html">worker CPU 打满的问题</a>。API7 是基于 Apache APISIX 的商业发行版，相关修复最终都提交到了上游 APISIX，分散在多个 PR 中：</p>
@@ -842,15 +852,6 @@
 <li><a href="https://github.com/openresty/lua-nginx-module">OpenResty lua-nginx-module 文档</a></li>
 <li><a href="https://github.com/ledgetech/lua-resty-http">lua-resty-http 源码</a></li>
 </ul>
-<hr>
-<blockquote>
-<p>📚 <strong>系列文章 · 网关故障复盘</strong></p>
-<ul>
-<li><a href="/APISIX-504-troubleshooting.html">15秒之谜：一次APISIX网关超时问题的排查记录</a></li>
-<li><a href="/one-upgrade-two-independent-bugs-api7-gateway.html">一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查</a></li>
-<li><strong><a href="/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘</a></strong></li>
-</ul>
-</blockquote>
 
     </div>
 
@@ -859,6 +860,25 @@
     
 
     <footer class="post-footer">
+
+<section class="post-discovery" aria-labelledby="post-discovery-title">
+  <div class="home-section-heading">
+    <h2 id="post-discovery-title">沿这个问题继续读</h2>
+    <a href="/topics/ai-gateway/">AI 网关工程专题 <span aria-hidden="true">→</span></a>
+  </div>
+  <ul class="post-discovery__list">
+    
+    <li><a href="/one-upgrade-two-independent-bugs-api7-gateway.html">API7 AI 网关升级故障复盘：流式 500 与低流量 CPU 打满</a><p>回到具体事故现场，阅读对照实验、依赖差异与最终修复。</p></li>
+    
+    <li><a href="/APISIX-504-troubleshooting.html">APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查</a><p>看同样的证据交叉验证方法如何用于网络超时问题。</p></li>
+    
+    <li><a href="/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html">AI 网关如何选型？协议兼容、流量治理与性能评估评分卡</a><p>把运行时教训整理为性能与稳定性验收条件。</p></li>
+    
+  </ul>
+  <p class="post-discovery__contact">也在处理类似问题？<a href="/about/#contact">联系我交流</a>，可以附上脱敏后的版本、现象和排查过程。</p>
+</section>
+
+
           <div class="reward-container">
   <div>请我喝杯啤酒吧！</div>
   <button>
@@ -866,7 +886,7 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="衣舞晨风 (jiankunking) 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
 
@@ -878,7 +898,7 @@
 <div class="post-copyright">
 <ul>
   <li class="post-copyright-author">
-      <strong>本文作者： </strong>衣舞晨风 (jiankunking)
+      <strong>本文作者： </strong>衣舞晨风（jiankunking）
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
@@ -891,7 +911,7 @@
 </div>
 
           <div class="followme">
-  <span>欢迎关注我的其它发布渠道</span>
+  <span>持续记录 AI 网关、Elasticsearch 与后端稳定性实践，欢迎通过 RSS 或公众号订阅后续文章。</span>
 
   <div class="social-list">
 
@@ -920,9 +940,9 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/cpu-saturation/" rel="tag"># CPU-Saturation</a>
               <a href="/tags/api7/" rel="tag"># API7</a>
               <a href="/tags/apisix/" rel="tag"># APISIX</a>
+              <a href="/tags/cpu-saturation/" rel="tag"># CPU-Saturation</a>
               <a href="/tags/ai-gateway/" rel="tag"># AI Gateway</a>
               <a href="/tags/lua/" rel="tag"># Lua</a>
               <a href="/tags/openresty/" rel="tag"># OpenResty</a>
@@ -936,13 +956,13 @@
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/efficient-design-and-development-in-the-ai-era-practice-of-plugin-development-for-converting-anthropic-requests-to-an-openai-compatible-backend.html" rel="prev" title="AI时代高效设计开发：Anthropic → OpenAI 协议转换插件实战">
-                  <i class="fa fa-angle-left"></i> AI时代高效设计开发：Anthropic → OpenAI 协议转换插件实战
+                <a href="/efficient-design-and-development-in-the-ai-era-practice-of-plugin-development-for-converting-anthropic-requests-to-an-openai-compatible-backend.html" rel="prev" title="APISIX 协议转换插件实战：Anthropic 与 OpenAI 兼容接口">
+                  <i class="fa fa-angle-left"></i> APISIX 协议转换插件实战：Anthropic 与 OpenAI 兼容接口
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html" rel="next" title="什么样的网关，才算好的 AI 网关？">
-                  什么样的网关，才算好的 AI 网关？ <i class="fa fa-angle-right"></i>
+                <a href="/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html" rel="next" title="AI 网关如何选型？协议兼容、流量治理与性能评估评分卡">
+                  AI 网关如何选型？协议兼容、流量治理与性能评估评分卡 <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
@@ -970,7 +990,7 @@
     <span class="with-love">
       <i class="fa-solid fa-heart"></i>
     </span>
-    <span class="author" itemprop="copyrightHolder">衣舞晨风 (jiankunking)</span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风（jiankunking）</span>
   </div>
 <div class="wordcount">
   <span class="post-meta-item">

@@ -1,18 +1,18 @@
-# 衣舞晨风: full content index
+# 衣舞晨风（jiankunking）: full content index
 
-> 专注 AI Gateway、Elasticsearch、Java、Go、云原生网关与后端架构实践，分享复杂系统设计、性能优化、稳定性治理和源码分析。
+> 衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。
 
 Canonical site: https://jiankunking.com/
-Author: 衣舞晨风 (jiankunking)
+Author: 衣舞晨风（jiankunking）
 Author profile: https://jiankunking.com/about/
 Generated from 178 indexable articles. Each entry keeps its canonical URL and content provenance.
 
 ## Core topics
 
-- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
-- [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
 - [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
 - [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
+- [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
+- [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
 
 ## Articles
 ### 从模型管理到 AI 网关：把资产、流量与成本串成闭环
@@ -20,8 +20,8 @@ Generated from 178 indexable articles. Each entry keeps its canonical URL and co
 - URL: https://jiankunking.com/from-model-management-to-ai-gateway.html
 - Content type: original
 - Published: 2026-10-05
-- Updated: 2026-10-05
-- Summary: 模型管理决定谁能用什么、能用多少，AI 网关把这些决定落实到每一次请求，用量再回流支撑分账、扩容和下线。本文沿模型生命周期与请求生命周期，看这个环怎么转。
+- Updated: 2026-10-17
+- Summary: 模型管理决定谁能用什么、能用多少，AI 网关把授权和配额落实到每次请求。本文沿模型与请求的生命周期，拆解业务面、配置面和数据面的职责，以及用量回流、成本归属和模型下线之间的关系。
 - Categories: AI
 - Tags: API7, APISIX, Gateway, Architecture, AI Gateway, Rate Limiting, LLM, Lua, LLMOps
 
@@ -281,13 +281,13 @@ Token 用量与调用明细 |
 
 - 生产排查：《一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查》
 
-### 一次升级引出两个BUG：API7 AI 网关流式 500 与低流量 CPU 打满排查
+### API7 AI 网关升级故障复盘：流式 500 与低流量 CPU 打满
 
 - URL: https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html
 - Content type: original
 - Published: 2026-09-21
-- Updated: 2026-09-21
-- Summary: 生产 API7 AI 网关一次升级引出两个互相独立的缺陷：流式请求偶发 500、低流量下多 worker CPU 打满，最明显的节点还叠加调频策略差异。开头先给结论摘要，再回溯排查过程：对照实验、监控反例、依赖 diff、perf 与受控复现，以及临时止血、最终修复与节点调频差异。
+- Updated: 2026-10-17
+- Summary: API7 AI 网关升级后出现流式请求偶发 500 与低流量 CPU 打满。本文通过对照实验、依赖 diff、perf 和受控复现，分别定位两个独立缺陷，并区分临时缓解、最终修复与节点调频差异。
 - Categories: Debugging
 - Tags: Performance, API7, APISIX, Troubleshooting, AI Gateway, Lua, OpenResty, SSE, Prometheus
 
@@ -1296,13 +1296,13 @@ type StreamEvent struct &#123;
 // 生产端:注册 channel,写 LiteTopic,然后阻塞等
 func (g *Gat…
 
-### 15秒之谜：一次APISIX网关超时问题的排查记录
+### APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查
 
 - URL: https://jiankunking.com/APISIX-504-troubleshooting.html
 - Content type: original
 - Published: 2026-09-08
-- Updated: 2026-09-29
-- Summary: 线上 API7 网关偶发 504 且耗时精确卡在 15 秒，经代码追踪、内核参数分析与抓包验证，定位为 tcp_syn_retries=3 导致的 SYN 重传超时。
+- Updated: 2026-10-17
+- Summary: 线上 API7 / APISIX 网关偶发 504，请求耗时精确卡在 15 秒。本文通过超时配置追踪、内核参数分析、DNS 排除和抓包交叉验证，定位一次 SYN 重传超时问题，并说明案例适用边界。
 - Categories: Debugging
 - Tags: API7, APISIX, Gateway, Troubleshooting, Linux Kernel, TCP
 
@@ -1564,14 +1564,6 @@ AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查�
 在这个问题上，MiMo V2.5 Free给我的体感比GPT 5.6 sol还要好。
 
 总的来说，这次体验让我对免费模型有了新认识。下次遇到类似问题，我还会用它。
-
-📚 系列文章 · 网关故障复盘
-
-- 15秒之谜：一次APISIX网关超时问题的排查记录
-
-- 一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查
-
-- 运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘
 
 ### Coding Agent Harness 选型与接入：OpenCode、Pi、DeepSeek Harness 等六款对比
 
@@ -4714,13 +4706,13 @@ RRF 和 Reranker 都会影响排序，但解决的问题不同：
 
 一句话概括：RRF 负责融合多路检索排名，Reranker 负责…
 
-### 什么样的网关，才算好的 AI 网关？
+### AI 网关如何选型？协议兼容、流量治理与性能评估评分卡
 
 - URL: https://jiankunking.com/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html
 - Content type: original
 - Published: 2026-07-11
-- Updated: 2026-07-11
-- Summary: 从网关基本功、AI 流量理解、运行时性能和工程治理四个维度，建立可量化的 AI Gateway 选型评分框架。
+- Updated: 2026-10-17
+- Summary: 面向企业模型接入层，从协议兼容、Token 与流量治理、SSE 流式处理、运行时性能和生产成熟度评估 AI 网关，提供选型评分框架与验收清单，不做具体产品排名。
 - Categories: AI
 - Tags: Performance, Gateway, AI Gateway, AI, LLM, LLMOps, Observability, Traffic Governance
 
@@ -5241,10 +5233,10 @@ I. 扩展性与可运维性（5%）
 - URL: https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html
 - Content type: original
 - Published: 2026-05-16
-- Updated: 2026-09-29
-- Summary: 代码逻辑正确，不代表运行时行为正确。本文复盘 API7 AI 网关连续出现的 CPU 饱和问题，以及如何借助 AI 扩展排查思路，再用源码、PR 和实验约束 AI 的结论。
+- Updated: 2026-10-17
+- Summary: 复盘 API7 / APISIX AI 网关的 CPU 饱和问题，从协程、流式背压和运行时行为寻找代码逻辑之外的盲区。记录如何借助 AI 扩展排查假设，再用源码、PR、实验和监控约束结论。
 - Categories: Debugging
-- Tags: CPU-Saturation, API7, APISIX, AI Gateway, Lua, OpenResty, SSE, Coroutine, Backpressure, AI-Assisted-Debugging
+- Tags: API7, APISIX, CPU-Saturation, AI Gateway, Lua, OpenResty, SSE, Coroutine, Backpressure, AI-Assisted-Debugging
 
 Article text:
 
@@ -6131,21 +6123,13 @@ AI 可以快速生成假设、解释机制和设计实验，但必须用准确�
 
 - lua-resty-http 源码
 
-📚 系列文章 · 网关故障复盘
-
-- 15秒之谜：一次APISIX网关超时问题的排查记录
-
-- 一次升级引出两个独立缺陷：API7 AI 网关流式 500 与低流量 CPU 打满排查
-
-- 运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘
-
-### AI时代高效设计开发：Anthropic → OpenAI 协议转换插件实战
+### APISIX 协议转换插件实战：Anthropic 与 OpenAI 兼容接口
 
 - URL: https://jiankunking.com/efficient-design-and-development-in-the-ai-era-practice-of-plugin-development-for-converting-anthropic-requests-to-an-openai-compatible-backend.html
 - Content type: original
 - Published: 2026-04-16
-- Updated: 2026-04-16
-- Summary: APISIX Anthropic 与 OpenAI 协议互转插件：支持流式、思考、工具调用与多模态。
+- Updated: 2026-10-17
+- Summary: 记录 APISIX 中 Anthropic 与 OpenAI 兼容协议转换插件的开发过程，围绕流式响应、思考、工具调用和多模态准备测试场景，结合参考实现与 AI 辅助开发验证转换行为。
 - Categories: AI
 - Tags: APISIX, Plugin, AI Gateway, AI, Anthropic, OpenAI, Protocol Translation
 
@@ -8004,8 +7988,8 @@ Article text:
 - URL: https://jiankunking.com/cloud-native-gateway-selection-for-multi-cloud-high-availability.html
 - Content type: original
 - Published: 2025-11-01
-- Updated: 2025-11-01
-- Summary: 企业上云后，单一云厂商风险逐渐暴露。本文介绍如何设计云原生网关架构，实现跨云高可用，涵盖集群适配、流量隔离等关键设计。
+- Updated: 2026-10-17
+- Summary: 记录多云、多 Kubernetes 集群环境中的网关架构取舍，围绕实例部署、流量就近、安全边界、故障隔离和统一管理组织设计，说明集群级网关与应用入口之间的关系。
 - Categories: Architecture
 - Tags: Gateway, Multi-Cloud, High Availability, Kubernetes, Istio, Envoy
 
@@ -8357,7 +8341,7 @@ func NewGatewayProvider(provider model.CloudProvider) (CloudGatewayProvider, err
 
 - 简单能落地的方案才是最好的！先解决核心问题，再慢慢完善。
 
-### Apache APISIX 架构浅析
+### Apache APISIX 架构分析：协程、事件驱动与 OpenResty/Envoy 底座比对
 
 - URL: https://jiankunking.com/apache-apisix-architecture.html
 - Content type: original
@@ -8797,15 +8781,15 @@ Istio是如何实现Kubernetes Gateway API路由优先级的？
 
 https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/conversion.go#L878 buildHTTPDestination
 
-### Go HTTP 客户端设置的调优指南
+### Go HTTP Client 大量 TIME_WAIT：连接复用与 Transport 调优实录
 
 - URL: https://jiankunking.com/tuning-the-go-http-client-library.html
 - Content type: original
 - Published: 2025-01-18
-- Updated: 2025-01-18
-- Summary: 记录 Go HTTP Client 产生大量 TIME_WAIT 的排查过程，分析连接复用、响应体处理和 Transport 参数调优。
+- Updated: 2026-10-17
+- Summary: 记录 Go HTTP Client 出现大量 TIME_WAIT 和短连接的一次排查，沿请求代码、响应体处理与连接生命周期分析复用问题，再讨论 Transport 配置和调优时需要考虑的负载条件。
 - Categories: Go
-- Tags: TCP, Go, Network, HTTP-Client, HTTP, IP, Settings, TIME_WAIT
+- Tags: TCP, Network, Go, HTTP-Client, HTTP, IP, Settings, TIME_WAIT
 
 Article text:
 
@@ -9595,15 +9579,15 @@ ES适合的场景都有哪些？
 
 - https://www.elastic.co/guide/en/elasticsearch/reference/current/general-recommendations.html
 
-### 又一次不接受Elasticsearch官方建议导致的事故
+### Elasticsearch 集群变红：hs_err 日志、mmap 与 6 万分片
 
 - URL: https://jiankunking.com/another-incident-caused-by-not-accepting-elasticsearch-official-advice.html
 - Content type: original
 - Published: 2025-01-08
 - Updated: 2026-09-29
-- Summary: 复盘 Elasticsearch 集群因索引和分片数量失控、mmap 与本地内存压力导致写入超时和集群变红的事故。
+- Summary: 复盘 Elasticsearch 集群因索引和分片数量失控、mmap 与本地内存压力导致写入超时和集群变红的事故：从 hs_err 日志定位 native memory 分配失败，并用 allocation explain 救回未分配的 shard。
 - Categories: Debugging
-- Tags: Elasticsearch, Shard, mmap, Memory-Management, Production-Incident
+- Tags: Elasticsearch, Shard, Production-Incident, mmap, Memory-Management
 
 Article text:
 
@@ -9627,7 +9611,7 @@ Article text:
 - 数据量大约480G
 
 看到这里是不是有一种似曾相识的感觉?
-&#x3D;> 一次不接受Elasticsearch官方建议导致的事故
+&#x3D;> Elasticsearch 集群没有 Master：线程池、抓包与 6 万分片
 
 立马联系业务删除历史数据，业务这边明确可以删除22年、23年的历史数据。
 
@@ -10624,7 +10608,7 @@ OQL 还有一个好处，就是可以分享。如果你和同事同时在分析�
 
 在很多场景，MAT 并不仅仅用于内存泄漏的排查。由于我们能够看到内存上的具体数据，在排查一些难度非常高的 bug 时，MAT 也有用武之地。比如，因为某些脏数据，引起了程序的执行异常，此时，想要找到它们，不要忘了 MAT 这个老朋友。
 
-### 一次线程池使用错误导致的问题
+### 服务线程数异常飙升：线程池重复创建的排查与四种修法
 
 - URL: https://jiankunking.com/a-problem-caused-by-a-thread-pool-usage-error.html
 - Content type: original
@@ -10982,7 +10966,7 @@ java.util.concurrent.DefaultThreadFactory
 如何自定义线程名字可以参考下面这个
 https://stackoverflow.com/questions/6113746/naming-threads-and-thread-pools-of-executorservice
 
-### 一次Feign CPU占用过高导致的事故
+### Feign 调用 CPU 打满：HttpMessageConverters 重复初始化
 
 - URL: https://jiankunking.com/an-accident-caused-by-excessive-cpu-usage-of-fegin.html
 - Content type: original
@@ -11526,13 +11510,13 @@ public Encoder feignEncoder() &#123;
 	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:892) [spring-webmvc-5.1.6.RELEASE.jar!/:5.1.6.RELEASE]
 	a…
 
-### Elasticsearch不停机切换(上云)方案
+### Elasticsearch 不停机迁移上云：数据同步、比对与平滑切换
 
 - URL: https://jiankunking.com/elasticsearch-non-stop-cloud-solution.html
 - Content type: original
 - Published: 2024-09-21
-- Updated: 2024-09-21
-- Summary: 如何给飞行中的飞机换引擎？本文介绍Elasticsearch不停机切换上云的完整方案，解决数据迁移、双写同步、平滑切换等核心问题。
+- Updated: 2026-10-17
+- Summary: 一个约 40 个索引、总量不足 100 GB 的 Elasticsearch 不停机迁移案例。在缺少可靠更新时间字段的约束下，讨论数据同步、文档比对、mapping / settings 校验与流量切换，说明方案的适用范围。
 - Categories: Elasticsearch
 - Tags: Elasticsearch, 上云
 
@@ -13919,7 +13903,7 @@ RocketMQ Client在云上环境报超时异常的排查过程，分析gRPC deadli
 	at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2019) ~[jboss-threads-3.1.0.Final.jar!/:3.1.0.Final]
 	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1558) ~[jboss-threads-3.1.0.Final.jar!/:3.1.0.Final]…
 
-### Elasticsearch 集群状态
+### Elasticsearch 集群状态 API：节点、索引元数据与路由表解读
 
 - URL: https://jiankunking.com/elasticsearch-cluster-state.html
 - Content type: original
@@ -14993,15 +14977,15 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-state.ht
  "modified_date": 1630029263987,
  "modified_date_string": "2021-08-27T01:54…
 
-### 一次不接受Elasticsearch官方建议导致的事故
+### Elasticsearch 集群没有 Master：线程池、抓包与 6 万分片
 
 - URL: https://jiankunking.com/an-accident-caused-by-not-accepting-the-official-advice-of-elasticsearch.html
 - Content type: original
 - Published: 2023-10-27
 - Updated: 2026-09-29
-- Summary: 复盘一次 Elasticsearch 7 节点集群磁盘与分片问题引发的生产事故，记录分析、排查和恢复过程。
+- Summary: 复盘 Elasticsearch 7 节点混部集群丢失 Master 的事故：从线程池尖峰、带宽核对到抓包定位节点反复加入与退出，最终指向 6 万 shard。含未解根因的坦白记录。
 - Categories: Debugging
-- Tags: Elasticsearch, Shard, Production-Incident, Disk
+- Tags: Elasticsearch, Shard, Disk, Production-Incident
 
 Article text:
 
@@ -15264,7 +15248,7 @@ GC
 
 Java garbage collection_ The 10-release evolution from JDK 8 to JDK 18
 
-### SQL必知必会 笔记
+### SQL必知必会 笔记：B+树、缓冲池与慢SQL分析
 
 - URL: https://jiankunking.com/sql-must-know.html
 - Content type: original
@@ -15731,7 +15715,7 @@ cd到代码根目录
 
  |
 
-### Redis的使用规范小建议
+### Redis 使用规范：键命名、数据结构与内存优化
 
 - URL: https://jiankunking.com/suggestion-for-redis-usage-standards.html
 - Content type: original
@@ -16005,7 +15989,7 @@ Redis 的 MONITOR 命令在执行后，会持续输出监测到的各个命令�
 - Updated: 2026-09-29
 - Summary: 分析Elasticsearch Index文件是如何存储的？ 主要是想看一下FST文件是以什么粒度创建的？
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Storage, Lucene
+- Tags: Elasticsearch, Lucene, Storage
 
 Article text:
 
@@ -17038,7 +17022,7 @@ ZAB 选举算法的核心是“少数服从多数，ID 大的节点优先成为�
 
 那些你不能错过的分布式系统论文
 
-### MySQL 必知必会 笔记
+### MySQL 必知必会 笔记：字段类型、索引与查询误区
 
 - URL: https://jiankunking.com/mysql-must-know-and-must-know.html
 - Content type: original
@@ -17702,7 +17686,7 @@ obj.proxyServer = ps // https://jiankunking.com/golang-copy-on-write-and-atomic.
 
  |
 
-### [译]自上而下认识Elasticsearch
+### [译]自上而下认识Elasticsearch：集群、节点与请求协调
 
 - URL: https://jiankunking.com/elasticsearch-from-the-top-down.html
 - Content type: translation
@@ -17715,7 +17699,7 @@ obj.proxyServer = ps // https://jiankunking.com/golang-copy-on-write-and-atomic.
 
 The full copied/translated body is omitted from this machine-readable corpus; follow the canonical and original-source URLs above.
 
-### [译]自下而上认识Elasticsearch
+### [译]自下而上认识Elasticsearch：倒排索引、Segment 与事务
 
 - URL: https://jiankunking.com/elasticsearch-from-the-bottom-up.html
 - Content type: translation
@@ -18261,7 +18245,7 @@ func proxyWebSocket(ctx context.Context, request *http.Request, target string) &
 
 后来换成了基础类库的httputil.ReverseProxy来处理网络连接，问题解决。
 
-### 权限的一种实现方式
+### RBAC 与 ABAC 结合的权限实现方式
 
 - URL: https://jiankunking.com/a-way-to-implement-permissions.html
 - Content type: original
@@ -20643,9 +20627,9 @@ COMMIT; |
 
 📚 系列文章 · MySQL InnoDB 存储引擎
 
-- MySQL InnoDB存储引擎：一致性非锁定读
+- MySQL InnoDB存储引擎：一致性非锁定读（快照读）
 
-- MySQL InnoDB存储引擎：一致性锁定读
+- MySQL InnoDB存储引擎：一致性锁定读（加锁读）
 
 - MySQL InnoDB存储引擎：行锁的3种算法
 
@@ -21397,7 +21381,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 
 The full copied/translated body is omitted from this machine-readable corpus; follow the canonical and original-source URLs above.
 
-### 友爱的Sentry
+### 友爱的 Sentry：Redis OOM 现象、社区讨论与存储数据类型
 
 - URL: https://jiankunking.com/fraternity-sentry.html
 - Content type: original
@@ -25969,7 +25953,7 @@ Article text:
 
 所以，在大厂中，对于海量数据的处理原则，都是根据业务对数据查询的需求，反过来确定选择什么数据库、如何组织数据结构、如何分片数据，这样才能达到最优的查询性能。同样一份订单数据，除了在订单库保存一份用于在线交易以外，还会在各种数据库中，以各种各样的组织方式存储，用于满足不同业务系统的查询需求。像 BAT 这种大厂，它的核心业务数据，存个几十上百份是非常正常的。
 
-### 对于Java系高级特性的个人看法
+### Java 高级特性取舍：Lambda、CompletableFuture 与 Spring Reactive
 
 - URL: https://jiankunking.com/personal-views-on-the-advanced-features-of-java.html
 - Content type: original
@@ -26046,13 +26030,13 @@ Java在云原生的路上，内存归还OS问题，已在G1、ZGC中解决了，
 
 - 到此Java 协程基本可用了
 
-### Elasticsearch Parent Data Too Large 熔断异常排查实录
+### Elasticsearch 7.6.2 Parent Data Too Large：一次熔断异常排查
 
 - URL: https://jiankunking.com/elasticsearch-parent-data-too-large-breaker.html
 - Content type: original
 - Published: 2020-11-24
-- Updated: 2026-09-29
-- Summary: 排查 Elasticsearch 7.6.2 的 Parent Data Too Large 熔断异常，分析真实内存断路器配置、触发条件和处理方式。
+- Updated: 2026-10-17
+- Summary: 基于 Elasticsearch 7.6.2 的历史案例，记录 Parent Data Too Large 熔断异常的排查，分析真实内存、JDK 与 GC 配置的关系。文中 JVM 参数和版本结论需结合当时环境阅读，不应直接套用到新集群。
 - Categories: Elasticsearch
 - Tags: Elasticsearch
 
@@ -26322,7 +26306,7 @@ es 7.x之后引入了indices.breaker.total.use_real_memory造成的
 
 这也是最新版es jvm.options中的默认配置。
 
-### Apache Lucene 评分简介
+### Apache Lucene 评分机制：TF-IDF 与 BM25 的差异
 
 - URL: https://jiankunking.com/apache-lucene-scoring-introduction.html
 - Content type: repost
@@ -26334,7 +26318,7 @@ es 7.x之后引入了indices.breaker.total.use_real_memory造成的
 
 The full copied/translated body is omitted from this machine-readable corpus; follow the canonical and original-source URLs above.
 
-### 集成容器云
+### 集成容器云：把日志、打包与权限收进内部控制台
 
 - URL: https://jiankunking.com/integrated-container-cloud.html
 - Content type: original
@@ -26342,7 +26326,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2020-11-10
 - Summary: 将容器管理平台（Compass）的能力集成到内部控制台，实现日志、打包、权限等功能的统一管理，提升开发者体验。
 - Categories: Kubernetes
-- Tags: Kubernetes, Design, Architecture
+- Tags: Kubernetes, Architecture, Design
 
 Article text:
 
@@ -26389,7 +26373,7 @@ Article text:
 
 The full copied/translated body is omitted from this machine-readable corpus; follow the canonical and original-source URLs above.
 
-### 控制台
+### 内部开发控制台：从容器云集成到权限治理的功能清单
 
 - URL: https://jiankunking.com/console-features.html
 - Content type: original
@@ -31052,7 +31036,7 @@ doc_values已经排好序了,所以通过每次search_after指定的值,往后�
 
 本文内容来自官方文档，主要是做了翻译及汇总。
 
-### 微服务理想国
+### 微服务理想国：Jenkins CI/CD、Kubernetes 调度与 Istio 治理
 
 - URL: https://jiankunking.com/microservice-ideal-country.html
 - Content type: original
@@ -31166,7 +31150,7 @@ Extra字段显示Using temporary，表示的是需要使用临时表；Using fil
 - Content type: original
 - Published: 2019-10-21
 - Updated: 2019-10-21
-- Summary: 域的内存语义：保证在对象引用可见之前，final域已在构造函数中被正确初始化，避免对象引用在构造函数中"逸出"。
+- Summary: Java final 关键字的内存语义：final 域在构造函数中正确初始化的保证、禁止构造期引用逸出，以及 happens-before 如何让对象引用安全可见。
 - Categories: Java
 - Tags: Final, Keyword, JMM
 
@@ -38330,7 +38314,7 @@ RentrantReadWriteLock的具体流程梳理完了，回过头来想一下前言�
 - Updated: 2026-09-29
 - Summary: 基于《Java并发编程的艺术》分析 AQS Condition 的等待队列、await、signal 及线程重新竞争锁的过程。
 - Categories: Java
-- Tags: Concurrent, AQS, Lock, Condition
+- Tags: Concurrent, AQS, Condition, Lock
 
 Article text:
 
@@ -38500,9 +38484,9 @@ Article text:
 
 📚 系列文章 · MySQL InnoDB 存储引擎
 
-- MySQL InnoDB存储引擎：一致性非锁定读
+- MySQL InnoDB存储引擎：一致性非锁定读（快照读）
 
-- MySQL InnoDB存储引擎：一致性锁定读
+- MySQL InnoDB存储引擎：一致性锁定读（加锁读）
 
 - MySQL InnoDB存储引擎：行锁的3种算法
 
@@ -38737,9 +38721,9 @@ INSERT INTO table VALUES (...);
 
 📚 系列文章 · MySQL InnoDB 存储引擎
 
-- MySQL InnoDB存储引擎：一致性非锁定读
+- MySQL InnoDB存储引擎：一致性非锁定读（快照读）
 
-- MySQL InnoDB存储引擎：一致性锁定读
+- MySQL InnoDB存储引擎：一致性锁定读（加锁读）
 
 - MySQL InnoDB存储引擎：行锁的3种算法
 
@@ -38882,9 +38866,9 @@ MySQL 5.7对分区的改进
 
 📚 系列文章 · MySQL InnoDB 存储引擎
 
-- MySQL InnoDB存储引擎：一致性非锁定读
+- MySQL InnoDB存储引擎：一致性非锁定读（快照读）
 
-- MySQL InnoDB存储引擎：一致性锁定读
+- MySQL InnoDB存储引擎：一致性锁定读（加锁读）
 
 - MySQL InnoDB存储引擎：行锁的3种算法
 
@@ -38894,7 +38878,7 @@ MySQL 5.7对分区的改进
 
 - MySQL InnoDB存储引擎：分区表
 
-### MySQL InnoDB存储引擎：一致性锁定读
+### MySQL InnoDB存储引擎：一致性锁定读（加锁读）
 
 - URL: https://jiankunking.com/mysql-innodb-consistent-locking-read.html
 - Content type: original
@@ -38929,9 +38913,9 @@ SELECT…LOCK IN SHARE MODE对读取的行记录加一个S锁，其他事务可�
 
 📚 系列文章 · MySQL InnoDB 存储引擎
 
-- MySQL InnoDB存储引擎：一致性非锁定读
+- MySQL InnoDB存储引擎：一致性非锁定读（快照读）
 
-- MySQL InnoDB存储引擎：一致性锁定读
+- MySQL InnoDB存储引擎：一致性锁定读（加锁读）
 
 - MySQL InnoDB存储引擎：行锁的3种算法
 
@@ -38941,7 +38925,7 @@ SELECT…LOCK IN SHARE MODE对读取的行记录加一个S锁，其他事务可�
 
 - MySQL InnoDB存储引擎：分区表
 
-### MySQL InnoDB存储引擎：一致性非锁定读
+### MySQL InnoDB存储引擎：一致性非锁定读（快照读）
 
 - URL: https://jiankunking.com/mysql-innodb-consistent-nonlocking-read.html
 - Content type: original
@@ -39101,9 +39085,9 @@ MySQL> SELECT FROM parent WHERE id=1;
 
 📚 系列文章 · MySQL InnoDB 存储引擎
 
-- MySQL InnoDB存储引擎：一致性非锁定读
+- MySQL InnoDB存储引擎：一致性非锁定读（快照读）
 
-- MySQL InnoDB存储引擎：一致性锁定读
+- MySQL InnoDB存储引擎：一致性锁定读（加锁读）
 
 - MySQL InnoDB存储引擎：行锁的3种算法
 
@@ -41954,7 +41938,7 @@ Reference
 https://studygolang.com/articles/10511
 http://www.jianshu.com/p/43e66dab535b
 
-### 关于Spring AOP与IOC的个人思考
+### Spring AOP 与 IOC：从动态代理看关注点分离与对象管理
 
 - URL: https://jiankunking.com/spring-aop-ioc-think.html
 - Content type: original
