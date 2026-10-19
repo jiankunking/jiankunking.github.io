@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="A RocketMQ Java client failed with gRPC DEADLINE_EXCEEDED only in one cloud test cluster. Packet capture and resource-limit tests traced it to container memory pressure, not the network.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory">
+<meta property="og:url" content="https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html">
+<meta property="og:site_name" content="衣舞晨风（jiankunking）">
+<meta property="og:description" content="A RocketMQ Java client failed with gRPC DEADLINE_EXCEEDED only in one cloud test cluster. Packet capture and resource-limit tests traced it to container memory pressure, not the network.">
+<meta property="og:locale" content="en_US">
+
+
+<meta property="article:published_time" content="2023-12-15T14:35:02.000Z">
+<meta property="article:modified_time" content="2026-09-29T04:00:00.000Z">
+<meta property="article:author" content="衣舞晨风（jiankunking）">
+<meta property="article:tag" content="AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化">
+<meta name="twitter:card" content="summary_large_image">
+
+
+
+<link rel="canonical" href="https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html","path":"en/rocketmq-client-deadline-exceeded.html","title":"RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory | 衣舞晨风（jiankunking）</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html","url":"https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html","name":"RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory","description":"A RocketMQ Java client failed with gRPC DEADLINE_EXCEEDED only in one cloud test cluster. Packet capture and resource-limit tests traced it to container memory ","inLanguage":"en","author":{"@id":"https://jiankunking.com/about/#person"},"isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory","item":"https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风（jiankunking）" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta property="og:image:alt" content="RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory">
+<meta name="twitter:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta name="twitter:image:alt" content="RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+<div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+      <span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span>
+    </div>
+  </div>
+  <div class="site-meta">
+    
+    <a href="/" class="brand" rel="start" aria-label="衣舞晨风（jiankunking）">
+      <i class="logo-line" aria-hidden="true"></i>
+      <p class="site-title">
+        <span class="site-title-name">衣舞晨风</span>
+        <span class="site-title-handle">jiankunking</span>
+      </p>
+      <i class="logo-line" aria-hidden="true"></i>
+    </a>
+    <p class="site-subtitle" itemprop="description">AI 网关与后端稳定性实践</p>
+    
+  </div>
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+      <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-英文"><a href="/en/" rel="section"><i class="fa-solid fa-language fa-fw"></i>英文</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Symptoms-and-the-stack-trace"><span class="nav-number">1.</span> <span class="nav-text">Symptoms and the stack trace</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Initial-investigation-code-or-network"><span class="nav-number">2.</span> <span class="nav-text">Initial investigation: code or network?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Packet-capture-and-the-CPU-hypothesis"><span class="nav-number">3.</span> <span class="nav-text">Packet capture and the CPU hypothesis</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#The-key-clue-not-enough-memory"><span class="nav-number">4.</span> <span class="nav-text">The key clue: not enough memory</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Repeated-verification-and-the-memory-threshold"><span class="nav-number">5.</span> <span class="nav-text">Repeated verification and the memory threshold</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusions-and-open-questions"><span class="nav-number">6.</span> <span class="nav-text">Conclusions and open questions</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风（jiankunking）"
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
+  <p class="site-author-name" itemprop="name">衣舞晨风（jiankunking）</p>
+  <div class="site-description" itemprop="description">衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">286</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory | 衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="A RocketMQ Java client failed with gRPC DEADLINE_EXCEEDED only in one cloud test cluster. Packet capture and resource-limit tests traced it to container memory pressure, not the network.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-12-15 22:35:02" itemprop="dateCreated datePublished" datetime="2023-12-15T22:35:02+08:00">2023-12-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-29 12:00:00" itemprop="dateModified" datetime="2026-09-29T12:00:00+08:00">2026-09-29</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4.4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>4 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">A RocketMQ Java client failed with gRPC DEADLINE_EXCEEDED only in one cloud test cluster. Packet capture and resource-limit tests traced it to container memory pressure, not the network.</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+<aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>记一次RocketMQ Client超时问题排查</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/rocketmq-client-deadline-exceeded-troubleshooting.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><p>A RocketMQ client started throwing timeouts in a cloud test cluster while the exact same code ran fine locally. This post walks through the investigation, the wrong turns included, and how a gRPC <code>DEADLINE_EXCEEDED</code> turned out to have nothing to do with the network.</p>
+<span id="more"></span>
+
+<blockquote>
+<p>One possible explanation for this class of problem</p>
+</blockquote>
+<h2 id="Symptoms-and-the-stack-trace"><a href="#Symptoms-and-the-stack-trace" class="headerlink" title="Symptoms and the stack trace"></a>Symptoms and the stack trace</h2><p>A colleague hit a strange one yesterday. After adding RocketMQ consumer code to the service, a program that ran perfectly fine locally started throwing the following exception when deployed to cloud test cluster A1:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line">time,cluster,namespace,service,pod,log</span><br><span class="line">2023-12-14 09:36:00,cluster-test,did-test,jiankunking-test,jiankunking-test-6b86565dbb-lzt9d,2023-12-14 09:36:00.595  INFO 1 --- [  XNIO-1 task-1] c.h.d.i.rocket.PdmRocketMqConsumer       : [TID:95e19b4533204903a985c90b068cddcc_64_17025177603380033] --- 构建mq5.0消费者：proxy:10.163.240.237:8080, topic:product_material_topic_uat_center, group:product_material_group_center</span><br><span class="line">2023-12-14 09:36:40,cluster-test,did-test,jiankunking-test,jiankunking-test-6b86565dbb-lzt9d,2023-12-14 09:36:39.995 ERROR 1 --- [  XNIO-1 task-1] c.h.d.i.rocket.PdmRocketMqConsumer       : [TID:95e19b4533204903a985c90b068cddcc_64_17025177603380033] --- 构建mq5.0消费者异常：proxy:10.163.240.237:8080, topic:product_material_topic_uat_center, group：product_material_group_center</span><br><span class="line">2023-12-14 09:36:40,cluster-test,did-test,jiankunking-test,jiankunking-test-6b86565dbb-lzt9d,</span><br><span class="line">2023-12-14 09:36:40,cluster-test,did-test,jiankunking-test,jiankunking-test-6b86565dbb-lzt9d,java.lang.IllegalStateException: Expected the service PushConsumerImpl-0 [FAILED] to be RUNNING, but the service has FAILED</span><br><span class="line">	at org.apache.rocketmq.shaded.com.google.common.util.concurrent.AbstractService.checkCurrentState(AbstractService.java:381) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.com.google.common.util.concurrent.AbstractService.awaitRunning(AbstractService.java:305) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.com.google.common.util.concurrent.AbstractIdleService.awaitRunning(AbstractIdleService.java:165) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.client.java.impl.consumer.PushConsumerBuilderImpl.build(PushConsumerBuilderImpl.java:128) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at com.jiankunking.issuemanage.rocket.PdmRocketMqConsumer.initConsumer(PdmRocketMqConsumer.java:89) ~[classes!/:na]</span><br><span class="line">	at com.jiankunking.issuemanage.controller.IssueTagInfoController.initRocketMq$original$l28F75DZ(IssueTagInfoController.java:103) ~[classes!/:na]</span><br><span class="line">	at com.jiankunking.issuemanage.controller.IssueTagInfoController.initRocketMq$original$l28F75DZ$accessor$0D0TSRNs(IssueTagInfoController.java) ~[classes!/:na]</span><br><span class="line">	at com.jiankunking.issuemanage.controller.IssueTagInfoController$auxiliary$Rnw73z4x.call(Unknown Source) ~[classes!/:na]</span><br><span class="line">	at org.apache.skywalking.apm.agent.core.plugin.interceptor.enhance.InstMethodsInter.intercept(InstMethodsInter.java:86) ~[skywalking-agent.jar:8.12.0]</span><br><span class="line">	at com.jiankunking.issuemanage.controller.IssueTagInfoController.initRocketMq(IssueTagInfoController.java) ~[classes!/:na]</span><br><span class="line">	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]</span><br><span class="line">	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:na]</span><br><span class="line">	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]</span><br><span class="line">	at java.base/java.lang.reflect.Method.invoke(Method.java:566) ~[na:na]</span><br><span class="line">	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:205) ~[spring-web-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:150) ~[spring-web-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:895) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:808) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1071) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:964) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1006) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:898) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at javax.servlet.http.HttpServlet.service(HttpServlet.java:645) ~[javax.servlet-api-4.0.1.jar!/:4.0.1]</span><br><span class="line">	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:883) ~[spring-webmvc-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at javax.servlet.http.HttpServlet.service(HttpServlet.java:750) ~[javax.servlet-api-4.0.1.jar!/:4.0.1]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:74) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:129) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:117) ~[spring-web-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:61) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:117) ~[spring-web-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:61) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:117) ~[spring-web-5.3.24.jar!/:5.3.24]</span><br><span class="line">	at io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:61) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.FilterHandler.handleRequest(FilterHandler.java:84) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:62) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletChain$1.handleRequest(ServletChain.java:68) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.RedirectDirHandler.handleRequest(RedirectDirHandler.java:68) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:117) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:57) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43) ~[undertow-core-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46) ~[undertow-core-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.security.handlers.AuthenticationMechanismsHandler.handleRequest(AuthenticationMechanismsHandler.java:60) ~[undertow-core-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler.handleRequest(CachedAuthenticatedSessionHandler.java:77) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43) ~[undertow-core-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43) ~[undertow-core-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.SendErrorPageHandler.handleRequest(SendErrorPageHandler.java:52) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43) ~[undertow-core-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:275) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletInitialHandler.access$100(ServletInitialHandler.java:79) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:134) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:131) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:255) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletInitialHandler.access$000(ServletInitialHandler.java:79) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:100) ~[undertow-servlet-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.server.Connectors.executeRootHandler(Connectors.java:387) ~[undertow-core-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:852) ~[undertow-core-2.2.20.Final.jar!/:2.2.20.Final]</span><br><span class="line">	at org.apache.skywalking.apm.plugin.undertow.v2x.SWRunnable.run(SWRunnable.java:45) ~[na:na]</span><br><span class="line">	at org.apache.skywalking.apm.plugin.undertow.v2x.SWRunnable.run(SWRunnable.java:45) ~[na:na]</span><br><span class="line">	at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35) ~[jboss-threads-3.1.0.Final.jar!/:3.1.0.Final]</span><br><span class="line">	at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2019) ~[jboss-threads-3.1.0.Final.jar!/:3.1.0.Final]</span><br><span class="line">	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1558) ~[jboss-threads-3.1.0.Final.jar!/:3.1.0.Final]</span><br><span class="line">	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1449) ~[jboss-threads-3.1.0.Final.jar!/:3.1.0.Final]</span><br><span class="line">	at org.xnio.XnioWorker$WorkerThreadFactory$1$1.run(XnioWorker.java:1282) ~[xnio-api-3.8.7.Final.jar!/:3.8.7.Final]</span><br><span class="line">	at java.base/java.lang.Thread.run(Thread.java:834) ~[na:na]</span><br><span class="line">Caused by: java.util.concurrent.ExecutionException: org.apache.rocketmq.shaded.io.grpc.StatusRuntimeException: DEADLINE_EXCEEDED: ClientCall started after deadline exceeded: -2.591386886s from now</span><br><span class="line">	at org.apache.rocketmq.shaded.com.google.common.util.concurrent.AbstractFuture.getDoneValue(AbstractFuture.java:588) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.com.google.common.util.concurrent.AbstractFuture.get(AbstractFuture.java:547) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.com.google.common.util.concurrent.FluentFuture$TrustedFuture.get(FluentFuture.java:91) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.client.java.impl.ClientImpl.startUp(ClientImpl.java:188) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.client.java.impl.consumer.PushConsumerImpl.startUp(PushConsumerImpl.java:161) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.com.google.common.util.concurrent.AbstractIdleService$DelegateService$1.run(AbstractIdleService.java:62) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.com.google.common.util.concurrent.Callables.lambda$threadRenaming$3(Callables.java:103) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	... 1 common frames omitted</span><br><span class="line">Caused by: org.apache.rocketmq.shaded.io.grpc.StatusRuntimeException: DEADLINE_EXCEEDED: ClientCall started after deadline exceeded: -2.591386886s from now</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.Status.asRuntimeException(Status.java:539) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.stub.ClientCalls$UnaryStreamToFuture.onClose(ClientCalls.java:544) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.PartialForwardingClientCallListener.onClose(PartialForwardingClientCallListener.java:39) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.ForwardingClientCallListener.onClose(ForwardingClientCallListener.java:23) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.ForwardingClientCallListener$SimpleForwardingClientCallListener.onClose(ForwardingClientCallListener.java:40) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.internal.ClientCallImpl.closeObserver(ClientCallImpl.java:563) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.internal.ClientCallImpl.access$300(ClientCallImpl.java:70) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.internal.ClientCallImpl$ClientStreamListenerImpl$1StreamClosed.runInternal(ClientCallImpl.java:744) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.internal.ClientCallImpl$ClientStreamListenerImpl$1StreamClosed.runInContext(ClientCallImpl.java:723) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at org.apache.rocketmq.shaded.io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133) ~[rocketmq-client-java-5.0.5.jar!/:na]</span><br><span class="line">	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128) ~[na:na]</span><br><span class="line">	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628) ~[na:na]</span><br><span class="line">	... 1 common frames omitted</span><br></pre></td></tr></table></figure>
+
+<p>Since the code was identical locally and on the server, the error message pointed to:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Expected the service PushConsumerImpl-0 [FAILED] to be RUNNING, but the service has FAILED</span><br><span class="line"></span><br><span class="line">org.apache.rocketmq.shaded.io.grpc.StatusRuntimeException: DEADLINE_EXCEEDED: ClientCall started after deadline exceeded: -2.591386886s from now</span><br></pre></td></tr></table></figure>
+
+<h2 id="Initial-investigation-code-or-network"><a href="#Initial-investigation-code-or-network" class="headerlink" title="Initial investigation: code or network?"></a>Initial investigation: code or network?</h2><p>My colleague’s first suspicion was the cluster’s network environment. My own first reaction was that it was not the network — why?</p>
+<p>Because if it were a network problem, there would be plenty of errors across the cluster, not just from this one service.</p>
+<p>So where was the problem? Was it the code?</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableConfigurationProperties(RocketMqProperties.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DemoConsumer</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">ClientServiceProvider</span> <span class="variable">provider</span> <span class="operator">=</span> ClientServiceProvider.loadService();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> List&lt;PushConsumer&gt; pushConsumers = Collections.synchronizedList(<span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> RestTemplate restTemplate;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String endpoints;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String accessKey;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String secretKey;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String topic;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String group;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">DemoConsumer</span><span class="params">(RestTemplate restTemplate, RocketMqProperties properties)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.restTemplate = restTemplate;</span><br><span class="line">        <span class="built_in">this</span>.accessKey = properties.getAccessKey();</span><br><span class="line">        <span class="built_in">this</span>.secretKey = properties.getSecretKey();</span><br><span class="line">        <span class="built_in">this</span>.endpoints = properties.getEndpoints();</span><br><span class="line">        <span class="built_in">this</span>.topic = properties.getTopic();</span><br><span class="line">        <span class="built_in">this</span>.group = properties.getGroup();</span><br><span class="line">        listener();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">listener</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            log.info(<span class="string">&quot;开始构建mq5.0消费者&quot;</span>);</span><br><span class="line">            <span class="type">SessionCredentialsProvider</span> <span class="variable">sessionCredentialsProvider</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StaticSessionCredentialsProvider</span>(accessKey, secretKey);</span><br><span class="line">            <span class="type">ClientConfiguration</span> <span class="variable">clientConfiguration</span> <span class="operator">=</span> ClientConfiguration.newBuilder()</span><br><span class="line">                    .setEndpoints(endpoints)</span><br><span class="line">                    .setCredentialProvider(sessionCredentialsProvider)</span><br><span class="line">                    .build();</span><br><span class="line">            <span class="type">PushConsumer</span> <span class="variable">pushConsumer</span> <span class="operator">=</span> provider.newPushConsumerBuilder()</span><br><span class="line">                    .setClientConfiguration(clientConfiguration)</span><br><span class="line">                    .setConsumerGroup(group)</span><br><span class="line">                    .setSubscriptionExpressions(Collections.singletonMap(topic, <span class="keyword">new</span> <span class="title class_">FilterExpression</span>(<span class="string">&quot;*&quot;</span>, FilterExpressionType.TAG)))</span><br><span class="line">                    .setMessageListener(messageView -&gt; &#123;</span><br><span class="line">                        <span class="type">String</span> <span class="variable">tagInfo</span> <span class="operator">=</span> messageView.getTag().orElse(<span class="string">&quot;&quot;</span>);</span><br><span class="line">                        <span class="type">String</span> <span class="variable">code</span> <span class="operator">=</span> StandardCharsets.UTF_8.decode(messageView.getBody()).toString();</span><br><span class="line">                        log.info(<span class="string">&quot;tagInfo:&#123;&#125; 消息内容:&#123;&#125;&quot;</span>, tagInfo, StandardCharsets.UTF_8.decode(messageView.getBody()));</span><br><span class="line">                        <span class="keyword">if</span> (StringUtils.isBlank(tagInfo) || StringUtils.isBlank(code)) &#123;</span><br><span class="line">                            <span class="keyword">return</span> ConsumeResult.SUCCESS;</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="comment">// split tagInfo to get the material type</span></span><br><span class="line">                        <span class="keyword">return</span> ConsumeResult.SUCCESS;</span><br><span class="line">                    &#125;).build();</span><br><span class="line">            log.info(<span class="string">&quot;构建mq5.0消费者成功：proxy:&#123;&#125;, topic:&#123;&#125;, group：&#123;&#125;&quot;</span>, endpoints, topic, group);</span><br><span class="line">            pushConsumers.add(pushConsumer);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClientException e) &#123;</span><br><span class="line">            log.info(<span class="string">&quot;构建mq5.0消费者失败：proxy:&#123;&#125;, topic:&#123;&#125;, group：&#123;&#125;, error:&#123;&#125;&quot;</span>, endpoints, topic, group, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="meta">@PreDestroy</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">destroy</span><span class="params">()</span> &#123;</span><br><span class="line">        pushConsumers.forEach(pushConsumer -&gt; &#123;</span><br><span class="line">            <span class="keyword">try</span> (pushConsumer) &#123;</span><br><span class="line">                log.info(<span class="string">&quot;关闭mq5.0消费者：proxy:&#123;&#125;, topic:&#123;&#125;, group：&#123;&#125;&quot;</span>, endpoints, topic, group);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                log.error(<span class="string">&quot;关闭mq5.0消费者失败：proxy:&#123;&#125;, topic:&#123;&#125;, group：&#123;&#125;, error:&#123;&#125;&quot;</span>, endpoints, topic, group, e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>I compared it against the official demo, and it matched exactly:</p>
+<blockquote>
+<p><a href="https://github.com/apache/rocketmq-clients/blob/master/java/client/src/main/java/org/apache/rocketmq/client/java/example/PushConsumerExample.java">https://github.com/apache/rocketmq-clients/blob/master/java/client/src/main/java/org/apache/rocketmq/client/java/example/PushConsumerExample.java</a></p>
+</blockquote>
+<p>On top of that, another colleague’s identical code ran fine on a different cluster, B1.</p>
+<h2 id="Packet-capture-and-the-CPU-hypothesis"><a href="#Packet-capture-and-the-CPU-hypothesis" class="headerlink" title="Packet capture and the CPU hypothesis"></a>Packet capture and the CPU hypothesis</h2><p>Could it really be a network problem after all?</p>
+<p>The exception above was thrown while the service was starting, so it never came up. At that point the container wasn’t ready either — no process to attach to — so we couldn’t yet run a packet capture to rule the network out.</p>
+<p>I asked my colleague to move the RocketMQ initialization logic behind an API call, so the service could start normally and I could capture the network traffic. (How to capture packets in a k8s cluster: <a href="https://jiankunking.blog.csdn.net/article/details/125189956">https://jiankunking.blog.csdn.net/article/details/125189956</a>)</p>
+<p>Packet capture screenshot:</p>
+<p><img src="/images/deadline-exceeded-clientcall/01.png" alt="01" loading="eager" fetchpriority="high" decoding="async" width="1906" height="791"></p>
+<p>The capture shows the network connection being established normally, then the service actively resetting it about 2.7 seconds in — exactly when the exception was thrown.</p>
+<p>The packet capture confirmed our suspicion: at least at the TCP level, the network was fine.</p>
+<p>Even with that verified, I still deployed the same broken image to cluster B1 — and the problem was still there.</p>
+<p>So where was the problem? The investigation stalled.</p>
+<p>Along the way I also tried:</p>
+<ul>
+<li>Switching the RocketMQ address to https:&#x2F;&#x2F;…</li>
+<li>Toggling enableSsl off and on</li>
+</ul>
+<p>…and the problem still wasn’t resolved.</p>
+<p>The service’s configuration in the test environment was:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Memory limit: 800m, request 600m</span><br><span class="line">CPU limit 0.3 cores, request 0.1 core</span><br></pre></td></tr></table></figure>
+
+<p>Startup in the test environment took over four minutes. Could too little CPU be the problem — JIT consuming too many resources during startup, preventing the RocketMQ network connection from being scheduled, and causing timeouts?</p>
+<p>Raising the CPU limit to 1 core got the service up in under a minute, but the exception remained.</p>
+<h2 id="The-key-clue-not-enough-memory"><a href="#The-key-clue-not-enough-memory" class="headerlink" title="The key clue: not enough memory"></a>The key clue: not enough memory</h2><p>The investigation stalled again. Then I remembered:</p>
+<blockquote>
+<ol>
+<li>The container platform injects agents like SkyWalking and Prometheus into our applications by default</li>
+<li>In earlier, less rigorous testing, I found that SkyWalking alone occupies 200–300 MB of memory</li>
+<li>The java command gets rewritten; the default heap is 65% of the memory limit</li>
+</ol>
+</blockquote>
+<p>800 × 0.65 &#x3D; 520m, minus 200–300m, leaves roughly 220–320m for the service itself. Could too little memory be the problem?</p>
+<p>Raising the memory request&#x2F;limit step by step to 1200m made the error disappear.</p>
+<p>Going back through the exception logs, I noticed that around the time the RocketMQ exception appeared, HikariPool was also failing to create database connections:</p>
+<blockquote>
+<p>HikariPool initializes after the rocketmq init</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">2023-12-14 09:43:24,cluster-test,did-test,jiankunking,jiankunking-6b86565dbb-lzt9d,2023-12-14 09:43:24.098  WARN 1 --- [  XNIO-1 task-1] com.zaxxer.hikari.pool.PoolBase          : [TID:95e19b4533204903a985c90b068cddcc_65_17025182033670077] --- HikariPool-1 - Failed to validate connection com.MySQL.cj.jdbc.ConnectionImpl@5c4719b1 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.</span><br><span class="line">2023-12-14 09:43:24,cluster-test,did-test,jiankunking,jiankunking-6b86565dbb-lzt9d,2023-12-14 09:43:24.101  WARN 1 --- [  XNIO-1 task-1] com.zaxxer.hikari.pool.PoolBase          : [TID:95e19b4533204903a985c90b068cddcc_65_17025182033670077] --- HikariPool-1 - Failed to validate connection com.MySQL.cj.jdbc.ConnectionImpl@33b9b407 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.</span><br><span class="line">2023-12-14 09:43:24,cluster-test,did-test,jiankunking,jiankunking-6b86565dbb-lzt9d,2023-12-14 09:43:24.103  WARN 1 --- [  XNIO-1 task-1] com.zaxxer.hikari.pool.PoolBase          : [TID:95e19b4533204903a985c90b068cddcc_65_17025182033670077] --- HikariPool-1 - Failed to validate connection com.MySQL.cj.jdbc.ConnectionImpl@59c237c9 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.</span><br><span class="line">2023-12-14 09:43:24,cluster-test,did-test,jiankunking,jiankunking-6b86565dbb-lzt9d,2023-12-14 09:43:24.196  WARN 1 --- [  XNIO-1 task-1] com.zaxxer.hikari.pool.PoolBase          : [TID:95e19b4533204903a985c90b068cddcc_65_17025182033670077] --- HikariPool-1 - Failed to validate connection com.MySQL.cj.jdbc.ConnectionImpl@4c517517 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.</span><br><span class="line">2023-12-14 09:43:24,cluster-test,did-test,jiankunking,jiankunking-6b86565dbb-lzt9d,2023-12-14 09:43:24.198  WARN 1 --- [  XNIO-1 task-1] com.zaxxer.hikari.pool.PoolBase          : [TID:95e19b4533204903a985c90b068cddcc_65_17025182033670077] --- HikariPool-1 - Failed to validate connection com.MySQL.cj.jdbc.ConnectionImpl@28bf77bd (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.</span><br><span class="line">2023-12-14 09:43:24,cluster-test,did-test,jiankunking,jiankunking-6b86565dbb-lzt9d,2023-12-14 09:43:24.203  WARN 1 --- [  XNIO-1 task-1] com.zaxxer.hikari.pool.PoolBase          : [TID:95e19b4533204903a985c90b068cddcc_65_17025182033670077] --- HikariPool-1 - Failed to validate connection com.MySQL.cj.jdbc.ConnectionImpl@59d2c94b (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.</span><br><span class="line">2023-12-14 09:43:24,cluster-test,did-test,jiankunking,jiankunking-6b86565dbb-lzt9d,2023-12-14 09:43:24.296  WARN 1 --- [  XNIO-1 task-1] com.zaxxer.hikari.pool.PoolBase          : [TID:95e19b4533204903a985c90b068cddcc_65_17025182033670077] --- HikariPool-1 - Failed to validate connection com.MySQL.cj.jdbc.ConnectionImpl@a835f53 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.</span><br></pre></td></tr></table></figure>
+
+<h2 id="Repeated-verification-and-the-memory-threshold"><a href="#Repeated-verification-and-the-memory-threshold" class="headerlink" title="Repeated verification and the memory threshold"></a>Repeated verification and the memory threshold</h2><p>I then told my colleague the fix, assuming that was the end of it…</p>
+<p>But that afternoon, he found that the service also started fine with the memory limit put back to 800m. Had something gone differently that morning?</p>
+<p>I redeployed the original broken image with the lowered memory limit — and the service really did start normally.</p>
+<p><img src="/images/deadline-exceeded-clientcall/%E6%88%91%E7%9A%84%E5%A4%A9%E5%91%90.png" alt="我的天呐" loading="lazy" decoding="async" width="767" height="751"></p>
+<p>Since the service could now start with the original configuration, how much memory does it actually need when no agents are injected by default?</p>
+<p>I first replaced the startup command, removing the injected SkyWalking, Prometheus, and other agents:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">java2</span><br><span class="line">-server</span><br><span class="line">-Xms300m</span><br><span class="line">-Xmx300m</span><br><span class="line">-jar</span><br><span class="line">application.jar</span><br><span class="line">--spring.profiles.active=test</span><br></pre></td></tr></table></figure>
+
+<p>The service started fine on 300m.</p>
+<p>Then I switched back to the startup command with agents, and found:</p>
+<ul>
+<li>limit &#x3D; request &#x3D; 500m: the service starts normally</li>
+<li>limit &#x3D; request &#x3D; 450m: the exception above reappears</li>
+<li>limit &#x3D; request &#x3D; 400m: the container gets OOMKilled</li>
+</ul>
+<h2 id="Conclusions-and-open-questions"><a href="#Conclusions-and-open-questions" class="headerlink" title="Conclusions and open questions"></a>Conclusions and open questions</h2><p>Two conclusions are solid by now:</p>
+<ul>
+<li>The exception was caused by insufficient memory</li>
+<li>The exact threshold that triggers it remains unclear<ul>
+<li>Two suspects:<ul>
+<li>The memory usage of injected agents like SkyWalking swings significantly with other factors</li>
+<li>The service’s own memory footprint differed between morning and afternoon runs</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>I also suspected the cluster was overcommitting memory requests. Checking:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">spec:</span><br><span class="line">  ratio:</span><br><span class="line">    limits.cpu: 500</span><br><span class="line">    limits.memory: 500</span><br><span class="line">    requests.cpu: 100</span><br><span class="line">    requests.memory: 100</span><br></pre></td></tr></table></figure>
+
+<p>The requests were not overcommitted — the limits were.</p>
+<p>Because of time constraints, I have not yet profiled the service’s memory usage or the memory usage of agents like SkyWalking; I will pick that up when I have time.</p>
+<p><em>This article is the English edition of a post originally published in <a href="/rocketmq-client-deadline-exceeded-troubleshooting.html">Chinese</a>.</em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+
+          <div class="reward-container">
+  <div>Buy me a coffee</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） WeChat Pay" loading="lazy" decoding="async" width="1118" height="1534">
+        <span>WeChat Pay</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>Post author:  </strong>衣舞晨风（jiankunking）
+  </li>
+  <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html" title="RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory">https://jiankunking.com/en/rocketmq-client-deadline-exceeded.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
+      </div>
+  </div>
+</div>
+
+
+        
+
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风（jiankunking）</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">861k</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Model management decides who can use what and how much; the AI gateway enforces it on every request. A tour of the three planes, the model lifecycle, and the request pipeline.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop">
+<meta property="og:url" content="https://jiankunking.com/en/from-model-management-to-ai-gateway.html">
+<meta property="og:site_name" content="衣舞晨风（jiankunking）">
+<meta property="og:description" content="Model management decides who can use what and how much; the AI gateway enforces it on every request. A tour of the three planes, the model lifecycle, and the request pipeline.">
+<meta property="og:locale" content="en_US">
+
+
+
+
+
+
+
+
+<meta property="article:published_time" content="2026-10-05T13:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-17T16:00:00.000Z">
+<meta property="article:author" content="衣舞晨风（jiankunking）">
+<meta property="article:tag" content="AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化">
+<meta name="twitter:card" content="summary_large_image">
+
+
+
+<link rel="canonical" href="https://jiankunking.com/en/from-model-management-to-ai-gateway.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"https://jiankunking.com/en/from-model-management-to-ai-gateway.html","path":"en/from-model-management-to-ai-gateway.html","title":"From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop | 衣舞晨风（jiankunking）</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://jiankunking.com/en/from-model-management-to-ai-gateway.html","url":"https://jiankunking.com/en/from-model-management-to-ai-gateway.html","name":"From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop","description":"Model management decides who can use what and how much; the AI gateway enforces it on every request. A tour of the three planes, the model lifecycle, and the re","inLanguage":"en","author":{"@id":"https://jiankunking.com/about/#person"},"isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/from-model-management-to-ai-gateway.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/from-model-management-to-ai-gateway.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop","item":"https://jiankunking.com/en/from-model-management-to-ai-gateway.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风（jiankunking）" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta property="og:image:alt" content="From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop">
+<meta name="twitter:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta name="twitter:image:alt" content="From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+<div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+      <span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span>
+    </div>
+  </div>
+  <div class="site-meta">
+    
+    <a href="/" class="brand" rel="start" aria-label="衣舞晨风（jiankunking）">
+      <i class="logo-line" aria-hidden="true"></i>
+      <p class="site-title">
+        <span class="site-title-name">衣舞晨风</span>
+        <span class="site-title-handle">jiankunking</span>
+      </p>
+      <i class="logo-line" aria-hidden="true"></i>
+    </a>
+    <p class="site-subtitle" itemprop="description">AI 网关与后端稳定性实践</p>
+    
+  </div>
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+      <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-英文"><a href="/en/" rel="section"><i class="fa-solid fa-language fa-fw"></i>英文</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Two-kinds-of-incidents"><span class="nav-number">1.</span> <span class="nav-text">1. Two kinds of incidents</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-The-life-of-a-model"><span class="nav-number">2.</span> <span class="nav-text">2. The life of a model</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-Selection-verify-first-then-add-to-the-asset-catalog"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 Selection: verify first, then add to the asset catalog</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Application-establish-ownership-first-then-open-production-access"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 Application: establish ownership first, then open production access</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-Tokens-the-carrier-of-permission-not-an-isolated-key"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 Tokens: the carrier of permission, not an isolated key</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-Invocation-asset-relationships-carried-into-the-request"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 Invocation: asset relationships carried into the request</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-Billing-usage-must-flow-back-to-the-asset-relationship"><span class="nav-number">2.5.</span> <span class="nav-text">2.5 Billing: usage must flow back to the asset relationship</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-6-Retirement-remove-references-first-then-delete-the-asset"><span class="nav-number">2.6.</span> <span class="nav-text">2.6 Retirement: remove references first, then delete the asset</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-The-life-of-a-request"><span class="nav-number">3.</span> <span class="nav-text">3. The life of a request</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Two-kinds-of-callers-two-paths"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 Two kinds of callers, two paths</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Usage-is-parsed-exactly-once"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 Usage is parsed exactly once</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-A-real-request"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 A real request</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Three-scenarios-where-the-loop-turns"><span class="nav-number">4.</span> <span class="nav-text">4. Three scenarios where the loop turns</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-Quota-computed-on-the-business-side-executed-on-the-data-plane"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 Quota: computed on the business side, executed on the data plane</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-Availability-the-instance-pool-automatically-avoids-failures"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 Availability: the instance pool automatically avoids failures</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-Configuration-the-database-is-the-source-of-truth-delivery-is-just-delivery"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 Configuration: the database is the source of truth; delivery is just delivery</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-The-capability-map-how-the-boundaries-were-drawn"><span class="nav-number">5.</span> <span class="nav-text">5. The capability map: how the boundaries were drawn</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-How-feedback-becomes-decisions"><span class="nav-number">6.</span> <span class="nav-text">6. How feedback becomes decisions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">7.</span> <span class="nav-text">Conclusion</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#A-note-from-the-author"><span class="nav-number">8.</span> <span class="nav-text">A note from the author</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风（jiankunking）"
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
+  <p class="site-author-name" itemprop="name">衣舞晨风（jiankunking）</p>
+  <div class="site-description" itemprop="description">衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">286</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/en/from-model-management-to-ai-gateway.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop | 衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="Model management decides who can use what and how much; the AI gateway enforces it on every request. A tour of the three planes, the model lifecycle, and the request pipeline.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-10-05 21:00:00" itemprop="dateCreated datePublished" datetime="2026-10-05T21:00:00+08:00">2026-10-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-18 00:00:00" itemprop="dateModified" datetime="2026-10-18T00:00:00+08:00">2026-10-18</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>17k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>16 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">Model management decides who can use what and how much; the AI gateway enforces it on every request. A tour of the three planes, the model lifecycle, and the request pipeline.</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+<aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>从模型管理到 AI 网关：把资产、流量与成本串成闭环</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/from-model-management-to-ai-gateway.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><blockquote>
+<p>Model management decides who can use what and how much; the AI gateway enforces those decisions on every request; and the outcome of each call flows back to become the basis for cost allocation, scale-out, and retirement. This article follows two lines — the life of a model, and the life of a request — to see how the loop turns.</p>
+</blockquote>
+<span id="more"></span>
+
+<hr>
+<h2 id="1-Two-kinds-of-incidents"><a href="#1-Two-kinds-of-incidents" class="headerlink" title="1. Two kinds of incidents"></a>1. Two kinds of incidents</h2><p>Anyone who has built a model platform has probably seen both of these incidents:</p>
+<ul>
+<li>A model has been retired, yet traffic is still hitting it.</li>
+<li>An approval has gone through, yet the call simply does not work.</li>
+</ul>
+<p>Both stem from the same root: the system that manages assets and the system that manages traffic are two separate systems, each holding half the picture. Approvals, permissions and quotas stay inside the business system and cannot constrain real requests; the gateway can forward traffic, but it does not know why a model was listed, who is allowed to use it, or whose cost the call books to.</p>
+<p>The core object of traditional API management is the interface; the core object of AI platform management is the model. Both appear to handle HTTP requests, but what they care about differs:</p>
+<table>
+<thead>
+<tr>
+<th>What interface management cares about</th>
+<th>What model management additionally cares about</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Address, protocol, authentication, routing</td>
+<td>Model listing, selection, permissions, quotas, unit price, retirement</td>
+</tr>
+<tr>
+<td>Whether the request succeeded</td>
+<td>How many input and output tokens were consumed</td>
+</tr>
+<tr>
+<td>Whether the upstream is healthy</td>
+<td>Whether instances are healthy, whether quota remains, whether the provider needs to be switched</td>
+</tr>
+<tr>
+<td>Who the caller is</td>
+<td>Which application, user and cost center the call belongs to</td>
+</tr>
+</tbody></table>
+<p>The real relationship between the two is a loop:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Model listing → selection and application → authorization and quota generation</span><br><span class="line">        → gateway authentication, rate limiting, routing, rewriting</span><br><span class="line">        → usage and status flow back → cost allocation, scale-out, migration and retirement</span><br></pre></td></tr></table></figure>
+
+<p>The loop runs in two directions: decisions flow down — models, permissions, quotas and routing rules enter the gateway through the configuration plane; results flow up — token usage, callers and call outcomes return from the gateway to the business side.</p>
+<p>Three planes keep the loop turning: the <strong>business plane</strong> makes decisions and owns model assets and usage rules; the <strong>configuration plane</strong> translates and delivers those decisions, turning business rules into router, instance and plugin configuration the gateway can execute; the <strong>data plane</strong> executes decisions and reports results back — built on a mature API gateway, it is responsible only for authentication, rate limiting, routing, rewriting, forwarding and recording along the request path. Each plane keeps to its boundary: the business plane does not touch inference traffic, the data plane does not hold asset rules, and the configuration plane only translates and delivers.</p>
+<p><img src="/images/from-model-management-to-ai-gateway/three-planes.png" alt="Figure 2 · The three planes" loading="eager" fetchpriority="high" decoding="async" width="2352" height="1666"></p>
+<p>The hard part is right here: the same model, token and caller must point to one and the same thing in both the asset system and the traffic system. Next, two lines show how this loop turns — first the life of a model, then the life of a request.</p>
+<hr>
+<h2 id="2-The-life-of-a-model"><a href="#2-The-life-of-a-model" class="headerlink" title="2. The life of a model"></a>2. The life of a model</h2><p>One running example throughout: the customer support team wants to connect a new inference model to their low-code agent platform. From arrival to exit, the model passes through six gates:</p>
+<p><img src="/images/from-model-management-to-ai-gateway/model-lifecycle.png" alt="Figure 3 · Model lifecycle" loading="lazy" decoding="async" width="2352" height="396"></p>
+<h3 id="2-1-Selection-verify-first-then-add-to-the-asset-catalog"><a href="#2-1-Selection-verify-first-then-add-to-the-asset-catalog" class="headerlink" title="2.1 Selection: verify first, then add to the asset catalog"></a>2.1 Selection: verify first, then add to the asset catalog</h3><p>They first tried several candidates side by side in the model marketplace: tuning <code>Temperature</code>, <code>Top_p</code>, <code>Max_tokens</code>, and also re-running with different models at identical parameters to compare the results.</p>
+<p>Selection is not just picking a model name; it also means judging whether reasoning capability is needed, how high the quality bar is, and whether there are security risks. Security risk is especially decisive — it directly determines whether to go with a private deployment or a cloud service, and the later application and routing approach follow from it.</p>
+<h3 id="2-2-Application-establish-ownership-first-then-open-production-access"><a href="#2-2-Application-establish-ownership-first-then-open-production-access" class="headerlink" title="2.2 Application: establish ownership first, then open production access"></a>2.2 Application: establish ownership first, then open production access</h3><p>The application form must state the usage mode (low-code agent platform, microservice calls, or personal office use) and the environment (test or production).</p>
+<p>Production access must be bound to an explicit scenario. Without a scenario, calls cannot be attributed to an application, and auditing, cost allocation and problem diagnosis become impossible. So what this step really establishes is the three-way relationship between model, caller, and cost ownership.</p>
+<h3 id="2-3-Tokens-the-carrier-of-permission-not-an-isolated-key"><a href="#2-3-Tokens-the-carrier-of-permission-not-an-isolated-key" class="headerlink" title="2.3 Tokens: the carrier of permission, not an isolated key"></a>2.3 Tokens: the carrier of permission, not an isolated key</h3><p>One token can carry permissions for multiple models — you do not need a separate key per model. The deletion boundary for tokens is deliberately tight: delete the last model permission and the token is invalidated with it; if an agent still references the token, deletion is refused. <strong>A token that is “still valid but whose user is unknown” must never exist in the system.</strong></p>
+<p>Once the application is approved, the rules continue down the chain. The enterprise&#x2F;application path issues a token, creates a Consumer (the gateway-side object representing the caller, holding its credentials and plugin configuration), writes model permissions and quota, and adds the route to a whitelist; the personal path only issues a token, with no Consumer — authentication and quota checks happen in real time on the business side. Until this step is complete, “authorized” in the business system cannot become “may call” in the request path.</p>
+<h3 id="2-4-Invocation-asset-relationships-carried-into-the-request"><a href="#2-4-Invocation-asset-relationships-carried-into-the-request" class="headerlink" title="2.4 Invocation: asset relationships carried into the request"></a>2.4 Invocation: asset relationships carried into the request</h3><p>Once real calls begin, the SDK documentation is only the surface; underneath it, model management rules are expressed on the request side:</p>
+<ul>
+<li>Exceeding either RPM or TPM causes a rejection, protecting request frequency, model throughput and the cost budget;</li>
+<li>Keeping <code>X-Session-ID</code> constant within a conversation lets consistent hashing land requests on the same instance as much as possible, reusing the KV cache;</li>
+<li>Passing user information via <code>baggage: sentry-user</code> (<code>baggage</code> is the standard request header OpenTelemetry uses to propagate key-value context along a trace) lets the call be correlated with the log field <code>caller_user</code>, enabling end-to-end attribution.</li>
+</ul>
+<p>These request headers are not business decoration; they are the carriers through which session, user and cost ownership enter the data plane.</p>
+<h3 id="2-5-Billing-usage-must-flow-back-to-the-asset-relationship"><a href="#2-5-Billing-usage-must-flow-back-to-the-asset-relationship" class="headerlink" title="2.5 Billing: usage must flow back to the asset relationship"></a>2.5 Billing: usage must flow back to the asset relationship</h3><p>A single user interaction can trigger several model calls; counting by interactions or requests alone cannot explain real consumption, and capacity and cost have to be measured in tokens.</p>
+<p>Token-based measurement supports three things: load tests give the average token consumption per interaction; cost allocation aggregates by token to the application or sub-product; ROI estimates daily cost as <code>DAU × interactions per user per day × average tokens per interaction × unit price</code>.</p>
+<p>The gateway is the feedback entry point here: it parses upstream usage, records input and output tokens, model instance, caller and trace information, and hands them to quota settlement, detail queries and cost allocation.</p>
+<h3 id="2-6-Retirement-remove-references-first-then-delete-the-asset"><a href="#2-6-Retirement-remove-references-first-then-delete-the-asset" class="headerlink" title="2.6 Retirement: remove references first, then delete the asset"></a>2.6 Retirement: remove references first, then delete the asset</h3><p>A model cannot be retired by deleting it from a list. Published routes, issued tokens, agent references and in-flight migrations must all be handled in sync. The system uses a migration protection list to block new routes being created against the old model, and route creation also validates service template compatibility. The correct order is: switch the calling relationships first, then reclaim tokens and routes, and only then remove the model asset. In reverse, you get the two incidents from the opening.</p>
+<p>The six stages do not really end here. The two dashed lines in Figure 3 are the feedback flow: the slot freed by retirement is filled by a replacement model, entering a new round of selection; usage and status continuously correct quotas, scale-out plans and provider trade-offs.</p>
+<hr>
+<h2 id="3-The-life-of-a-request"><a href="#3-The-life-of-a-request" class="headerlink" title="3. The life of a request"></a>3. The life of a request</h2><p>The life of a model establishes and changes asset relationships; the life of a request is those relationships taking effect along a millisecond-to-minute path.</p>
+<p><img src="/images/from-model-management-to-ai-gateway/request-pipeline-six-stages.png" alt="Figure 4 · Request execution pipeline" loading="lazy" decoding="async" width="2352" height="628"></p>
+<p>Once the low-code agent platform is officially connected, every request on the enterprise path enters the gateway, and the gateway must answer five questions in order:</p>
+<ol>
+<li><strong>Who are you</strong>: verify the enterprise credentials.</li>
+<li><strong>May you call this model</strong>: check model permissions and the routing whitelist.</li>
+<li><strong>Where does this request go</strong>: filter out unhealthy or quota-exhausted candidate instances, then complete routing.</li>
+<li><strong>May this request be admitted</strong>: run the token pre-check and RPM rate limit against the selected instance.</li>
+<li><strong>How much was actually used</strong>: parse the response usage, write logs, and report back to the business side.</li>
+</ol>
+<p>Identity and permission come first, instances must be selected before forwarding, and actual usage can only be settled after the response. Implementations may vary; this order cannot.</p>
+<p>Behind all five questions are the decisions from Section 2: who you are comes from the ownership established at application time; whether you may call comes from token permissions; where it goes comes from the instance list determined by selection and retirement; whether it is admitted comes from the quota verdict; how much was used returns to the billing basis. The two lines mesh right here.</p>
+<h3 id="3-1-Two-kinds-of-callers-two-paths"><a href="#3-1-Two-kinds-of-callers-two-paths" class="headerlink" title="3.1 Two kinds of callers, two paths"></a>3.1 Two kinds of callers, two paths</h3><p>The low-code agent platform takes the enterprise path; personal office use takes the personal path. The two kinds of callers have different data sources and do not fit into one authentication model:</p>
+<p><img src="/images/from-model-management-to-ai-gateway/enterprise-vs-personal-paths-v2.png" alt="Figure 5 · Different scenario domains map to two invocation paths" loading="lazy" decoding="async" width="2352" height="440"></p>
+<ul>
+<li><strong>Enterprise&#x2F;application path</strong>: the token is bound to a fixed caller, and the gateway completes identity, model permission and quota checks locally.</li>
+<li><strong>Personal path</strong>: no fixed consumer object is created; the business side validates token and quota in real time, and actual usage is reclaimed after the request ends.</li>
+</ul>
+<p>The two kinds of calls use different scenario domains. By the time a request reaches the gateway, the domain has already determined whether it hits the enterprise route or the personal route — it is not a choice made by route labels after entry.</p>
+<h3 id="3-2-Usage-is-parsed-exactly-once"><a href="#3-2-Usage-is-parsed-exactly-once" class="headerlink" title="3.2 Usage is parsed exactly once"></a>3.2 Usage is parsed exactly once</h3><p>The gateway parses upstream response usage exactly once, and hands the same result to token quota settlement, personal usage reporting, logs and metrics, avoiding the inconsistent accounting that arises when each of them computes it separately.</p>
+<p>This step turns “the request succeeded” into operational information: not only whether the call completed, but which instance served it, how many tokens it burned, and whose account it books to.</p>
+<p>Request and response bodies may contain prompts, business data, and even personal information; “can be recorded” does not mean “retained in full by default”. In production, sampling decisions must also be made per scenario, together with the corresponding masking, access control and retention periods.</p>
+<h3 id="3-3-A-real-request"><a href="#3-3-A-real-request" class="headerlink" title="3.3 A real request"></a>3.3 A real request</h3><p><img src="/images/from-model-management-to-ai-gateway/ai-request-complete-journey-diagram-hd-v2.gif" alt="Figure 8 · A complete request: from entry to settlement" loading="lazy" decoding="async" width="4320" height="2852"></p>
+<p>In the figure, instance C has already been removed from the candidates after failing an active health check. This request first reached instance A, which returned 429 — A is excluded only for this request and is not written into health-check state. Fallback is enabled, the time since the last failure is still within the retry window, and retries remain, so the router then selected instance B. The low-code agent platform notices nothing: no retry of its own, no need to change address or credentials.</p>
+<p>If instance A keeps failing and triggers an alert, alert integration sets its priority to 0, subsequent traffic no longer selects it, and the priority is restored once the alert clears. Request-level exclusion, health-check removal, and alert-based demotion — three mechanisms that do not interfere with one another. How they are wired together is the topic of the next section.</p>
+<hr>
+<h2 id="4-Three-scenarios-where-the-loop-turns"><a href="#4-Three-scenarios-where-the-loop-turns" class="headerlink" title="4. Three scenarios where the loop turns"></a>4. Three scenarios where the loop turns</h2><p>Quota, availability, configuration — every scenario is the same loop: decisions down, results up.</p>
+<h3 id="4-1-Quota-computed-on-the-business-side-executed-on-the-data-plane"><a href="#4-1-Quota-computed-on-the-business-side-executed-on-the-data-plane" class="headerlink" title="4.1 Quota: computed on the business side, executed on the data plane"></a>4.1 Quota: computed on the business side, executed on the data plane</h3><p>The business side holds model permissions, plans and cost rules, so it is the right place to answer “how much should be granted”; the data plane sees every real request, so it is the right place to answer “how much has been used”. The two are not interchangeable.</p>
+<p>The enterprise&#x2F;application path connects them with a four-step chain:</p>
+<p><img src="/images/from-model-management-to-ai-gateway/quota-four-step-loop.png" alt="Figure 6 · The four-step chain of quota generation and execution" loading="lazy" decoding="async" width="2352" height="1060"></p>
+<p>The core boundary in one sentence: <strong>on the enterprise path, the gateway does not hold quota rules — only the computed verdict.</strong> The personal path goes further: authentication and quota checks are all done in real time on the business side.</p>
+<p>Token rate limiting has two stages: check remaining headroom before forwarding, then book against real usage after the response. That way a call can be rejected before it happens and settled accurately afterward. The cost is that concurrent in-flight requests have no reserved quota, so actual usage can briefly exceed the threshold.</p>
+<p>To users, this implementation ultimately surfaces as just two kinds of information: the rate-limit dimensions are RPM &#x2F; TPM, and the performance tiers include standard mode &#x2F; high-performance mode, with exact values on the model marketplace detail page. Time-window rate limiting works the same way: the time window is a variable read when the request arrives, not a scheduled daily batch edit of live configuration — this capability is already live, with busy&#x2F;off-peak quotas switching at runtime under the same rules.</p>
+<h3 id="4-2-Availability-the-instance-pool-automatically-avoids-failures"><a href="#4-2-Availability-the-instance-pool-automatically-avoids-failures" class="headerlink" title="4.2 Availability: the instance pool automatically avoids failures"></a>4.2 Availability: the instance pool automatically avoids failures</h3><p>One model may map to self-hosted instances, a cloud service and a backup provider at the same time. Before forwarding, health status, remaining quota and alert-based demotion jointly decide whether an instance may enter the candidate set; after forwarding, an upstream 429&#x2F;5xx triggers candidate switching according to the retry conditions. These conditions must converge into a single routing-and-retry chain, otherwise an instance just removed by health checks may be re-selected by another logic path, and a high-priority instance that has exhausted its quota may keep receiving traffic.</p>
+<p><img src="/images/from-model-management-to-ai-gateway/fallback-selection-retry-v2.png" alt="Figure 7 · Fallback&#39;s filtering and retry chain" loading="lazy" decoding="async" width="2352" height="382"></p>
+<p>The request in the previous section traveled exactly this path: although the three exclusion mechanisms are independent of each other, they all act on the same candidate pool — with high-priority A unavailable, the request landed on B.</p>
+<h3 id="4-3-Configuration-the-database-is-the-source-of-truth-delivery-is-just-delivery"><a href="#4-3-Configuration-the-database-is-the-source-of-truth-delivery-is-just-delivery" class="headerlink" title="4.3 Configuration: the database is the source of truth; delivery is just delivery"></a>4.3 Configuration: the database is the source of truth; delivery is just delivery</h3><p>Model permissions, quotas and instance state all change, but changes cannot be made by overwriting the gateway configuration wholesale — a single business-side delivery could wipe out manual operations adjustments.</p>
+<p>So the configuration stage enforces exactly two boundaries. <strong>Source-of-truth boundary</strong>: managed plugins treat the database as the single source of truth; unmanaged plugins keep their current data-plane state; the gateway is called only after the database transaction commits, and external IO stays out of the transaction. <strong>Failure boundary</strong>: a failed delivery records status, alerts and retries — a database rollback is never used to paper over “not delivered”; if a rollback is genuinely needed, restore the gateway first, then roll back the database.</p>
+<p>The configuration plane only changes target fields and reads back to confirm after delivery. The goal is not that a given call never fails, but that after a failure you still know where the source of truth is and the data plane can re-converge.</p>
+<hr>
+<h2 id="5-The-capability-map-how-the-boundaries-were-drawn"><a href="#5-The-capability-map-how-the-boundaries-were-drawn" class="headerlink" title="5. The capability map: how the boundaries were drawn"></a>5. The capability map: how the boundaries were drawn</h2><p>Looking back at the boundaries of this system, the starting point was a list of 13 capability categories:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Management · Traffic governance · Connections and timeouts · Routing and load balancing · Request rewriting · Observability</span><br><span class="line">Health checks · Model management · Security · Multi-region · Protocol conversion · Extensibility · High availability</span><br></pre></td></tr></table></figure>
+
+<p>Observability and request rewriting had the most entries — the inventory was never really about forwarding itself. Rather than listing items one by one from a product menu, I grouped them into 8 domains by where the capability finally executes:</p>
+<p><img src="/images/from-model-management-to-ai-gateway/capability-map-8-domains-v2.png" alt="Figure 1 · Full capability map (8 domains)" loading="lazy" decoding="async" width="2400" height="1180"></p>
+<p>A–G are gateway-side capabilities covering the execution of a request and its operational guarantees; H is the asset chain, answering where a model comes from, who it is for, and when it exits. The details are all in Figure 1 and are not repeated here.</p>
+<p>Cross-referencing the existing code and configuration material shows that the main path already covers model routing, rate limiting across four scopes, SSE, request rewriting, health checks, fallback, baseline logging and metrics, and multi-region access. A few boundaries are still not in place:</p>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Current boundary</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Content moderation</td>
+<td>Integration point reserved, but consumer-level, bidirectional request&#x2F;response moderation is not yet complete</td>
+</tr>
+<tr>
+<td>Protocol conversion</td>
+<td>Partial directional conversion exists; transparent two-way conversion between OpenAI and Anthropic still needs validation</td>
+</tr>
+<tr>
+<td>Observability</td>
+<td>Tokens, latency and TTFT are in place; output TPS metrics are still to be built, and some business fields need custom configuration</td>
+</tr>
+<tr>
+<td>Automatic certificate renewal</td>
+<td>A target capability; no implementation evidence located in the current material</td>
+</tr>
+</tbody></table>
+<p>The most important thing about this map is not the number of features but the boundaries: A–G decide how a request executes; H decides why it executes that way. Traditional API gateways mainly cover the former; to make models first-class citizens, the latter must be supplied by model management and the business control plane.</p>
+<p>When placing items, I used a single rule: every capability must have an explicit executor, input and output; anything without a clear responsibility boundary is recorded as a gap first, rather than turned into a menu item.</p>
+<hr>
+<h2 id="6-How-feedback-becomes-decisions"><a href="#6-How-feedback-becomes-decisions" class="headerlink" title="6. How feedback becomes decisions"></a>6. How feedback becomes decisions</h2><p>Operational results flow back from three places:</p>
+<table>
+<thead>
+<tr>
+<th>Feedback trigger</th>
+<th>Who catches it</th>
+<th>What decision it changes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Persistent upstream 429 &#x2F; 5xx triggering an alert</td>
+<td>Data-plane alert integration demotes priority</td>
+<td>The instance’s routing priority, directly affecting every subsequent routing decision</td>
+</tr>
+<tr>
+<td>Token usage and call details</td>
+<td>Quota and analytics layer</td>
+<td>Cost allocation aggregates to the application or cost center, and supports the capacity and cost basis (2.5)</td>
+</tr>
+<tr>
+<td>Instance health status and usage growth trends</td>
+<td>Operations and model operations</td>
+<td>Scale out instances, degrade, or add providers — eventually entering the retirement and migration of 2.6</td>
+</tr>
+</tbody></table>
+<p>The first row needs no human: once the state changes, routing priority changes with it. The latter two need a human decision: data first becomes bills and dashboards, and only then does someone decide to scale out, switch providers, or retire.</p>
+<p>Back to the two incidents from the opening — a retired model still receiving traffic, an approved call that does not work. Both stem from asset relationships drifting apart from real traffic: decisions do not get through, and results do not come back. Only once both lines run does “who can use what and how much” stop being a ledger locked in by a single approval, and become a decision continuously corrected by operational results.</p>
+<hr>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Model management decides who can use what and how much; the AI gateway is responsible for enforcing those decisions on every request; and after each request, usage, callers and outcomes flow back into model management to support cost allocation, scale-out, migration and retirement.</p>
+<p>This is also where the two main lines intersect: the life of a model establishes and changes asset relationships, and the life of a request executes and verifies them. Without the first, the gateway does not know why it routes the way it does; without the second, permissions and quotas in model management are just rules on paper.</p>
+<p>The value of the capability map is not how many features it lists, but that every capability can be found with an execution location, input, output and feedback path. Connect these things together, and model assets, traffic governance and cost management finally form a genuine closed loop.</p>
+<hr>
+<h2 id="A-note-from-the-author"><a href="#A-note-from-the-author" class="headerlink" title="A note from the author"></a>A note from the author</h2><p>I drove this system end to end — from the capability inventory and three-plane architecture design, through custom plugins, the full model lifecycle, rate-limiting migration, and the operations console. Putting implementations scattered across different systems onto one diagram made one thing clear: those who manage assets, those who compute quotas, and those who count requests must each hold their own boundary, while closing the loop with one another through two chains — control and feedback.</p>
+<p>If you are also working on model platforms, AI gateways or LLMOps, I would be glad to compare notes.</p>
+<p><strong>Further reading</strong></p>
+<ul>
+<li>Selection criteria: <a href="https://jiankunking.com/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html">What Kind of Gateway Makes a Good AI Gateway?</a></li>
+<li>Another rate-limiting shape: <a href="https://jiankunking.com/llm-gateway-rate-limiting-with-litetopic.html">Rethinking LLM Gateway Rate Limiting: From an In-Process Leaky Bucket to a Distributed Leaky-Bucket Matrix</a></li>
+<li>Protocol conversion: <a href="https://jiankunking.com/efficient-design-and-development-in-the-ai-era-practice-of-plugin-development-for-converting-anthropic-requests-to-an-openai-compatible-backend.html">Efficient Design and Development in the AI Era: Building an Anthropic → OpenAI Protocol Conversion Plugin</a></li>
+<li>Production troubleshooting: <a href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html">One Upgrade, Two Independent Bugs: Tracing Streaming 500s and CPU Pegged at 100% Under Low Traffic in an API7 AI Gateway</a></li>
+</ul>
+<p><em>This article is the English edition of a post originally published in <a href="/from-model-management-to-ai-gateway.html">Chinese</a>.</em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+
+          <div class="reward-container">
+  <div>Buy me a coffee</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） WeChat Pay" loading="lazy" decoding="async" width="1118" height="1534">
+        <span>WeChat Pay</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>Post author:  </strong>衣舞晨风（jiankunking）
+  </li>
+  <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://jiankunking.com/en/from-model-management-to-ai-gateway.html" title="From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop">https://jiankunking.com/en/from-model-management-to-ai-gateway.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
+      </div>
+  </div>
+</div>
+
+
+        
+
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风（jiankunking）</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">861k</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="North-south entry gateway selection for a hybrid cloud spanning China and overseas, comparing Istio Gateway, cloud ASM and the Kubernetes Gateway API.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="North-South Entry Gateway Selection">
+<meta property="og:url" content="https://jiankunking.com/en/south-north-entry-gateway-selection.html">
+<meta property="og:site_name" content="衣舞晨风（jiankunking）">
+<meta property="og:description" content="North-south entry gateway selection for a hybrid cloud spanning China and overseas, comparing Istio Gateway, cloud ASM and the Kubernetes Gateway API.">
+<meta property="og:locale" content="en_US">
+
+<meta property="article:published_time" content="2025-03-07T22:12:47.000Z">
+<meta property="article:modified_time" content="2025-03-07T22:12:47.000Z">
+<meta property="article:author" content="衣舞晨风（jiankunking）">
+<meta property="article:tag" content="AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化">
+<meta name="twitter:card" content="summary_large_image">
+
+
+
+<link rel="canonical" href="https://jiankunking.com/en/south-north-entry-gateway-selection.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"https://jiankunking.com/en/south-north-entry-gateway-selection.html","path":"en/south-north-entry-gateway-selection.html","title":"North-South Entry Gateway Selection"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>North-South Entry Gateway Selection | 衣舞晨风（jiankunking）</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://jiankunking.com/en/south-north-entry-gateway-selection.html","url":"https://jiankunking.com/en/south-north-entry-gateway-selection.html","name":"North-South Entry Gateway Selection","description":"North-south entry gateway selection for a hybrid cloud spanning China and overseas, comparing Istio Gateway, cloud ASM and the Kubernetes Gateway API.","inLanguage":"en","author":{"@id":"https://jiankunking.com/about/#person"},"isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/south-north-entry-gateway-selection.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/south-north-entry-gateway-selection.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"North-South Entry Gateway Selection","item":"https://jiankunking.com/en/south-north-entry-gateway-selection.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风（jiankunking）" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta property="og:image:alt" content="North-South Entry Gateway Selection">
+<meta name="twitter:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta name="twitter:image:alt" content="North-South Entry Gateway Selection">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+<div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+      <span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span>
+    </div>
+  </div>
+  <div class="site-meta">
+    
+    <a href="/" class="brand" rel="start" aria-label="衣舞晨风（jiankunking）">
+      <i class="logo-line" aria-hidden="true"></i>
+      <p class="site-title">
+        <span class="site-title-name">衣舞晨风</span>
+        <span class="site-title-handle">jiankunking</span>
+      </p>
+      <i class="logo-line" aria-hidden="true"></i>
+    </a>
+    <p class="site-subtitle" itemprop="description">AI 网关与后端稳定性实践</p>
+    
+  </div>
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+      <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-英文"><a href="/en/" rel="section"><i class="fa-solid fa-language fa-fw"></i>英文</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pros-and-cons-of-each-gateway"><span class="nav-number">2.</span> <span class="nav-text">Pros and cons of each gateway</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Huawei-Cloud-ASM"><span class="nav-number">2.1.</span> <span class="nav-text">Huawei Cloud ASM</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Advantages"><span class="nav-number">2.1.1.</span> <span class="nav-text">Advantages</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Disadvantages"><span class="nav-number">2.1.2.</span> <span class="nav-text">Disadvantages</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Alibaba-Cloud-ASM"><span class="nav-number">2.2.</span> <span class="nav-text">Alibaba Cloud ASM</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Advantages-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">Advantages</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Disadvantages-1"><span class="nav-number">2.2.2.</span> <span class="nav-text">Disadvantages</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Istio-Gateway-Kubernetes-Gateway-API"><span class="nav-number">2.3.</span> <span class="nav-text">Istio Gateway &#x2F; Kubernetes Gateway API</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Service-Mesh"><span class="nav-number">2.3.1.</span> <span class="nav-text">Service Mesh</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Route-priority-in-the-Kubernetes-Gateway-API"><span class="nav-number">2.3.2.</span> <span class="nav-text">Route priority in the Kubernetes Gateway API</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Verification-results"><span class="nav-number">2.3.2.1.</span> <span class="nav-text">Verification results</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Result"><span class="nav-number">3.</span> <span class="nav-text">Result</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Misc"><span class="nav-number">4.</span> <span class="nav-text">Misc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Kubernetes-version-range-supported-by-the-cloud-ASM-offerings-and-their-Istio-versions"><span class="nav-number">4.1.</span> <span class="nav-text">Kubernetes version range supported by the cloud ASM offerings, and their Istio versions</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Sidecar-vs-Ambient"><span class="nav-number">4.2.</span> <span class="nav-text">Sidecar vs Ambient</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Istio-and-the-Kubernetes-Gateway-API"><span class="nav-number">4.3.</span> <span class="nav-text">Istio and the Kubernetes Gateway API</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#How-does-Istio-implement-Kubernetes-Gateway-API-route-priority"><span class="nav-number">4.4.</span> <span class="nav-text">How does Istio implement Kubernetes Gateway API route priority?</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风（jiankunking）"
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
+  <p class="site-author-name" itemprop="name">衣舞晨风（jiankunking）</p>
+  <div class="site-description" itemprop="description">衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">286</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/en/south-north-entry-gateway-selection.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="North-South Entry Gateway Selection | 衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="North-south entry gateway selection for a hybrid cloud spanning China and overseas, comparing Istio Gateway, cloud ASM and the Kubernetes Gateway API.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          North-South Entry Gateway Selection
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-03-08 06:12:47" itemprop="dateCreated datePublished" datetime="2025-03-08T06:12:47+08:00">2025-03-08</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>6.3k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>6 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">North-south entry gateway selection for a hybrid cloud spanning China and overseas, comparing Istio Gateway, cloud ASM and the Kubernetes Gateway API.</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+<aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>南北入口网关选型</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/south-north-entry-gateway-selection.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><p>A write-up of our north-south gateway selection for a hybrid cloud spanning China and overseas, comparing the pros and cons of Istio, Envoy and other gateway options.</p>
+<span id="more"></span>
+
+<blockquote>
+<p>The road to selecting a north-south gateway</p>
+</blockquote>
+<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>Our container cloud is a hybrid spanning China and overseas. By provider it includes:</p>
+<ul>
+<li>Alibaba Cloud</li>
+<li>Huawei Cloud</li>
+<li>AWS</li>
+<li>Oracle</li>
+<li>Self-hosted</li>
+</ul>
+<p>By region it includes:</p>
+<ul>
+<li>Mainland China</li>
+<li>Overseas<ul>
+<li>Frankfurt</li>
+<li>Russia</li>
+<li>Singapore</li>
+<li>……</li>
+</ul>
+</li>
+</ul>
+<p>So we wanted a gateway solution that</p>
+<ul>
+<li>covers every cluster and every region</li>
+<li>is preferably a managed cloud product</li>
+<li>uses one uniform integration approach across clusters</li>
+<li>covers<ul>
+<li>the capabilities of Ingress Nginx</li>
+<li>business developers’ everyday gateway needs</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>Phase one targets the north-south gateway; phase two will consider a service mesh (east-west) depending on how things go.<br>So this write-up focuses on north-south gateway selection, but whatever we pick must also be able to support a service mesh later.</p>
+</blockquote>
+<p>Given that background, the options available in the industry look roughly like this:</p>
+<ul>
+<li><a href="https://istio.io/latest/docs/reference/config/networking/gateway/">Istio Gateway</a></li>
+<li><a href="https://help.aliyun.com/zh/asm/product-overview/what-is-asm">Alibaba Cloud ASM</a></li>
+<li><a href="https://support.huaweicloud.com/asm/index.html">Huawei Cloud ASM</a></li>
+<li><a href="https://gateway-api.sigs.k8s.io/">Kubernetes Gateway API</a></li>
+</ul>
+<p>First, the basic capabilities of a business gateway:</p>
+<ul>
+<li>HTTP routing</li>
+<li>HTTP traffic splitting<ul>
+<li>Canary traffic rollout</li>
+<li>Blue-green traffic rollout</li>
+<li>……</li>
+</ul>
+</li>
+<li>Timeout</li>
+<li>Rewrite</li>
+<li>Redirect</li>
+<li>Header Modify</li>
+<li>Request Mirror</li>
+<li>WebSocket</li>
+<li>Retry</li>
+<li>CORS</li>
+<li>Rate Limits</li>
+<li>Circuit Breaking</li>
+</ul>
+<p>These capabilities also cover everything Ingress Nginx does.</p>
+<blockquote>
+<p>For the gateway part, you might wonder why we did not evaluate Alibaba Cloud’s MSE.<br>Mainly because MSE can only be deployed in Alibaba Cloud ACK — it cannot manage non-Alibaba Cloud ACK clusters or self-hosted clusters.</p>
+</blockquote>
+<p>Now let’s go through the pros and cons of each option.</p>
+<h2 id="Pros-and-cons-of-each-gateway"><a href="#Pros-and-cons-of-each-gateway" class="headerlink" title="Pros and cons of each gateway"></a>Pros and cons of each gateway</h2><h3 id="Huawei-Cloud-ASM"><a href="#Huawei-Cloud-ASM" class="headerlink" title="Huawei Cloud ASM"></a>Huawei Cloud ASM</h3><blockquote>
+<p>Built on Istio Gateway; supports a service mesh, but only via the sidecar mode.</p>
+</blockquote>
+<h4 id="Advantages"><a href="#Advantages" class="headerlink" title="Advantages"></a>Advantages</h4><ul>
+<li>ASM is fully compatible with Istio CRDs</li>
+</ul>
+<h4 id="Disadvantages"><a href="#Disadvantages" class="headerlink" title="Disadvantages"></a>Disadvantages</h4><ul>
+<li>The ASM base edition supports a single cluster, a <strong>maximum of 200 instances</strong>, and <font color="DeepPink"><strong>no SLA guarantee</strong></font></li>
+<li>UCS service mesh is restricted for commercial use (nobody has used it yet)<ul>
+<li>Note 1: <code>the ASM Enterprise edition has been taken offline</code></li>
+</ul>
+</li>
+<li>Cannot manage clusters from other clouds or self-hosted clusters</li>
+<li>Also has the route priority problem</li>
+</ul>
+<h3 id="Alibaba-Cloud-ASM"><a href="#Alibaba-Cloud-ASM" class="headerlink" title="Alibaba Cloud ASM"></a>Alibaba Cloud ASM</h3><blockquote>
+<p>Built on Istio Gateway; supports a service mesh in both sidecar and ambient modes, though ambient is not recommended for production at this stage.</p>
+</blockquote>
+<h4 id="Advantages-1"><a href="#Advantages-1" class="headerlink" title="Advantages"></a>Advantages</h4><ul>
+<li>Provides an SLA guarantee</li>
+<li>No need to operate the components yourself</li>
+<li>Supports managing clusters from other clouds and self-hosted clusters</li>
+<li>For business clusters where Alibaba Cloud has no region nearby, or where overseas network quality is poor, there is a targeted solution: <a href="https://help.aliyun.com/zh/asm/user-guide/reduce-push-latency-using-asm-remote-control-plane">ASM remote control plane</a></li>
+<li><a href="https://help.aliyun.com/zh/asm/user-guide/overview-of-asm-gateways?spm=a2c4g.11186623.help-menu-147365.d_2_5_0.681c5bcdGTAA8B&scm=20140722.H_473114._.OR_help-T_cn~zh-V_1">Full feature set</a></li>
+<li>One control plane can manage multiple Kubernetes clusters<ul>
+<li>Note: these clusters are essentially mirror clusters — the ASM CRDs deployed in-cluster and the routes pushed down are all identical, so this feature is not much use</li>
+</ul>
+</li>
+</ul>
+<h4 id="Disadvantages-1"><a href="#Disadvantages-1" class="headerlink" title="Disadvantages"></a>Disadvantages</h4><ul>
+<li>Because it is directly built on Istio Gateway, routing order is a problem<ul>
+<li><a href="https://istio.io/latest/zh/docs/concepts/traffic-management/">Within the same virtual service, matching follows declaration order and stops at the first match</a></li>
+<li><a href="https://istio.io/latest/zh/docs/ops/best-practices/traffic-management/#multiple-virtual-services-and-destination-rules-for-the-same-host">For the same domain across different virtual services, the order is non-deterministic</a></li>
+</ul>
+</li>
+<li>Currently supports Kubernetes Gateway API v1.1.0, and not the <a href="https://github.com/kubernetes-sigs/gateway-api/milestone/19?closed=1">v1.2.0</a> features<ul>
+<li>Standards<ul>
+<li>HTTPRoute timeouts</li>
+<li>Backend protocol support for WebSocket and HTTP&#x2F;2</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="Istio-Gateway-Kubernetes-Gateway-API"><a href="#Istio-Gateway-Kubernetes-Gateway-API" class="headerlink" title="Istio Gateway &#x2F; Kubernetes Gateway API"></a>Istio Gateway &#x2F; Kubernetes Gateway API</h3><p>For Istio Gateway there are two options:</p>
+<ul>
+<li>Going with the standard — that is, the Kubernetes Gateway API<ul>
+<li><strong>Standardization</strong>: the Kubernetes Gateway API aims to be a standard for describing how services are exposed in a Kubernetes cluster. That means it is not limited to working with one particular service mesh or ingress controller (such as Istio). By adopting the Gateway API, you can <strong>switch implementations or providers more easily without rewriting your configuration</strong>.</li>
+<li><strong>Conceptual consistency</strong>: consistent with the MSE and APISIX we had used before</li>
+<li><strong>Better integration</strong>: because the Gateway API is a Kubernetes-native API, it integrates better with other Kubernetes-native tools and systems</li>
+<li><a href="https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1.HTTPRouteRule"><strong>Route priority support</strong></a></li>
+</ul>
+</li>
+<li>Talking directly to Istio Gateway<ul>
+<li>Today Istio Gateway covers more than the Kubernetes Gateway API — for example <a href="https://istio.io/latest/zh/docs/tasks/traffic-management/circuit-breaking/">circuit breaking</a> and <a href="https://istio.io/latest/zh/docs/tasks/policy-enforcement/rate-limit/">rate limiting</a></li>
+<li>But it introduces Istio Gateway concepts such as VirtualService and DestinationRule, raising the learning curve for users</li>
+<li>Routing order is non-deterministic</li>
+</ul>
+</li>
+</ul>
+<p>At this point, looking at <code>route priority</code> alone eliminates the cloud ASM options and talking directly to Istio Gateway.</p>
+<p>But a few more things to note:</p>
+<ul>
+<li>The Kubernetes Gateway API currently does not support circuit breaking or rate limiting</li>
+<li>For cross-origin support we also have to wait for <a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21">Milestone v1.3.0</a> (current version v1.2.1; the next should be v1.3.0, but the exact release date is uncertain)</li>
+</ul>
+<h4 id="Service-Mesh"><a href="#Service-Mesh" class="headerlink" title="Service Mesh"></a><a href="https://gateway-api.kubernetes.ac.cn/implementations/#service-mesh-implementation-status">Service Mesh</a></h4><p>From the official site, Istio’s support for the Kubernetes Gateway API as a service mesh has already gone GA.</p>
+<h4 id="Route-priority-in-the-Kubernetes-Gateway-API"><a href="#Route-priority-in-the-Kubernetes-Gateway-API" class="headerlink" title="Route priority in the Kubernetes Gateway API"></a>Route priority in the Kubernetes Gateway API</h4><p>Route configurations for proxies or load balancers generated from HTTPRoutes must prioritize matches according to the following criteria, continuing to the next criterion on ties. Among all rules specified on applicable routes, priority is given to matches with:</p>
+<ul>
+<li>An “exact” path match.</li>
+<li>A “prefix” path match with the most characters.</li>
+<li>A method match.</li>
+<li>The greatest number of header matches.</li>
+<li>The greatest number of query parameter matches.</li>
+</ul>
+<p>Note: the priority of regular expression path matches is implementation-specific.</p>
+<p>If a tie still exists between routes, match precedence must be determined by the following criteria in order, continuing to the next criterion on ties:</p>
+<ul>
+<li>The earliest route based on creation timestamp.</li>
+<li>The first route in “{namespace}&#x2F;{name}” alphabetical order.</li>
+</ul>
+<p>If a tie still exists within an HTTPRoute, match precedence goes to the first matching rule (in list order) that satisfies the above.</p>
+<p>If a rule matching the request fails to attach to the request’s parent, HTTP 404 must be returned.</p>
+<blockquote>
+<p>Source:<br><a href="https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule">https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule</a></p>
+</blockquote>
+<p>Judging by where the note sits in the doc, multiple HTTPRouteMatch entries within a single HTTPRouteRule should satisfy these rules. What about across multiple HTTPRouteRules?</p>
+<p>Let’s verify both cases.</p>
+<h5 id="Verification-results"><a href="#Verification-results" class="headerlink" title="Verification results"></a>Verification results</h5><p><img src="/images/south-north-entry-gateway-selection/%E8%B7%AF%E7%94%B1%E4%BC%98%E5%85%88%E7%BA%A7%E9%AA%8C%E8%AF%81.png" alt="路由优先级验证" loading="eager" fetchpriority="high" decoding="async" width="1847" height="1347"></p>
+<p>We verified the common cases:</p>
+<ul>
+<li>Priority among multiple prefix matches</li>
+<li>Priority between a prefix match and an exact match</li>
+</ul>
+<p>As the results show, Istio routing follows the Kubernetes Gateway API spec.</p>
+<h2 id="Result"><a href="#Result" class="headerlink" title="Result"></a>Result</h2><p>From the options listed here, the most viable paths today are:</p>
+<ul>
+<li>Deploy Istio Gateway ourselves and talk directly to the Kubernetes Gateway API CRDs.<ul>
+<li>In practice this still waits for <a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21">Milestone v1.3.0</a> to ship and Istio to support it</li>
+</ul>
+</li>
+<li>Or wait for Alibaba Cloud ASM to support <a href="https://github.com/kubernetes-sigs/gateway-api/milestone/21">Milestone v1.3.0</a></li>
+</ul>
+<h2 id="Misc"><a href="#Misc" class="headerlink" title="Misc"></a>Misc</h2><h3 id="Kubernetes-version-range-supported-by-the-cloud-ASM-offerings-and-their-Istio-versions"><a href="#Kubernetes-version-range-supported-by-the-cloud-ASM-offerings-and-their-Istio-versions" class="headerlink" title="Kubernetes version range supported by the cloud ASM offerings, and their Istio versions"></a>Kubernetes version range supported by the cloud ASM offerings, and their Istio versions</h3><ul>
+<li><a href="https://help.aliyun.com/zh/asm/product-overview/support-for-istio-versions?spm=5176.13895322.console-base_help.dexternal.6dac5fcfo2sie4">Alibaba Cloud</a></li>
+<li><a href="https://support.huaweicloud.com/usermanual-asm/asm_01_0020.html">Huawei Cloud</a></li>
+</ul>
+<h3 id="Sidecar-vs-Ambient"><a href="#Sidecar-vs-Ambient" class="headerlink" title="Sidecar vs Ambient"></a>Sidecar vs Ambient</h3><p><a href="https://istio.io/latest/zh/docs/overview/dataplane-modes/#choosing-between-sidecar-and-ambient">https://istio.io/latest/zh/docs/overview/dataplane-modes/#choosing-between-sidecar-and-ambient</a></p>
+<h3 id="Istio-and-the-Kubernetes-Gateway-API"><a href="#Istio-and-the-Kubernetes-Gateway-API" class="headerlink" title="Istio and the Kubernetes Gateway API"></a>Istio and the Kubernetes Gateway API</h3><p><a href="https://istio.io/latest/zh/docs/ops/configuration/traffic-management/network-topologies/">Istio supports the Kubernetes Gateway API and plans to make it the default API for traffic management going forward.</a></p>
+<h3 id="How-does-Istio-implement-Kubernetes-Gateway-API-route-priority"><a href="#How-does-Istio-implement-Kubernetes-Gateway-API-route-priority" class="headerlink" title="How does Istio implement Kubernetes Gateway API route priority?"></a>How does Istio implement Kubernetes Gateway API route priority?</h3><p><a href="https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/conversion.go#L878">https://github.com/istio/istio/blob/master/pilot/pkg/config/kube/gateway/conversion.go#L878 buildHTTPDestination</a></p>
+<p><em>This article is the English edition of a post originally published in <a href="/south-north-entry-gateway-selection.html">Chinese</a>.</em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+
+          <div class="reward-container">
+  <div>Buy me a coffee</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） WeChat Pay" loading="lazy" decoding="async" width="1118" height="1534">
+        <span>WeChat Pay</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>Post author:  </strong>衣舞晨风（jiankunking）
+  </li>
+  <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://jiankunking.com/en/south-north-entry-gateway-selection.html" title="North-South Entry Gateway Selection">https://jiankunking.com/en/south-north-entry-gateway-selection.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
+      </div>
+  </div>
+</div>
+
+
+        
+
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风（jiankunking）</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">861k</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

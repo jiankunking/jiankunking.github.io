@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Selected production engineering articles translated from Chinese: AI gateway evaluation, APISIX and Elasticsearch troubleshooting, and real incident postmortems.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="English Articles">
+<meta property="og:url" content="https://jiankunking.com/en/">
+<meta property="og:site_name" content="衣舞晨风（jiankunking）">
+<meta property="og:description" content="Selected production engineering articles translated from Chinese: AI gateway evaluation, APISIX and Elasticsearch troubleshooting, and real incident postmortems.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-18T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-17T16:00:00.000Z">
+<meta property="article:author" content="衣舞晨风（jiankunking）">
+<meta property="article:tag" content="AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化">
+<meta name="twitter:card" content="summary_large_image">
+
+
+<link rel="canonical" href="https://jiankunking.com/en/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"https://jiankunking.com/en/","path":"en/index.html","title":"English Articles"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>English Articles | 衣舞晨风（jiankunking）</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://jiankunking.com/en/","url":"https://jiankunking.com/en/","name":"English Articles","description":"Selected production engineering articles translated from Chinese: AI gateway evaluation, APISIX and Elasticsearch troubleshooting, and real incident postmortems","inLanguage":"en","author":{"@id":"https://jiankunking.com/about/#person"},"isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"English Articles","item":"https://jiankunking.com/en/"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风（jiankunking）" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta property="og:image:alt" content="English Articles">
+<meta name="twitter:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta name="twitter:image:alt" content="English Articles">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+<div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+      <span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span>
+    </div>
+  </div>
+  <div class="site-meta">
+    
+    <a href="/" class="brand" rel="start" aria-label="衣舞晨风（jiankunking）">
+      <i class="logo-line" aria-hidden="true"></i>
+      <p class="site-title">
+        <span class="site-title-name">衣舞晨风</span>
+        <span class="site-title-handle">jiankunking</span>
+      </p>
+      <i class="logo-line" aria-hidden="true"></i>
+    </a>
+    <p class="site-subtitle" itemprop="description">AI 网关与后端稳定性实践</p>
+    
+  </div>
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+      <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-英文"><a href="/en/" rel="section"><i class="fa-solid fa-language fa-fw"></i>英文</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</header>
+        
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风（jiankunking）"
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
+  <p class="site-author-name" itemprop="name">衣舞晨风（jiankunking）</p>
+  <div class="site-description" itemprop="description">衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">286</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+    </div>
+
+    <div class="main-inner site-page page posts-expand">
+
+<div class="site-page-shell">
+  <nav class="collection-breadcrumb" aria-label="当前位置"><a href="/">首页</a><span aria-hidden="true">/</span><span aria-current="page">English Articles</span></nav>
+  <header class="site-page-hero">
+    <p class="site-eyebrow">ENGLISH / 英文文章</p>
+    <h1>English Articles</h1>
+    <p class="site-intro">Production engineering articles translated from Chinese: AI gateway selection, APISIX and Elasticsearch troubleshooting, and real incident postmortems.</p>
+  </header>
+  <div class="post-body site-page-body"><ul class="en-article-list">
+<li class="en-article">
+  <a class="en-article__title" href="/en/apisix-504-15-seconds.html">APISIX Gateway 504s After Exactly 15 Seconds: Tracing It to tcp_syn_retries</a>
+  <p class="en-article__desc">An API gateway kept returning 504s with request time pinned at exactly 15 seconds. This postmortem walks through timeout tracing, kernel parameter analysis, DNS elimination and packet capture to root-cause it as a SYN retransmission timeout.</p>
+  <span class="en-article__source">Chinese original: <a href="/APISIX-504-troubleshooting.html">APISIX Gateway 504s After Exactly 15 Seconds: Tracing It to tcp_syn_retries</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/from-model-management-to-ai-gateway.html">From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop</a>
+  <p class="en-article__desc">Model management decides who can use what and how much; the AI gateway enforces it on every request. A tour of the three planes, the model lifecycle, and the request pipeline.</p>
+  <span class="en-article__source">Chinese original: <a href="/from-model-management-to-ai-gateway.html">From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/api7-upgrade-two-independent-bugs.html">API7 Gateway Upgrade Postmortem: Streaming 500s and Low-Traffic CPU Saturation From Two Independent Bugs</a>
+  <p class="en-article__desc">An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff, and perf data proved they were two independent bugs.</p>
+  <span class="en-article__source">Chinese original: <a href="/one-upgrade-two-independent-bugs-api7-gateway.html">API7 Gateway Upgrade Postmortem: Streaming 500s and Low-Traffic CPU Saturation From Two Independent Bugs</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/llm-gateway-rate-limiting-distributed-leaky-bucket.html">Rethinking LLM Gateway Rate Limiting: From an In-Process Leaky Bucket to a Distributed Leaky-Bucket Matrix</a>
+  <p class="en-article__desc">How Alibaba Cloud's Bailian gateway rebuilt LLM rate limiting: fixed window plus a distributed LiteTopic leaky-bucket matrix, and the response channel the article skips.</p>
+  <span class="en-article__source">Chinese original: <a href="/llm-gateway-rate-limiting-with-litetopic.html">Rethinking LLM Gateway Rate Limiting: From an In-Process Leaky Bucket to a Distributed Leaky-Bucket Matrix</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/coding-agent-harness-selection.html">Coding Agent Harness Selection and Integration: OpenCode, Pi, DeepSeek Harness, Codex, Claude Agent SDK, and OpenHands Compared</a>
+  <p class="en-article__desc">A documentation-based comparison of six coding agent harnesses across standalone operation, HTTP APIs and session management, with a decision tree and integration guidance.</p>
+  <span class="en-article__source">Chinese original: <a href="/coding-agent-harness-landscape-and-selection.html">Coding Agent Harness Selection and Integration: OpenCode, Pi, DeepSeek Harness, Codex, Claude Agent SDK, and OpenHands Compared</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/go-document-rag-implementation.html">From Upload to Verifiable Answers: A Go Document Q&amp;A RAG Implementation</a>
+  <p class="en-article__desc">How a Go document Q&amp;A system turns an uploaded file into verifiable answers: async parsing, OCR, chunking, hybrid retrieval with RRF, reranking, and citation checking.</p>
+  <span class="en-article__source">Chinese original: <a href="/document-rag-design-and-implementation.html">From Upload to Verifiable Answers: A Go Document Q&amp;A RAG Implementation</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/how-to-judge-an-ai-gateway.html">How to Judge an AI Gateway: Protocol Compatibility, Traffic Governance, and a Performance Scorecard</a>
+  <p class="en-article__desc">A practical framework for judging AI gateways: L7 fundamentals, AI traffic handling, provable runtime performance, production maturity, five veto lines, and a weighted scorecard.</p>
+  <span class="en-article__source">Chinese original: <a href="/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html">How to Judge an AI Gateway: Protocol Compatibility, Traffic Governance, and a Performance Scorecard</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/runtime-behavior-blind-spots-api7-cpu-saturation.html">Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway</a>
+  <p class="en-article__desc">Postmortem of repeated CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, per-request decode cost, and streaming backpressure — four distinct failure modes with separate fixes.</p>
+  <span class="en-article__source">Chinese original: <a href="/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/apisix-plugin-anthropic-to-openai.html">APISIX Protocol Translation Plugin in Practice: Anthropic and OpenAI Compatible APIs</a>
+  <p class="en-article__desc">How an APISIX plugin converts Anthropic Messages API traffic to OpenAI Chat Completions and back, covering streaming, thinking, tool calls, and multimodal images.</p>
+  <span class="en-article__source">Chinese original: <a href="/efficient-design-and-development-in-the-ai-era-practice-of-plugin-development-for-converting-anthropic-requests-to-an-openai-compatible-backend.html">APISIX Protocol Translation Plugin in Practice: Anthropic and OpenAI Compatible APIs</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/apache-apisix-architecture.html">Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy</a>
+  <p class="en-article__desc">A look at the Apache APISIX architecture: how event-driven design, coroutines, and LuaJIT on top of OpenResty deliver its performance, plus a comparison with Envoy as a foundation.</p>
+  <span class="en-article__source">Chinese original: <a href="/apache-apisix-architecture.html">Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/south-north-entry-gateway-selection.html">North-South Entry Gateway Selection</a>
+  <p class="en-article__desc">North-south entry gateway selection for a hybrid cloud spanning China and overseas, comparing Istio Gateway, cloud ASM and the Kubernetes Gateway API.</p>
+  <span class="en-article__source">Chinese original: <a href="/south-north-entry-gateway-selection.html">North-South Entry Gateway Selection</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/go-http-client-time-wait-tuning.html">Flood of TIME_WAIT Connections from a Go HTTP Client: Unread Response Bodies and the Liveness Probe</a>
+  <p class="en-article__desc">A Go HTTP client produced masses of TIME_WAIT and short-lived connections. Tracing it from request code through response body handling and connection reuse, then Transport tuning.</p>
+  <span class="en-article__source">Chinese original: <a href="/tuning-the-go-http-client-library.html">Flood of TIME_WAIT Connections from a Go HTTP Client: Unread Response Bodies and the Liveness Probe</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/elasticsearch-cluster-red-hs-err.html">Elasticsearch Cluster Turned Red: hs_err Logs, mmap, and 60,000 Shards</a>
+  <p class="en-article__desc">Postmortem of a 3-node Elasticsearch cluster that went red with write timeouts: tracing an hs_err crash log to native memory (mmap) exhaustion and rescuing unassigned shards.</p>
+  <span class="en-article__source">Chinese original: <a href="/another-incident-caused-by-not-accepting-elasticsearch-official-advice.html">Elasticsearch Cluster Turned Red: hs_err Logs, mmap, and 60,000 Shards</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/thread-pool-duplicate-creation.html">Service Thread Count Spikes: Tracing It to Repeated Thread Pool Creation</a>
+  <p class="en-article__desc">A postmortem of a service whose thread count spiked from repeated thread pool creation: monitoring alert, thread dump and heap analysis, root cause, and four fixes.</p>
+  <span class="en-article__source">Chinese original: <a href="/a-problem-caused-by-a-thread-pool-usage-error.html">Service Thread Count Spikes: Tracing It to Repeated Thread Pool Creation</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/feign-cpu-usage-incident.html">Feign Calls Pegged the CPU: Repeated HttpMessageConverter Initialization</a>
+  <p class="en-article__desc">A production postmortem: Feign calls pegged the CPU because HttpMessageConverters were re-initialized on every call, re-running class loading and Jackson setup. Full diagnosis chain and fixes.</p>
+  <span class="en-article__source">Chinese original: <a href="/an-accident-caused-by-excessive-cpu-usage-of-fegin.html">Feign Calls Pegged the CPU: Repeated HttpMessageConverter Initialization</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/elasticsearch-non-stop-cloud-migration.html">Zero-Downtime Elasticsearch Cloud Migration: Data Sync, Document Comparison, and Cutover</a>
+  <p class="en-article__desc">A zero-downtime Elasticsearch cloud migration: ~40 indexes under 100 GB with no usable update-time fields. Data sync, document comparison, mapping checks, and traffic cutover.</p>
+  <span class="en-article__source">Chinese original: <a href="/elasticsearch-non-stop-cloud-solution.html">Zero-Downtime Elasticsearch Cloud Migration: Data Sync, Document Comparison, and Cutover</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/rocketmq-client-deadline-exceeded.html">RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory</a>
+  <p class="en-article__desc">A RocketMQ Java client failed with gRPC DEADLINE_EXCEEDED only in one cloud test cluster. Packet capture and resource-limit tests traced it to container memory pressure, not the network.</p>
+  <span class="en-article__source">Chinese original: <a href="/rocketmq-client-deadline-exceeded-troubleshooting.html">RocketMQ Client DEADLINE_EXCEEDED in the Cloud: Tracing It to Container Memory</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/elasticsearch-no-master-incident.html">Elasticsearch Cluster Lost Its Master: Thread Pools, Packet Capture, and 60,000 Shards</a>
+  <p class="en-article__desc">Postmortem of a seven-node Elasticsearch 7 cluster that lost its master: thread pool spikes, bandwidth checks, packet capture, and a shard count that had grown past 60,000.</p>
+  <span class="en-article__source">Chinese original: <a href="/an-accident-caused-by-not-accepting-the-official-advice-of-elasticsearch.html">Elasticsearch Cluster Lost Its Master: Thread Pools, Packet Capture, and 60,000 Shards</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/gin-response-body-oom.html">OOM in a Gin API Gateway: Caching Every Response Body</a>
+  <p class="en-article__desc">A postmortem of an OOM caused by caching every response body in a Gin API gateway: why memory ballooned in minutes, and a safer implementation.</p>
+  <span class="en-article__source">Chinese original: <a href="/golang-gin-get-response-body-oom.html">OOM in a Gin API Gateway: Caching Every Response Body</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/elasticsearch-limits-and-recommended-configurations.html">Elasticsearch Limits and Recommended Configurations</a>
+  <p class="en-article__desc">Elasticsearch limits and recommended settings: array and document size caps, a reference index template, shard balancing, delayed allocation, and concurrent recoveries.</p>
+  <span class="en-article__source">Chinese original: <a href="/elasticsearch-limits-and-recommended-configurations.html">Elasticsearch Limits and Recommended Configurations</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/elasticsearch-refresh-vs-flush.html">Elasticsearch Refresh vs Flush: What Each One Does and When It Runs</a>
+  <p class="en-article__desc">Elasticsearch refresh vs flush explained: trigger timing, scope, and how each affects search visibility and write durability, plus the settings to trade one for the other.</p>
+  <span class="en-article__source">Chinese original: <a href="/elasticsearch-refresh-vs-flush.html">Elasticsearch Refresh vs Flush: What Each One Does and When It Runs</a></span>
+</li>
+<li class="en-article">
+  <a class="en-article__title" href="/en/elasticsearch-parent-data-too-large-breaker.html">Elasticsearch 7.6.2 &quot;[parent] Data Too Large&quot;: Troubleshooting a Circuit Breaker Exception</a>
+  <p class="en-article__desc">Troubleshooting the &quot;[parent] Data too large&quot; circuit breaker on Elasticsearch 7.6.2: how use_real_memory and G1 GC interact. The JVM flags here apply to that era's clusters only.</p>
+  <span class="en-article__source">Chinese original: <a href="/elasticsearch-parent-data-too-large-breaker.html">Elasticsearch 7.6.2 &quot;[parent] Data Too Large&quot;: Troubleshooting a Circuit Breaker Exception</a></span>
+</li>
+</ul>
+
+<p class="en-note">These are English editions of articles originally published in Chinese on this blog. The <a href="/">Chinese edition</a> is always the most complete and up-to-date version. Feedback and corrections are welcome via <a href="mailto:jiankunking@163.com">email</a>.</p>
+</div>
+  <footer class="site-page-footer"><a href="/topics/">专题导读</a><a href="/archives/">文章归档</a><a href="/atom.xml">RSS 订阅</a></footer>
+</div>
+
+    <div class="comments giscus-container"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风（jiankunking）</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">861k</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="A look at the Apache APISIX architecture: how event-driven design, coroutines, and LuaJIT on top of OpenResty deliver its performance, plus a comparison with Envoy as a foundation.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy">
+<meta property="og:url" content="https://jiankunking.com/en/apache-apisix-architecture.html">
+<meta property="og:site_name" content="衣舞晨风（jiankunking）">
+<meta property="og:description" content="A look at the Apache APISIX architecture: how event-driven design, coroutines, and LuaJIT on top of OpenResty deliver its performance, plus a comparison with Envoy as a foundation.">
+<meta property="og:locale" content="en_US">
+
+
+
+
+<meta property="article:published_time" content="2025-03-21T22:59:22.000Z">
+<meta property="article:modified_time" content="2025-03-21T22:59:22.000Z">
+<meta property="article:author" content="衣舞晨风（jiankunking）">
+<meta property="article:tag" content="AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化">
+<meta name="twitter:card" content="summary_large_image">
+
+
+
+<link rel="canonical" href="https://jiankunking.com/en/apache-apisix-architecture.html">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"https://jiankunking.com/en/apache-apisix-architecture.html","path":"en/apache-apisix-architecture.html","title":"Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy | 衣舞晨风（jiankunking）</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7603QLL6LM"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-7603QLL6LM","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?3a234fd6ba55e88f18fe2d8e55dd52c5"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://jiankunking.com/en/apache-apisix-architecture.html","url":"https://jiankunking.com/en/apache-apisix-architecture.html","name":"Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy","description":"A look at the Apache APISIX architecture: how event-driven design, coroutines, and LuaJIT on top of OpenResty deliver its performance, plus a comparison with En","inLanguage":"en","author":{"@id":"https://jiankunking.com/about/#person"},"isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/apache-apisix-architecture.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/apache-apisix-architecture.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy","item":"https://jiankunking.com/en/apache-apisix-architecture.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="衣舞晨风（jiankunking）" type="application/atom+xml">
+<meta property="og:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta property="og:image:alt" content="Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy">
+<meta name="twitter:image" content="https://jiankunking.com/images/avatar/avatar.png">
+<meta name="twitter:image:alt" content="Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+<div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+      <span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span>
+    </div>
+  </div>
+  <div class="site-meta">
+    
+    <a href="/" class="brand" rel="start" aria-label="衣舞晨风（jiankunking）">
+      <i class="logo-line" aria-hidden="true"></i>
+      <p class="site-title">
+        <span class="site-title-name">衣舞晨风</span>
+        <span class="site-title-handle">jiankunking</span>
+      </p>
+      <i class="logo-line" aria-hidden="true"></i>
+    </a>
+    <p class="site-subtitle" itemprop="description">AI 网关与后端稳定性实践</p>
+    
+  </div>
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+      <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-英文"><a href="/en/" rel="section"><i class="fa-solid fa-language fa-fw"></i>英文</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#A-first-look"><span class="nav-number">1.</span> <span class="nav-text">A first look</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Coroutines-events"><span class="nav-number">1.1.</span> <span class="nav-text">Coroutines + events</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LuaJIT"><span class="nav-number">1.2.</span> <span class="nav-text">LuaJIT</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Standard-Lua-vs-LuaJIT"><span class="nav-number">1.2.1.</span> <span class="nav-text">Standard Lua vs LuaJIT</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Selected-passages"><span class="nav-number">1.3.</span> <span class="nav-text">Selected passages</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OpenResty-vs-Envoy-as-a-foundation"><span class="nav-number">2.</span> <span class="nav-text">OpenResty vs Envoy as a foundation</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="衣舞晨风（jiankunking）"
+      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
+  <p class="site-author-name" itemprop="name">衣舞晨风（jiankunking）</p>
+  <div class="site-description" itemprop="description">衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">286</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jiankunking" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/jiankunking" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener me" target="_blank"><i class="fab fa-stack-overflow fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdnjs.cloudflare.com/ajax/libs/creativecommons-vocabulary/2020.11.3/assets/license_badges/small/by_nc_nd.svg" alt="Creative Commons" loading="lazy" decoding="async"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://blog.csdn.net/jiankunking" title="https:&#x2F;&#x2F;blog.csdn.net&#x2F;jiankunking" rel="noopener" target="_blank">CSDN博客</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jiankunking.com/en/apache-apisix-architecture.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy | 衣舞晨风（jiankunking）">
+      <meta itemprop="description" content="A look at the Apache APISIX architecture: how event-driven design, coroutines, and LuaJIT on top of OpenResty deliver its performance, plus a comparison with Envoy as a foundation.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-03-22 06:59:22" itemprop="dateCreated datePublished" datetime="2025-03-22T06:59:22+08:00">2025-03-22</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>5.6k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>5 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">A look at the Apache APISIX architecture: how event-driven design, coroutines, and LuaJIT on top of OpenResty deliver its performance, plus a comparison with Envoy as a foundation.</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+<aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>Apache APISIX 架构分析：协程、事件驱动与 OpenResty/Envoy 底座比对</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/apache-apisix-architecture.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><blockquote>
+<p>You have surely come across articles about how fast APISIX is. But how is that performance actually achieved?<br>This post is both an analysis and my own study notes from the book “OpenResty: From Beginner to Practice” and the official APISIX documentation.</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="A-first-look"><a href="#A-first-look" class="headerlink" title="A first look"></a>A first look</h2><p>Start with the architecture diagram from the official site:</p>
+<p><img src="/images/apache-apisix-architecture/flow-software-architecture.png" alt="flow software architecture" loading="eager" fetchpriority="high" decoding="async" width="2328" height="996"></p>
+<p>As the diagram shows, APISIX is built on OpenResty and Nginx.</p>
+<p>One thing to note here: <font color=DeepPink><strong>OpenResty is not a fork of Nginx, nor is it Nginx repackaged with some common libraries bolted on — it simply uses Nginx as an underlying networking library.</strong></font></p>
+<p>So how exactly does it use Nginx as a networking library?</p>
+<p>It’s simple: a few lines of configuration in <code>Nginx.conf</code> route all traffic through the gateway’s Lua code.</p>
+<blockquote>
+<p>Note: Nginx does not support Lua by default — that capability comes from OpenResty.</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 9080;</span><br><span class="line"></span><br><span class="line">    init_worker_by_lua_block &#123;</span><br><span class="line">        apisix.http_init_worker()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        access_by_lua_block &#123;</span><br><span class="line">            apisix.http_access_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        header_filter_by_lua_block &#123;</span><br><span class="line">            apisix.http_header_filter_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        body_filter_by_lua_block &#123;</span><br><span class="line">            apisix.http_body_filter_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        log_by_lua_block &#123;</span><br><span class="line">            apisix.http_log_phase()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># simplified illustration only; for the full configuration see the nginx.conf file at the end of this article</span><br></pre></td></tr></table></figure>
+
+<p>In this example, the gateway listens on port 9080 and, via <code>location /</code>, intercepts every request to that port, processing each one through the <code>access</code>, <code>rewrite</code>, <code>header filter</code>, <code>body filter</code>, and <code>log</code> phases in order — calling the corresponding plugin function in each phase. The <code>rewrite</code> phase is handled together inside the <code>apisix.http_access_phase</code> function.</p>
+<p>Here is a complete Nginx configuration file: <a href="/attachments/APISIX/apisix_nginx.conf" target="_blank" rel="noopener noreferrer">APISIX Nginx.conf</a></p>
+<p>For reference, the OpenResty phases:</p>
+<p><img src="/images/apache-apisix-architecture/openresty_phases.png" alt="openresty phases" loading="lazy" decoding="async" width="1005" height="910"></p>
+<blockquote>
+<p>To achieve sufficiently high performance, Apache APISIX implements a radix-tree-based route matching algorithm in C, and on top of it uses LuaJIT’s FFI to expose a Lua interface. The flexibility of Lua also lets the APISIX routing module easily support matching sub-routes under the same prefix with expressions and similar methods. The result replaces NGINX’s native routing while delivering dynamic configuration that is both high-performance and highly flexible. For the detailed implementation, see <a href="https://github.com/api7/lua-resty-radixtree">lua-resty-radixtree</a> and <a href="https://github.com/apache/apisix/blob/master/apisix/http/route.lua">route.lua</a>.</p>
+</blockquote>
+<p>But how does the Lua layer keep performance high?</p>
+<h3 id="Coroutines-events"><a href="#Coroutines-events" class="headerlink" title="Coroutines + events"></a>Coroutines + events</h3><p>At the OpenResty layer, Lua coroutines work together with Nginx’s event mechanism. When Lua code performs an I&#x2F;O operation — querying a MySQL database, say — it first calls yield to suspend itself and registers a callback with Nginx. Once the I&#x2F;O completes (or times out, or errors out), Nginx calls resume to wake the Lua coroutine back up. That is how Lua coroutines and Nginx’s event-driven model cooperate, avoiding callbacks written by hand in Lua code.</p>
+<p><img src="/images/apache-apisix-architecture/openresty_lua_%E5%8D%8F%E7%A8%8B_nginx%E4%BA%8B%E4%BB%B6%E6%9C%BA%E5%88%B6.png" alt="openresty lua 协程 nginx事件机制" loading="lazy" decoding="async" width="1728" height="764"></p>
+<h3 id="LuaJIT"><a href="#LuaJIT" class="headerlink" title="LuaJIT"></a>LuaJIT</h3><p>First, where LuaJIT sits in the overall OpenResty architecture:</p>
+<p><img src="/images/apache-apisix-architecture/openresty_luajit.png" alt="openresty luajit" loading="lazy" decoding="async" width="1180" height="874"></p>
+<p>OpenResty’s worker processes are all forked from the master process, and the LuaJIT VM in the master is forked along with it. Every coroutine within a worker shares that one LuaJIT VM, and Lua code executes inside it.</p>
+<h4 id="Standard-Lua-vs-LuaJIT"><a href="#Standard-Lua-vs-LuaJIT" class="headerlink" title="Standard Lua vs LuaJIT"></a>Standard Lua vs LuaJIT</h4><p>Standard Lua actually ships a VM of its own for performance reasons, so Lua code is not interpreted directly: the Lua compiler first compiles it into bytecode, and the Lua virtual machine then executes that bytecode.</p>
+<p>LuaJIT’s runtime, besides an assembly-implemented Lua interpreter, also includes a JIT compiler that can emit machine code directly. At startup, LuaJIT behaves like standard Lua — Lua code is compiled to bytecode, and the bytecode is interpreted by LuaJIT’s interpreter.</p>
+<p>The difference: while interpreting bytecode, LuaJIT’s interpreter records runtime statistics — the actual number of times each Lua function entry point is invoked, and the actual number of iterations of each Lua loop. Once those counts exceed a certain randomized threshold, the corresponding function entry or loop is considered hot enough, and the JIT compiler kicks in.</p>
+<p>The JIT compiler starts from the hot function’s entry point or some point in the hot loop and tries to compile the corresponding Lua code path. Compilation converts LuaJIT bytecode into LuaJIT’s own intermediate representation (IR), and then into machine code for the target architecture.</p>
+<p>So, <strong>LuaJIT performance tuning is, in essence, about getting as much Lua code as possible compiled into machine code by the JIT compiler, instead of falling back to the Lua interpreter’s interpreted mode</strong>.</p>
+<p>Worth noting:</p>
+<ul>
+<li>LuaJIT is not complete — there are <a href="https://web.archive.org/web/20220717120825/http://wiki.luajit.org/NYI">NYI (Not Yet Implemented)</a> gaps</li>
+<li>LuaJIT’s author is semi-retired</li>
+<li>The LuaJIT used by OpenResty is a branch maintained by LuaJIT itself</li>
+</ul>
+<h3 id="Selected-passages"><a href="#Selected-passages" class="headerlink" title="Selected passages"></a>Selected passages</h3><p>While working through “OpenResty: From Beginner to Practice”, a few passages really resonated with me. Quoting them here for mutual encouragement:</p>
+<blockquote>
+<p>🎯 <strong>In my view, understanding why a technology exists, and figuring out its differences and advantages versus similar technologies, matters far more than merely being fluent in calling its APIs. That kind of technical perspective gives you a measure of foresight and insight — arguably an important difference between an engineer and an architect.</strong></p>
+</blockquote>
+<blockquote>
+<p>📚 <strong>No amount of technical coursework can replace careful reading of the official documentation. That slow, unglamorous work cannot be skipped by anyone.</strong></p>
+</blockquote>
+<blockquote>
+<p>🌍 <strong>OpenResty’s official documentation is currently available in English only, so engineers in China will inevitably miss the key points — or even misunderstand the content — because of the language barrier. But precisely because of that, there is no shortcut: you should read the documentation carefully from beginning to end, and when in doubt, work through the test case suites and your own experiments to pin down the answer. That is the right path to learning OpenResty.</strong></p>
+</blockquote>
+<blockquote>
+<p>⚖️ <strong>It’s fine to have preferences when choosing technologies, but we should not turn them into blanket absolutes — there is no silver bullet that fits every caching scenario. Building a minimally viable solution for the actual requirements and growing it step by step is a sound approach.</strong></p>
+</blockquote>
+<h2 id="OpenResty-vs-Envoy-as-a-foundation"><a href="#OpenResty-vs-Envoy-as-a-foundation" class="headerlink" title="OpenResty vs Envoy as a foundation"></a>OpenResty vs Envoy as a foundation</h2><p>With the rise of cloud native, north-south traffic gateways in the Kubernetes stack have become common as well: <a href="https://jiankunking.com/south-north-entry-gateway-selection.html">North–South Entry Gateway Selection</a></p>
+<p>Feature-wise, these gateways may still lag behind Kong or APISIX, which sit on an OpenResty foundation, but the cloud-native community is clearly more active. Below, a comparison across four dimensions — contributors, stars, commits, and releases (data collected 2025-03-22):</p>
+<ul>
+<li>Contributors<ul>
+<li><a href="https://github.com/openresty/openresty">OpenResty</a>: 35</li>
+<li><a href="https://github.com/envoyproxy/envoy">Envoy</a>: 1227</li>
+</ul>
+</li>
+<li>Stars<ul>
+<li><a href="https://github.com/openresty/openresty">OpenResty</a>: 12.9k</li>
+<li><a href="https://github.com/envoyproxy/envoy">Envoy</a>: 25.7k</li>
+</ul>
+</li>
+<li>Commits<ul>
+<li><a href="https://github.com/openresty/openresty">OpenResty</a>: 1746</li>
+<li><a href="https://github.com/envoyproxy/envoy">Envoy</a>: 24125</li>
+</ul>
+</li>
+<li>Releases<ul>
+<li><a href="https://github.com/openresty/openresty">OpenResty</a>: 16</li>
+<li><a href="https://github.com/envoyproxy/envoy">Envoy</a>: 196</li>
+</ul>
+</li>
+</ul>
+<p>By current functionality, Kong and APISIX are more complete; but long-term, I personally favor gateways built on the <a href="https://gateway-api.sigs.k8s.io/">Kubernetes Gateway API</a>.</p>
+<p>It also feels like Cloudflare has moved off OpenResty to <a href="https://github.com/cloudflare/pingora">Pingora</a>: <a href="https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/">how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet</a></p>
+<blockquote>
+<p>Pingora is not a tool; it is a library.</p>
+</blockquote>
+<p><em>This article is the English edition of a post originally published in <a href="/apache-apisix-architecture.html">Chinese</a>.</em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+
+          <div class="reward-container">
+  <div>Buy me a coffee</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） WeChat Pay" loading="lazy" decoding="async" width="1118" height="1534">
+        <span>WeChat Pay</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>Post author:  </strong>衣舞晨风（jiankunking）
+  </li>
+  <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://jiankunking.com/en/apache-apisix-architecture.html" title="Apache APISIX Architecture: Coroutines, Event-Driven Design, and OpenResty vs Envoy">https://jiankunking.com/en/apache-apisix-architecture.html</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-ND</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml" rel="noopener noreferrer">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <span class="social-link">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </span>
+
+          <img class="social-item-img" src="/images/wechat/wechat.jpg" alt="微信公众号二维码" loading="lazy" decoding="async" width="258" height="258">
+      </div>
+  </div>
+</div>
+
+
+        
+
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">鲁ICP备18016400号-1 </a>
+  </div>
+  <div class="copyright">
+    &copy; 2019 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa-solid fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">衣舞晨风（jiankunking）</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">861k</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa-solid fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/jiankunking" class="github-corner" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
