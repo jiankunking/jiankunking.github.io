@@ -298,7 +298,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>3.5k</span>
+      <span>3.4k</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -318,15 +318,15 @@
     
     <div class="post-body" itemprop="articleBody">
 
-<aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>服务线程数异常飙升：线程池重复创建的排查与四种修法</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/a-problem-caused-by-a-thread-pool-usage-error.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><p>Monitoring showed a service’s thread count spiking; troubleshooting revealed that the thread pools were being used incorrectly. This post records the full investigation and the fix, to help clarify how thread pools are supposed to be used.</p>
+<aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>服务线程数异常飙升：线程池重复创建的排查与四种修法</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/a-problem-caused-by-a-thread-pool-usage-error.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><p>Monitoring showed a service's thread count spiking; troubleshooting revealed that the thread pools were being used incorrectly. This post records the full investigation and the fix, to help clarify how thread pools are supposed to be used.</p>
 <span id="more"></span>
-
-<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>Monitoring flagged an abnormally high thread count in one of our services:</p>
-<p><img src="/images/a-problem-caused-by-a-thread-pool-usage-error/%E7%BA%BF%E7%A8%8B%E6%95%B0.png" alt="线程数" loading="eager" fetchpriority="high" decoding="async" width="1797" height="407"></p>
+<h2 id="Background">Background</h2>
+<p>Monitoring flagged an abnormally high thread count in one of our services:</p>
+<p><img src="https://jiankunking.com/images/a-problem-caused-by-a-thread-pool-usage-error/%E7%BA%BF%E7%A8%8B%E6%95%B0.png" alt="线程数" loading="eager" fetchpriority="high" decoding="async"></p>
 <p>CPU, memory, and network connections were all normal at the same time.</p>
-<h2 id="Investigation"><a href="#Investigation" class="headerlink" title="Investigation"></a>Investigation</h2><p>The first reaction was to look at the thread dumps:</p>
+<h2 id="Investigation">Investigation</h2>
+<p>The first reaction was to look at the thread dumps:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">&quot;pool-2493-thread-3&quot; #3718833 prio=5 os_prio=0 tid=0x00007f1610041000 nid=0x38bff6 waiting on condition [0x00007f18ba29e000]</span><br><span class="line">   java.lang.Thread.State: WAITING (parking)</span><br><span class="line">	at sun.misc.Unsafe.park(Native Method)</span><br><span class="line">	- parking to wait for  &lt;0x00000007a044cce0&gt; (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)</span><br><span class="line">	at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)</span><br><span class="line">	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)</span><br><span class="line">	at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1074)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:748)</span><br><span class="line"></span><br><span class="line">&quot;pool-2493-thread-2&quot; #3718832 prio=5 os_prio=0 tid=0x00007f161003f800 nid=0x38bff5 waiting on condition [0x00007f18bd502000]</span><br><span class="line">   java.lang.Thread.State: WAITING (parking)</span><br><span class="line">	at sun.misc.Unsafe.park(Native Method)</span><br><span class="line">	- parking to wait for  &lt;0x00000007a044cce0&gt; (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)</span><br><span class="line">	at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)</span><br><span class="line">	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)</span><br><span class="line">	at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1074)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:748)</span><br><span class="line"></span><br><span class="line">&quot;pool-2493-thread-1&quot; #3718823 prio=5 os_prio=0 tid=0x00007f161003e000 nid=0x38bff3 waiting on condition [0x00007f18c2725000]</span><br><span class="line">   java.lang.Thread.State: WAITING (parking)</span><br><span class="line">	at sun.misc.Unsafe.park(Native Method)</span><br><span class="line">	- parking to wait for  &lt;0x00000007a044cce0&gt; (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)</span><br><span class="line">	at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)</span><br><span class="line">	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)</span><br><span class="line">	at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1074)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:748)</span><br></pre></td></tr></table></figure>
-
 <p>I wanted to find where the threads were created from the thread dumps, but all they showed was that the threads were created by a <code>ThreadPoolExecutor</code> — only runtime state.</p>
 <p>What about the heap?</p>
 <table>
@@ -336,8 +336,9 @@
 <th>Value</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>Object&#x2F;Stack Frame</td>
+<tbody>
+<tr>
+<td>Object/Stack Frame</td>
 <td>java.lang.Thread @ 0x7a044af30</td>
 </tr>
 <tr>
@@ -353,7 +354,7 @@
 <td>1,728</td>
 </tr>
 <tr>
-<td>Max. Locals’ Retained Heap</td>
+<td>Max. Locals' Retained Heap</td>
 <td></td>
 </tr>
 <tr>
@@ -372,22 +373,29 @@
 <td>State value</td>
 <td>0x291</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>The heap gave me nothing useful beyond one extra field versus the thread dump: the Context Class Loader.</p>
 <p>Going back over the thread dumps, a pattern emerged: in <code>[pool-2493-thread-1]</code>, the number after <code>pool</code> keeps increasing, while the number after <code>thread</code> is almost always 1, 2, or 3.</p>
 <p>From <a href="https://www.baeldung.com/java-naming-executor-service-thread">Naming Executor Service Threads and Thread Pool in Java</a>, I inferred that somewhere in the code a thread pool was being initialized with 3 core threads. A quick search of the codebase turned up exactly such a snippet:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">// import cn.hutool.core.thread.ThreadUtil;</span><br><span class="line"></span><br><span class="line">    @GetMapping(value = &quot;/jiankunkingTransfer&quot;)</span><br><span class="line">    public Map&lt;String, Object&gt; jiankunkingTransfer(String date) &#123;</span><br><span class="line">        Executor executor = ThreadUtil.newExecutor(3, 6, 30000);</span><br><span class="line">        // todo: run some business logic</span><br><span class="line">        for (Object c : json.getJSONArray(&quot;data&quot;)) &#123;</span><br><span class="line">            executor.execute(() -&gt; &#123;</span><br><span class="line">               // todo: run some business logic</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">		// note: no CountDownLatch await() here</span><br><span class="line">		// and no shutdown() either</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
 <p>At first I assumed the locally created threads would be reclaimed by the GC, so I forced a GC through <a href="https://arthas.aliyun.com/doc/vmtool.html#%E5%BC%BA%E5%88%B6-gc">Arthas vmtool</a> — and the thread count did not drop.</p>
-<p>Why weren’t they reclaimed?</p>
-<p>&#x3D;&gt;<br><a href="https://stackoverflow.com/questions/24953978/does-an-executorservice-get-garbage-collected-when-out-of-scope">Does an ExecutorService get garbage collected when out of scope?</a></p>
-<p>&#x3D;&gt; That question mentions <code>shutdown()</code> on the pool, but I had not focused on it yet.<br>&#x3D;&gt; This led me to believe the unreclaimed threads belonged to some global variable, and a round of investigation found no large global thread pool anywhere.<br>&#x3D;&gt; Searching again eventually turned up the answer:<br><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ThreadPoolExecutor.html">https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ThreadPoolExecutor.html</a></p>
+<p>Why weren't they reclaimed?</p>
+<p>=&gt;<br>
+<a href="https://stackoverflow.com/questions/24953978/does-an-executorservice-get-garbage-collected-when-out-of-scope">Does an ExecutorService get garbage collected when out of scope?</a></p>
+<p>=&gt; That question mentions <code>shutdown()</code> on the pool, but I had not focused on it yet.<br>
+=&gt; This led me to believe the unreclaimed threads belonged to some global variable, and a round of investigation found no large global thread pool anywhere.<br>
+=&gt; Searching again eventually turned up the answer:<br>
+<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ThreadPoolExecutor.html">https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ThreadPoolExecutor.html</a></p>
 <p>The JDK official documentation says:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Finalization</span><br><span class="line"> A pool that is no longer referenced in a program AND has no remaining threads will be shutdown automatically.</span><br><span class="line"> If you would like to ensure that unreferenced pools are reclaimed even if users forget to call shutdown(), </span><br><span class="line"> then you must arrange that unused threads eventually die, by setting appropriate keep-alive times, using a </span><br><span class="line"> lower bound of zero core threads and/or setting allowCoreThreadTimeOut(boolean).</span><br></pre></td></tr></table></figure>
-
-<p>&#x3D;&gt;<br>A pool that is no longer referenced in the program AND has no remaining threads will be shut down automatically. If you want to ensure that unreferenced pools are reclaimed even when users forget to call shutdown(), you must arrange for unused threads to eventually die — by setting appropriate keep-alive times, using a lower bound of zero core threads, and&#x2F;or setting allowCoreThreadTimeOut(boolean).</p>
-<p>But why don’t the threads get reclaimed once the pool goes out of scope?<br>&#x3D;&gt;<br><a href="https://stackoverflow.com/questions/7728102/why-doesnt-this-thread-pool-get-garbage-collected">https://stackoverflow.com/questions/7728102/why-doesnt-this-thread-pool-get-garbage-collected</a></p>
-<h2 id="Conclusions"><a href="#Conclusions" class="headerlink" title="Conclusions"></a>Conclusions</h2><p>The official documentation shows there are several ways to fix this:</p>
+<p>=&gt;<br>
+A pool that is no longer referenced in the program AND has no remaining threads will be shut down automatically. If you want to ensure that unreferenced pools are reclaimed even when users forget to call shutdown(), you must arrange for unused threads to eventually die — by setting appropriate keep-alive times, using a lower bound of zero core threads, and/or setting allowCoreThreadTimeOut(boolean).</p>
+<p>But why don't the threads get reclaimed once the pool goes out of scope?<br>
+=&gt;<br>
+<a href="https://stackoverflow.com/questions/7728102/why-doesnt-this-thread-pool-get-garbage-collected">https://stackoverflow.com/questions/7728102/why-doesnt-this-thread-pool-get-garbage-collected</a></p>
+<h2 id="Conclusions">Conclusions</h2>
+<p>The official documentation shows there are several ways to fix this:</p>
 <ol>
 <li>Make the thread pool a member variable (<font color=DeepPink><strong>recommended</strong></font>)</li>
 <li>Shut the pool down with <code>threadPoolExecutor.shutdown();</code> (this waits for in-flight tasks to finish)</li>
@@ -395,15 +403,18 @@
 <li>Set the core thread count to 0 — but this causes other headaches in practice (omitted)</li>
 </ol>
 <p>The fix is clear now. Next, a look at <code>shutdown()</code> and the default thread pool naming rule.</p>
-<h2 id="Extras"><a href="#Extras" class="headerlink" title="Extras"></a>Extras</h2><h3 id="How-shutdown-works"><a href="#How-shutdown-works" class="headerlink" title="How shutdown() works"></a>How shutdown() works</h3><p><code>shutdown()</code> sets the pool state to SHUTDOWN, interrupts all idle threads (idle meaning blocked on the queue), and finally sets the pool state to TERMINATED.</p>
+<h2 id="Extras">Extras</h2>
+<h3 id="How-shutdown-works">How shutdown() works</h3>
+<p><code>shutdown()</code> sets the pool state to SHUTDOWN, interrupts all idle threads (idle meaning blocked on the queue), and finally sets the pool state to TERMINATED.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Initiates an orderly shutdown in which previously submitted</span><br><span class="line"> * tasks are executed, but no new tasks will be accepted.</span><br><span class="line"> * Invocation has no additional effect if already shut down.</span><br><span class="line"> *</span><br><span class="line"> * &lt;p&gt;This method does not wait for previously submitted tasks to</span><br><span class="line"> * complete execution.  Use &#123;@link #awaitTermination awaitTermination&#125;</span><br><span class="line"> * to do that.</span><br><span class="line"> *</span><br><span class="line"> * @throws SecurityException &#123;@inheritDoc&#125;</span><br><span class="line"> */</span><br><span class="line">public void shutdown() &#123;</span><br><span class="line">    </span><br><span class="line">    final ReentrantLock mainLock = this.mainLock;</span><br><span class="line">    // acquire the (global) lock</span><br><span class="line">    mainLock.lock();</span><br><span class="line">    try &#123;</span><br><span class="line">        // permission check, security-policy related</span><br><span class="line">        checkShutdownAccess();</span><br><span class="line">        // set the pool state to SHUTDOWN</span><br><span class="line">        advanceRunState(SHUTDOWN);</span><br><span class="line">        // interrupt all idle worker threads</span><br><span class="line">        interruptIdleWorkers();</span><br><span class="line">        // empty method, left for subclasses to implement</span><br><span class="line">        onShutdown(); // hook for ScheduledThreadPoolExecutor</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        // release the lock</span><br><span class="line">        mainLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    tryTerminate();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ThreadPoolExecutor.html#shutdown--">https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ThreadPoolExecutor.html#shutdown--</a></p>
-<h3 id="Default-thread-pool-naming-rule"><a href="#Default-thread-pool-naming-rule" class="headerlink" title="Default thread pool naming rule"></a>Default thread pool naming rule</h3><p>java.util.concurrent.DefaultThreadFactory</p>
+<h3 id="Default-thread-pool-naming-rule">Default thread pool naming rule</h3>
+<p>java.util.concurrent.DefaultThreadFactory</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">static class DefaultThreadFactory implements ThreadFactory &#123;</span><br><span class="line">        private static final AtomicInteger poolNumber = new AtomicInteger(1);</span><br><span class="line">        private final ThreadGroup group;</span><br><span class="line">        private final AtomicInteger threadNumber = new AtomicInteger(1);</span><br><span class="line">        private final String namePrefix;</span><br><span class="line"></span><br><span class="line">        DefaultThreadFactory() &#123;</span><br><span class="line">            SecurityManager s = System.getSecurityManager();</span><br><span class="line">            group = (s != null) ? s.getThreadGroup() :</span><br><span class="line">                                  Thread.currentThread().getThreadGroup();</span><br><span class="line">            namePrefix = &quot;pool-&quot; +</span><br><span class="line">                          poolNumber.getAndIncrement() +</span><br><span class="line">                         &quot;-thread-&quot;;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public Thread newThread(Runnable r) &#123;</span><br><span class="line">            Thread t = new Thread(group, r,</span><br><span class="line">                                  namePrefix + threadNumber.getAndIncrement(),</span><br><span class="line">                                  0);</span><br><span class="line">            if (t.isDaemon())</span><br><span class="line">                t.setDaemon(false);</span><br><span class="line">            if (t.getPriority() != Thread.NORM_PRIORITY)</span><br><span class="line">                t.setPriority(Thread.NORM_PRIORITY);</span><br><span class="line">            return t;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>As the code shows, the default thread name follows &#x3D;&gt; <font color=DeepPink><strong><code>pool-&lt;pool number, auto-incremented from 1&gt;-thread-&lt;thread number within the pool, auto-incremented from 1&gt;</code></strong></font></p>
-<p>For custom thread naming, see:<br><a href="https://stackoverflow.com/questions/6113746/naming-threads-and-thread-pools-of-executorservice">https://stackoverflow.com/questions/6113746/naming-threads-and-thread-pools-of-executorservice</a></p>
-<p><em>This article is the English edition of a post originally published in <a href="/a-problem-caused-by-a-thread-pool-usage-error.html">Chinese</a>.</em></p>
+<p>As the code shows, the default thread name follows =&gt; <font color=DeepPink><strong><code>pool-&lt;pool number, auto-incremented from 1&gt;-thread-&lt;thread number within the pool, auto-incremented from 1&gt;</code></strong></font></p>
+<p>For custom thread naming, see:<br>
+<a href="https://stackoverflow.com/questions/6113746/naming-threads-and-thread-pools-of-executorservice">https://stackoverflow.com/questions/6113746/naming-threads-and-thread-pools-of-executorservice</a></p>
+<p><em>This article is the English edition of a post originally published in <a href="https://jiankunking.com/a-problem-caused-by-a-thread-pool-usage-error.html">Chinese</a>.</em></p>
 
     </div>
 
@@ -508,7 +519,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">861k</span>
+    <span title="站点总字数">863k</span>
   </span>
 </div>
 <div class="busuanzi-count">

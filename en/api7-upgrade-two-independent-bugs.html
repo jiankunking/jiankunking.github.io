@@ -332,42 +332,45 @@
 <aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>API7 AI 网关升级故障复盘：流式 500 与低流量 CPU 打满</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><p>After upgrading our production AI gateway (API7 Enterprise, a commercial distribution of Apache APISIX) from 3.9.14 to 3.9.19-patch.1, two problems surfaced in quick succession: streaming requests intermittently returned 500 with the client receiving nothing at all, and multiple OpenResty workers on node 56 repeatedly ran near 100% CPU even though traffic had not visibly grown. A single upgrade tripped two mutually independent software defects — and on the most visibly affected node, a CPU frequency-governor difference stacked on top.</p>
 <p>I will give the conclusions first, then walk back through the investigation. Hypotheses I later discarded are marked along the way so they do not blur into the final findings.</p>
 <span id="more"></span>
-
 <blockquote>
 <p><strong>Conclusions first</strong></p>
 <p><strong>Problem 1: intermittent 500s on streaming requests</strong></p>
 <ul>
-<li>Root cause: while an SSE message was being reassembled from chunks, the old logic still flagged “needs flush.” When the background timer fired, the send interface returned <code>nothing to flush</code> (which only means there is nothing to flush <em>right now</em>), but the code read it as a client disconnect and proactively stopped reading from upstream. The error occurred before any response bytes went out, so the client received nothing at all.</li>
+<li>Root cause: while an SSE message was being reassembled from chunks, the old logic still flagged &quot;needs flush.&quot; When the background timer fired, the send interface returned <code>nothing to flush</code> (which only means there is nothing to flush <em>right now</em>), but the code read it as a client disconnect and proactively stopped reading from upstream. The error occurred before any response bytes went out, so the client received nothing at all.</li>
 <li>Trigger: it depends on the relative order of chunk arrival and the periodic flush, not on response length — which is why it comes and goes.</li>
 <li>Handling: temporarily set <code>streaming_flush_interval_ms</code> to <code>0</code> to bypass the background flush path; the temporary setting was removed after patch.3 fixed the state check.</li>
 </ul>
 <p><strong>Problem 2: high CPU on multiple workers at low traffic</strong></p>
 <ul>
-<li>Root cause: an index-sync regression introduced when <code>nginx-lua-prometheus-api7</code> was bumped to 1.0.0-1. Re-registering an expired metric changes the global <code>delete_count</code>, and the next time other workers sync they perform an O(key_count) full slot scan. The <code>get</code> and <code>ttl</code> calls inside the scan repeatedly contend for the shared dict’s global lock, burning user CPU. <code>key_count</code> only ever grows, so CPU consumption tracks historically allocated slots rather than traffic — low QPS alone is enough to peg the CPU.</li>
+<li>Root cause: an index-sync regression introduced when <code>nginx-lua-prometheus-api7</code> was bumped to 1.0.0-1. Re-registering an expired metric changes the global <code>delete_count</code>, and the next time other workers sync they perform an O(key_count) full slot scan. The <code>get</code> and <code>ttl</code> calls inside the scan repeatedly contend for the shared dict's global lock, burning user CPU. <code>key_count</code> only ever grows, so CPU consumption tracks historically allocated slots rather than traffic — low QPS alone is enough to peg the CPU.</li>
 <li>Trigger: high-cardinality labels plus metrics with <code>expire: 1800</code> constantly being created, expiring, and re-registering; the more workers, the more visible the contention.</li>
 <li>Handling: rebuilding the Pods to zero the accumulated index only stopped the bleeding. The final fix rolled <code>nginx-lua-prometheus-api7</code> back to 0.20250302-1, the version shipped with 3.9.14, delivered via a new patch while the gateway itself stayed on 3.9.19.</li>
 <li>Impact: apart from the streaming 500s in Problem 1, no increase in 5xx was observed during the CPU anomalies; the main user-visible effect was slightly higher response times, which we did not quantify separately.</li>
 </ul>
-<p>One-line lesson: a restart clears state; it does not fix a bug. And a software bug cannot explain “only one machine alerts” — that is an infrastructure difference at another layer, which needs its own investigation.</p>
+<p>One-line lesson: a restart clears state; it does not fix a bug. And a software bug cannot explain &quot;only one machine alerts&quot; — that is an infrastructure difference at another layer, which needs its own investigation.</p>
 </blockquote>
-<h2 id="Background-the-request-path-and-the-environment"><a href="#Background-the-request-path-and-the-environment" class="headerlink" title="Background: the request path and the environment"></a>Background: the request path and the environment</h2><p>The path is short:</p>
+<h2 id="Background-the-request-path-and-the-environment">Background: the request path and the environment</h2>
+<p>The path is short:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Client (Codex, curl, application code) → API7 gateway (3 nodes) → Azure (GPT-series models)</span><br></pre></td></tr></table></figure>
-
 <p>The three nodes are 10.200.76.54, .55, and .56, 16 cores each. Both problems appeared after the upgrade; below I investigate them one at a time, and then look at the node-to-node difference.</p>
-<h2 id="A-few-terms-that-will-keep-coming-up"><a href="#A-few-terms-that-will-keep-coming-up" class="headerlink" title="A few terms that will keep coming up"></a>A few terms that will keep coming up</h2><p>Readers familiar with OpenResty can skip this section.</p>
+<h2 id="A-few-terms-that-will-keep-coming-up">A few terms that will keep coming up</h2>
+<p>Readers familiar with OpenResty can skip this section.</p>
 <ul>
 <li><strong>shared dict and its lock</strong>: <code>ngx.shared.DICT</code> is a memory dictionary shared by all workers. To keep concurrent access consistent, every read and write goes through the same mutex (<code>ngx_shmtx_lock</code>) — pure reads included. When multiple workers hit the same dict at high frequency, lock contention and spin-backoff burn user CPU directly; it never shows up as iowait.</li>
-<li><strong><code>KeyIndex</code> and three counters</strong>: <code>KeyIndex</code> is the slot-index cache inside <code>nginx-lua-prometheus-api7</code>, one copy per worker, used to avoid walking the dict from scratch on every lookup. It involves three numbers:<ul>
+<li><strong><code>KeyIndex</code> and three counters</strong>: <code>KeyIndex</code> is the slot-index cache inside <code>nginx-lua-prometheus-api7</code>, one copy per worker, used to avoid walking the dict from scratch on every lookup. It involves three numbers:
+<ul>
 <li><code>key_count</code>: the number of slots ever allocated historically; it only increases;</li>
 <li><code>delete_count</code>: a global deletion counter; incremented whenever an expired metric slot is reclaimed and then re-registered;</li>
 <li><code>self.deleted</code>: the worker-local snapshot of <code>delete_count</code>; if it disagrees with the global value, a full rescan is triggered.</li>
 </ul>
 </li>
 <li><strong><code>expire</code> and <code>remove_expired_keys_interval</code></strong>: the first is how long a single entry lives (1800 seconds in this deployment); the second is how often the cleanup job runs (library default: 3600 seconds).</li>
-<li><strong>cpufreq governor</strong>: the kernel’s frequency-scaling policy. <code>performance</code> tries to stay at high frequency; <code>powersave</code> prefers dropping frequency to save power (behavior differs under <code>intel_pstate</code>, covered later). The same user-CPU work takes longer at a lower frequency and is more likely to trip an alert threshold.</li>
+<li><strong>cpufreq governor</strong>: the kernel's frequency-scaling policy. <code>performance</code> tries to stay at high frequency; <code>powersave</code> prefers dropping frequency to save power (behavior differs under <code>intel_pstate</code>, covered later). The same user-CPU work takes longer at a lower frequency and is more likely to trip an alert threshold.</li>
 </ul>
-<h2 id="Problem-1-streaming-requests-return-500"><a href="#Problem-1-streaming-requests-return-500" class="headerlink" title="Problem 1: streaming requests return 500"></a>Problem 1: streaming requests return 500</h2><p>Conclusion first: patch.1 reworked the common streaming path, and the cooperation between message reassembly and the periodic flush turned out to be defective. Combined, they make the code <strong>misread “nothing to flush” as a client disconnect</strong>, aborting the upstream read. Because the error happens before the response is emitted, the symptom is a client that receives nothing and a 500 in the logs.</p>
-<h3 id="Symptom-and-three-controlled-comparisons"><a href="#Symptom-and-three-controlled-comparisons" class="headerlink" title="Symptom and three controlled comparisons"></a>Symptom and three controlled comparisons</h3><p>After configuring Codex to use the GPT-series models proxied through API7, errors started appearing in normal use — the client received nothing. The gateway access logs recorded 500 for the corresponding requests. I ran three comparisons first:</p>
+<h2 id="Problem-1-streaming-requests-return-500">Problem 1: streaming requests return 500</h2>
+<p>Conclusion first: patch.1 reworked the common streaming path, and the cooperation between message reassembly and the periodic flush turned out to be defective. Combined, they make the code <strong>misread &quot;nothing to flush&quot; as a client disconnect</strong>, aborting the upstream read. Because the error happens before the response is emitted, the symptom is a client that receives nothing and a 500 in the logs.</p>
+<h3 id="Symptom-and-three-controlled-comparisons">Symptom and three controlled comparisons</h3>
+<p>After configuring Codex to use the GPT-series models proxied through API7, errors started appearing in normal use — the client received nothing. The gateway access logs recorded 500 for the corresponding requests. I ran three comparisons first:</p>
 <table>
 <thead>
 <tr>
@@ -376,7 +379,8 @@
 <th>What it narrowed down at the time</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Same request body sent straight to Azure</td>
 <td>Works</td>
 <td>Reduces suspicion of upstream trouble or request-format problems; focus on the gateway</td>
@@ -391,34 +395,41 @@
 <td>Works</td>
 <td>Focus on the streaming processing path</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>I took a detour here: the second comparison sent me down the wrong path for a while — I suspected some non-standard parameter inside <code>tools</code>. Only later did I learn it had merely avoided the trigger. Change the request shape and the relative order of chunk arrival and periodic flush changes with it, so whether you hit the bug is purely a timing question; <code>tools</code> itself was never invalid. Controlled comparisons narrow the search space, but the root cause still requires reproduction and code confirmation.</p>
-<h3 id="Reproduction"><a href="#Reproduction" class="headerlink" title="Reproduction"></a>Reproduction</h3><p>At first, switching upstreams failed to reproduce it. Once I had the full curl command, gateway logs, route configuration, and Azure streaming response, and replayed them against the same version image (3.9.19-patch.1), the problem appeared immediately. <strong>The key is preserving the original request and environment</strong> — omit either one and it may not reproduce.</p>
-<h3 id="Root-cause-a-new-change-tripping-an-old-defect"><a href="#Root-cause-a-new-change-tripping-an-old-defect" class="headerlink" title="Root cause: a new change tripping an old defect"></a>Root cause: a new change tripping an old defect</h3><p>Two parts.</p>
-<p>One part: patch.1, to fix content moderation, changed the common streaming path. Some models’ streamed answers do not carry usage information, which could leave the complete answer unmoderated, so the gateway was changed to first collect one complete SSE message, then hand it to the downstream plugins for processing and sending. Requests with content moderation disabled also pass through this logic.</p>
-<p>The other part: message reassembly and the periodic flush cooperate badly. A bit of background first — a single SSE message may arrive at the gateway split across multiple TCP chunks; incomplete content is buffered until the whole message is assembled. But the old logic still flags “needs flush.” The background timer fires at that moment, and the send interface returns <code>nothing to flush</code>. That return value <strong>only means there is nothing to flush right now; it is not sufficient evidence that the connection has dropped</strong>. The old code, however, treated it as a client disconnect and proactively stopped reading from Azure.</p>
+<h3 id="Reproduction">Reproduction</h3>
+<p>At first, switching upstreams failed to reproduce it. Once I had the full curl command, gateway logs, route configuration, and Azure streaming response, and replayed them against the same version image (3.9.19-patch.1), the problem appeared immediately. <strong>The key is preserving the original request and environment</strong> — omit either one and it may not reproduce.</p>
+<h3 id="Root-cause-a-new-change-tripping-an-old-defect">Root cause: a new change tripping an old defect</h3>
+<p>Two parts.</p>
+<p>One part: patch.1, to fix content moderation, changed the common streaming path. Some models' streamed answers do not carry usage information, which could leave the complete answer unmoderated, so the gateway was changed to first collect one complete SSE message, then hand it to the downstream plugins for processing and sending. Requests with content moderation disabled also pass through this logic.</p>
+<p>The other part: message reassembly and the periodic flush cooperate badly. A bit of background first — a single SSE message may arrive at the gateway split across multiple TCP chunks; incomplete content is buffered until the whole message is assembled. But the old logic still flags &quot;needs flush.&quot; The background timer fires at that moment, and the send interface returns <code>nothing to flush</code>. That return value <strong>only means there is nothing to flush right now; it is not sufficient evidence that the connection has dropped</strong>. The old code, however, treated it as a client disconnect and proactively stopped reading from Azure.</p>
 <p>The full error chain is shown below: a background flush fires while the SSE message is still being buffered, <code>nothing to flush</code> is misread as a disconnect, and the chain is cut before any response content goes out.</p>
-<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/sse-flush-misjudge-disconnect.svg" alt="The error chain behind streaming 500s: a background flush fires while an SSE message is still being buffered, &quot;nothing to flush&quot; is misjudged as a client disconnect, and the error occurs before the response is emitted" loading="eager" fetchpriority="high" decoding="async" width="880" height="736"></p>
+<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/sse-flush-misjudge-disconnect.svg" alt="The error chain behind streaming 500s: a background flush fires while an SSE message is still being buffered, &quot;nothing to flush&quot; is misjudged as a client disconnect, and the error occurs before the response is emitted" loading="eager" fetchpriority="high" decoding="async"></p>
 <p>Whether it triggers depends on the relative order of chunk arrival and the periodic flush; long responses are not a precondition, which is why it comes and goes.</p>
 <p>There is one more trap that inflated the debugging cost: the misjudged-disconnect record is logged at INFO level, while production is configured at WARN, so no corresponding log line was visible. The eventual diagnosis rested on the reproduction result compared against the streaming-path code, not on logs. <strong>The absence of an error log does not mean the error path did not run.</strong></p>
-<h3 id="Mitigation-and-fix"><a href="#Mitigation-and-fix" class="headerlink" title="Mitigation and fix"></a>Mitigation and fix</h3><p>The temporary mitigation was to set <code>streaming_flush_interval_ms</code> to <code>0</code> on the affected routes. It proved effective in production, with no need to drop <code>tools</code> or disable streaming.</p>
+<h3 id="Mitigation-and-fix">Mitigation and fix</h3>
+<p>The temporary mitigation was to set <code>streaming_flush_interval_ms</code> to <code>0</code> on the affected routes. It proved effective in production, with no need to drop <code>tools</code> or disable streaming.</p>
 <p>The parameter belongs to the <code>ai-proxy</code> plugin; <code>ai-proxy-multi</code> exposes it as well. The <a href="https://apisix.apache.org/docs/apisix/plugins/ai-proxy/">official documentation</a> lists a default of <code>10</code>, with values of 0 or greater. The two flush paths involved here:</p>
 <ul>
 <li><strong>Greater than 0</strong>: a background timer calls <code>ngx.flush(false)</code> every N milliseconds, batching prepared output into periodic flushes.</li>
 <li><strong>Equal to 0</strong>: the background flush timer is not enabled; flushing goes through the synchronous <code>ngx.flush(true)</code> path instead.</li>
 </ul>
-<p>Setting 0 avoids the problematic background path, but giving up batching may increase send overhead, so actual CPU changes need watching. <code>ngx.flush(true)</code> suspends the current request’s coroutine while waiting, not the whole Nginx worker; a slow client can still delay subsequent upstream reads for the current request — see <a href="https://blog.openresty.com/en/stream-resp/">OpenResty’s notes on streaming responses</a>.</p>
+<p>Setting 0 avoids the problematic background path, but giving up batching may increase send overhead, so actual CPU changes need watching. <code>ngx.flush(true)</code> suspends the current request's coroutine while waiting, not the whole Nginx worker; a slow client can still delay subsequent upstream reads for the current request — see <a href="https://blog.openresty.com/en/stream-resp/">OpenResty's notes on streaming responses</a>.</p>
 <p>The rollout touched only the affected routes, watching 5xx, 499, client time-to-first-byte, worker CPU, and upstream latency. Once patch.3, which contains the code fix, passed validation, the temporary setting was removed and the default of 10 milliseconds restored.</p>
-<p>The code fix has two parts: schedule a flush only after content has been handed to the downstream response handler, and when the flush reports “nothing to flush,” keep waiting instead of treating it as a disconnect. The SSE reassembly logic remains; the key to the fix is <strong>distinguishing “temporarily nothing to flush” from “the client is gone.”</strong></p>
-<h2 id="Problem-2-multiple-workers-pegged-while-traffic-stayed-low"><a href="#Problem-2-multiple-workers-pegged-while-traffic-stayed-low" class="headerlink" title="Problem 2: multiple workers pegged while traffic stayed low"></a>Problem 2: multiple workers pegged while traffic stayed low</h2><p>The root cause of Problem 2 is an index-sync regression in <code>nginx-lua-prometheus-api7</code> 1.0.0-1: a change in <code>delete_count</code> triggers an O(key_count) full slot scan, and the <code>get</code> and <code>ttl</code> calls in the scan contend for the shared dict’s global lock, burning user CPU. <code>key_count</code> is a historical cumulative value — <strong>it reached 570,000 in production at one point — which is why current traffic is irrelevant</strong>.</p>
+<p>The code fix has two parts: schedule a flush only after content has been handed to the downstream response handler, and when the flush reports &quot;nothing to flush,&quot; keep waiting instead of treating it as a disconnect. The SSE reassembly logic remains; the key to the fix is <strong>distinguishing &quot;temporarily nothing to flush&quot; from &quot;the client is gone.&quot;</strong></p>
+<h2 id="Problem-2-multiple-workers-pegged-while-traffic-stayed-low">Problem 2: multiple workers pegged while traffic stayed low</h2>
+<p>The root cause of Problem 2 is an index-sync regression in <code>nginx-lua-prometheus-api7</code> 1.0.0-1: a change in <code>delete_count</code> triggers an O(key_count) full slot scan, and the <code>get</code> and <code>ttl</code> calls in the scan contend for the shared dict's global lock, burning user CPU. <code>key_count</code> is a historical cumulative value — <strong>it reached 570,000 in production at one point — which is why current traffic is irrelevant</strong>.</p>
 <p>The hourly <code>flush_expired()</code> is a separate path. The counterexample from monitoring (below) shows that the amount reclaimed is unrelated to CPU; the cleanup is more like the trigger for short hourly spikes than the CPU cost itself. Rebuilding the Pods to zero the index state counts as stopping the bleeding; the real cure was rolling back that dependency.</p>
-<h3 id="Symptom-and-what-we-ruled-out"><a href="#Symptom-and-what-we-ruled-out" class="headerlink" title="Symptom and what we ruled out"></a>Symptom and what we ruled out</h3><p>After upgrading to patch.1, node 56 began showing CPU spikes of one or two minutes every hour, later escalating into dense clusters of repeated multi-worker saturation. In that snapshot, 9 of the OpenResty workers were above 99% and the 10th around 38%, for about 9.3 cores total — not a brief blip in a single worker, but 9 of 10 workers pegged simultaneously, nearly hitting the 10-core ceiling the license allows.</p>
-<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/node-cpu-comparison-20260920.png" alt="OpenResty CPU on node 56 versus the other two nodes (2026-09-20 08:45–11:45; red line is node 56, yellow and light blue are 54 and 55)" loading="lazy" decoding="async" width="1900" height="1035"></p>
+<h3 id="Symptom-and-what-we-ruled-out">Symptom and what we ruled out</h3>
+<p>After upgrading to patch.1, node 56 began showing CPU spikes of one or two minutes every hour, later escalating into dense clusters of repeated multi-worker saturation. In that snapshot, 9 of the OpenResty workers were above 99% and the 10th around 38%, for about 9.3 cores total — not a brief blip in a single worker, but 9 of 10 workers pegged simultaneously, nearly hitting the 10-core ceiling the license allows.</p>
+<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/node-cpu-comparison-20260920.png" alt="OpenResty CPU on node 56 versus the other two nodes (2026-09-20 08:45–11:45; red line is node 56, yellow and light blue are 54 and 55)" loading="lazy" decoding="async"></p>
 <p>A traffic surge was the first hypothesis. But at peak, QPS on the three nodes was 77.5, 74.6, and 52.3 — node 56 had the <em>lowest</em> traffic yet drove CPU to about 9 cores (red line above), approaching the 10-core license ceiling, while the other two sat at 1.1 to 1.4 cores. The Elasticsearch logs showed no surge in request count, streaming requests, bytes in and out, or tokens either.</p>
-<p>No matching anomaly in network, memory, or disk: soft interrupts were low, no packet loss or queue overflows, memory was plentiful with no swap, and iowait was near zero. During the anomalous window, roughly 97%–98% of CPU consumption was in user mode, so the investigation turned to OpenResty’s user-space execution path.</p>
+<p>No matching anomaly in network, memory, or disk: soft interrupts were low, no packet loss or queue overflows, memory was plentiful with no swap, and iowait was near zero. During the anomalous window, roughly 97%–98% of CPU consumption was in user mode, so the investigation turned to OpenResty's user-space execution path.</p>
 <p>Nothing on the application side failed along with it: apart from the streaming 500s in Problem 1, no increase in 5xx was observed during the CPU spikes; the main user-visible impact was slightly higher response times, which we did not quantify separately. The symptom showed up as latency, not as errors — and precisely because nothing throws errors, problems like this are mostly discoverable only through CPU alerts and latency curves.</p>
-<p>At this point I could only say that <strong>the current request volume cannot explain the CPU difference between nodes</strong> — but that was not yet grounds to declare it “completely unrelated to the workload.”</p>
-<h3 id="A-monitoring-counterexample-reclaimed-volume-does-not-track-CPU"><a href="#A-monitoring-counterexample-reclaimed-volume-does-not-track-CPU" class="headerlink" title="A monitoring counterexample: reclaimed volume does not track CPU"></a>A monitoring counterexample: reclaimed volume does not track CPU</h3><p>The most obvious suspect was that hourly cleanup timer. Test it first: is the CPU spike really caused by <code>flush_expired()</code>?</p>
+<p>At this point I could only say that <strong>the current request volume cannot explain the CPU difference between nodes</strong> — but that was not yet grounds to declare it &quot;completely unrelated to the workload.&quot;</p>
+<h3 id="A-monitoring-counterexample-reclaimed-volume-does-not-track-CPU">A monitoring counterexample: reclaimed volume does not track CPU</h3>
+<p>The most obvious suspect was that hourly cleanup timer. Test it first: is the CPU spike really caused by <code>flush_expired()</code>?</p>
 <p>Aggregating two days of monitoring by minute shows that the CPU curve actually has two distinct shapes:</p>
 <table>
 <thead>
@@ -428,7 +439,8 @@
 <th>Pattern ②: dense spike clusters</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Shape</td>
 <td>short spikes at a fixed time each hour, one to two minutes each</td>
 <td>not a sustained plateau, but bursts of high-CPU multi-worker spikes, each lasting a few seconds to tens of seconds, with dips in between</td>
@@ -440,12 +452,13 @@
 </tr>
 <tr>
 <td>Can the scheduled cleanup explain it?</td>
-<td>only “why at this moment,” not the magnitude</td>
+<td>only &quot;why at this moment,&quot; not the magnitude</td>
 <td>not at all</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>Why is the cleanup time fixed? Each worker runs cleanup every 3600 seconds from the moment its process starts, so it fires at the same second every hour — for example, 25 minutes and 30 seconds past the hour. A CPU spike can only be called cleanup-related if it appears at that same moment; the dense clusters clearly do not line up.</p>
-<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-two-patterns-timeline.svg" alt="The two CPU patterns: short spikes landing on the timer&#39;s schedule, dense clusters of high-CPU multi-worker spikes unrelated to the timer, plus a counterexample where a large cleanup produced no high CPU" loading="lazy" decoding="async" width="880" height="442"></p>
+<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-two-patterns-timeline.svg" alt="The two CPU patterns: short spikes landing on the timer's schedule, dense clusters of high-CPU multi-worker spikes unrelated to the timer, plus a counterexample where a large cleanup produced no high CPU" loading="lazy" decoding="async"></p>
 <p>Now compare reclaimed volume against CPU: neither direction lines up. Reclaimed volume is the single-step drop in shared-dict occupied space; CPU is the node peak within ten minutes of the reclaim (rate over a 1-minute window, 30-second step; recomputing with a finer step gives the same result, so smoothing did not erase the spikes):</p>
 <table>
 <thead>
@@ -456,7 +469,8 @@
 <th>Highest single worker at the time</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>09-16 14:18 (cleanup time)</td>
 <td>8.63 MiB</td>
 <td>4.74 cores</td>
@@ -480,32 +494,29 @@
 <td>7.35 cores</td>
 <td>0.76 cores, all 10 workers above 0.5 cores simultaneously</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>The first two rows come from the 5-worker era; on the evening of September 17 the license per node was raised from 5 cores to 10 and the worker count went up to 10, so the last two rows are from the 10-worker era.</p>
 <p>A large reclaim can cost almost no CPU. The 12:25:30 hourly cleanup ran as scheduled and shared-dict occupancy dropped a step — <strong>17.07 MiB reclaimed in a single pass, the largest scheduled cleanup of the day, yet the node CPU peak was only 1.35 cores, with every worker under 0.2 cores</strong>. The same day at 12:22 and 12:29, the other two nodes reclaimed 19.75 and 18.82 MiB respectively, with CPU peaks of only 0.96 and 0.72 cores. A small reclaim can be expensive: at 14:45:00 only 5.30 MiB was reclaimed, yet node CPU shot to 7.35 cores.</p>
-<p>Treating “5.5–21.8 MiB reclaimed per hour accompanied by 2.4–4.7 cores” on September 16 daytime as a rule means mistaking coincidence at the same moment for causation: later that night, at 22:22 and 23:22, two comparable reclaims of 8.14 and 12.53 MiB produced CPU of only 0.75 and 0.78 cores.</p>
-<p>Tables alone can look cherry-picked, so here is node 56’s entire day on September 20 plotted on a single timeline: node CPU on top, each reclaim’s time and size below. Reclaims range from 1 MiB to 18 MiB and occur almost every hour outside the 3 a.m.–9 a.m. gap; yet the dense spike clusters appear only in the two blocks after 10 a.m. and after 1 p.m. The 17.07 MiB reclaim at 12:25 falls right in a quiet stretch, and the evening’s 8–18 MiB reclaims raised no spikes either. The orange reclaims in the chart — those outside the cleanup schedule — all sit <em>under</em> the spike clusters instead. Finally, pooling all 522 reclaim events of ≥1 MiB across the three nodes from 9&#x2F;14 to 9&#x2F;22, the correlation between reclaimed volume and the CPU peak within ±10 minutes is only 0.18.</p>
-<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-vs-reclaim-timeline-20260920.png" alt="Node 56 timeline for 9&#x2F;20: node CPU on top, each reclaim&#39;s time and size below; large reclaims land in quiet stretches, and reclaims outside the cleanup schedule (orange) concentrate in the dense spike windows" loading="lazy" decoding="async" width="1711" height="1036"></p>
-<p>It is worth separating the sources as well: “space reclaimed” in monitoring does not come from a single path. What lands on the cleanup’s timestamp is <code>flush_expired()</code>‘s batch cleanup; reclaims off that schedule (like the 14:45:00 one) are more likely LRU eviction from the write path — two sides of the same churn that produces the dense spikes. Mix them into one metric and you get the odd result of “same reclaim volume, completely different CPU.”</p>
-<p>So “how much was reclaimed” is not the independent variable: the scheduled cleanup at best explains <em>when</em> short spikes happen, not their magnitude, and certainly not the dense clusters. A second trigger path had to be found.</p>
-<h3 id="Dependency-diff-two-commits-two-paths"><a href="#Dependency-diff-two-commits-two-paths" class="headerlink" title="Dependency diff: two commits, two paths"></a>Dependency diff: two commits, two paths</h3><p>Next, diff the full change surface of the upgrade — indirect dependencies included:</p>
+<p>Treating &quot;5.5–21.8 MiB reclaimed per hour accompanied by 2.4–4.7 cores&quot; on September 16 daytime as a rule means mistaking coincidence at the same moment for causation: later that night, at 22:22 and 23:22, two comparable reclaims of 8.14 and 12.53 MiB produced CPU of only 0.75 and 0.78 cores.</p>
+<p>Tables alone can look cherry-picked, so here is node 56's entire day on September 20 plotted on a single timeline: node CPU on top, each reclaim's time and size below. Reclaims range from 1 MiB to 18 MiB and occur almost every hour outside the 3 a.m.–9 a.m. gap; yet the dense spike clusters appear only in the two blocks after 10 a.m. and after 1 p.m. The 17.07 MiB reclaim at 12:25 falls right in a quiet stretch, and the evening's 8–18 MiB reclaims raised no spikes either. The orange reclaims in the chart — those outside the cleanup schedule — all sit <em>under</em> the spike clusters instead. Finally, pooling all 522 reclaim events of ≥1 MiB across the three nodes from 9/14 to 9/22, the correlation between reclaimed volume and the CPU peak within ±10 minutes is only 0.18.</p>
+<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-vs-reclaim-timeline-20260920.png" alt="Node 56 timeline for 9/20: node CPU on top, each reclaim's time and size below; large reclaims land in quiet stretches, and reclaims outside the cleanup schedule (orange) concentrate in the dense spike windows" loading="lazy" decoding="async"></p>
+<p>It is worth separating the sources as well: &quot;space reclaimed&quot; in monitoring does not come from a single path. What lands on the cleanup's timestamp is <code>flush_expired()</code>'s batch cleanup; reclaims off that schedule (like the 14:45:00 one) are more likely LRU eviction from the write path — two sides of the same churn that produces the dense spikes. Mix them into one metric and you get the odd result of &quot;same reclaim volume, completely different CPU.&quot;</p>
+<p>So &quot;how much was reclaimed&quot; is not the independent variable: the scheduled cleanup at best explains <em>when</em> short spikes happen, not their magnitude, and certainly not the dense clusters. A second trigger path had to be found.</p>
+<h3 id="Dependency-diff-two-commits-two-paths">Dependency diff: two commits, two paths</h3>
+<p>Next, diff the full change surface of the upgrade — indirect dependencies included:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">3.9.14                    nginx-lua-prometheus-api7 0.20250302-1</span><br><span class="line">3.9.19-patch.1, patch.3   nginx-lua-prometheus-api7 1.0.0-1</span><br></pre></td></tr></table></figure>
-
 <p>The leads landed on two commits between those versions:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">845084f 2026-06-23  bump the global delete_count in KeyIndex:add() when an expired metric reappears</span><br><span class="line">5f68f6c 2026-07-27  add self.dict:flush_expired() at the end of remove_expired_keys()</span><br></pre></td></tr></table></figure>
-
-<p>First: the full scan after a counter change. The key branch of <code>KeyIndex:sync()</code> is below (simplified excerpt, keeping only the branches relevant to the incident; for the full implementation see upstream <a href="https://github.com/knyar/nginx-lua-prometheus/blob/main/prometheus_keys.lua"><code>prometheus_keys.lua</code>‘s <code>KeyIndex</code></a>; API7’s fork is published as the LuaRocks package <a href="https://luarocks.org/modules/membphis/nginx-lua-prometheus-api7"><code>nginx-lua-prometheus-api7</code></a>):</p>
+<p>First: the full scan after a counter change. The key branch of <code>KeyIndex:sync()</code> is below (simplified excerpt, keeping only the branches relevant to the incident; for the full implementation see upstream <a href="https://github.com/knyar/nginx-lua-prometheus/blob/main/prometheus_keys.lua"><code>prometheus_keys.lua</code>'s <code>KeyIndex</code></a>; API7's fork is published as the LuaRocks package <a href="https://luarocks.org/modules/membphis/nginx-lua-prometheus-api7"><code>nginx-lua-prometheus-api7</code></a>):</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- N is the current upper bound of known slots; it grows with key_count</span></span><br><span class="line"><span class="keyword">if</span> <span class="built_in">self</span>.deleted ~= delete_count <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:sync_range(<span class="number">0</span>, N)         <span class="comment">-- rescan all historical slots, O(key_count)</span></span><br><span class="line">    <span class="built_in">self</span>.deleted = delete_count</span><br><span class="line"><span class="keyword">elseif</span> N ~= <span class="built_in">self</span>.last <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:sync_range(<span class="built_in">self</span>.last, N) <span class="comment">-- sync only newly added slots</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
-
-<p>The trigger chain: a metric slot configured with <code>expire: 1800</code> expires and is physically reclaimed, but some worker’s local index still holds it; when a later request tries to renew it, <code>dict:expire()</code> returns <code>not found</code>, so <code>add()</code> re-registers it and the global <code>delete_count</code> increments. The next time other workers run <code>sync()</code> and find their local <code>self.deleted</code> out of sync, they execute <code>sync_range(0, N)</code>:</p>
+<p>The trigger chain: a metric slot configured with <code>expire: 1800</code> expires and is physically reclaimed, but some worker's local index still holds it; when a later request tries to renew it, <code>dict:expire()</code> returns <code>not found</code>, so <code>add()</code> re-registers it and the global <code>delete_count</code> increments. The next time other workers run <code>sync()</code> and find their local <code>self.deleted</code> out of sync, they execute <code>sync_range(0, N)</code>:</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i = <span class="number">0</span>, N <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> v = <span class="built_in">self</span>.dict:get(<span class="built_in">self</span>.key_prefix .. i)      <span class="comment">-- at least one get per historical slot</span></span><br><span class="line">    <span class="keyword">if</span> v <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">local</span> ttl = <span class="built_in">self</span>.dict:ttl(<span class="built_in">self</span>.key_prefix .. i) <span class="comment">-- plus a ttl for slots that still hold values</span></span><br><span class="line">        <span class="comment">-- remaining sync logic omitted</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
-
 <p>Every historical slot needs at least one shared-dict <code>get</code>; slots that still hold values need a <code>ttl</code> as well. The loop contains no yield point — other requests on the same worker, including streaming responses that are mid-output, have to wait for the scan to finish.</p>
 <p>The trap here: <strong><code>key_count</code> is the upper bound of slots ever allocated, and in this implementation it only ever grows; the scan cost depends on historical slots, not on the number of samples currently in <code>/metrics</code></strong>. That is why low traffic can still peg a worker.</p>
 <p>Second path: the unbounded hourly cleanup:</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">KeyIndex:remove_expired_keys</span><span class="params">()</span></span></span><br><span class="line">    <span class="comment">-- logic for self.expire_keys omitted</span></span><br><span class="line">    <span class="built_in">self</span>.dict:flush_expired()   <span class="comment">-- no max_count passed, no cap on how many keys are cleaned</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
-
-<p>This call walks the LRU queue while holding the shared dict’s mutex. Each worker builds its own cleanup timer, using the library default <code>remove_expired_keys_interval</code> of 3600 seconds, which this version of APISIX does not override. So it can pull multiple workers in at the same moment every hour.</p>
+<p>This call walks the LRU queue while holding the shared dict's mutex. Each worker builds its own cleanup timer, using the library default <code>remove_expired_keys_interval</code> of 3600 seconds, which this version of APISIX does not override. So it can pull multiple workers in at the same moment every hour.</p>
 <p>Compare the two paths side by side:</p>
 <table>
 <thead>
@@ -515,7 +526,8 @@
 <th>Path B: hourly <code>flush_expired()</code></th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Trigger</td>
 <td>any request that causes an expired metric to re-register</td>
 <td>the cleanup timer every 3600 seconds</td>
@@ -532,7 +544,7 @@
 </tr>
 <tr>
 <td>monitoring evidence</td>
-<td>the controlled reproduction’s worker signature matches both patterns</td>
+<td>the controlled reproduction's worker signature matches both patterns</td>
 <td>same-magnitude reclaims stay flat throughout (17.07 MiB → 1.35 cores, 12.53 MiB → 0.78 cores); the cleanup itself costs almost no CPU</td>
 </tr>
 <tr>
@@ -540,32 +552,36 @@
 <td>the main cause of this batch of spikes</td>
 <td>trigger and amplifier; insufficient evidence for an independent CPU source</td>
 </tr>
-</tbody></table>
-<p>Pattern ①’s attribution needs one more check. Although it lands on the cleanup’s timestamp, three details do not fit “the cleanup itself burns CPU”: the spike peaks only 30–60 seconds after the cleanup and settles about 90 seconds in; the magnitude is independent of the reclaimed volume; and the worker distribution is 4 workers near a full core each with the rest low — exactly the Path A signature seen later in the controlled reproduction (a <em>signature</em> is the characteristic distribution of per-worker CPU usage, which can be used to infer the failure mechanism).</p>
-<p>A more consistent reading: the timer’s batch reclaim merely pulls the trigger, and the CPU is actually spent on what follows — “expired metric re-register → <code>delete_count</code> changes → other workers do a full scan.” During the day, requests keep touching expired metrics, so re-registration follows immediately after cleanup; at night with no requests, a reclaim of the same size costs almost nothing.</p>
+</tbody>
+</table>
+<p>Pattern ①'s attribution needs one more check. Although it lands on the cleanup's timestamp, three details do not fit &quot;the cleanup itself burns CPU&quot;: the spike peaks only 30–60 seconds after the cleanup and settles about 90 seconds in; the magnitude is independent of the reclaimed volume; and the worker distribution is 4 workers near a full core each with the rest low — exactly the Path A signature seen later in the controlled reproduction (a <em>signature</em> is the characteristic distribution of per-worker CPU usage, which can be used to infer the failure mechanism).</p>
+<p>A more consistent reading: the timer's batch reclaim merely pulls the trigger, and the CPU is actually spent on what follows — &quot;expired metric re-register → <code>delete_count</code> changes → other workers do a full scan.&quot; During the day, requests keep touching expired metrics, so re-registration follows immediately after cleanup; at night with no requests, a reclaim of the same size costs almost nothing.</p>
 <p>The boundary should be stated too: all 23 perf profiles were taken during dense-spike windows where a single worker held ≥80% continuously; Pattern ① has no independent perf evidence, so that layer of attribution is an inference from timing and signatures.</p>
 <p>Production configuration made the problem more likely: <code>http_status</code>, <code>http_latency</code>, and <code>bandwidth</code> are all configured with <code>expire: 1800</code>, and some metrics carry high-cardinality labels like <code>app</code>, <code>project</code>, and <code>request_host</code>; histograms further expand each label set into multiple buckets. Large numbers of time series are constantly created, expired, and re-registered. The <code>pid</code> label added during troubleshooting is used by only one metric, adds limited series, and is not a major factor.</p>
 <p>Going from 5 to 10 workers may also amplify the concurrent contention.</p>
-<h3 id="perf-evidence-the-hotspot-is-the-shared-dict-lock"><a href="#perf-evidence-the-hotspot-is-the-shared-dict-lock" class="headerlink" title="perf evidence: the hotspot is the shared-dict lock"></a>perf evidence: the hotspot is the shared-dict lock</h3><p>A script on the node sampled worker CPU every second; once it saw sustained ≥80%, it automatically captured a system snapshot and ran <code>perf record</code>, ultimately producing 23 profiles.</p>
+<h3 id="perf-evidence-the-hotspot-is-the-shared-dict-lock">perf evidence: the hotspot is the shared-dict lock</h3>
+<p>A script on the node sampled worker CPU every second; once it saw sustained ≥80%, it automatically captured a system snapshot and ran <code>perf record</code>, ultimately producing 23 profiles.</p>
 <p><strong>17 of them showed a shared-dict lock hotspot</strong>: median Self CPU for <code>ngx_shmtx_lock</code> was <strong>66.47%</strong>, median Children CPU for <code>ngx_meta_lua_ffi_shdict_get</code> was <strong>73.99%</strong>, and <code>get_ttl</code> was clearly lower. Self and Children are measured differently and must not be added together.</p>
-<p>None of the 23 profiles captured the <code>flush_expired</code> symbol. <strong>Not captured does not mean never executed</strong> — but combined with the spikes appearing in clusters and not matching the timer’s fixed schedule, its likelihood as the main cause of this batch dropped substantially; the hourly cleanup’s risk is still on the books.</p>
+<p>None of the 23 profiles captured the <code>flush_expired</code> symbol. <strong>Not captured does not mean never executed</strong> — but combined with the spikes appearing in clusters and not matching the timer's fixed schedule, its likelihood as the main cause of this batch dropped substantially; the hourly cleanup's risk is still on the books.</p>
 <p>In the perf output, <code>ngx_meta_lua_ffi_shdict_get</code>, <code>ngx_meta_lua_shdict_lookup</code>, and <code>ngx_meta_lua_ffi_shdict_get_ttl</code> correspond to <code>get</code>, dict lookup, and <code>ttl</code>. <code>get</code> and <code>ttl</code> each need to acquire the same lock, and the spin-backoff on acquisition failure consumes CPU. This is not one worker holding the lock while scanning the whole index; it is multiple workers each scanning and contending for the same lock as they repeatedly touch the shared dict — a different contention pattern from <code>flush_expired()</code> holding the lock through a single cleanup walk.</p>
-<p><img src="/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/shdict-lock-contention.svg" alt="Multiple workers each scanning historical slots, repeatedly contending for the same lock on shared-dict access; the diagram shows only a snapshot of the lock holder and waiters at one moment" loading="lazy" decoding="async" width="880" height="460"></p>
-<p>High <code>get</code> and low <code>ttl</code> fit the model of “many historical slots already invalid,” but slot counts cannot be inferred from that alone. When the dense high-CPU clusters hit, 9 to 10 workers repeatedly fall into the hotspot at the same time.</p>
-<h3 id="Internal-counters-and-controlled-reproduction"><a href="#Internal-counters-and-controlled-reproduction" class="headerlink" title="Internal counters and controlled reproduction"></a>Internal counters and controlled reproduction</h3><p><code>key_count</code> and <code>delete_count</code> were not exposed as metrics at the time; I read them through a temporary diagnostic endpoint restricted to operations-only access. Reading them required distinguishing the global counters from worker-local caches, and aligning the readings with each worker’s CPU and the shared dict’s free space on one timeline. Such endpoints should be deleted once troubleshooting ends.</p>
+<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/shdict-lock-contention.svg" alt="Multiple workers each scanning historical slots, repeatedly contending for the same lock on shared-dict access; the diagram shows only a snapshot of the lock holder and waiters at one moment" loading="lazy" decoding="async"></p>
+<p>High <code>get</code> and low <code>ttl</code> fit the model of &quot;many historical slots already invalid,&quot; but slot counts cannot be inferred from that alone. When the dense high-CPU clusters hit, 9 to 10 workers repeatedly fall into the hotspot at the same time.</p>
+<h3 id="Internal-counters-and-controlled-reproduction">Internal counters and controlled reproduction</h3>
+<p><code>key_count</code> and <code>delete_count</code> were not exposed as metrics at the time; I read them through a temporary diagnostic endpoint restricted to operations-only access. Reading them required distinguishing the global counters from worker-local caches, and aligning the readings with each worker's CPU and the shared dict's free space on one timeline. Such endpoints should be deleted once troubleshooting ends.</p>
 <p><code>key_count</code> on node 56 reached <strong>570,000</strong> before the instance was rebuilt and dropped to <strong>just over 10,000</strong> afterward. The former means one full sync has to scan hundreds of thousands of historical slots. <code>key_count</code> indicates scan size; changes in <code>delete_count</code> indicate that the next sync may take the full-scan path.</p>
 <p>The controlled experiment used the same-version image with 5 workers: first construct already-reclaimed slots, then trigger one counter change. It reproduced the production pattern: <strong>the worker that initiated the change stayed at low CPU while the other 4 simultaneously approached a full core each</strong> (why the initiator stays low was not pursued further). The reproduction still worked with external metric scraping removed, showing scraping is not a necessary condition.</p>
 <p>Condensed into minimal reproduction steps (these describe the necessary conditions and their order; exact commands and configuration vary a bit by version):</p>
 <ol>
 <li>Start an instance with the same-version image (<code>nginx-lua-prometheus-api7 1.0.0-1</code>), 5 workers;</li>
 <li>Configure metrics with <code>expire: 1800</code>, preferably with high-cardinality labels, to create continuous slot allocation and expiry;</li>
-<li>Wait for slots to be physically reclaimed while each worker’s local <code>KeyIndex</code> still holds the old indexes;</li>
-<li>Trigger one “expired metric re-registration” so the global <code>delete_count</code> changes;</li>
+<li>Wait for slots to be physically reclaimed while each worker's local <code>KeyIndex</code> still holds the old indexes;</li>
+<li>Trigger one &quot;expired metric re-registration&quot; so the global <code>delete_count</code> changes;</li>
 <li>Observe: the worker that initiated the change stays low while the rest simultaneously approach a full core each, for a few seconds to tens of seconds; an <code>ngx_shmtx_lock</code> hotspot is visible in perf;</li>
 <li>Still reproducible with external Prometheus scraping removed.</li>
 </ol>
-<p>The dependency change provided the trigger mechanism, perf pointed to lock contention, the internal counters explained the scan size, and the controlled experiment reproduced the multi-worker high CPU. The vendor’s final report (API7) also confirmed the root cause — only at that point did all the evidence lines truly line up.</p>
-<h3 id="Stopping-the-bleeding-configuration-mitigation-and-the-code-fix"><a href="#Stopping-the-bleeding-configuration-mitigation-and-the-code-fix" class="headerlink" title="Stopping the bleeding, configuration mitigation, and the code fix"></a>Stopping the bleeding, configuration mitigation, and the code fix</h3><p>First, stop the bleeding: after reading the counters on all three nodes, I deleted and recreated the gateway Pods one at a time. An ordinary reload preserves the shared dict; rebuilding the instance cleared the accumulated index state, and the CPU spikes temporarily stopped. <strong>But this only zeroes state; it does not fix the bug.</strong></p>
+<p>The dependency change provided the trigger mechanism, perf pointed to lock contention, the internal counters explained the scan size, and the controlled experiment reproduced the multi-worker high CPU. The vendor's final report (API7) also confirmed the root cause — only at that point did all the evidence lines truly line up.</p>
+<h3 id="Stopping-the-bleeding-configuration-mitigation-and-the-code-fix">Stopping the bleeding, configuration mitigation, and the code fix</h3>
+<p>First, stop the bleeding: after reading the counters on all three nodes, I deleted and recreated the gateway Pods one at a time. An ordinary reload preserves the shared dict; rebuilding the instance cleared the accumulated index state, and the CPU spikes temporarily stopped. <strong>But this only zeroes state; it does not fix the bug.</strong></p>
 <p>If the code fix cannot be delivered right away, configuration changes can reduce the trigger and amplification conditions:</p>
 <ul>
 <li><strong>Tame high-cardinality labels</strong>: prioritize metrics that carry an expiry, and remove non-essential <code>app</code>, <code>project</code>, <code>request_host</code> dimensions and ad-hoc troubleshooting labels.</li>
@@ -573,17 +589,19 @@
 <li><strong>Distinguish the two paths</strong>: raising <code>remove_expired_keys_interval</code> only lowers how often the scheduled cleanup runs; it does not fix the full scan triggered by a <code>delete_count</code> change. Whether it can even be tuned depends on whether that version exposes a configuration entry.</li>
 <li><strong>Rolling instance rebuild</strong>: clears inflated historical state, but cannot substitute for the algorithmic fix.</li>
 </ul>
-<h3 id="Why-we-chose-a-wholesale-rollback"><a href="#Why-we-chose-a-wholesale-rollback" class="headerlink" title="Why we chose a wholesale rollback"></a>Why we chose a wholesale rollback</h3><p>Three options were on the table: keep patching the two defects on <code>nginx-lua-prometheus-api7</code> 1.0.0-1, revert only those two related commits, or roll the dependency back wholesale to 0.20250302-1, the version shipped with 3.9.14. We chose the third — the gateway stays on 3.9.19, keeping its other features and fixes, with only the Prometheus dependency rolled back to the 3.9.14 version, delivered via a new patch. <strong>This was not a downgrade of the whole gateway stack.</strong></p>
+<h3 id="Why-we-chose-a-wholesale-rollback">Why we chose a wholesale rollback</h3>
+<p>Three options were on the table: keep patching the two defects on <code>nginx-lua-prometheus-api7</code> 1.0.0-1, revert only those two related commits, or roll the dependency back wholesale to 0.20250302-1, the version shipped with 3.9.14. We chose the third — the gateway stays on 3.9.19, keeping its other features and fixes, with only the Prometheus dependency rolled back to the 3.9.14 version, delivered via a new patch. <strong>This was not a downgrade of the whole gateway stack.</strong></p>
 <p>The rollback was chosen mainly for its certainty: the target is behavior that ran in production on 3.9.14 for a long time — a return to a known state. Continuing to patch on 1.0.0 means stacking patches on a new version, with a much higher regression-verification cost. Scope of change was also a consideration: both defects live inside the LuaRocks dependency, one in index sync, one in cleanup logic, and whether reverting a single commit works cleanly depends on whether later commits depend on earlier changes. The cost is equally clear: we give up whatever else changed between 1.0.0 and 0.20250302-1, and any future re-upgrade must first address these two commits, with acceptance testing covering the process of the index state re-accumulating.</p>
 <p>Plainly put: the trade-off was not about which option was more elegant, but which one got us back to verified behavior fastest.</p>
-<h2 id="Node-difference-why-it-was-always-node-56"><a href="#Node-difference-why-it-was-always-node-56" class="headerlink" title="Node difference: why it was always node 56"></a>Node difference: why it was always node 56</h2><p>While investigating the CPU issue, there was one more thing: same code, no obvious traffic surge, yet alerts almost all landed on node 56. A software bug cannot explain a severity difference like that; beyond current QPS, I had to compare process uptime, <code>key_count</code>, the rate of <code>delete_count</code> changes, and machine configuration.</p>
-<p>Real machine-side differences did show up: all three run the Ubuntu 5.4.0 kernel but at different patch levels — 56 is <code>5.4.0-135-generic</code> (built November 2022), while 54 and 55 are both <code>5.4.0-90-generic</code> (built October 2021), so 56’s kernel is actually about a year newer. The CPU model is the same on all three, Xeon Silver 4110, but 56 shows a lower CPU MHz in <code>lscpu</code>. Checking the governor:</p>
+<h2 id="Node-difference-why-it-was-always-node-56">Node difference: why it was always node 56</h2>
+<p>While investigating the CPU issue, there was one more thing: same code, no obvious traffic surge, yet alerts almost all landed on node 56. A software bug cannot explain a severity difference like that; beyond current QPS, I had to compare process uptime, <code>key_count</code>, the rate of <code>delete_count</code> changes, and machine configuration.</p>
+<p>Real machine-side differences did show up: all three run the Ubuntu 5.4.0 kernel but at different patch levels — 56 is <code>5.4.0-135-generic</code> (built November 2022), while 54 and 55 are both <code>5.4.0-90-generic</code> (built October 2021), so 56's kernel is actually about a year newer. The CPU model is the same on all three, Xeon Silver 4110, but 56 shows a lower CPU MHz in <code>lscpu</code>. Checking the governor:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor</span><br><span class="line"></span><br><span class="line">56: powersave</span><br><span class="line">55: performance</span><br><span class="line">54: performance</span><br></pre></td></tr></table></figure>
-
 <p><code>powersave</code> behaves differently across drivers and modes, so one cannot conclude the CPU was pinned at a low frequency from this alone — see the <a href="https://www.kernel.org/doc/html/latest/admin-guide/pm/intel_pstate.html">intel_pstate documentation</a>. A single <code>lscpu</code> reading is also not representative of the whole incident window.</p>
-<p>After unifying the governor, the effect was clear: comparing the same time window on the days before and after, node 56’s total CPU consumption curve moved down noticeably, and the gap between nodes narrowed with it. Node 56 was still slightly higher than the other two, though. Note also that this comparison did not separately control for historical index state and workload — it is an observational before&#x2F;after in production, not a controlled experiment.</p>
-<p>So the frequency-governor difference is best characterized as: <strong>a genuine amplifying factor, with a clear drop in the production before&#x2F;after comparison</strong>, but its independent contribution was not quantified, and the remaining difference still has to be sought in kernel minor version, accumulated index state, and load distribution. <strong>The confirmed CPU root cause remains the Prometheus index-sync defect.</strong></p>
-<h2 id="Outcomes-and-validation-boundaries"><a href="#Outcomes-and-validation-boundaries" class="headerlink" title="Outcomes and validation boundaries"></a>Outcomes and validation boundaries</h2><p>These actions addressed different layers and cannot be uniformly summarized as “it got better after the upgrade”:</p>
+<p>After unifying the governor, the effect was clear: comparing the same time window on the days before and after, node 56's total CPU consumption curve moved down noticeably, and the gap between nodes narrowed with it. Node 56 was still slightly higher than the other two, though. Note also that this comparison did not separately control for historical index state and workload — it is an observational before/after in production, not a controlled experiment.</p>
+<p>So the frequency-governor difference is best characterized as: <strong>a genuine amplifying factor, with a clear drop in the production before/after comparison</strong>, but its independent contribution was not quantified, and the remaining difference still has to be sought in kernel minor version, accumulated index state, and load distribution. <strong>The confirmed CPU root cause remains the Prometheus index-sync defect.</strong></p>
+<h2 id="Outcomes-and-validation-boundaries">Outcomes and validation boundaries</h2>
+<p>These actions addressed different layers and cannot be uniformly summarized as &quot;it got better after the upgrade&quot;:</p>
 <table>
 <thead>
 <tr>
@@ -592,7 +610,8 @@
 <th>Boundary of the conclusion</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Streaming 500</td>
 <td>The set-to-0 workaround was effective in production; after patch.3 passed validation and was upgraded, the temporary setting was removed</td>
 <td>Bypassing the background path and fixing the state check are two different measures</td>
@@ -605,36 +624,41 @@
 <tr>
 <td>Node difference</td>
 <td>After unifying the governor, CPU dropped noticeably and the inter-node gap narrowed, but 56 is still slightly higher</td>
-<td>A production before&#x2F;after comparison; the frequency-governor contribution cannot be quantified separately; the remaining difference is unexplained</td>
+<td>A production before/after comparison; the frequency-governor contribution cannot be quantified separately; the remaining difference is unexplained</td>
 </tr>
-</tbody></table>
-<h2 id="Pitfalls-and-lessons"><a href="#Pitfalls-and-lessons" class="headerlink" title="Pitfalls and lessons"></a>Pitfalls and lessons</h2><p>The easiest traps to fall into, together with a few judgment calls worth keeping.</p>
+</tbody>
+</table>
+<h2 id="Pitfalls-and-lessons">Pitfalls and lessons</h2>
+<p>The easiest traps to fall into, together with a few judgment calls worth keeping.</p>
 <ul>
-<li><strong>No error log does not mean the error path didn’t run.</strong> The misjudged disconnect was logged at INFO; configured for WARN in production, it is completely invisible.</li>
+<li><strong>No error log does not mean the error path didn't run.</strong> The misjudged disconnect was logged at INFO; configured for WARN in production, it is completely invisible.</li>
 <li><strong><code>nothing to flush</code> is not a disconnect signal</strong> — it only means there is temporarily nothing to flush. Reasoning about network state from it will kill upstream reads that should have continued.</li>
-<li><strong>Restarts and instance rebuilds only zero state; they don’t fix bugs.</strong> The accumulated index in the shared dict can only be cleared by rebuilding the instance, but the regression remains, and the problem returns once state re-accumulates.</li>
+<li><strong>Restarts and instance rebuilds only zero state; they don't fix bugs.</strong> The accumulated index in the shared dict can only be cleared by rebuilding the instance, but the regression remains, and the problem returns once state re-accumulates.</li>
 <li><strong>CPU consumption depends on historically accumulated slots, not on current traffic or active metric count.</strong> <code>key_count</code> only grows; 570,000 historical slots are enough to peg the CPU at low QPS.</li>
 <li><strong>Reads on a shared dict also take the lock.</strong> The mass of <code>get</code> and <code>ttl</code> calls in a loop can burn just as much user CPU, showing up as high CPU rather than iowait.</li>
-<li><strong>“Only one machine alerts” points to another layer.</strong> A software bug cannot explain severity differences between nodes; dig into kernel version, frequency scaling, power policy. But finding one configuration difference does not mean you have explained the difference — keep comparing other variables.</li>
+<li><strong>&quot;Only one machine alerts&quot; points to another layer.</strong> A software bug cannot explain severity differences between nodes; dig into kernel version, frequency scaling, power policy. But finding one configuration difference does not mean you have explained the difference — keep comparing other variables.</li>
 <li><strong>Resource saturation does not mean application errors.</strong> During the dense CPU spikes there were no 5xx, only slightly higher response times; watching only the error rate misses this class of failure — resource alerts and latency curves matter too.</li>
 <li><strong>Include indirect dependencies in the change surface.</strong> Diffing only the gateway code would have missed this Prometheus regression.</li>
-<li><strong>Let counterexamples change your hypothesis — and re-check the measurement basis of your comparisons.</strong> Reclaiming 17.07 MiB at 1.35 cores while 5.30 MiB came with 7.35 cores shows “reclaimed volume” was never the independent variable of CPU; what I saw during the day on September 16 was coincidence, not causation. perf and the controlled reproduction narrowed the range further.</li>
+<li><strong>Let counterexamples change your hypothesis — and re-check the measurement basis of your comparisons.</strong> Reclaiming 17.07 MiB at 1.35 cores while 5.30 MiB came with 7.35 cores shows &quot;reclaimed volume&quot; was never the independent variable of CPU; what I saw during the day on September 16 was coincidence, not causation. perf and the controlled reproduction narrowed the range further.</li>
 </ul>
 <p>Two things to do earlier next time: capture perf immediately when dense clusters of multi-worker high-CPU spikes appear; and when reproducing, assemble the complete request, the original response, and a same-version environment in one go.</p>
-<h2 id="Still-unverified-and-open-questions"><a href="#Still-unverified-and-open-questions" class="headerlink" title="Still unverified and open questions"></a>Still unverified and open questions</h2><p>These conclusion boundaries need to be kept, to avoid reading “suspected” as “proven”:</p>
+<h2 id="Still-unverified-and-open-questions">Still unverified and open questions</h2>
+<p>These conclusion boundaries need to be kept, to avoid reading &quot;suspected&quot; as &quot;proven&quot;:</p>
 <ul>
 <li><strong>The independent contribution of <code>powersave</code> is not quantified</strong>: all we confirmed is that 56 was on <code>powersave</code> with a lower frequency; after unifying the governor, CPU dropped noticeably and the node gap narrowed, but 56 is still slightly higher; the remaining difference is unexplained, and no controlled comparison was run. To verify, first hold version, worker count, index state, and load constant, then switch governors on the same node and compare frequency, CPU, and request latency. What we do in the meantime: add kernel version, frequency scaling, and power policy to the node baseline checks, while keeping checks on application accumulated state.</li>
-<li><strong>Long-term effect not quantified</strong>: we have no quantitative evidence for how well the patch that fixed the CPU problem performs long-term — we did not record the patch’s full build number or observation duration, nor do we have pre&#x2F;post error-rate and latency comparisons. So we can only say the fix has shipped and has not recurred in the short term; no conclusion on the long-term effect.</li>
-<li><strong>Acceptance isn’t closed out yet</strong>: subsequent acceptance must cover normal traffic together with metric scraping, hourly cycles, and the re-accumulation of index state — not just the brief calm right after a rebuild.</li>
+<li><strong>Long-term effect not quantified</strong>: we have no quantitative evidence for how well the patch that fixed the CPU problem performs long-term — we did not record the patch's full build number or observation duration, nor do we have pre/post error-rate and latency comparisons. So we can only say the fix has shipped and has not recurred in the short term; no conclusion on the long-term effect.</li>
+<li><strong>Acceptance isn't closed out yet</strong>: subsequent acceptance must cover normal traffic together with metric scraping, hourly cycles, and the re-accumulation of index state — not just the brief calm right after a rebuild.</li>
 </ul>
-<h2 id="Disclosure-how-tooling-was-used"><a href="#Disclosure-how-tooling-was-used" class="headerlink" title="Disclosure: how tooling was used"></a>Disclosure: how tooling was used</h2><p>Most of the perf-report aggregation, monitoring correlation, and source-code triage in this investigation was done with automated tooling, and this postmortem itself was drafted and polished with an AI assistant (mimo-v2.6-pro). None of that changes the epistemics: judgment had to come back to the evidence on the ground, and no plausible-sounding explanation was allowed to stand when a counterexample contradicted it. For a fuller account of how tooling participated in the analysis, see <a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Runtime Behavior Blind Spots: An AI-Assisted Postmortem of the API7 AI Gateway CPU Saturation Failures</a> (in Chinese).</p>
-<h2 id="Related-posts"><a href="#Related-posts" class="headerlink" title="Related posts"></a>Related posts</h2><ul>
-<li><a href="/en/apisix-504-15-seconds.html">APISIX Gateway 504s After Exactly 15 Seconds: Tracing It to tcp_syn_retries</a></li>
+<h2 id="Disclosure-how-tooling-was-used">Disclosure: how tooling was used</h2>
+<p>Most of the perf-report aggregation, monitoring correlation, and source-code triage in this investigation was done with automated tooling, and this postmortem itself was drafted and polished with an AI assistant (mimo-v2.6-pro). None of that changes the epistemics: judgment had to come back to the evidence on the ground, and no plausible-sounding explanation was allowed to stand when a counterexample contradicted it. For a fuller account of how tooling participated in the analysis, see <a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Runtime Behavior Blind Spots: An AI-Assisted Postmortem of the API7 AI Gateway CPU Saturation Failures</a> (in Chinese).</p>
+<h2 id="Related-posts">Related posts</h2>
+<ul>
+<li><a href="https://jiankunking.com/en/apisix-504-15-seconds.html">APISIX Gateway 504s After Exactly 15 Seconds: Tracing It to tcp_syn_retries</a></li>
 <li><a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Runtime Behavior Blind Spots: An AI-Assisted Postmortem of the API7 AI Gateway CPU Saturation Failures</a> (in Chinese)</li>
 <li><a href="https://jiankunking.com/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html">What Makes a Good AI Gateway? From Boundaries to a Scorecard</a> (in Chinese)</li>
 <li><a href="https://jiankunking.com/from-model-management-to-ai-gateway.html">From Model Management to an AI Gateway: Tying Assets, Traffic, and Cost into a Closed Loop</a> (in Chinese)</li>
 </ul>
-<p><em>This article is the English edition of a post originally published in <a href="/one-upgrade-two-independent-bugs-api7-gateway.html">Chinese</a>.</em></p>
+<p><em>This article is the English edition of a post originally published in <a href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html">Chinese</a>.</em></p>
 
     </div>
 
@@ -739,7 +763,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">861k</span>
+    <span title="站点总字数">863k</span>
   </span>
 </div>
 <div class="busuanzi-count">

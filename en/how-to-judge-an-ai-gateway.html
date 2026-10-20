@@ -323,21 +323,21 @@
     
     <div class="post-body" itemprop="articleBody">
 
-<aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>AI 网关如何选型？协议兼容、流量治理与性能评估评分卡</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><p>This article doesn’t rank specific products. It answers a single question: <strong>how do you tell whether an AI gateway is any good?</strong></p>
-<p>My conclusion: a good AI gateway is not the one with the longest feature list. It’s the one that keeps running stably inside your production boundaries for the long haul. At minimum, it has to do four things at once:</p>
+<aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>AI 网关如何选型？协议兼容、流量治理与性能评估评分卡</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><p>This article doesn't rank specific products. It answers a single question: <strong>how do you tell whether an AI gateway is any good?</strong></p>
+<p>My conclusion: a good AI gateway is not the one with the longest feature list. It's the one that keeps running stably inside your production boundaries for the long haul. At minimum, it has to do four things at once:</p>
 <ol>
 <li><strong>Solid L7 gateway fundamentals</strong>: proxying, routing, load balancing, timeouts, TLS, rate limiting, authentication, and observability — none of them obviously weak;</li>
-<li><strong>Real understanding of AI traffic</strong>: model routing, body rewriting, token governance, SSE streaming, protocol conversion, and agent &#x2F; tool call handling;</li>
+<li><strong>Real understanding of AI traffic</strong>: model routing, body rewriting, token governance, SSE streaming, protocol conversion, and agent / tool call handling;</li>
 <li><strong>Provable performance and runtime behavior</strong>: with AI plugins enabled, CPU, memory, GC, p99, streaming backpressure, and cancellation handling all have to hold up under load testing;</li>
 <li><strong>Enough production maturity</strong>: core capabilities that are usable, operable, easy to roll back, and observable, with enough production references behind them.</li>
 </ol>
-<p>There is no universally best AI gateway — only the one that fits your team’s current boundaries. When your model platform, logging, alerting, and security sidecar are all mature, the gateway should be “thin and fast.” When those capabilities are still incomplete, the gateway can be “thick and full-featured” — but you have to accept a heavier data plane and prove with load tests that the complexity is controllable.</p>
+<p>There is no universally best AI gateway — only the one that fits your team's current boundaries. When your model platform, logging, alerting, and security sidecar are all mature, the gateway should be &quot;thin and fast.&quot; When those capabilities are still incomplete, the gateway can be &quot;thick and full-featured&quot; — but you have to accept a heavier data plane and prove with load tests that the complexity is controllable.</p>
 <span id="more"></span>
-
-<p>This article is meant for AI gateway selection, for evaluating an existing gateway, or for breaking down the capabilities of a homegrown gateway. It is not an installation tutorial for any particular product, and it doesn’t cover personal relay proxies.</p>
+<p>This article is meant for AI gateway selection, for evaluating an existing gateway, or for breaking down the capabilities of a homegrown gateway. It is not an installation tutorial for any particular product, and it doesn't cover personal relay proxies.</p>
 <hr>
-<h2 id="Overview-The-Conclusion-First"><a href="#Overview-The-Conclusion-First" class="headerlink" title="Overview: The Conclusion First"></a>Overview: The Conclusion First</h2><h3 id="The-one-line-model"><a href="#The-one-line-model" class="headerlink" title="The one-line model"></a>The one-line model</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">good AI gateway = solid L7 gateway + AI traffic capabilities + provable performance + production maturity</span><br></pre></td></tr></table></figure>
-
+<h2 id="Overview-The-Conclusion-First">Overview: The Conclusion First</h2>
+<h3 id="The-one-line-model">The one-line model</h3>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">good AI gateway = solid L7 gateway + AI traffic capabilities + provable performance + production maturity</span><br></pre></td></tr></table></figure>
 <p>All four are required:</p>
 <table>
 <thead>
@@ -347,15 +347,16 @@
 <th>What to judge</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>L7 foundation</td>
 <td>proxying, routing, LB, timeouts, TLS, rate limiting, auth, observability</td>
 <td>Whether the basic gateway fundamentals are solid</td>
 </tr>
 <tr>
 <td>AI capabilities</td>
-<td>body routing &#x2F; rewriting, token governance, SSE, protocol conversion, agents</td>
-<td>Whether it actually understands LLM &#x2F; agent traffic</td>
+<td>body routing / rewriting, token governance, SSE, protocol conversion, agents</td>
+<td>Whether it actually understands LLM / agent traffic</td>
 </tr>
 <tr>
 <td>Performance &amp; runtime safety</td>
@@ -367,29 +368,34 @@
 <td>GA, production references, usable core capabilities, operability</td>
 <td>Whether it can run long-term on critical production paths</td>
 </tr>
-</tbody></table>
-<h3 id="Responsibility-boundaries-come-before-feature-comparison"><a href="#Responsibility-boundaries-come-before-feature-comparison" class="headerlink" title="Responsibility boundaries come before feature comparison"></a>Responsibility boundaries come before feature comparison</h3><p>Before evaluating anything, answer one question: <strong>which capabilities must live in the gateway, and which belong on the model side or in sidecar systems?</strong></p>
+</tbody>
+</table>
+<h3 id="Responsibility-boundaries-come-before-feature-comparison">Responsibility boundaries come before feature comparison</h3>
+<p>Before evaluating anything, answer one question: <strong>which capabilities must live in the gateway, and which belong on the model side or in sidecar systems?</strong></p>
 <table>
 <thead>
 <tr>
-<th>Model-side &#x2F; sidecar maturity</th>
+<th>Model-side / sidecar maturity</th>
 <th>Suitable gateway shape</th>
-<th>The gateway’s core responsibilities</th>
+<th>The gateway's core responsibilities</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Thick: mature model platform, logging, alerting, and security sidecar</td>
-<td>“Thin” gateway</td>
+<td>&quot;Thin&quot; gateway</td>
 <td>Routing, auth, basic rate limiting, lightweight observability, low overhead</td>
 </tr>
 <tr>
 <td>Thin: bare vLLM or mostly third-party APIs</td>
-<td>“Thick” gateway</td>
+<td>&quot;Thick&quot; gateway</td>
 <td>Availability fallback, log enrichment, content moderation, protocol conversion, cost governance</td>
 </tr>
-</tbody></table>
-<p>The core trade-off: <strong>you can’t simultaneously maximize stability, flexibility, and performance.</strong> The thicker the gateway, the more capable it is — but also the heavier the data plane and the larger the failure surface. Capabilities that can live on the model side or in a sidecar shouldn’t be crammed into the gateway just because the gateway <em>can</em> do them.</p>
-<h3 id="A-three-step-evaluation-process"><a href="#A-three-step-evaluation-process" class="headerlink" title="A three-step evaluation process"></a>A three-step evaluation process</h3><table>
+</tbody>
+</table>
+<p>The core trade-off: <strong>you can't simultaneously maximize stability, flexibility, and performance.</strong> The thicker the gateway, the more capable it is — but also the heavier the data plane and the larger the failure surface. Capabilities that can live on the model side or in a sidecar shouldn't be crammed into the gateway just because the gateway <em>can</em> do them.</p>
+<h3 id="A-three-step-evaluation-process">A three-step evaluation process</h3>
+<table>
 <thead>
 <tr>
 <th>Step</th>
@@ -397,7 +403,8 @@
 <th>Purpose</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>① Draw boundaries</td>
 <td>Define what the gateway, model platform, logging system, and security system each own</td>
 <td>Avoid piling all the complexity onto the gateway</td>
@@ -405,16 +412,18 @@
 <tr>
 <td>② Apply the veto lines</td>
 <td>Screen candidates first with the one-vote veto lines in §5</td>
-<td>Weed out options that don’t belong on critical production paths</td>
+<td>Weed out options that don't belong on critical production paths</td>
 </tr>
 <tr>
 <td>③ Score</td>
-<td>Score against your P0 &#x2F; P1 requirements using §7</td>
+<td>Score against your P0 / P1 requirements using §7</td>
 <td>Find the best fit, not the longest feature list</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <hr>
-<h2 id="1-What-Actually-Makes-AI-Traffic-Special"><a href="#1-What-Actually-Makes-AI-Traffic-Special" class="headerlink" title="1. What Actually Makes AI Traffic Special"></a>1. What Actually Makes AI Traffic Special</h2><p>Most ordinary APIs are stateless, small, and structurally fixed. AI traffic, by contrast, combines semantic request bodies, responses that may stream for a long time, cost metered per token, backends that are heterogeneous and unreliable, and agents that can trigger side-effecting tool calls.</p>
+<h2 id="1-What-Actually-Makes-AI-Traffic-Special">1. What Actually Makes AI Traffic Special</h2>
+<p>Most ordinary APIs are stateless, small, and structurally fixed. AI traffic, by contrast, combines semantic request bodies, responses that may stream for a long time, cost metered per token, backends that are heterogeneous and unreliable, and agents that can trigger side-effecting tool calls.</p>
 <table>
 <thead>
 <tr>
@@ -422,8 +431,9 @@
 <th>New requirement on the gateway</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>Request &#x2F; response bodies are semantic</td>
+<tbody>
+<tr>
+<td>Request / response bodies are semantic</td>
 <td>Must be able to read and rewrite fields like <code>model</code>, <code>messages</code>, <code>max_tokens</code>, and <code>stream</code></td>
 </tr>
 <tr>
@@ -432,20 +442,22 @@
 </tr>
 <tr>
 <td>Cost is metered per token</td>
-<td>QPS alone isn’t enough — you need TPM, TTFT &#x2F; TPOT, token attribution, and budgets</td>
+<td>QPS alone isn't enough — you need TPM, TTFT / TPOT, token attribution, and budgets</td>
 </tr>
 <tr>
-<td>Backends are heterogeneous and prone to rate limiting &#x2F; failures</td>
+<td>Backends are heterogeneous and prone to rate limiting / failures</td>
 <td>Multi-provider protocol adaptation, fallback, health checks, and traffic demotion</td>
 </tr>
 <tr>
 <td>Agents trigger tool calls</td>
 <td>Traces, permissions, audit, idempotency, and cost must be correlated across model calls and tool calls</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>So a gateway that only rewrites URLs and headers while passing the body through as a black box is, in essence, just an ordinary gateway. A real AI gateway must understand the runtime semantics of the body, the stream, tokens, providers, and tool calls.</p>
 <hr>
-<h2 id="2-The-AI-Gateway-Capability-Map"><a href="#2-The-AI-Gateway-Capability-Map" class="headerlink" title="2. The AI Gateway Capability Map"></a>2. The AI Gateway Capability Map</h2><p>Once you lay out the capabilities, they fall into roughly ten categories. Note: this is a capability map — it does not mean the gateway must implement every one of them.</p>
+<h2 id="2-The-AI-Gateway-Capability-Map">2. The AI Gateway Capability Map</h2>
+<p>Once you lay out the capabilities, they fall into roughly ten categories. Note: this is a capability map — it does not mean the gateway must implement every one of them.</p>
 <table>
 <thead>
 <tr>
@@ -454,7 +466,8 @@
 <th>Typical capabilities</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Management &amp; operations plane</td>
 <td>Can it be managed systematically</td>
 <td>REST API, CRD, GitOps, automatic certificate renewal, hot config reload, hot plugin loading</td>
@@ -467,7 +480,7 @@
 <tr>
 <td>Performance &amp; runtime safety</td>
 <td>Stable under high concurrency, large bodies, and streaming</td>
-<td>Extra CPU, JSON decode &#x2F; encode counts, SSE flush, backpressure, yield, fairness, memory and GC</td>
+<td>Extra CPU, JSON decode / encode counts, SSE flush, backpressure, yield, fairness, memory and GC</td>
 </tr>
 <tr>
 <td>AI routing &amp; load balancing</td>
@@ -477,12 +490,12 @@
 <tr>
 <td>Fallback &amp; high availability</td>
 <td>Can backend failures be absorbed</td>
-<td>429 &#x2F; 5xx &#x2F; timeout fallback, health checks, automatic ejection &#x2F; recovery, alert-driven demotion</td>
+<td>429 / 5xx / timeout fallback, health checks, automatic ejection / recovery, alert-driven demotion</td>
 </tr>
 <tr>
-<td>Request &#x2F; response rewriting &amp; protocol adaptation</td>
+<td>Request / response rewriting &amp; protocol adaptation</td>
 <td>Shielding backend differences</td>
-<td>Model name mapping, credential injection, body field injection, <code>max_tokens</code> enforcement, OpenAI &#x2F; Anthropic &#x2F; Gemini &#x2F; Bedrock conversion</td>
+<td>Model name mapping, credential injection, body field injection, <code>max_tokens</code> enforcement, OpenAI / Anthropic / Gemini / Bedrock conversion</td>
 </tr>
 <tr>
 <td>Traffic governance &amp; cost</td>
@@ -492,7 +505,7 @@
 <tr>
 <td>Observability &amp; audit</td>
 <td>Can you diagnose what went wrong</td>
-<td>OTel, structured logs, Prometheus, TTFT &#x2F; TPOT, trace, upstream, risk level</td>
+<td>OTel, structured logs, Prometheus, TTFT / TPOT, trace, upstream, risk level</td>
 </tr>
 <tr>
 <td>Security &amp; content governance</td>
@@ -502,25 +515,29 @@
 <tr>
 <td>Extensibility &amp; ecosystem</td>
 <td>Can it keep growing</td>
-<td>Plugin mechanism, execution ordering, external moderation services, AlertManager, Kafka &#x2F; ES &#x2F; HTTP sinks</td>
+<td>Plugin mechanism, execution ordering, external moderation services, AlertManager, Kafka / ES / HTTP sinks</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>A few points that are easy to get wrong:</p>
 <ul>
-<li><strong>Performance isn’t just hello-world QPS</strong>: you need to look at the extra CPU with AI plugins enabled, memory allocations, GC, JSON encode&#x2F;decode counts — plus runtime edge cases like small SSE chunks, fast upstreams, slow downstreams, and client disconnects.</li>
-<li><strong>Streaming capability isn’t just SSE passthrough</strong>: the real question is whether rate limiting, moderation, observability, fallback, protocol conversion, and disconnect handling are all still available on a streaming request.</li>
-<li><strong>Protocol conversion is advanced rewriting</strong>: converting non-streaming requests isn’t enough — you also have to handle SSE, error codes, tool calls, usage, and provider-specific fields.</li>
-<li><strong>Observability doesn’t mean logging bodies without limits</strong>: the more complete the body logs, the higher the compliance risk. Redaction, sampling, sensitive-field filtering, and expiration cleanup are mandatory.</li>
-<li><strong>Multi-region is not automatically high availability</strong>: deploying multiple regions isn’t enough — routing, probing, failover, logging, alerting, and recovery have to form a closed loop.</li>
+<li><strong>Performance isn't just hello-world QPS</strong>: you need to look at the extra CPU with AI plugins enabled, memory allocations, GC, JSON encode/decode counts — plus runtime edge cases like small SSE chunks, fast upstreams, slow downstreams, and client disconnects.</li>
+<li><strong>Streaming capability isn't just SSE passthrough</strong>: the real question is whether rate limiting, moderation, observability, fallback, protocol conversion, and disconnect handling are all still available on a streaming request.</li>
+<li><strong>Protocol conversion is advanced rewriting</strong>: converting non-streaming requests isn't enough — you also have to handle SSE, error codes, tool calls, usage, and provider-specific fields.</li>
+<li><strong>Observability doesn't mean logging bodies without limits</strong>: the more complete the body logs, the higher the compliance risk. Redaction, sampling, sensitive-field filtering, and expiration cleanup are mandatory.</li>
+<li><strong>Multi-region is not automatically high availability</strong>: deploying multiple regions isn't enough — routing, probing, failover, logging, alerting, and recovery have to form a closed loop.</li>
 </ul>
 <hr>
-<h2 id="3-Core-Capability-Areas-Minimum-Bar-Excellence-Bar"><a href="#3-Core-Capability-Areas-Minimum-Bar-Excellence-Bar" class="headerlink" title="3. Core Capability Areas: Minimum Bar &#x2F; Excellence Bar"></a>3. Core Capability Areas: Minimum Bar &#x2F; Excellence Bar</h2><h3 id="3-1-Routing-and-load-balancing"><a href="#3-1-Routing-and-load-balancing" class="headerlink" title="3.1 Routing and load balancing"></a>3.1 Routing and load balancing</h3><p>Minimum bar: routes by <code>model</code>, supports weighted load balancing and basic fallback; plain HTTP requests pass through too, without being forcibly parsed as Chat Completions.</p>
+<h2 id="3-Core-Capability-Areas-Minimum-Bar-Excellence-Bar">3. Core Capability Areas: Minimum Bar / Excellence Bar</h2>
+<h3 id="3-1-Routing-and-load-balancing">3.1 Routing and load balancing</h3>
+<p>Minimum bar: routes by <code>model</code>, supports weighted load balancing and basic fallback; plain HTTP requests pass through too, without being forcibly parsed as Chat Completions.</p>
 <p>Excellence bar: conditional routing based on body content — requests with images go to a multimodal instance, long prompts go to a large-context model; weight + priority, session affinity, and fallback configured separately for 429, 5xx, and timeouts.</p>
 <p>Watch the fallback boundary in streaming scenarios: switching before the first token is relatively safe. Once output has started flowing to the client, switching backends can cause duplicate output, broken context, or double billing. Tool calls also require distinguishing whether they have side effects.</p>
-<h3 id="3-2-Performance-and-runtime-safety"><a href="#3-2-Performance-and-runtime-safety" class="headerlink" title="3.2 Performance and runtime safety"></a>3.2 Performance and runtime safety</h3><p>Performance is the most underestimated capability of an AI gateway. Plenty of products will show you plain HTTP forwarding QPS, but once you’re really in production, the bottleneck usually comes from the extra work after the AI plugins are turned on: reading the body, parsing JSON, rewriting fields, streaming parsing, content moderation, log enrichment, token accounting, protocol conversion.</p>
+<h3 id="3-2-Performance-and-runtime-safety">3.2 Performance and runtime safety</h3>
+<p>Performance is the most underestimated capability of an AI gateway. Plenty of products will show you plain HTTP forwarding QPS, but once you're really in production, the bottleneck usually comes from the extra work after the AI plugins are turned on: reading the body, parsing JSON, rewriting fields, streaming parsing, content moderation, log enrichment, token accounting, protocol conversion.</p>
 <p>Minimum bar: you can produce load test results aimed at AI scenarios, not just plain HTTP hello-world QPS. The test matrix should cover at least:</p>
 <ul>
-<li>body routing &#x2F; rewriting;</li>
+<li>body routing / rewriting;</li>
 <li>request bodies of different sizes: 32 KB, 128 KB, 1 MB;</li>
 <li>SSE streaming forwarding;</li>
 <li>an upstream that returns small chunks quickly;</li>
@@ -528,11 +545,11 @@
 <li>a client that disconnects mid-request;</li>
 <li>plugin combinations such as content moderation, logging, and token accounting.</li>
 </ul>
-<p>Metrics should at least include worker CPU, RSS, Lua &#x2F; runtime GC, p95 &#x2F; p99 latency, TTFT, TPOT, token throughput, and flame graphs.</p>
-<p>Excellence bar: performance engineering becomes part of the product. On key hot paths, you know exactly how many JSON decode &#x2F; encode operations each request performs; reading only a few fields like <code>model</code> and <code>stream</code> goes through a raw get fast path; patching only a few fields like <code>model</code>, <code>temperature</code>, and <code>stream</code> goes through a raw patch fast path; complex protocol conversion, RAG, and deep rewriting fall back to full decode &#x2F; encode. The SSE loop has explicit backpressure, flush, cancellation, and yield policies, and every version upgrade runs performance regression tests.</p>
+<p>Metrics should at least include worker CPU, RSS, Lua / runtime GC, p95 / p99 latency, TTFT, TPOT, token throughput, and flame graphs.</p>
+<p>Excellence bar: performance engineering becomes part of the product. On key hot paths, you know exactly how many JSON decode / encode operations each request performs; reading only a few fields like <code>model</code> and <code>stream</code> goes through a raw get fast path; patching only a few fields like <code>model</code>, <code>temperature</code>, and <code>stream</code> goes through a raw patch fast path; complex protocol conversion, RAG, and deep rewriting fall back to full decode / encode. The SSE loop has explicit backpressure, flush, cancellation, and yield policies, and every version upgrade runs performance regression tests.</p>
 <p>Two traps deserve special attention here.</p>
-<p><strong>First: “looks like I&#x2F;O” doesn’t mean the CPU actually gets yielded.</strong> In cooperative scheduling models like OpenResty &#x2F; Nginx, if the upstream socket buffer always has data available, <code>body_reader()</code> can degenerate into something close to a memory copy; and if <code>ngx.flush()</code> never creates real backpressure, the loop can go a long time without yielding — a single SSE request can saturate a worker. Problems like this are nearly impossible to spot by reading static logic; you have to put “fast upstream + slow or disconnecting downstream + small chunks with frequent flush” into your load test matrix. See the earlier postmortem: <a href="/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Runtime behavior blind spots: a postmortem on CPU saturation bugs in the API7 AI gateway</a>.</p>
-<p><strong>Second: body JSON processing is not free.</strong> AI gateways frequently full-decode the entire <code>messages</code> payload — sometimes even full-encode it again — just to route on <code>post_arg.model</code>, detect the protocol, or override a handful of fields like <code>model/temperature/stream</code>. With large prompts, multi-turn messages, and multimodal bodies, this turns directly into worker CPU, memory allocation, and GC pressure. A better strategy: raw get &#x2F; raw patch on the hot path, full decode &#x2F; encode reserved for complex cases, and flame graphs to verify whether <code>cjson.decode</code> and <code>encode</code> are really hotspots.</p>
+<p><strong>First: &quot;looks like I/O&quot; doesn't mean the CPU actually gets yielded.</strong> In cooperative scheduling models like OpenResty / Nginx, if the upstream socket buffer always has data available, <code>body_reader()</code> can degenerate into something close to a memory copy; and if <code>ngx.flush()</code> never creates real backpressure, the loop can go a long time without yielding — a single SSE request can saturate a worker. Problems like this are nearly impossible to spot by reading static logic; you have to put &quot;fast upstream + slow or disconnecting downstream + small chunks with frequent flush&quot; into your load test matrix. See the earlier postmortem: <a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Runtime behavior blind spots: a postmortem on CPU saturation bugs in the API7 AI gateway</a>.</p>
+<p><strong>Second: body JSON processing is not free.</strong> AI gateways frequently full-decode the entire <code>messages</code> payload — sometimes even full-encode it again — just to route on <code>post_arg.model</code>, detect the protocol, or override a handful of fields like <code>model/temperature/stream</code>. With large prompts, multi-turn messages, and multimodal bodies, this turns directly into worker CPU, memory allocation, and GC pressure. A better strategy: raw get / raw patch on the hot path, full decode / encode reserved for complex cases, and flame graphs to verify whether <code>cjson.decode</code> and <code>encode</code> are really hotspots.</p>
 <p>An actionable performance acceptance bar:</p>
 <table>
 <thead>
@@ -542,7 +559,8 @@
 <th>Suggested metrics</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td><code>post_arg.model</code> routing</td>
 <td>When reading a single field, does it still full-decode the whole body</td>
 <td>Visibly lower worker CPU on 32 KB+ bodies</td>
@@ -550,7 +568,7 @@
 <tr>
 <td>AI passthrough + few-field overrides</td>
 <td>Does it avoid decoding + encoding the entire request body</td>
-<td>Clearly lower decode &#x2F; encode share on the flame graph</td>
+<td>Clearly lower decode / encode share on the flame graph</td>
 </tr>
 <tr>
 <td>SSE fast small chunks</td>
@@ -560,61 +578,74 @@
 <tr>
 <td>Client cancels the request</td>
 <td>After the downstream disconnects, does it stop reading upstream and parsing JSON ASAP</td>
-<td>Wasted CPU, upstream cancellation latency, 499 &#x2F; disconnect logs</td>
+<td>Wasted CPU, upstream cancellation latency, 499 / disconnect logs</td>
 </tr>
 <tr>
-<td>Content moderation &#x2F; logging</td>
+<td>Content moderation / logging</td>
 <td>Is the extra overhead explainable once the plugin is on</td>
 <td>CPU, RSS, GC, and external call latency reported separately</td>
 </tr>
-</tbody></table>
-<p>The core of performance is not “what language the gateway is written in” — it’s: <strong>how much extra work the data plane does once you enable the AI capabilities you actually need, whether it can lose scheduling fairness in the worst case, and whether those costs can be proven with load tests and flame graphs.</strong></p>
-<h3 id="3-3-Request-response-rewriting-and-protocol-adaptation"><a href="#3-3-Request-response-rewriting-and-protocol-adaptation" class="headerlink" title="3.3 Request &#x2F; response rewriting and protocol adaptation"></a>3.3 Request &#x2F; response rewriting and protocol adaptation</h3><p>Minimum bar: path rewriting, header injection, backend credential injection, and model name mapping are all configurable.</p>
-<p>Excellence bar: body field injection can distinguish “backfill only when missing” from “forceful override”; field order is preserved where possible when modifying the body; protocols like OpenAI, Anthropic, Gemini, and Bedrock convert into each other, correctly handling tool calls, error codes, usage, and streaming formats.</p>
-<p>A simple test: body rewriting should ideally be doable through configuration alone. If every scenario requires writing a plugin, the product’s abstraction isn’t mature enough.</p>
-<h3 id="3-4-Traffic-governance-and-cost"><a href="#3-4-Traffic-governance-and-cost" class="headerlink" title="3.4 Traffic governance and cost"></a>3.4 Traffic governance and cost</h3><p>Minimum bar: consumer-level RPM, concurrency limits, and SSE passthrough.</p>
+</tbody>
+</table>
+<p>The core of performance is not &quot;what language the gateway is written in&quot; — it's: <strong>how much extra work the data plane does once you enable the AI capabilities you actually need, whether it can lose scheduling fairness in the worst case, and whether those costs can be proven with load tests and flame graphs.</strong></p>
+<h3 id="3-3-Request-response-rewriting-and-protocol-adaptation">3.3 Request / response rewriting and protocol adaptation</h3>
+<p>Minimum bar: path rewriting, header injection, backend credential injection, and model name mapping are all configurable.</p>
+<p>Excellence bar: body field injection can distinguish &quot;backfill only when missing&quot; from &quot;forceful override&quot;; field order is preserved where possible when modifying the body; protocols like OpenAI, Anthropic, Gemini, and Bedrock convert into each other, correctly handling tool calls, error codes, usage, and streaming formats.</p>
+<p>A simple test: body rewriting should ideally be doable through configuration alone. If every scenario requires writing a plugin, the product's abstraction isn't mature enough.</p>
+<h3 id="3-4-Traffic-governance-and-cost">3.4 Traffic governance and cost</h3>
+<p>Minimum bar: consumer-level RPM, concurrency limits, and SSE passthrough.</p>
 <p>Excellence bar: token-based rate limiting (TPM) supporting composite dimensions such as consumer × model, tenant × model, route level, and instance level; cost attribution, budget quotas, and over-limit alerting or circuit breaking.</p>
-<p>Semantic caching can save money and reduce latency, but you have to handle cache hits on the wrong data, permission isolation, freshness, and audit. For enterprise use cases, a wrong cache hit is more dangerous than a cache miss — you can’t just turn it on blindly.</p>
-<h3 id="3-5-Observability"><a href="#3-5-Observability" class="headerlink" title="3.5 Observability"></a>3.5 Observability</h3><p>Minimum bar: OpenTelemetry integration, structured access logs, body logging switchable per tenant &#x2F; route.</p>
-<p>Excellence bar: latency metrics like TTFT and TPOT exposed as histograms with P90 &#x2F; P99 percentiles; token totals attributable by model, consumer, and project; logs covering key fields like model mapping, token, upstream, trace, and risk level, shippable to Kafka, ES, HTTP, and OTLP.</p>
+<p>Semantic caching can save money and reduce latency, but you have to handle cache hits on the wrong data, permission isolation, freshness, and audit. For enterprise use cases, a wrong cache hit is more dangerous than a cache miss — you can't just turn it on blindly.</p>
+<h3 id="3-5-Observability">3.5 Observability</h3>
+<p>Minimum bar: OpenTelemetry integration, structured access logs, body logging switchable per tenant / route.</p>
+<p>Excellence bar: latency metrics like TTFT and TPOT exposed as histograms with P90 / P99 percentiles; token totals attributable by model, consumer, and project; logs covering key fields like model mapping, token, upstream, trace, and risk level, shippable to Kafka, ES, HTTP, and OTLP.</p>
 <p>Full body logging must support redaction, sampling, sensitive-field filtering, and expiration cleanup — otherwise the stronger your observability, the higher your compliance risk.</p>
-<h3 id="3-6-Health-checking-and-high-availability"><a href="#3-6-Health-checking-and-high-availability" class="headerlink" title="3.6 Health checking and high availability"></a>3.6 Health checking and high availability</h3><p>Minimum bar: passive health checks with automatic ejection after consecutive failures.</p>
-<p>Excellence bar: active health checks that POST real inference requests, not just GET <code>/health</code>. The common failure mode of LLM backends is “the process is alive but inference is unavailable” — shallow probes can’t detect that. Going further: alerting wired to demotion and recovery — when an alert fires, the instance gets demoted; after recovery, traffic flows back automatically.</p>
-<h3 id="3-7-Security-authentication-authorization-and-content-moderation"><a href="#3-7-Security-authentication-authorization-and-content-moderation" class="headerlink" title="3.7 Security: authentication, authorization, and content moderation"></a>3.7 Security: authentication, authorization, and content moderation</h3><p>Minimum bar: consumer authentication, API key management, backend credential vaulting, request body size limits.</p>
-<p>Excellence bar: JWT &#x2F; OAuth, RBAC, multi-tenant isolation; consumer identity carried through to rate limiting and observability; content moderation covering both request and response, effective on streams, configurable per consumer or route, and able to call external services.</p>
-<h3 id="3-8-Agent-tool-call-traffic"><a href="#3-8-Agent-tool-call-traffic" class="headerlink" title="3.8 Agent &#x2F; tool call traffic"></a>3.8 Agent &#x2F; tool call traffic</h3><p>If you only serve ordinary Chat Completions, this is a bonus item. If you need to support agents, it’s mandatory.</p>
+<h3 id="3-6-Health-checking-and-high-availability">3.6 Health checking and high availability</h3>
+<p>Minimum bar: passive health checks with automatic ejection after consecutive failures.</p>
+<p>Excellence bar: active health checks that POST real inference requests, not just GET <code>/health</code>. The common failure mode of LLM backends is &quot;the process is alive but inference is unavailable&quot; — shallow probes can't detect that. Going further: alerting wired to demotion and recovery — when an alert fires, the instance gets demoted; after recovery, traffic flows back automatically.</p>
+<h3 id="3-7-Security-authentication-authorization-and-content-moderation">3.7 Security: authentication, authorization, and content moderation</h3>
+<p>Minimum bar: consumer authentication, API key management, backend credential vaulting, request body size limits.</p>
+<p>Excellence bar: JWT / OAuth, RBAC, multi-tenant isolation; consumer identity carried through to rate limiting and observability; content moderation covering both request and response, effective on streams, configurable per consumer or route, and able to call external services.</p>
+<h3 id="3-8-Agent-tool-call-traffic">3.8 Agent / tool call traffic</h3>
+<p>If you only serve ordinary Chat Completions, this is a bonus item. If you need to support agents, it's mandatory.</p>
 <p>A single user request to an agent can trigger multiple model calls and tool calls. The gateway must at minimum correlate conversation id, tool call id, and trace id — and enforce permissions, audit, idempotency, and cost attribution across tool calls. A tool call that sends an email, places an order, or changes configuration can become an incident if it gets retried just once.</p>
-<h3 id="3-9-Extensibility-and-operability"><a href="#3-9-Extensibility-and-operability" class="headerlink" title="3.9 Extensibility and operability"></a>3.9 Extensibility and operability</h3><p>Minimum bar: plugin mechanism, hot config reload, and complete management interfaces (REST API, CRD, or GitOps).</p>
+<h3 id="3-9-Extensibility-and-operability">3.9 Extensibility and operability</h3>
+<p>Minimum bar: plugin mechanism, hot config reload, and complete management interfaces (REST API, CRD, or GitOps).</p>
 <p>Excellence bar: extension point ordering is controllable, plugins and policies hot-loadable, certificates auto-renewed, both declarative and imperative management supported; critical config changes are auditable, canary-deployable, and easy to roll back.</p>
 <hr>
-<h2 id="4-Thick-Gateway-or-Thin-Gateway-Which-One-Do-You-Need"><a href="#4-Thick-Gateway-or-Thin-Gateway-Which-One-Do-You-Need" class="headerlink" title="4. Thick Gateway or Thin Gateway: Which One Do You Need"></a>4. Thick Gateway or Thin Gateway: Which One Do You Need</h2><p>Most of these arguments aren’t really about “which gateway is better” — they start because nobody established the responsibility boundary first.</p>
-<h3 id="When-a-thin-gateway-fits"><a href="#When-a-thin-gateway-fits" class="headerlink" title="When a thin gateway fits"></a>When a thin gateway fits</h3><p>If you already have a mature model platform, unified logging, alerting, security review, cost attribution, and scheduling systems, the gateway doesn’t need to carry much AI logic. Priorities then:</p>
+<h2 id="4-Thick-Gateway-or-Thin-Gateway-Which-One-Do-You-Need">4. Thick Gateway or Thin Gateway: Which One Do You Need</h2>
+<p>Most of these arguments aren't really about &quot;which gateway is better&quot; — they start because nobody established the responsibility boundary first.</p>
+<h3 id="When-a-thin-gateway-fits">When a thin gateway fits</h3>
+<p>If you already have a mature model platform, unified logging, alerting, security review, cost attribution, and scheduling systems, the gateway doesn't need to carry much AI logic. Priorities then:</p>
 <ol>
 <li>A stable data plane with low overhead;</li>
 <li>Reliable routing, auth, basic rate limiting, and lightweight observability;</li>
 <li>Clean boundaries with existing platforms;</li>
 <li>No complex protocol conversion, deep moderation, or heavy log processing on the request hot path.</li>
 </ol>
-<h3 id="When-a-thick-gateway-fits"><a href="#When-a-thick-gateway-fits" class="headerlink" title="When a thick gateway fits"></a>When a thick gateway fits</h3><p>If your model side and sidecar systems are still thin — you mostly rely on third-party APIs, run bare vLLM, or don’t yet have a unified LLMOps platform — the gateway can take on more:</p>
+<h3 id="When-a-thick-gateway-fits">When a thick gateway fits</h3>
+<p>If your model side and sidecar systems are still thin — you mostly rely on third-party APIs, run bare vLLM, or don't yet have a unified LLMOps platform — the gateway can take on more:</p>
 <ol>
 <li>Multi-provider protocol adaptation;</li>
 <li>Fallback, circuit breaking, demotion, active health checks;</li>
-<li>Request &#x2F; response content moderation;</li>
+<li>Request / response content moderation;</li>
 <li>Token accounting, budgets, cost attribution;</li>
 <li>Log enrichment and alerting integration.</li>
 </ol>
-<p>But a thick gateway must pay the performance verification cost. The more logic moves into the data plane, the more you have to prove that it won’t become a new source of failures under large bodies, small streaming chunks, client disconnects, content moderation, and high QPS.</p>
+<p>But a thick gateway must pay the performance verification cost. The more logic moves into the data plane, the more you have to prove that it won't become a new source of failures under large bodies, small streaming chunks, client disconnects, content moderation, and high QPS.</p>
 <hr>
-<h2 id="5-Five-One-Vote-Veto-Lines"><a href="#5-Five-One-Vote-Veto-Lines" class="headerlink" title="5. Five One-Vote Veto Lines"></a>5. Five One-Vote Veto Lines</h2><p>Some weaknesses aren’t points deducted — they disqualify a gateway from critical production paths outright.</p>
+<h2 id="5-Five-One-Vote-Veto-Lines">5. Five One-Vote Veto Lines</h2>
+<p>Some weaknesses aren't points deducted — they disqualify a gateway from critical production paths outright.</p>
 <ol>
 <li><strong>Weak L7 foundation</strong>: unstable at plain HTTP proxying, routing, LB, timeouts, TLS, rate limiting, auth, and observability, yet claiming to be an AI gateway — treat such candidates with caution.</li>
-<li><strong>Unprovable data plane performance or unsafe runtime behavior</strong>: mature data planes like Rust &#x2F; Go &#x2F; Envoy &#x2F; Nginx are steadier, but the language and framework are no get-out-of-jail-free card. You must prove controllable overhead with real AI workloads: does body routing &#x2F; rewriting repeatedly decode and encode JSON, do small SSE chunks busy-wait, does the CPU keep burning after a client disconnects, and are worker CPU, RSS, GC, and p99 still acceptable with content moderation &#x2F; logging turned on?</li>
+<li><strong>Unprovable data plane performance or unsafe runtime behavior</strong>: mature data planes like Rust / Go / Envoy / Nginx are steadier, but the language and framework are no get-out-of-jail-free card. You must prove controllable overhead with real AI workloads: does body routing / rewriting repeatedly decode and encode JSON, do small SSE chunks busy-wait, does the CPU keep burning after a client disconnects, and are worker CPU, RSS, GC, and p99 still acceptable with content moderation / logging turned on?</li>
 <li><strong>Insufficient maturity</strong>: pre-1.0, no production references, too small a community, an unclear upgrade path, or no transparent record of fixing serious past issues — all warrant a heavy discount.</li>
-<li><strong>Core capabilities unavailable</strong>: if body conditional routing, model-level fallback, TPM rate limiting, and semantic moderation are all locked behind the enterprise edition, the open-source edition has limited value; if the enterprise edition is also missing key capabilities, it’s even less suitable for critical paths.</li>
-<li><strong>No trustworthy active health check</strong>: passive ejection only, or GET <code>/health</code>, will rarely surface “the service is alive but inference is unavailable.” AI backends need real inference probes — at minimum, detecting anomalies by model, route, and instance, and wiring that into demotion &#x2F; recovery.</li>
+<li><strong>Core capabilities unavailable</strong>: if body conditional routing, model-level fallback, TPM rate limiting, and semantic moderation are all locked behind the enterprise edition, the open-source edition has limited value; if the enterprise edition is also missing key capabilities, it's even less suitable for critical paths.</li>
+<li><strong>No trustworthy active health check</strong>: passive ejection only, or GET <code>/health</code>, will rarely surface &quot;the service is alive but inference is unavailable.&quot; AI backends need real inference probes — at minimum, detecting anomalies by model, route, and instance, and wiring that into demotion / recovery.</li>
 </ol>
 <hr>
-<h2 id="6-Good-vs-Mediocre-A-Quick-Comparison"><a href="#6-Good-vs-Mediocre-A-Quick-Comparison" class="headerlink" title="6. Good vs. Mediocre: A Quick Comparison"></a>6. Good vs. Mediocre: A Quick Comparison</h2><p>To quickly judge whether a gateway has obvious weaknesses, start with these high-risk points.</p>
+<h2 id="6-Good-vs-Mediocre-A-Quick-Comparison">6. Good vs. Mediocre: A Quick Comparison</h2>
+<p>To quickly judge whether a gateway has obvious weaknesses, start with these high-risk points.</p>
 <table>
 <thead>
 <tr>
@@ -623,25 +654,26 @@
 <th>Good approach</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>L7 foundation</td>
 <td>Can only forward AI requests; thin ordinary HTTP capability</td>
 <td>Complete L7 gateway capability; AI features enhance rather than replace it</td>
 </tr>
 <tr>
 <td>body capability</td>
-<td>Treats the body as a black box; only changes headers &#x2F; paths</td>
+<td>Treats the body as a black box; only changes headers / paths</td>
 <td>Routes, rewrites, and injects fields based on the body, preserving order where possible</td>
 </tr>
 <tr>
 <td>performance evidence</td>
-<td>Only shows plain HTTP QPS or touts language &#x2F; framework</td>
+<td>Only shows plain HTTP QPS or touts language / framework</td>
 <td>Provides CPU, RSS, GC, flame graphs, and p99 data with AI plugins enabled</td>
 </tr>
 <tr>
 <td>JSON hot path</td>
-<td>Repeatedly full-decodes &#x2F; full-encodes to read &#x2F; modify a few fields</td>
-<td>raw get &#x2F; patch on hot fields, falling back for complex cases</td>
+<td>Repeatedly full-decodes / full-encodes to read / modify a few fields</td>
+<td>raw get / patch on hot fields, falling back for complex cases</td>
 </tr>
 <tr>
 <td>streaming path</td>
@@ -656,20 +688,20 @@
 <tr>
 <td>fallback</td>
 <td>Retries only by status code</td>
-<td>Distinguishes failure types, before&#x2F;after the first token, instance rate limits, and tool call side effects</td>
+<td>Distinguishes failure types, before/after the first token, instance rate limits, and tool call side effects</td>
 </tr>
 <tr>
 <td>metrics and logs</td>
 <td>Only average latency and request counts</td>
-<td>TTFT &#x2F; TPOT by percentile; token, model, consumer, upstream, and trace all attributable</td>
+<td>TTFT / TPOT by percentile; token, model, consumer, upstream, and trace all attributable</td>
 </tr>
 <tr>
 <td>health checks</td>
 <td>Passive ejection or GET <code>/health</code></td>
-<td>Active POST real inference probes, with automatic ejection &#x2F; recovery</td>
+<td>Active POST real inference probes, with automatic ejection / recovery</td>
 </tr>
 <tr>
-<td>Agent &#x2F; tool call</td>
+<td>Agent / tool call</td>
 <td>Forwards them as ordinary HTTP requests</td>
 <td>Trace, permissions, audit, idempotency, and cost all correlated</td>
 </tr>
@@ -678,85 +710,98 @@
 <td>pre-1.0, performance unprovable</td>
 <td>GA, production references, key capabilities usable, overhead verifiable under load tests</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <hr>
-<h2 id="7-The-Scorecard-Weights-Total-100"><a href="#7-The-Scorecard-Weights-Total-100" class="headerlink" title="7. The Scorecard (Weights Total 100%)"></a>7. The Scorecard (Weights Total 100%)</h2><p>The weights below are generic — adjust them for your team’s P0 &#x2F; P1 priorities. If you already have a mature security sidecar, lower the weight on “content governance”; if you rely heavily on SSE and long multi-turn contexts, raise the weight on “performance and runtime safety.”</p>
-<h3 id="A-Core-gateway-capabilities-10"><a href="#A-Core-gateway-capabilities-10" class="headerlink" title="A. Core gateway capabilities (10%)"></a>A. Core gateway capabilities (10%)</h3><ul>
-<li><input disabled="" type="checkbox"> Plain HTTP proxying &#x2F; routing works too, not just binding to AI providers</li>
-<li><input disabled="" type="checkbox"> Path rewriting, header injection, backend credential injection</li>
-<li><input disabled="" type="checkbox"> Connection reuse, route-level timeouts, controllable TLS verification</li>
-<li><input disabled="" type="checkbox"> Rate limiting, authentication, and basic observability are complete</li>
+<h2 id="7-The-Scorecard-Weights-Total-100">7. The Scorecard (Weights Total 100%)</h2>
+<p>The weights below are generic — adjust them for your team's P0 / P1 priorities. If you already have a mature security sidecar, lower the weight on &quot;content governance&quot;; if you rely heavily on SSE and long multi-turn contexts, raise the weight on &quot;performance and runtime safety.&quot;</p>
+<h3 id="A-Core-gateway-capabilities-10">A. Core gateway capabilities (10%)</h3>
+<ul>
+<li>[ ] Plain HTTP proxying / routing works too, not just binding to AI providers</li>
+<li>[ ] Path rewriting, header injection, backend credential injection</li>
+<li>[ ] Connection reuse, route-level timeouts, controllable TLS verification</li>
+<li>[ ] Rate limiting, authentication, and basic observability are complete</li>
 </ul>
-<h3 id="B-Performance-and-runtime-safety-15"><a href="#B-Performance-and-runtime-safety-15" class="headerlink" title="B. Performance and runtime safety (15%)"></a>B. Performance and runtime safety (15%)</h3><ul>
-<li><input disabled="" type="checkbox"> AI-scenario load tests exist, not just plain HTTP QPS</li>
-<li><input disabled="" type="checkbox"> You know how many JSON decode &#x2F; encode operations each request performs on hot paths, provable with flame graphs</li>
-<li><input disabled="" type="checkbox"> A fast path — or an explicit optimization plan — exists for reading &#x2F; modifying only a few fields</li>
-<li><input disabled="" type="checkbox"> No busy-waiting or worker monopolization under small SSE chunks, client disconnects, or slow downstream consumption</li>
-<li><input disabled="" type="checkbox"> Observability covers worker CPU, RSS, GC, p95 &#x2F; p99, TTFT &#x2F; TPOT, and token throughput</li>
+<h3 id="B-Performance-and-runtime-safety-15">B. Performance and runtime safety (15%)</h3>
+<ul>
+<li>[ ] AI-scenario load tests exist, not just plain HTTP QPS</li>
+<li>[ ] You know how many JSON decode / encode operations each request performs on hot paths, provable with flame graphs</li>
+<li>[ ] A fast path — or an explicit optimization plan — exists for reading / modifying only a few fields</li>
+<li>[ ] No busy-waiting or worker monopolization under small SSE chunks, client disconnects, or slow downstream consumption</li>
+<li>[ ] Observability covers worker CPU, RSS, GC, p95 / p99, TTFT / TPOT, and token throughput</li>
 </ul>
-<h3 id="C-Routing-and-load-balancing-12"><a href="#C-Routing-and-load-balancing-12" class="headerlink" title="C. Routing and load balancing (12%)"></a>C. Routing and load balancing (12%)</h3><ul>
-<li><input disabled="" type="checkbox"> Routing on the <code>model</code> field, weight + priority load balancing</li>
-<li><input disabled="" type="checkbox"> Conditional routing based on body content</li>
-<li><input disabled="" type="checkbox"> Session affinity, instance-level rate limiting, and multi-provider mixing</li>
-<li><input disabled="" type="checkbox"> Fallback distinguishes failure types, streaming phases, and tool call side effects</li>
+<h3 id="C-Routing-and-load-balancing-12">C. Routing and load balancing (12%)</h3>
+<ul>
+<li>[ ] Routing on the <code>model</code> field, weight + priority load balancing</li>
+<li>[ ] Conditional routing based on body content</li>
+<li>[ ] Session affinity, instance-level rate limiting, and multi-provider mixing</li>
+<li>[ ] Fallback distinguishes failure types, streaming phases, and tool call side effects</li>
 </ul>
-<h3 id="D-Request-response-rewriting-and-protocol-adaptation-12"><a href="#D-Request-response-rewriting-and-protocol-adaptation-12" class="headerlink" title="D. Request &#x2F; response rewriting and protocol adaptation (12%)"></a>D. Request &#x2F; response rewriting and protocol adaptation (12%)</h3><ul>
-<li><input disabled="" type="checkbox"> Field injection clearly distinguishes backfill from override</li>
-<li><input disabled="" type="checkbox"> Field order preserved where possible, avoiding pointless reordering that breaks signatures &#x2F; caches &#x2F; audit</li>
-<li><input disabled="" type="checkbox"> Model name mapping and multi-provider protocol adaptation are usable</li>
-<li><input disabled="" type="checkbox"> Error codes, streaming formats, tool call fields, and usage convert correctly</li>
+<h3 id="D-Request-response-rewriting-and-protocol-adaptation-12">D. Request / response rewriting and protocol adaptation (12%)</h3>
+<ul>
+<li>[ ] Field injection clearly distinguishes backfill from override</li>
+<li>[ ] Field order preserved where possible, avoiding pointless reordering that breaks signatures / caches / audit</li>
+<li>[ ] Model name mapping and multi-provider protocol adaptation are usable</li>
+<li>[ ] Error codes, streaming formats, tool call fields, and usage convert correctly</li>
 </ul>
-<h3 id="E-Traffic-governance-and-cost-13"><a href="#E-Traffic-governance-and-cost-13" class="headerlink" title="E. Traffic governance and cost (13%)"></a>E. Traffic governance and cost (13%)</h3><ul>
-<li><input disabled="" type="checkbox"> TPM rate limiting supporting arbitrary dimension combinations</li>
-<li><input disabled="" type="checkbox"> Cost attribution and budget quotas, with alerting &#x2F; circuit breaking on overage</li>
-<li><input disabled="" type="checkbox"> SSE supported end to end, not only non-streaming requests</li>
-<li><input disabled="" type="checkbox"> Semantic cache has permission isolation, freshness, and audit boundaries</li>
+<h3 id="E-Traffic-governance-and-cost-13">E. Traffic governance and cost (13%)</h3>
+<ul>
+<li>[ ] TPM rate limiting supporting arbitrary dimension combinations</li>
+<li>[ ] Cost attribution and budget quotas, with alerting / circuit breaking on overage</li>
+<li>[ ] SSE supported end to end, not only non-streaming requests</li>
+<li>[ ] Semantic cache has permission isolation, freshness, and audit boundaries</li>
 </ul>
-<h3 id="F-Observability-13"><a href="#F-Observability-13" class="headerlink" title="F. Observability (13%)"></a>F. Observability (13%)</h3><ul>
-<li><input disabled="" type="checkbox"> TTFT &#x2F; TPOT as histograms, viewable at P90 &#x2F; P99</li>
-<li><input disabled="" type="checkbox"> Tokens attributable by model, consumer, project, upstream instance</li>
-<li><input disabled="" type="checkbox"> Structured log fields are complete enough and can feed multiple sinks</li>
-<li><input disabled="" type="checkbox"> Body logs support redaction, sampling, per-tenant &#x2F; route switches, and expiration cleanup</li>
+<h3 id="F-Observability-13">F. Observability (13%)</h3>
+<ul>
+<li>[ ] TTFT / TPOT as histograms, viewable at P90 / P99</li>
+<li>[ ] Tokens attributable by model, consumer, project, upstream instance</li>
+<li>[ ] Structured log fields are complete enough and can feed multiple sinks</li>
+<li>[ ] Body logs support redaction, sampling, per-tenant / route switches, and expiration cleanup</li>
 </ul>
-<h3 id="G-Health-checking-and-high-availability-10"><a href="#G-Health-checking-and-high-availability-10" class="headerlink" title="G. Health checking and high availability (10%)"></a>G. Health checking and high availability (10%)</h3><ul>
-<li><input disabled="" type="checkbox"> Both passive outlier detection and active health checks</li>
-<li><input disabled="" type="checkbox"> Active probes can POST real inference requests</li>
-<li><input disabled="" type="checkbox"> Ejection and recovery by model, route, and instance</li>
-<li><input disabled="" type="checkbox"> Alerting integration, with instances demoted and restored automatically</li>
+<h3 id="G-Health-checking-and-high-availability-10">G. Health checking and high availability (10%)</h3>
+<ul>
+<li>[ ] Both passive outlier detection and active health checks</li>
+<li>[ ] Active probes can POST real inference requests</li>
+<li>[ ] Ejection and recovery by model, route, and instance</li>
+<li>[ ] Alerting integration, with instances demoted and restored automatically</li>
 </ul>
-<h3 id="H-Security-and-compliance-10"><a href="#H-Security-and-compliance-10" class="headerlink" title="H. Security and compliance (10%)"></a>H. Security and compliance (10%)</h3><ul>
-<li><input disabled="" type="checkbox"> API Key &#x2F; JWT &#x2F; OAuth &#x2F; RBAC, backend credential vaulting</li>
-<li><input disabled="" type="checkbox"> Bidirectional content moderation for requests and responses, streams included</li>
-<li><input disabled="" type="checkbox"> PII, prompt injection, and multimodal moderation can integrate with external services</li>
-<li><input disabled="" type="checkbox"> Multi-tenant isolation, audit, and controllable key lifecycle</li>
+<h3 id="H-Security-and-compliance-10">H. Security and compliance (10%)</h3>
+<ul>
+<li>[ ] API Key / JWT / OAuth / RBAC, backend credential vaulting</li>
+<li>[ ] Bidirectional content moderation for requests and responses, streams included</li>
+<li>[ ] PII, prompt injection, and multimodal moderation can integrate with external services</li>
+<li>[ ] Multi-tenant isolation, audit, and controllable key lifecycle</li>
 </ul>
-<h3 id="I-Extensibility-and-operability-5"><a href="#I-Extensibility-and-operability-5" class="headerlink" title="I. Extensibility and operability (5%)"></a>I. Extensibility and operability (5%)</h3><ul>
-<li><input disabled="" type="checkbox"> Plugin mechanism, extension point ordering, and hot policy reload are controllable</li>
-<li><input disabled="" type="checkbox"> At least one of REST API &#x2F; CRD &#x2F; GitOps is pleasant to use</li>
-<li><input disabled="" type="checkbox"> Certificates, config, and secret lifecycles can be automated</li>
-<li><input disabled="" type="checkbox"> Critical changes are auditable, canary-deployable, and easy to roll back</li>
+<h3 id="I-Extensibility-and-operability-5">I. Extensibility and operability (5%)</h3>
+<ul>
+<li>[ ] Plugin mechanism, extension point ordering, and hot policy reload are controllable</li>
+<li>[ ] At least one of REST API / CRD / GitOps is pleasant to use</li>
+<li>[ ] Certificates, config, and secret lifecycles can be automated</li>
+<li>[ ] Critical changes are auditable, canary-deployable, and easy to roll back</li>
 </ul>
-<h3 id="Veto-items-one-vote-vetoes-—-not-scored-but-mandatory"><a href="#Veto-items-one-vote-vetoes-—-not-scored-but-mandatory" class="headerlink" title="Veto items: one-vote vetoes — not scored, but mandatory"></a>Veto items: one-vote vetoes — not scored, but mandatory</h3><ul>
-<li><input disabled="" type="checkbox"> Solid L7 foundation</li>
-<li><input disabled="" type="checkbox"> Provable data plane performance, with safe streaming runtime behavior</li>
-<li><input disabled="" type="checkbox"> Sufficient maturity: GA, production references, active community or reliable commercial support</li>
-<li><input disabled="" type="checkbox"> Core capabilities usable — or the enterprise edition cost explicitly accepted</li>
-<li><input disabled="" type="checkbox"> Trustworthy active health checks that can prove a model instance can actually run inference</li>
+<h3 id="Veto-items-one-vote-vetoes-—-not-scored-but-mandatory">Veto items: one-vote vetoes — not scored, but mandatory</h3>
+<ul>
+<li>[ ] Solid L7 foundation</li>
+<li>[ ] Provable data plane performance, with safe streaming runtime behavior</li>
+<li>[ ] Sufficient maturity: GA, production references, active community or reliable commercial support</li>
+<li>[ ] Core capabilities usable — or the enterprise edition cost explicitly accepted</li>
+<li>[ ] Trustworthy active health checks that can prove a model instance can actually run inference</li>
 </ul>
 <hr>
-<h2 id="8-Final-Thoughts"><a href="#8-Final-Thoughts" class="headerlink" title="8. Final Thoughts"></a>8. Final Thoughts</h2><p>Don’t start judging an AI gateway by comparing feature-list length. The right order is:</p>
+<h2 id="8-Final-Thoughts">8. Final Thoughts</h2>
+<p>Don't start judging an AI gateway by comparing feature-list length. The right order is:</p>
 <ol>
 <li><strong>Draw boundaries first</strong>: which capabilities go in the gateway, which go to the model platform, logging system, and security system;</li>
 <li><strong>Then pass the veto lines</strong>: L7 foundation, performance, maturity, core capabilities, active health checking;</li>
-<li><strong>Finally, score</strong>: adjust weights against your own P0 &#x2F; P1 requirements.</li>
+<li><strong>Finally, score</strong>: adjust weights against your own P0 / P1 requirements.</li>
 </ol>
 <p>If the model side, logging, alerting, and security sidecar are all strong, the gateway should be thinner, with stability and performance first. If the model side is thin, the gateway has to take on more protocol adaptation, availability fallback, content governance, and cost control — while accepting a more complex data plane.</p>
-<p>The thicker the AI gateway, the more you must treat performance as a first-class capability: not only forwarding requests, but proving you won’t become the new bottleneck under large bodies, small SSE chunks, client disconnects, content moderation, and high QPS.</p>
-<p>In one line: <strong>a good AI gateway is neither the thickest nor the flashiest — it’s the one that closes the loop on features, performance, and production stability within a clear set of responsibility boundaries.</strong></p>
-<p>For how the model platform on the other side of the boundary manages models — the life of a model from selection and access approval, through tokens, invocation, and billing, to decommissioning — see <a href="/from-model-management-to-ai-gateway.html">From Model Management to an AI Gateway: Tying Assets, Traffic, and Cost into a Closed Loop</a>.</p>
+<p>The thicker the AI gateway, the more you must treat performance as a first-class capability: not only forwarding requests, but proving you won't become the new bottleneck under large bodies, small SSE chunks, client disconnects, content moderation, and high QPS.</p>
+<p>In one line: <strong>a good AI gateway is neither the thickest nor the flashiest — it's the one that closes the loop on features, performance, and production stability within a clear set of responsibility boundaries.</strong></p>
+<p>For how the model platform on the other side of the boundary manages models — the life of a model from selection and access approval, through tokens, invocation, and billing, to decommissioning — see <a href="https://jiankunking.com/from-model-management-to-ai-gateway.html">From Model Management to an AI Gateway: Tying Assets, Traffic, and Cost into a Closed Loop</a>.</p>
 <hr>
 <p><em>2026-07-11 | Based on: verification against mainstream AI gateway source code and documentation, plus hands-on production experience</em></p>
-<p><em>This article is the English edition of a post originally published in <a href="/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html">Chinese</a>.</em></p>
+<p><em>This article is the English edition of a post originally published in <a href="https://jiankunking.com/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html">Chinese</a>.</em></p>
 
     </div>
 
@@ -861,7 +906,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">861k</span>
+    <span title="站点总字数">863k</span>
   </span>
 </div>
 <div class="busuanzi-count">
