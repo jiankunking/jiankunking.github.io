@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">Zhiye service architecture</title>
+  <desc id="desc">Clients and admin users reach the Zhiye service through a Go API, which splits into two RAG paths: document processing that builds a searchable index, and online Q&amp;A that retrieves relevant chunks and generates cited answers.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#eef2ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/>
+    </marker>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .title { font: 700 38px -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif; fill:#0f172a; }
+      .subtitle { font: 400 18px -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif; fill:#475569; }
+      .lane-title { font: 700 23px -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif; }
+      .box-title { font: 700 18px -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif; fill:#0f172a; text-anchor:middle; }
+      .box-sub { font: 400 14px -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif; fill:#475569; text-anchor:middle; }
+      .small { font: 500 14px -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif; fill:#475569; text-anchor:middle; }
+      .legend { font: 500 15px -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif; fill:#334155; }
+      .flow-blue { fill:none; stroke:#2563eb; stroke-width:3; marker-end:url(#arrow-blue); }
+      .flow-orange { fill:none; stroke:#ea580c; stroke-width:3; marker-end:url(#arrow-orange); }
+      .branch-orange { fill:none; stroke:#ea580c; stroke-width:3; }
+      .flow-slate { fill:none; stroke:#64748b; stroke-width:2.5; marker-end:url(#arrow-slate); }
+      .dependency { fill:none; stroke:#94a3b8; stroke-width:2; stroke-dasharray:7 7; marker-end:url(#arrow-slate); }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1120" fill="url(#bg)"/>
+  <text x="80" y="65" class="title">Zhiye Service Architecture</text>
+  <text x="80" y="100" class="subtitle">Two main paths: document processing builds a searchable index; online Q&amp;A retrieves relevant chunks and generates cited answers</text>
+
+  <!-- Access layer -->
+  <rect x="80" y="140" width="1440" height="155" rx="24" fill="#ffffff" stroke="#dbeafe" filter="url(#shadow)"/>
+  <text x="110" y="178" class="lane-title" fill="#334155">Clients and business entry points</text>
+
+  <g filter="url(#shadow)">
+    <rect x="175" y="192" width="220" height="40" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="175" y="242" width="220" height="40" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="600" y="190" width="280" height="84" rx="16" fill="#dbeafe" stroke="#60a5fa"/>
+    <rect x="1060" y="190" width="320" height="84" rx="16" fill="#f1f5f9" stroke="#94a3b8"/>
+  </g>
+  <text x="285" y="218" class="box-title">User app</text>
+  <text x="285" y="268" class="box-title">Admin console</text>
+  <text x="740" y="225" class="box-title">Go / Gin API</text>
+  <text x="740" y="250" class="box-sub">Auth, handlers, validation</text>
+  <text x="1220" y="225" class="box-title">Business services</text>
+  <text x="1220" y="250" class="box-sub">Profiles, documents, tasks, Q&amp;A</text>
+  <path d="M395 212 H585" class="flow-slate"/>
+  <path d="M395 262 H585" class="flow-slate"/>
+  <path d="M880 232 H1045" class="flow-slate"/>
+
+  <!-- Ingestion lane -->
+  <rect x="80" y="330" width="1440" height="280" rx="24" fill="#ffffff" stroke="#bfdbfe" filter="url(#shadow)"/>
+  <rect x="80" y="330" width="18" height="280" rx="9" fill="#2563eb"/>
+  <text x="120" y="375" class="lane-title" fill="#1d4ed8">Document processing path</text>
+  <text x="120" y="405" class="subtitle">Process once, reuse many times: parse, chunk, and build keyword + vector indexes</text>
+
+  <g filter="url(#shadow)">
+    <rect x="120" y="450" width="160" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="320" y="450" width="160" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="520" y="450" width="170" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="730" y="450" width="180" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="950" y="450" width="160" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="1150" y="450" width="160" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <rect x="1350" y="450" width="130" height="90" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+  </g>
+  <text x="200" y="487" class="box-title">Upload doc</text>
+  <text x="200" y="513" class="box-sub">Dedupe, store</text>
+  <text x="400" y="487" class="box-title">Enqueue task</text>
+  <text x="400" y="513" class="box-sub">Transactional write</text>
+  <text x="605" y="487" class="box-title">Task Runner</text>
+  <text x="605" y="513" class="box-sub">Retry, heartbeat, resume</text>
+  <text x="820" y="487" class="box-title">Parse document</text>
+  <text x="820" y="513" class="box-sub">Poppler / OCR</text>
+  <text x="1030" y="487" class="box-title">Chunk text</text>
+  <text x="1030" y="513" class="box-sub">Page numbers, overlap</text>
+  <text x="1230" y="487" class="box-title">Embedding</text>
+  <text x="1230" y="513" class="box-sub">Batch vectorization</text>
+  <text x="1415" y="487" class="box-title">Qdrant</text>
+  <text x="1415" y="513" class="box-sub">Dense / Sparse</text>
+  <path d="M280 495 H305" class="flow-blue"/>
+  <path d="M480 495 H505" class="flow-blue"/>
+  <path d="M690 495 H715" class="flow-blue"/>
+  <path d="M910 495 H935" class="flow-blue"/>
+  <path d="M1110 495 H1135" class="flow-blue"/>
+  <path d="M1310 495 H1335" class="flow-blue"/>
+  <text x="1030" y="578" class="small">Chunk text, page numbers and status are also written to MySQL; keyword search reads them directly</text>
+  <path d="M1030 540 V558" class="flow-slate"/>
+
+  <!-- Query lane -->
+  <rect x="80" y="645" width="1440" height="300" rx="24" fill="#ffffff" stroke="#fed7aa" filter="url(#shadow)"/>
+  <rect x="80" y="645" width="18" height="300" rx="9" fill="#ea580c"/>
+  <text x="120" y="690" class="lane-title" fill="#c2410c">Document Q&amp;A path</text>
+  <text x="120" y="720" class="subtitle">Permissions and metadata filtering run through multi-path recall; RRF fusion is followed by optional reranking, then generation with citation checks</text>
+
+  <g filter="url(#shadow)">
+    <rect x="115" y="770" width="145" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="305" y="748" width="175" height="70" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="305" y="835" width="175" height="70" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="525" y="770" width="135" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="705" y="770" width="145" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="895" y="770" width="155" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="1095" y="770" width="120" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <rect x="1260" y="770" width="170" height="90" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+  </g>
+  <text x="187" y="807" class="box-title">User question</text>
+  <text x="187" y="833" class="box-sub">Permissions + filters</text>
+  <text x="392" y="776" class="box-title">Keyword search</text>
+  <text x="392" y="801" class="box-sub">MySQL fulltext / tokens</text>
+  <text x="392" y="863" class="box-title">Qdrant retrieval</text>
+  <text x="392" y="888" class="box-sub">Dense / optional BM25</text>
+  <text x="592" y="807" class="box-title">RRF fusion</text>
+  <text x="592" y="833" class="box-sub">40 + 40 -&gt; 20</text>
+  <text x="777" y="807" class="box-title">Reranker</text>
+  <text x="777" y="830" class="box-sub">Optional; fallback</text>
+  <text x="777" y="849" class="box-sub">on failure</text>
+  <text x="972" y="807" class="box-title">Build context</text>
+  <text x="972" y="833" class="box-sub">Top 8 text + pages</text>
+  <text x="1155" y="807" class="box-title">LLM</text>
+  <text x="1155" y="833" class="box-sub">Structured JSON</text>
+  <text x="1345" y="807" class="box-title">Citation check</text>
+  <text x="1345" y="830" class="box-sub">Whitelist / hash</text>
+  <text x="1345" y="849" class="box-sub">Source-text validation</text>
+  <path d="M260 815 H280" class="branch-orange"/>
+  <path d="M280 815 V783 H290" class="flow-orange"/>
+  <path d="M280 815 V870 H290" class="flow-orange"/>
+  <circle cx="280" cy="815" r="4" fill="#ea580c"/>
+  <path d="M480 783 H500 V800 H510" class="flow-orange"/>
+  <path d="M480 870 H500 V830 H510" class="flow-orange"/>
+  <path d="M660 815 H690" class="flow-orange"/>
+  <path d="M850 815 H880" class="flow-orange"/>
+  <path d="M1050 815 H1080" class="flow-orange"/>
+  <path d="M1215 815 H1245" class="flow-orange"/>
+  <text x="777" y="900" class="small">Failures in Embedding, Qdrant, Reranker or LLM degrade gracefully by capability; cancellations and timeouts propagate upward</text>
+
+  <!-- Dependencies / legend -->
+  <rect x="80" y="980" width="1440" height="90" rx="22" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="115" y="1018" class="legend">Storage:</text>
+  <text x="215" y="1018" class="legend">MySQL (business data, tasks, chunks, Q&amp;A)</text>
+  <text x="215" y="1048" class="legend">Local file directory (uploaded originals)</text>
+  <text x="710" y="1018" class="legend">External:</text>
+  <text x="815" y="1018" class="legend">Tencent Cloud OCR</text>
+  <text x="815" y="1048" class="legend">Embedding / Reranker services</text>
+  <text x="1120" y="1018" class="legend">LLM service</text>
+  <text x="1120" y="1048" class="legend">Qdrant vector store</text>
+
+  <!-- High-level connections -->
+  <path d="M1180 274 V315 H200 V435" class="flow-blue" opacity="0.75"/>
+  <path d="M1260 274 V315 H1490 V630 H200 V755" class="flow-orange" opacity="0.75"/>
+</svg>

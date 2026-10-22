@@ -320,31 +320,26 @@
 
 <aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>Elasticsearch Refresh vs Flush</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/elasticsearch-refresh-vs-flush.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><p>A detailed look at the difference between refresh and flush in Elasticsearch, including when each one is triggered, the scope it covers, and how each affects search visibility.</p>
 <span id="more"></span>
-<p><img src="https://jiankunking.com/images/elasticsearch-refresh-vs-flush/n6Ym_ff-e.avif" alt="n6Ym ff e" loading="eager" fetchpriority="high" decoding="async"></p>
+
+<p><img src="https://jiankunking.com/images/elasticsearch-refresh-vs-flush/n6Ym_ff-e.avif" alt="Elasticsearch shard internals: indexing buffer, Lucene segments and transaction log" loading="eager" fetchpriority="high" decoding="async"></p>
 <blockquote>
 <p>Image from <a href="https://lakshyabansal.hashnode.dev/write-operation-in-elasticsearch">https://lakshyabansal.hashnode.dev/write-operation-in-elasticsearch</a></p>
 </blockquote>
-<h2 id="Refresh"><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-refresh.html">Refresh</a></h2>
-<p>Use the refresh API to explicitly refresh one or more indices. If the request targets a data stream, the background indices of that stream are refreshed. <font color=DeepPink><strong>A refresh makes every operation performed on an index since the last refresh available for searching.</strong></font></p>
+<h2 id="Refresh"><a href="#Refresh" class="headerlink" title="Refresh"></a><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-refresh.html">Refresh</a></h2><p>Use the refresh API to explicitly refresh one or more indices. If the request targets a data stream, the background indices of that stream are refreshed. <font color=DeepPink><strong>A refresh makes every operation performed on an index since the last refresh available for searching.</strong></font></p>
 <p><font color=DeepPink><strong>By default, Elasticsearch periodically refreshes indices every second, but only indices that have received a search request within the last 30 seconds.</strong></font> You can change this default interval with <code>index.refresh_interval</code>.</p>
 <p>Refresh requests are synchronous, and the response is not returned until the refresh operation completes.</p>
-<h3 id="Example">Example</h3>
-<p>Set an index's <code>refresh_interval</code> to -1 and <code>/_search?track_total_hits=true</code> will return an inaccurate total hit count — for instance, data keeps being written while the total returned by the query stays the same.</p>
-<h2 id="Flush"><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html#flush-api-desc">Flush</a></h2>
-<p>For a data stream or an index, a flush persists data that currently lives only in the transaction log (translog) into the Lucene index. When Elasticsearch restarts, it replays the data in the transaction log that has not been flushed to the Lucene index, restoring Elasticsearch to its pre-restart state.</p>
+<h3 id="Example"><a href="#Example" class="headerlink" title="Example"></a>Example</h3><p>Set an index’s <code>refresh_interval</code> to -1 and <code>/_search?track_total_hits=true</code> will return an inaccurate total hit count — for instance, data keeps being written while the total returned by the query stays the same.</p>
+<h2 id="Flush"><a href="#Flush" class="headerlink" title="Flush"></a><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html#flush-api-desc">Flush</a></h2><p>For a data stream or an index, a flush persists data that currently lives only in the transaction log (translog) into the Lucene index. When Elasticsearch restarts, it replays the data in the transaction log that has not been flushed to the Lucene index, restoring Elasticsearch to its pre-restart state.</p>
 <blockquote>
-<p>By default, Elasticsearch uses memory heuristics so that flushes are triggered automatically as needed in order to free memory.<br>
-Elasticsearch automatically triggers flushes as needed, using heuristics that trade off the size of the unflushed transaction log against the cost of performing each flush.</p>
+<p>By default, Elasticsearch uses memory heuristics so that flushes are triggered automatically as needed in order to free memory.<br>Elasticsearch automatically triggers flushes as needed, using heuristics that trade off the size of the unflushed transaction log against the cost of performing each flush.</p>
 </blockquote>
 <p><font color=DeepPink><strong>Once an operation has been flushed, it is permanently stored in the Lucene index.</strong></font> That means no extra copy of it needs to be maintained in the transaction log, unless it is <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-translog.html#index-modules-translog-retention">retained for some other reason</a>. The transaction log consists of multiple files called generations; once a generation file is no longer needed, Elasticsearch deletes it, freeing disk space.</p>
 <p>You can also trigger a flush on one or more indices with the flush API, although it is rarely necessary to call this API directly. If you call the flush API after indexing some documents, a successful response indicates that Elasticsearch has flushed all documents indexed before the flush API call.</p>
 <p>Elasticsearch flushes the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html">translog</a> automatically in the background. By default, Elasticsearch checks every 5 seconds whether it should <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html">flush</a> the translog. The default conditions are a proactive flush <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html#flush-api-desc">every 30 minutes</a>, or when the translog file grows larger than 512 MB. <font color=DeepPink><strong>With the default configuration, every completed index, bulk, delete or update triggers a flush of the translog to disk before the 200 OK is returned.</strong></font> This improves data safety, but it takes a real toll on write performance.</p>
 <p>When write throughput matters more, set the following parameters in the index template:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&quot;index.translog.durability&quot;:&quot;async&quot;(default is request) </span><br><span class="line">&quot;index.translog.sync_interval&quot;:30s (default is 5s)</span><br></pre></td></tr></table></figure>
-<h2 id="Summary">Summary</h2>
-<p>In short, <code>_refresh</code> is what makes new documents visible to searches.<br>
-Conversely, <code>_flush</code> is what persists in-memory segments to disk.<br>
-<code>_flush</code> does not affect document visibility in Elasticsearch, because searches run against the in-memory segments; <code>_refresh</code> is what affects that visibility.</p>
+
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>In short, <code>_refresh</code> is what makes new documents visible to searches.<br>Conversely, <code>_flush</code> is what persists in-memory segments to disk.<br><code>_flush</code> does not affect document visibility in Elasticsearch, because searches run against the in-memory segments; <code>_refresh</code> is what affects that visibility.</p>
 <p><em>This article is the English edition of a post originally published in <a href="https://jiankunking.com/elasticsearch-refresh-vs-flush.html">Chinese</a>.</em></p>
 
     </div>
@@ -450,7 +445,7 @@ Conversely, <code>_flush</code> is what persists in-memory segments to disk.<br>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">863k</span>
+    <span title="站点总字数">861k</span>
   </span>
 </div>
 <div class="busuanzi-count">

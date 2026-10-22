@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1080" role="img" aria-labelledby="route-priority-title route-priority-desc" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif">
+  <title id="route-priority-title">HTTPRoute path priority verification</title>
+  <desc id="route-priority-desc">Three cases verify exact and prefix matching within one rule, identical routes with earlier creation taking precedence, and overlapping routes with the most specific match taking precedence.</desc>
+  <style>
+    text { fill: #29435b; font-size: 15px; }
+    .heading { font-size: 21px; font-weight: 700; }
+    .code { font-family: Menlo, Consolas, monospace; font-size: 12.5px; }
+    .small { font-size: 13px; }
+    .column { font-weight: 700; font-size: 14px; }
+  </style>
+  <rect width="1280" height="1080" fill="white"/>
+  <text x="32" y="40" class="heading">HTTPRoute path priority verification</text>
+  <text x="32" y="67">Exact matches win; otherwise use the longest matching path prefix.</text>
+
+  <rect x="24" y="92" width="1232" height="224" rx="8" fill="#fff8f3" stroke="#ff8757"/>
+  <text x="44" y="125" class="heading">1. Multiple paths within one HTTPRouteRule</text>
+  <text x="44" y="155" class="column">RULE / MATCH TYPE / PATH</text>
+  <text x="684" y="155" class="column">REQUEST PATH → MATCHED RULE</text>
+  <text x="44" y="185" class="code">1  PathPrefix  /api/v2/projects</text>
+  <text x="44" y="215" class="code">2  Exact       /api/v2/projects/console/apps/cmdb</text>
+  <text x="44" y="245" class="code">3  PathPrefix  /api/v2/projects/console</text>
+  <text x="684" y="185" class="code">/api/v2/projects → 1</text>
+  <text x="684" y="215" class="code">/api/v2/projects/console/apps/cmdb → 2</text>
+  <text x="684" y="245" class="code">/api/v2/projects/console → 3</text>
+  <text x="44" y="291" class="small">The exact path wins over prefixes; the longer prefix wins over the shorter prefix.</text>
+
+  <rect x="24" y="332" width="1232" height="296" rx="8" fill="#fff5fa" stroke="#ef5da8"/>
+  <text x="44" y="367" class="heading">2. Two HTTPRoutes with identical path configuration</text>
+  <text x="44" y="397" class="column">HTTPRoute 1 (EARLIER) / HTTPRoute 2 (LATER)</text>
+  <text x="684" y="397" class="column">REQUEST PATH → MATCHED RULE</text>
+  <text x="44" y="427" class="code">1 / 4  PathPrefix  /api/v2/projects</text>
+  <text x="44" y="457" class="code">2 / 5  Exact       /api/v2/projects/console/apps/cmdb</text>
+  <text x="44" y="487" class="code">3 / 6  PathPrefix  /api/v2/projects/console</text>
+  <text x="684" y="427" class="code">/api/v2/projects → 1</text>
+  <text x="684" y="457" class="code">/api/v2/projects/console/apps/cmdb → 2</text>
+  <text x="684" y="487" class="code">/api/v2/projects/console → 3</text>
+  <text x="44" y="536">When matching routes are otherwise identical, the earlier-created HTTPRoute takes precedence.</text>
+  <text x="44" y="569" class="small">Observed behavior agrees with the Kubernetes Gateway API precedence rules.</text>
+  <text x="44" y="601" class="small">Source typo clarified: the rule-3 test uses /console, not the repeated exact /console/apps/cmdb path.</text>
+
+  <rect x="24" y="644" width="1232" height="408" rx="8" fill="#fff5fa" stroke="#ef5da8"/>
+  <text x="44" y="679" class="heading">3. Two HTTPRoutes with overlapping path configuration</text>
+  <text x="44" y="713" class="column">HTTPRoute 1: RULES 1–3 / HTTPRoute 2: RULES 4–7</text>
+  <text x="684" y="713" class="column">REQUEST PATH → MATCHED RULE</text>
+  <text x="44" y="747" class="code">1  PathPrefix  /api/v2/projects</text>
+  <text x="44" y="781" class="code">2  Exact       /api/v2/projects/console/apps/cmdb</text>
+  <text x="44" y="815" class="code">3  PathPrefix  /api/v2/projects/console</text>
+  <text x="44" y="849" class="code">4  PathPrefix  /</text>
+  <text x="44" y="883" class="code">5  PathPrefix  /api/v2/projects22222</text>
+  <text x="44" y="917" class="code">6  Exact       /api/v2/projects/console/apps/cmdb22222</text>
+  <text x="44" y="951" class="code">7  PathPrefix  /api/v2/projects/console22222</text>
+  <text x="684" y="747" class="code">/api/v2/projects → 1</text>
+  <text x="684" y="781" class="code">/api3/v2/projects22222 → 4</text>
+  <text x="684" y="815" class="code">/api/v2/projects22222 → 5</text>
+  <text x="684" y="849" class="code">/api/v2/projects/console22222 → 7</text>
+  <text x="684" y="883" class="code">/api/v2/projects/console/apps/cmdb → 2</text>
+  <text x="684" y="917" class="code">/api/v2/projects/console/apps/cmdb22222 → 6</text>
+  <text x="44" y="1018" class="small">Observed behavior agrees with the Kubernetes Gateway API precedence rules.</text>
+</svg>
