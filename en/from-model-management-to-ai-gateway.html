@@ -312,14 +312,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>18k</span>
+      <span>17k</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>17 mins.</span>
+      <span>15 mins.</span>
     </span>
 </div>
 
@@ -421,7 +421,7 @@
 <p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/fallback-selection-retry-v2-en.png" alt="Figure 5 · Fallback&#39;s filtering and retry chain" loading="lazy" decoding="async"></p>
 <h3 id="3-4-A-real-request"><a href="#3-4-A-real-request" class="headerlink" title="3.4 A real request"></a>3.4 A real request</h3><p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/ai-request-complete-journey-diagram-hd-v2-en.gif" alt="Figure 6 · A complete request: from entry to settlement" loading="lazy" decoding="async"></p>
 <p>In the figure, the red-flagged “unavailable” instance was removed from the candidates after failing an active health check. This request first reached the preferred instance, which returned 429 — excluded only for this request, marked “tried this round” in the figure, and not written into health-check state. Fallback is on, the time since the last failure is still within the retry window, and retries remain, so the router then switched to backup one. The low-code agent platform notices nothing: no retry of its own, no need to change address or credentials.</p>
-<p>Request-level exclusion, health-check removal, quota filtering and alert-based demotion — four mechanisms that do not interfere with one another, yet all act on the same candidate pool. In the animation, “unavailable” was removed by the health check and “tried this round” belongs only to this request; only after the preferred instance keeps failing past a threshold is it demoted by alert integration, and it re-enters the candidate set according to policy once probing recovers.</p>
+<p>Request-level exclusion, health-check removal, quota filtering and alert-based demotion — four mechanisms that do not interfere with one another, yet all act on the same candidate pool. Only after the preferred instance keeps failing past a threshold is it demoted by alert integration, and it re-enters the candidate set according to policy once probing recovers.</p>
 <hr>
 <h2 id="4-Where-the-two-lines-mesh"><a href="#4-Where-the-two-lines-mesh" class="headerlink" title="4. Where the two lines mesh"></a>4. Where the two lines mesh</h2><p>The asset side makes decisions and the traffic side executes them, connected by quota and configuration; the capability map fixes the boundary between the two sides.</p>
 <h3 id="4-1-Quota-computed-on-the-asset-side-executed-on-the-data-plane"><a href="#4-1-Quota-computed-on-the-asset-side-executed-on-the-data-plane" class="headerlink" title="4.1 Quota: computed on the asset side, executed on the data plane"></a>4.1 Quota: computed on the asset side, executed on the data plane</h3><p>The asset side holds model permissions, plans and cost rules, so it is the right place to answer “how much should be granted”; the data plane sees every real request, so it is the right place to answer “how much has been used”. The two are not interchangeable.</p>
@@ -437,36 +437,9 @@
 <h3 id="4-3-Capability-map"><a href="#4-3-Capability-map" class="headerlink" title="4.3 Capability map"></a>4.3 Capability map</h3><p>The asset side and the traffic side each hold a segment — where does the boundary lie? The starting point was a list of 13 capability categories:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Management · Traffic governance · Connections and timeouts · Routing and load balancing · Request rewriting · Observability</span><br><span class="line">Health checks · Model management · Security · Multi-region · Protocol conversion · Extensibility · High availability</span><br></pre></td></tr></table></figure>
 
-<p>Laid item by item against a traditional API gateway, the differences cluster in governance and operations, not in forwarding — and among the 13 categories, observability and request rewriting were the densest. Rather than listing items one by one from a product menu, I grouped them into 8 domains by where the capability finally executes:</p>
+<p>Laid item by item against a traditional API gateway, the differences cluster in governance and operations, not in forwarding — and among the 13 categories, observability and request rewriting were the densest. Grouped by where the capability finally executes, they fall into 8 domains:</p>
 <p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/capability-map-8-domains-v2-en.png" alt="Figure 8 · Full capability map (8 domains)" loading="lazy" decoding="async"></p>
-<p>A–G are gateway-side capabilities covering the execution of a request and its operational guarantees; H is the asset chain, answering where a model comes from, who it is for, and when it exits. The details are all in Figure 8 and are not repeated here.</p>
-<p>Cross-referencing the existing code and configuration material shows that the main path already covers model routing, rate limiting across four scopes, SSE, request rewriting, health checks, fallback, baseline logging and metrics, and multi-region access. A few boundaries are still not in place:</p>
-<table>
-<thead>
-<tr>
-<th>Capability</th>
-<th>Current boundary</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Content moderation</td>
-<td>Integration point reserved, but consumer-level, bidirectional request&#x2F;response moderation is not yet complete</td>
-</tr>
-<tr>
-<td>Protocol conversion</td>
-<td>Partial directional conversion exists; transparent two-way conversion between OpenAI and Anthropic still needs validation</td>
-</tr>
-<tr>
-<td>Observability</td>
-<td>Tokens, latency and TTFT are in place; output TPS metrics are still to be built, and some business fields need custom configuration</td>
-</tr>
-<tr>
-<td>Automatic certificate renewal</td>
-<td>A target capability; no implementation evidence located in the current material</td>
-</tr>
-</tbody></table>
 <p>The most important thing about this map is not the number of features but the boundaries: A–G decide how a request executes; H decides why it executes that way. Traditional API gateways mainly cover the former; to make models first-class citizens, the latter must be supplied by model management and the business control plane.</p>
-<p>When placing items, I used a single rule: every capability must have an explicit executor, input and output; anything without a clear responsibility boundary is recorded as a gap first, rather than turned into a menu item.</p>
 <hr>
 <h2 id="5-How-feedback-becomes-decisions"><a href="#5-How-feedback-becomes-decisions" class="headerlink" title="5. How feedback becomes decisions"></a>5. How feedback becomes decisions</h2><p>Operational results flow back from three places, carrying the traffic side’s execution results back to the asset side:</p>
 <table>
@@ -499,7 +472,7 @@
 <p>This is also where the two main lines intersect: the life of a model establishes and changes asset relationships, and the life of a request executes and verifies them. Without the first, the gateway does not know why it routes the way it does; without the second, permissions and quotas in model management are just rules on paper.</p>
 <p>Connect these things, and model assets, traffic governance and cost management finally form a genuine closed loop.</p>
 <hr>
-<h2 id="A-note-from-the-author"><a href="#A-note-from-the-author" class="headerlink" title="A note from the author"></a>A note from the author</h2><p>I drove this system end to end — from the capability inventory and three-plane architecture design, through custom plugins, the full model lifecycle, rate-limiting migration, and the operations console. Putting implementations scattered across different systems onto one diagram made one thing clear: those who manage assets, those who compute quotas, and those who count requests must each hold their own boundary, while closing the loop with one another through two chains — control and feedback.</p>
+<h2 id="A-note-from-the-author"><a href="#A-note-from-the-author" class="headerlink" title="A note from the author"></a>A note from the author</h2><p>I drove this system end to end — from the capability inventory and three-plane architecture design, through custom plugins, the full model lifecycle, rate-limiting migration, and the operations console.</p>
 <p>If you are also working on model platforms, AI gateways or LLMOps, I would be glad to compare notes.</p>
 <p><strong>Further reading</strong></p>
 <ul>
