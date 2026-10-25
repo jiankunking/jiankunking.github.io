@@ -348,25 +348,25 @@
 <blockquote>
 <p>Why care about QPS? Because 100 QPS shouldn’t consume this much CPU — and the request and response bodies were small.</p>
 </blockquote>
-<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%BD%91%E7%BB%9C%E6%B5%81%E5%85%A5%E6%83%85%E5%86%B5-en.png" alt="Network inbound traffic during the incident" loading="eager" fetchpriority="high" decoding="async"><br><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%BD%91%E7%BB%9C%E6%B5%81%E5%87%BA%E6%83%85%E5%86%B5-en.png" alt="Network outbound traffic during the incident" loading="lazy" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%BD%91%E7%BB%9C%E6%B5%81%E5%85%A5%E6%83%85%E5%86%B5-en-clean.png" alt="Network inbound traffic during the incident" loading="eager" fetchpriority="high" decoding="async"><br><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%BD%91%E7%BB%9C%E6%B5%81%E5%87%BA%E6%83%85%E5%86%B5-en-clean.png" alt="Network outbound traffic during the incident" loading="lazy" decoding="async"></p>
 <h3 id="POD-monitoring"><a href="#POD-monitoring" class="headerlink" title="POD monitoring"></a>POD monitoring</h3><p>POD quotas:</p>
 <ul>
 <li>CPU request 2 cores, CPU limit 3 cores</li>
 <li>Memory request 7 GiB, memory limit 9 GiB</li>
 </ul>
-<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_CPU-en.png" alt="POD CPU usage during the incident" loading="lazy" decoding="async"><br><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_TCP%E9%93%BE%E6%8E%A5-en.png" alt="POD TCP connection count during the incident" loading="lazy" decoding="async"><br><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_%E7%BA%BF%E7%A8%8B%E6%95%B0-en.png" alt="POD thread count during the incident" loading="lazy" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_CPU-en-clean.png" alt="POD CPU usage during the incident" loading="lazy" decoding="async"><br><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_TCP%E9%93%BE%E6%8E%A5-en-clean.png" alt="POD TCP connection count during the incident" loading="lazy" decoding="async"><br><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_%E7%BA%BF%E7%A8%8B%E6%95%B0-en-clean.png" alt="POD thread count during the incident" loading="lazy" decoding="async"></p>
 <p>From the charts:</p>
 <ul>
 <li>CPU load stayed high;</li>
 <li>TCP connections and thread count climbed steeply starting at 11:40.</li>
 </ul>
 <h3 id="ARMS"><a href="#ARMS" class="headerlink" title="ARMS"></a>ARMS</h3><p>Looking at the trace monitoring, we saw that the time was going into the <code>customer</code> service calling external APIs via Feign.</p>
-<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83Arms%E7%9B%91%E6%8E%A7_%E6%A0%87%E8%AF%86%E5%8D%A0%E7%94%A8CPU%E8%BF%87%E9%AB%98%E6%8E%A5%E5%8F%A3.png" alt="ARMS CPU profile highlighting the high-CPU production endpoint" loading="lazy" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83Arms%E7%9B%91%E6%8E%A7_%E6%A0%87%E8%AF%86%E5%8D%A0%E7%94%A8CPU%E8%BF%87%E9%AB%98%E6%8E%A5%E5%8F%A3-clean.png" alt="ARMS CPU profile highlighting the high-CPU production endpoint" loading="lazy" decoding="async"></p>
 <h3 id="Interim-mitigation"><a href="#Interim-mitigation" class="headerlink" title="Interim mitigation"></a>Interim mitigation</h3><p>Scale out instances and increase the CPU allocation.</p>
 <h2 id="Root-cause-analysis"><a href="#Root-cause-analysis" class="headerlink" title="Root cause analysis"></a>Root cause analysis</h2><blockquote>
 <p>The investigation of the third-party APIs and the open-platform gateway is omitted here; the conclusion was that neither the third-party APIs nor the open-platform gateway had a problem.<br>They were checked first because the trace showed the time going into calls to third-party APIs.</p>
 </blockquote>
-<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/getAddressWarehouse_%E6%94%BE%E5%A4%A7.png" alt="Expanded CPU profile for getAddressWarehouse" loading="lazy" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/getAddressWarehouse_%E6%94%BE%E5%A4%A7-clean.png" alt="Expanded CPU profile for getAddressWarehouse" loading="lazy" decoding="async"></p>
 <p>From the ARMS chart:</p>
 <ul>
 <li>CPU time was concentrated in the Decoder and Encoder of the Feign calls;</li>
@@ -406,7 +406,7 @@
 <h4 id="Results-after-the-fix"><a href="#Results-after-the-fix" class="headerlink" title="Results after the fix"></a>Results after the fix</h4><blockquote>
 <p>CPU usage dropped by half</p>
 </blockquote>
-<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E4%BC%98%E5%8C%96%E5%89%8D%E5%90%8E%E6%95%88%E6%9E%9C%E6%AF%94%E5%AF%B9-en.png" alt="CPU before optimization in yellow, after optimization in green, and the after-to-before ratio in blue" loading="lazy" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E4%BC%98%E5%8C%96%E5%89%8D%E5%90%8E%E6%95%88%E6%9E%9C%E6%AF%94%E5%AF%B9-en-clean.png" alt="CPU before optimization in yellow, after optimization in green, and the after-to-before ratio in blue" loading="lazy" decoding="async"></p>
 <h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>When you customize Feign’s codecs with SpringEncoder &#x2F; SpringDecoder, avoid re-initializing HttpMessageConverters on every call. If you don’t need the default HttpMessageConverters, pass <code>false</code> as the first argument when constructing <code>HttpMessageConverters</code>, so the defaults are never initialized.</p>
 <p><em>This article is the English edition of a post originally published in <a href="https://jiankunking.com/an-accident-caused-by-excessive-cpu-usage-of-fegin.html">Chinese</a>.</em></p>
 

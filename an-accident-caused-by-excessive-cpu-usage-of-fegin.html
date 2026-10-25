@@ -360,25 +360,25 @@
 <blockquote>
 <p>为啥要关注QPS，因为QPS100不应该消耗这么多CPU啊，而且请求、响应体都不大。</p>
 </blockquote>
-<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%BD%91%E7%BB%9C%E6%B5%81%E5%85%A5%E6%83%85%E5%86%B5.png" alt="网络流入情况" loading="eager" fetchpriority="high" decoding="async" width="1728" height="420"><br><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%BD%91%E7%BB%9C%E6%B5%81%E5%87%BA%E6%83%85%E5%86%B5.png" alt="网络流出情况" loading="lazy" decoding="async" width="1713" height="395"></p>
+<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%BD%91%E7%BB%9C%E6%B5%81%E5%85%A5%E6%83%85%E5%86%B5-clean.png" alt="网络流入情况 clean" loading="eager" fetchpriority="high" decoding="async" width="1728" height="420"><br><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%BD%91%E7%BB%9C%E6%B5%81%E5%87%BA%E6%83%85%E5%86%B5-clean.png" alt="网络流出情况 clean" loading="lazy" decoding="async" width="1713" height="395"></p>
 <h3 id="POD监控"><a href="#POD监控" class="headerlink" title="POD监控"></a>POD监控</h3><p>POD配额</p>
 <ul>
 <li>CPU请求 2 Core CPU上限 3 Core</li>
 <li>内存请求 7GiB 内存上限 9GiB</li>
 </ul>
-<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_CPU.png" alt="POD CPU" loading="lazy" decoding="async" width="1749" height="396"><br><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_TCP%E9%93%BE%E6%8E%A5.png" alt="POD TCP链接" loading="lazy" decoding="async" width="1750" height="396"><br><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_%E7%BA%BF%E7%A8%8B%E6%95%B0.png" alt="POD 线程数" loading="lazy" decoding="async" width="1779" height="400"></p>
+<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_CPU-clean.png" alt="POD CPU clean" loading="lazy" decoding="async" width="1749" height="396"><br><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_TCP%E9%93%BE%E6%8E%A5-clean.png" alt="POD TCP链接 clean" loading="lazy" decoding="async" width="1750" height="396"><br><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/POD_%E7%BA%BF%E7%A8%8B%E6%95%B0-clean.png" alt="POD 线程数 clean" loading="lazy" decoding="async" width="1779" height="400"></p>
 <p>从图中可以看出</p>
 <ul>
 <li>CPU负载一直很高</li>
 <li>TCP链接及线程数从11点40开始陡峭上升</li>
 </ul>
 <h3 id="Arms"><a href="#Arms" class="headerlink" title="Arms"></a>Arms</h3><p>看下Trace监控发现，耗时主要是customer通过fegin调用外围接口导致的。</p>
-<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83Arms%E7%9B%91%E6%8E%A7_%E6%A0%87%E8%AF%86%E5%8D%A0%E7%94%A8CPU%E8%BF%87%E9%AB%98%E6%8E%A5%E5%8F%A3.png" alt="生产环境Arms监控 标识占用CPU过高接口" loading="lazy" decoding="async" width="3174" height="1898"></p>
+<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83Arms%E7%9B%91%E6%8E%A7_%E6%A0%87%E8%AF%86%E5%8D%A0%E7%94%A8CPU%E8%BF%87%E9%AB%98%E6%8E%A5%E5%8F%A3-clean.png" alt="生产环境Arms监控 标识占用CPU过高接口 clean" loading="lazy" decoding="async" width="3174" height="1898"></p>
 <h3 id="临时方案"><a href="#临时方案" class="headerlink" title="临时方案"></a>临时方案</h3><p>临时处理方案：扩实例并增加CPU配置。</p>
 <h2 id="根因分析"><a href="#根因分析" class="headerlink" title="根因分析"></a>根因分析</h2><blockquote>
 <p>此处略过排查三方接口跟开放平台网关的过程，此处的结论是：依赖的三方接口跟开放平台网关没有问题。<br>为啥会先排查三方接口跟开放平台网关是因为中Trace上来看是调用三方接口响应时间过长。</p>
 </blockquote>
-<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/getAddressWarehouse_%E6%94%BE%E5%A4%A7.png" alt="getAddressWarehouse 放大" loading="lazy" decoding="async" width="3665" height="1566"><br>从Arms图看可以看出</p>
+<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/getAddressWarehouse_%E6%94%BE%E5%A4%A7-clean.png" alt="getAddressWarehouse 放大 clean" loading="lazy" decoding="async" width="3665" height="1566"><br>从Arms图看可以看出</p>
 <ul>
 <li>CPU耗时集中在fegin调用的Decoder、Encoder</li>
 <li>Decoder、Encoder耗时都集中在<ul>
@@ -415,7 +415,7 @@
 <h4 id="优化后效果"><a href="#优化后效果" class="headerlink" title="优化后效果"></a>优化后效果</h4><blockquote>
 <p>优化后CPU占用降低一半 </p>
 </blockquote>
-<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E4%BC%98%E5%8C%96%E5%89%8D%E5%90%8E%E6%95%88%E6%9E%9C%E6%AF%94%E5%AF%B9.png" alt="优化前后效果比对" loading="lazy" decoding="async" width="3757" height="847"></p>
+<p><img src="/images/an-accident-caused-by-excessive-cpu-usage-of-fegin/%E4%BC%98%E5%8C%96%E5%89%8D%E5%90%8E%E6%95%88%E6%9E%9C%E6%AF%94%E5%AF%B9-clean.png" alt="优化前后效果比对 clean" loading="lazy" decoding="async" width="3757" height="847"></p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>大家在自定义 Feign 的编解码器时，如果用到了 SpringEncoder &#x2F; SpringDecoder，应避免 HttpMessageConverters 的重复初始化。如果不需要使用那些默认的 HttpMessageConverter，可以在初始化 HttpMessageConverters 时将第一个入参设置为 false，从而不初始化那些默认的 HttpMessageConverter。</p>
 
     </div>

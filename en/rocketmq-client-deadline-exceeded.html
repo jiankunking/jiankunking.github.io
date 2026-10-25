@@ -352,7 +352,7 @@
 <p>The exception above was thrown while the service was starting, so it never came up. At that point the container wasn’t ready either — no process to attach to — so we couldn’t yet run a packet capture to rule the network out.</p>
 <p>I asked my colleague to move the RocketMQ initialization logic behind an API call, so the service could start normally and I could capture the network traffic. (How to capture packets in a k8s cluster: <a href="https://jiankunking.blog.csdn.net/article/details/125189956">https://jiankunking.blog.csdn.net/article/details/125189956</a>)</p>
 <p>Packet capture screenshot:</p>
-<p><img src="https://jiankunking.com/images/deadline-exceeded-clientcall/01.png" alt="Wireshark capture used to investigate the RocketMQ client deadline error" loading="eager" fetchpriority="high" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/deadline-exceeded-clientcall/01-clean.png" alt="Wireshark capture used to investigate the RocketMQ client deadline error" loading="eager" fetchpriority="high" decoding="async"></p>
 <p>The capture shows the network connection being established normally, then the service actively resetting it about 2.7 seconds in — exactly when the exception was thrown.</p>
 <p>The packet capture confirmed our suspicion: at least at the TCP level, the network was fine.</p>
 <p>Even with that verified, I still deployed the same broken image to cluster B1 — and the problem was still there.</p>
@@ -387,7 +387,7 @@
 <h2 id="Repeated-verification-and-the-memory-threshold"><a href="#Repeated-verification-and-the-memory-threshold" class="headerlink" title="Repeated verification and the memory threshold"></a>Repeated verification and the memory threshold</h2><p>I then told my colleague the fix, assuming that was the end of it…</p>
 <p>But that afternoon, he found that the service also started fine with the memory limit put back to 800m. Had something gone differently that morning?</p>
 <p>I redeployed the original broken image with the lowered memory limit — and the service really did start normally.</p>
-<p><img src="https://jiankunking.com/images/deadline-exceeded-clientcall/%E6%88%91%E7%9A%84%E5%A4%A9%E5%91%90-en.png" alt="Surprised reaction: Oh my God!" loading="lazy" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/deadline-exceeded-clientcall/%E6%88%91%E7%9A%84%E5%A4%A9%E5%91%90-en-clean.png" alt="Surprised reaction: Oh my God!" loading="lazy" decoding="async"></p>
 <p>Since the service could now start with the original configuration, how much memory does it actually need when no agents are injected by default?</p>
 <p>I first replaced the startup command, removing the injected SkyWalking, Prometheus, and other agents:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">java2</span><br><span class="line">-server</span><br><span class="line">-Xms300m</span><br><span class="line">-Xmx300m</span><br><span class="line">-jar</span><br><span class="line">application.jar</span><br><span class="line">--spring.profiles.active=test</span><br></pre></td></tr></table></figure>

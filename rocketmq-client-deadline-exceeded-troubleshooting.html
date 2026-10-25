@@ -364,7 +364,7 @@
 <p>上述异常是在服务启动的时候，抛出的，导致服务一直没有起来，这时候容器还有创建成功，也就没有对应的进程，所以无法通过抓包的方式排除网络问题。</p>
 <p>我让同事将rocketmq初始化的逻辑调整为调用api触发，这样可以保证服务能够正常启动,然后我也可以通过网络抓包的方式来获取网络流程。</p>
 <p>k8s集群中抓包的方式参见:<a href="https://jiankunking.blog.csdn.net/article/details/125189956">https://jiankunking.blog.csdn.net/article/details/125189956</a></p>
-<p>抓包截图如下：<br><img src="/images/deadline-exceeded-clientcall/01.png" alt="01" loading="eager" fetchpriority="high" decoding="async" width="1906" height="791"></p>
+<p>抓包截图如下：<br><img src="/images/deadline-exceeded-clientcall/01-clean.png" alt="01 clean" loading="eager" fetchpriority="high" decoding="async" width="1906" height="791"></p>
 <p>从图中可以看出网络连接正常建立，并在2.7秒左右的时间服务主动RST连接，这个时间也就是服务抛出异常的时间。</p>
 <p>从网络抓包，也验证了咱们的想法，网络至少在TCP层面是没有问题的。</p>
 <p>虽然抓包已经验证了，但我还是将有问题的镜像部署到部署到集群B1发现还是有问题。</p>
@@ -394,7 +394,7 @@
 <h2 id="反复验证与内存阈值测试"><a href="#反复验证与内存阈值测试" class="headerlink" title="反复验证与内存阈值测试"></a>反复验证与内存阈值测试</h2><p>然后，告诉同事问题解决方案，以为这就结束了……</p>
 <p>然而下午同事发现将内存的上限改回800m服务也可以正常启动了，难道上午哪里出了问题？</p>
 <p>先用之前问题镜像，降低内存上限，服务真的正常启动了……</p>
-<p><img src="/images/deadline-exceeded-clientcall/%E6%88%91%E7%9A%84%E5%A4%A9%E5%91%90.png" alt="我的天呐" loading="lazy" decoding="async" width="767" height="751"></p>
+<p><img src="/images/deadline-exceeded-clientcall/%E6%88%91%E7%9A%84%E5%A4%A9%E5%91%90-clean.png" alt="我的天呐 clean" loading="lazy" decoding="async" width="767" height="751"></p>
 <p>既然服务现在能用之前的配置起来了，那么在没有默认注入agent的情况下，服务到底多大内存能正常启动呢？</p>
 <p>先替换启动命令，移除默认注入的skywalking、prometheus等agent</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">java2</span><br><span class="line">-server</span><br><span class="line">-Xms300m</span><br><span class="line">-Xmx300m</span><br><span class="line">-jar</span><br><span class="line">application.jar</span><br><span class="line">--spring.profiles.active=test</span><br></pre></td></tr></table></figure>
