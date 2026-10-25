@@ -11,8 +11,8 @@ Generated from 178 indexable articles. Each entry keeps its canonical URL and co
 
 - [AI Agent 工程](https://jiankunking.com/topics/ai-agent-engineering/): 从 Tool Calling、MCP、A2A、AG-UI 到上下文工程和 Harness，理解 AI Agent 应用从 Demo 到生产系统的关键工程问题。
 - [AI Gateway](https://jiankunking.com/topics/ai-gateway/): 系统理解 AI Gateway 的能力边界、模型协议转换、流量治理、可观测性、运行时性能、多云高可用与选型方法。
-- [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
 - [后端与云原生架构](https://jiankunking.com/topics/backend-cloud-native/): 从架构原则、领域建模和分布式一致性，到 Kubernetes、云原生网关、多云高可用与稳定性治理的系统实践路径。
+- [Elasticsearch](https://jiankunking.com/topics/elasticsearch/): Elasticsearch 从原理入门、数据建模和查询优化，到写入检索源码、分片恢复、容量规划与生产事故复盘的系统阅读路径。
 
 ## Articles
 ### 从模型管理到 AI 网关：把资产、流量与成本串成闭环
@@ -186,7 +186,7 @@ Article text:
 
 图里标红的”不可用”实例因为主动健康检查失败，已经移出候选。这次请求先到首选实例，它返回 429——只在本次请求中被排除，图中标为”本轮已试”，不写进健康检查状态。故障转移（Fallback）开着、距上次失败还没超过重试冷却时间、重试次数也没用完，选路器接着改投备用一。低代码智能体平台全程无感：不用自己重试，也不用换地址换凭证。
 
-请求级排除、健康检查摘除、额度过滤、告警降权，四种机制互不干扰，作用的却是同一个候选池。动图里”不可用”是健康检查摘的，”本轮已试”只属于这一次请求；首选实例持续异常达到阈值后，才被告警联动挂上”降权”，等探测恢复再按策略重新接入候选。
+请求级排除、健康检查摘除、额度过滤、告警降权，四种机制互不干扰，作用的却是同一个候选池。首选实例持续异常达到阈值后，才被告警联动挂上”降权”，等探测恢复再按策略重新接入候选。
 
 四、咬合点与边界
 
@@ -228,13 +228,11 @@ Token 限流分两段：转发前看还有没有余量，响应后按真实 usag
 
  |
 
-拿这 13 类逐项对照传统 API 网关，差异集中在治理与运营，不在转发本身；13 类里条目最密的是可观测性和请求改写。我没有按产品菜单逐项罗列，只按”能力最终在哪里执行”把它们归入 8 个域：
+拿这 13 类逐项对照传统 API 网关，差异集中在治理与运营，不在转发本身；13 类里条目最密的是可观测性和请求改写。按”能力最终在哪里执行”，它们可以归入 8 个域：
 
 图 8 · 能力图谱全景（8 域）
 
 这张图要交代的是边界：A–G 决定请求如何执行，H 决定为什么这样执行。传统 API 网关主要覆盖前者；要让模型成为一等公民，后者必须由模型管理与业务控制面补齐。
-
-归类时我只用一条规则：每项能力都要有明确的执行方、输入和输出；找不到责任边界的先记为缺口，别急着做成菜单项。
 
 五、反馈如何变成决定
 
@@ -268,7 +266,7 @@ Token 用量与调用明细 |
 
 作者的话
 
-这套系统从能力盘点、三平面架构设计，到自研插件、模型全生命周期、限流迁移与运维台，都由我负责推进落地。把散在不同系统里的实现放到同一张图上后，一件事变得清楚：”管资产的””算配额的””数请求的”必须各守边界，又能通过控制与反馈两条链路相互闭合。
+这套系统从能力盘点、三平面架构设计，到自研插件、模型全生命周期、限流迁移与运维台，都由我负责推进落地。
 
 如果你也在做模型平台、AI 网关或 LLMOps，欢迎交流。
 
@@ -1555,7 +1553,7 @@ AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查�
 - URL: https://jiankunking.com/coding-agent-harness-landscape-and-selection.html
 - Content type: original
 - Published: 2026-09-05
-- Updated: 2026-09-25
+- Updated: 2026-10-25
 - Summary: 比较 OpenCode、Pi、DeepSeek Harness、Codex、Claude Agent SDK 和 OpenHands，区分独立运行、HTTP API 和会话管理，给出决策路径与建设量估算，并讨论接入业务时的职责边界和数据合规。
 - Categories: AI
 - Tags: AI Agent, Harness Engineering, OpenCode, Pi, DeepSeek Harness, Codex, MCP, Agent Runtime, OpenClaw, Hermes Agent
@@ -1563,6 +1561,7 @@ AI助手在这次排查中帮了很大忙：代码追踪、日志分析、ES查�
 Key takeaways:
 
 - “可以独立运行”“提供原生 HTTP API”和“具备会话管理”是三项不同能力，应该作为独立选型维度。
+- OpenCode 2 的 Server API 重写和 DeepSeek Harness 0.2.x 的配置破坏性变更说明：Adapter 层不是最佳实践，而是必需品。
 - OpenCode 适合通过 HTTP/SSE 快速接入现有业务，Pi 适合嵌入自有产品，DeepSeek Harness 更适合想验证插件化架构、或深度使用 DeepSeek 模型的团队，但它仍是 Developer Preview，接入…
 - Harness 负责一次任务怎样执行，业务系统仍要负责身份、任务状态、幂等、审批、审计和结果正确性。
 - 已有 CLI 可以先作为工具接入；稳定后应增加 Schema、权限和审计，核心能力再逐步封装成 Harness 原生工具，共享能力则放到 MCP。
@@ -1578,9 +1577,65 @@ Article text:
 
 所以这篇不比“谁写代码更聪明”，只比两件事：怎么选，选完怎么接。
 
-先交代版本和边界。判断基于 2026 年 9 月的官方资料，核对版本是 OpenCode v1.18.31、Pi v0.85.1、DeepSeek Harness v0.1.6-alpha.2、Codex v0.155.0、Claude Agent SDK Python v0.2.156 &#x2F; TypeScript v0.3.276、OpenHands v1.20.0、OpenClaw v2026.9.4、Hermes Agent v2026.9.14。领域变化快，接口以你实际采用的版本为准。
+先交代版本和边界。判断基于 2026 年 9 月的官方资料，核对版本是 OpenCode v1.18.31、Pi v0.85.1、DeepSeek Harness v0.1.6-alpha.2、Codex v0.155.0、Claude Agent SDK Python v0.2.156 &#x2F; TypeScript v0.3.276、OpenHands v1.20.0、OpenClaw v2026.9.4、Hermes Agent v2026.9.14。领域变化快，接口以你实际采用的版本为准。2026 年 10 月 25 日做了一次复核，变化集中在 OpenCode 2、Pi 1.0 和 DeepSeek Harness 0.2.x，见下一节；正文里各节末尾也补了对应说明，没改的部分沿用 9 月的判断。
 
 丑话说在前面：这是文档调研，不是实测。全文没有性能、并发、成本数据；“建设量”是量级判断，不是人月承诺。个别小节我只看过文档没跑过代码，会在文里直接标出来。
+
+2026 年 10 月 25 日复核
+
+文章发了一个月，我把六款工具都复核了一遍。结论框架没有变化，但三个项目的版本和接口动得不小，先说清楚：
+
+项目
+9 月核对版本
+10 月复核版本
+对本文的影响
+
+OpenCode |
+v1.18.31 |
+v1.19.x（V1 维护线）&#x2F; OpenCode 2 v2.1.x |
+Server API 和插件 API 都是破坏性重写，V1 集成必须迁移 |
+
+Pi |
+v0.85.1 |
+v1.4.0（10 月 1 日发 1.0） |
+原生 HTTP API 依然没有；MCP 改为内置支持 |
+
+DeepSeek Harness |
+v0.1.6-alpha.2 |
+v0.2.1-rc.2 |
+仍是 Developer Preview，且出现了真实的破坏性变更案例 |
+
+Codex |
+v0.155.0 |
+v0.163.0 |
+App Server 补了托管 daemon 重启、后台压缩、并行只读工具 |
+
+Claude Agent SDK |
+Py 0.2.156 &#x2F; TS 0.3.276 |
+Py 0.2.168 &#x2F; TS 0.3.303 |
+permissionMode 省略时的默认值一个月改了两次 |
+
+OpenHands |
+v1.20.0 |
+v1.33.0 |
+Agent Profiles 可按 agent 限定工具和 secrets |
+
+OpenClaw &#x2F; Hermes Agent |
+v2026.9.4 &#x2F; v2026.9.14 |
+快速迭代中 &#x2F; v0.22.4 |
+OpenClaw 出企业版；Hermes 主打零配置上手 |
+
+几条值得展开。
+
+OpenCode 2 是这一个月最大的变化。 10 月 11 日的 v1.19.0 只是过渡，提供 opencode upgrade --major 作为升级入口；随后发布的 OpenCode 2 有三个官方明确的破坏性变更：插件 API 重写（V1 插件不能直接运行）、Server API 和客户端契约重写（调用 V1 server API 的集成必须迁移到 V2 API 和新的 @opencode/client）、终端配置合并到全局 cli.json（首次启动自动迁移）。.opencode/ 里的 agent、命令、skill 等配置官方声称保持兼容。对本文的影响：“OpenCode 接入链路最短”仍然成立，但最短的那条路现在指向 V2 API；而这次迁移本身也证明了大版本切换的成本——“业务侧只依赖自己的接口”从最佳实践变成了必需品。另外 v1.19.1 移除了 session sharing，已有分享链接被禁用。
+
+Pi 发了 1.0，两件事和本文有关。 一是 MCP 内置了（通过新的 Codemode 沙箱机制），Pi 坚持了一年的“不需要 MCP”立场正式反转；二是 0.87.1 把那套不小心发出去的实验性 client&#x2F;server 栈彻底移除了，@earendil-works/pi-server 等包不再发布，“没有原生 HTTP API、按不会有现成远程接口来规划”的判断可以写得更硬。另外有个实验性包 Pi Durable，面向长运行 agent 应用，值得留意但不适合现在押注。
+
+DeepSeek Harness 的警告应验了。 10 月版本一路推进到 0.2.1-rc.2，新增 Web 本机账号登录、密钥自动脱敏、对话压缩和 DeepSeek Search&#x2F;Fetch API，但仍标 Developer Preview，期间还出现了一次真实的静默破坏性变更——细节放在后面 DeepSeek 小节讲。结论就是原文那句话：外面包一层 Adapter、固定版本跑影子任务，就是为这种事准备的。
+
+Codex 和 Claude Agent SDK 只是把“发版快”演得更充分。Codex 到 v0.163.0，App Server 补上了托管 daemon 重启、turn 生命周期里的后台压缩、并行只读工具和实时响应引导，服务封装的建设量略有下降；桌面版 Codex app 和云端触发的 Automations 也在推进。Claude Agent SDK 的 permissionMode 省略时的默认值在 9 月 30 日和 10 月 16 日各改了一次，fork subagent 改为默认开启——“接口频繁变，升级回归的时间别省”一个月后依然成立。
+
+OpenHands 到 v1.33.0，9 月起 Agent Profiles 可以按 agent 限定可用工具和 secrets，automations 可以带着这些 profile 跑，Docker runtime 给 agent 提供隔离工作区——本文“隔离够不够”关心的几件事，它是六款里答案最完整的。OpenClaw 推出了 Enterprise 版，完成了 OpenAI “Patch the Planet” 安全审计，新增 extended-stable 发布通道和功能成熟度记分卡；Hermes Agent 10 月 13 日的 v0.22 主打零配置上手（免费试用模型的引导对话、Connectors、一键本地模型、600 个插件目录），并成为 NVIDIA RTX Spark 的发布合作方，版本号也从日期制切回了 0.x 系列。一体化助手的定位都没变，但安全治理和上手门槛都在正规化。
 
 先说结论
 
@@ -1695,6 +1750,8 @@ OpenCode Server
 
 要留意它的边界。它解决的是“一次任务怎么执行”，多租户隔离、任务排队、跨实例存储、凭证管理、故障恢复都不在职责内。内部原型直接用没问题；要承载大量用户和并发任务，外面还得补调度、权限、存储和运行隔离。
 
+10 月复核：OpenCode 2 把 Server API 和插件 API 都做了破坏性重写，V1 的调用方要迁到 V2 API 和 @opencode/client。接 V2 本身不难，但集成迁移窗口里把真实调用链路跑一遍验证，这一步不能省。
+
 Pi：可以嵌进产品的 Agent 内核
 
 Pi 和 OpenCode 的手感不一样。OpenCode 像一个能对外提供服务的进程，Pi 像一组小而清晰的构件。实用的接法有两种：
@@ -1705,7 +1762,9 @@ Pi 和 OpenCode 的手感不一样。OpenCode 像一个能对外提供服务的�
 
 Session 这块有个小改动值得一提：v0.85.0 加了 SessionManager.inMemory()，能把外部系统存的会话条目恢复进来，自己做持久化省不少事。
 
-还有个插曲很能说明 Pi 的现状：0.85.0 不小心把内部实验性的 client&#x2F;server 代码发了出去，0.85.1 马上退回到仅源码可用。官方支持的接口就两个，本地 SDK 和 stdio RPC，原生 HTTP API 至今没有时间表。做架构时按“不会有现成远程接口”来规划，比等它补齐靠谱。
+还有个插曲很能说明 Pi 的现状：0.85.0 不小心把内部实验性的 client&#x2F;server 代码发了出去，0.85.1 马上退回到仅源码可用，到 0.87.1 干脆把整套实验性 server&#x2F;client 栈正式移除，相关包不再发布。官方支持的接口就两个，本地 SDK 和 stdio RPC，原生 HTTP API 至今没有时间表。做架构时按“不会有现成远程接口”来规划，比等它补齐靠谱。
+
+10 月复核：Pi 在 10 月 1 日发了 1.0（复核时已到 v1.4.0），最大的变化是内置了 MCP——通过新的 Codemode 沙箱机制提供，坚持了一年的“不需要 MCP”立场正式反转。本文后面对 MCP 的用法描述不受影响，但“Pi 怎么用 MCP”从自己写扩展变成了开箱可用。另有一个实验性包 Pi Durable，面向长运行 agent 应用，留意即可，不适合现在押注。
 
 Extension 可以注册工具、命令和事件钩子，加上 Skill、Prompt Template、Package，做产品级组合比较顺手。想自己决定外部 API、UI、会话存储和任务状态、只复用 Agent Loop 的团队，Pi 是这几款里最合适的。
 
@@ -1725,6 +1784,8 @@ DeepSeek Harness：插件化值得看，变化也要留空间
 
 我的建议是尽早试，但业务接口别直接依赖它当前的 SDK 类型。外面包一层 Adapter，升级或切回其他 Runtime 都从容得多。
 
+10 月复核：版本推进到 0.2.1-rc.2，新增 Web 本机账号登录、消息中密钥自动识别脱敏、对话压缩、DeepSeek Search&#x2F;Fetch API 和 V4.1-Flash 适配，但 README 仍标 Developer Preview。期间发生了一次很能说明问题的破坏性变更：0.2.1 把账号模型路由改成服务端下发，升级后配置里残留的旧 models 字段会让插件静默加载失败，UI 只显示“暂无可用模型”（官方 Discussion #9952）。不迁移旧配置、不报错、失败是静默的——Adapter 隔离层和固定版本跑影子任务，就是为这种事准备的。
+
 Codex 和 Claude Agent SDK：定了平台就别折腾
 
 公司已经定了模型平台的话，“模型中立”就不是必选项。为了抽象而抽象，成本是真的。
@@ -1735,6 +1796,8 @@ Codex 有非交互执行、SDK 和 App Server 三种用法，Thread、Turn、事
 
 厂商 Runtime 的好处是模型和 Harness 配合完整，官方新能力出现后直接用得上。坏处是账号、模型、协议、运行时绑成一串。定了平台就用；想做多模型通用平台的，谨慎。
 
+10 月复核：Codex 到 v0.163.0，App Server 补上了托管 daemon 重启、turn 生命周期里的后台压缩、并行只读工具和实时响应引导，服务封装的建设量略有下降；桌面版 Codex app 和云端触发的 Automations 也在推进。Claude Agent SDK 到 Python v0.2.168 &#x2F; TypeScript v0.3.303，permissionMode 省略时的默认值在 9 月 30 日和 10 月 16 日各改了一次，fork subagent 改为默认开启——“接口频繁变，升级回归的时间别省”一个月后依然成立。
+
 OpenHands：要的是一台远程开发机时再看
 
 OpenHands 比上面几个都重：SDK、Agent Server、远程 Sandbox、Web UI，一套面向软件工程任务的完整执行环境。这块我看得最少，只翻了 SDK 和 Agent Server 的文档，没实测。
@@ -1743,9 +1806,13 @@ OpenHands 比上面几个都重：SDK、Agent Server、远程 Sandbox、Web UI�
 
 结论就一句：想清楚你要的是“一个循环”，还是“一台能远程用的开发机”。
 
+10 月复核：版本到 v1.33.0，迭代依然很快。9 月起 Agent Profiles 可以按 agent 限定可用工具和 secrets，automations 可以带着这些 profile 跑，Docker runtime 给 agent 提供隔离工作区——本文“隔离够不够”关心的几件事，它是六款里答案最完整的。
+
 顺带说说一体化助手
 
 OpenClaw 和 Hermes Agent 是另一个物种（9 月下旬 star 约 39 万和 25 万）：内核、聊天渠道、定时任务、会话管理全都建好，直接交付一个长驻助手。它们回答的是“怎么给自己或团队部署一个一直在线的助手”，跟本文“业务怎么程序化调用 Agent”不是一个问题。要在公司 IM 里放一个能干活的 Agent，部署它们改改配置更划算；想当多租户 Runtime 塞进业务系统，会话模型和安全假设都不支持。留一条旁证：OpenClaw 内核基于 Pi、接 Codex 用的 app-server 在 Codex 仓库里还标着 experimental——Pi 那条路走得通，集成的坑也有下游项目先替你踩了。
+
+10 月复核：OpenClaw 推出了 Enterprise 版，完成了 OpenAI “Patch the Planet” 安全审计，新增 extended-stable 发布通道和功能成熟度记分卡，安全治理在明显正规化，但“个人&#x2F;团队长驻助手”的定位没变。Hermes Agent 10 月 13 日的 v0.22 主打零配置上手（免费试用模型的引导对话、Connectors、一键本地模型、600 个插件目录），并成为 NVIDIA RTX Spark 的发布合作方，版本号也从日期制切回了 0.x 系列（复核时是 v0.22.4）。
 
 选型时我会重点看什么
 
@@ -1896,202 +1963,7 @@ Agent Server 本身就是远程服务 |
 15
 
  | 想要的其实是"一直在线的个人或团队助手"，不是业务后端？
-├─ 是 → OpenClaw / Hermes Agent
-└─ 否 ↓
-任务是否需要完整的远程开发环境（拉仓库、装依赖、起服务、跑浏览器）？
-├─ 是 → OpenHands
-└─ 否 ↓
-是否已确定单一模型平台，且没有真实的多模型需求？
-├─ 是 → Codex / Claude Agent SDK
-└─ 否 ↓
-是否要把 Agent 内核嵌进自己的 Node.js 产品，自己定 API 和会话层？
-├─ 是 → Pi
-└─ 否 ↓
-是否想验证插件化架构，或深度使用 DeepSeek 模型？
-├─ 是 → DeepSeek Harness（记得留 Adapter 隔离层）
-└─ 否 → OpenCode（HTTP/SSE 接入现有服务最快）
-
- |
-
-分述之外补充两点：DeepSeek Harness 值得固定版本跑一批影子任务，用数据判断插件化架构是否值得投入；OpenCode 上手先只跑只读任务，把认证、结果校验、并发限制补上，再放写操作。
-
-最后看建设量。上面合并表里的相对建设量是选型里最现实的变量，按路线能差出一个量级，比“哪个模型更聪明”重要得多。团队没有专人补控制面的话，选建设量小的路线通常更划算。
-
-为什么不从头写一套
-
-自己写一个最小 Agent Loop 不难：拼上下文、调模型、解析 Tool Call、执行工具、把结果送回去。麻烦的是后面的细节——超时、中断、权限确认、上下文过长、子进程残留、Session 恢复。每一项都不复杂，叠在一起很耗时间。
-
-现成 Harness 的价值就在这里：执行循环它搭好了，业务团队的时间花在更实际的问题上。现有 API 和 CLI 够不够清楚，模型拿到工具能不能完成任务，哪些步骤必须人工确认，最终结果怎么验收。
-
-顺带说一句，这是检验内部工具质量的好机会。很多 CLI 是给人用的，错误全是文本，参数命名不一致，输出格式还会变。Agent 连续调几次，问题很快暴露。把参数、错误码、JSON 输出补齐后，受益的不只是 Agent，普通自动化脚本也更可靠。
-
-业务经验也不必全塞进一段长 Prompt。操作步骤写成 Skill，真实动作交给 Tool，权限放进 Policy，判断结果交给固定的评测集。以后换模型或者换 Runtime，这些东西大多还能接着用。
-
-Harness 能替我们做什么
-
-把 OpenCode、Pi 或 DeepSeek Harness 放在业务系统后面，我把它们当执行面。一次 Run 内部的事情，尽量交给 Harness：
-
-- 调用模型并维护 Agent Loop；
-
-- 保存本轮会话上下文；
-
-- 注册和调用工具；
-
-- 载入 Skill、Agent 或扩展；
-
-- 处理文件、Shell 和工作目录；
-
-- 发送消息、工具和错误事件；
-
-- 做基础的权限确认和任务取消；
-
-- 在支持的情况下约束结构化输出。
-
-这些够把一个业务想法跑起来了。客服助手先查订单和历史工单再组织回复，数据助手先查指标、发现异常继续查明细，研发助手改代码跑测试，都是这么起步的。
-
-别把业务控制面也交给 Harness
-
-Harness 只负责“怎么执行”。下面这些，还得留在自己的业务系统里。
-
-业务任务状态
-
-Harness 认识的是 Session 和 Message，业务认识的是工单、审核单、报表任务、订单、代码变更。两者画不了等号。
-
-一次业务任务可能超时重跑两次，也可能先由 OpenCode 执行、后来交给 Pi 复核。更合适的关系：
-
-1
-
- | BusinessTask 1 ── N AgentRun 1 ── N HarnessSession
-
- |
-
-我会保留三个 ID：
-
-- task_id：业务任务；
-
-- run_id：一次执行尝试；
-
-- session_id：具体 Runtime 内的会话。
-
-这样以后做重试、回放、替换 Runtime，业务数据模型不用动。
-
-身份和权限
-
-Harness 不知道用户属于哪个部门，也不知道他能不能看某个客户、数据集、项目。它提供的工具权限只是第一层，资源级授权要在业务系统或 Tool Gateway 里做。
-
-每次 Run 签发短期身份，让工具按租户、用户、任务检查权限。别把长期管理员 Token 放进 Agent 容器。
-
-幂等、重试和审批
-
-模型调用失败可以重试，查询工具超时也可以重试，但“提交退款”“发布内容”“修改配置”不能简单重放。
-
-业务侧要清楚一个操作有没有执行过、能不能再执行、谁审批的。Harness 的确认弹窗可以承载交互，审批规则和最终状态存在业务系统。
-
-结果是否正确
-
-Harness 能让模型输出一份报告，不知道这份报告符不符合公司的业务定义。
-
-数据分析结果可能必须带统计周期、数据口径、样本量；审核结果要有规则编号和证据；代码修改必须过指定测试。最终结果过 Schema 和业务规则校验，别只看文字通不通顺。
-
-调度、容量和高可用
-
-任务队列、Worker、限流、优先级、失败补偿、成本配额、跨机房部署，通常也不属于单个 Harness。把 Harness 当 Worker 用比较清楚，别让业务请求同步等一个 CLI 进程退出。
-
-数据合规和审计
-
-一次 Run 的上下文、工具输出、结果里往往带着业务数据，几件事提前确认，别等上线前才补：
-
-- 数据发给哪个模型供应商，留不留存、训不训练，合同和模型配置里是否明确；
-
-- 事件日志和工具输出落库前脱敏，凭证、个人信息、客户数据不能原样进日志；
-
-- 高风险动作能否追溯到人、run_id 和审批记录，审计记录留多久、能不能防篡改；
-
-- 跨境部署时，模型调用和日志存储的数据出境合规。
-
-接入时怎么分层
-
-我倾向拆成四层：
-
-1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-
- | ┌───────────────────────────────────────────┐
-│ Business Control Plane │
-│ API / Tenant / Task / Retry / Approval │
-│ Result / Notification / Billing │
-└──────────────────┬────────────────────────┘
- │ internal API
-┌──────────────────▼────────────────────────┐
-│ Harness Adapter │
-│ OpenCode / Pi / DeepSeek / Codex │
-│ event normalize / capability / routing │
-└──────────────────┬────────────────────────┘
- │ run
-┌──────────────────▼────────────────────────┐
-│ Execution Runtime │
-│ Session / Context / Skill / Workspace │
-└──────────────────┬────────────────────────┘
- │ tool call
-┌──────────────────▼────────────────────────┐
-│ Tool Plane │
-│ CLI / Harness Tool / MCP / Workflow API │
-│ Auth / Schema / Timeout / Audit │
-└───────────────────────────────────────────┘
-
- |
-
-控制面保存业务事实；Adapter 屏蔽 Runtime 差异；Harness 完成一次执行；工具层访问真实系统。
-
-工具怎么接：CLI、原生工具和 MCP
-
-三种方式不互斥，通常并存。已有成熟 CLI 的话先复用，尤其适合 PoC；文件处理、本地脚本、一次性迁移任务也适合 CLI。
-
-已有 CLI：最快接入
-
-最简单的做法，把 CLI 固化到 Runtime 镜像并加入 PATH：
-
-1
-2
-3
-
- | biz-ticket get --id TICKET-001 --output json
-biz-data query --dataset sales --range 7d --output json
-biz-content inspect --content-id C-1001 --output json
-
- |
-
-再写一份 Skill，说明每个命令什么时候用、要哪些参数、返回什么。OpenCode、Pi 这类工具都能通过 Shell 执行它们。
-
-但别把二进制临时复制到每个任务目录，让模型自由组合命令。目录只是文件位置，不是权限边界。至少处理这几件事：
-
-- CLI 版本固定，镜像可追溯；
-
-- 只开放允许执行的命令，参数经校验，不直接拼 Shell；
-
-- 默认只读，写操作走独立入口，用短期凭证；
-
-- 统一 JSON 输出和错误码，并设超时、输出大小、资源上限；…
+├─ 是 → Op…
 
 ### 阅读六本大模型书的阶段性思考：一个 Token 如何变成答案
 
@@ -15298,7 +15170,7 @@ SQL注入：你的SQL是如何被注入的
 - Updated: 2023-06-23
 - Summary: SQL99和SQL92是两种不同的SQL标准，本文主要对比两者在JOIN语法方面的区别，建议多表连接使用SQL99标准，因为层次性更强，可读性更强。
 - Categories: SQL
-- Tags: SQL, Standards, SQL99, SQL92
+- Tags: SQL, SQL99, SQL92, Standards
 
 Article text:
 
@@ -21434,7 +21306,7 @@ The full copied/translated body is omitted from this machine-readable corpus; fo
 - Updated: 2026-09-29
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析节点关闭流程、资源释放顺序和相关生命周期管理。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Node, 源码
+- Tags: Elasticsearch, 源码, Node
 
 Article text:
 
@@ -21960,7 +21832,7 @@ kill -15&#x2F;-2 ElasticSearch是可以正常退出的。
 - Updated: 2026-09-29
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析节点启动流程、核心组件初始化和服务启动顺序。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, Node, 源码
+- Tags: Elasticsearch, 源码, Node
 
 Article text:
 
@@ -23375,7 +23247,7 @@ static void init(
 - Updated: 2026-09-29
 - Summary: 基于 Elasticsearch 8.0.0-SNAPSHOT 源码分析 GET 请求的处理链路、节点路由与文档读取过程。
 - Categories: Elasticsearch
-- Tags: Elasticsearch, 源码, GET
+- Tags: Elasticsearch, GET, 源码
 
 Article text:
 

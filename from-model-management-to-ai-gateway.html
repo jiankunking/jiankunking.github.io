@@ -329,7 +329,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>5.6k</span>
+      <span>5.4k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -456,7 +456,7 @@
 <h3 id="3-4-一次真实的请求"><a href="#3-4-一次真实的请求" class="headerlink" title="3.4 一次真实的请求"></a>3.4 一次真实的请求</h3><figure><img src="/images/from-model-management-to-ai-gateway/ai-request-complete-journey-diagram-hd-v2.gif" alt="图 6 · 一次请求的完整链路：从进门到交账" loading="lazy" decoding="async" width="4320" height="2852"><figcaption>图 6 · 一次请求的完整链路：从进门到交账</figcaption></figure>
 
 <p>图里标红的”不可用”实例因为主动健康检查失败，已经移出候选。这次请求先到首选实例，它返回 429——只在本次请求中被排除，图中标为”本轮已试”，不写进健康检查状态。故障转移（Fallback）开着、距上次失败还没超过重试冷却时间、重试次数也没用完，选路器接着改投备用一。低代码智能体平台全程无感：不用自己重试，也不用换地址换凭证。</p>
-<p>请求级排除、健康检查摘除、额度过滤、告警降权，四种机制互不干扰，作用的却是同一个候选池。动图里”不可用”是健康检查摘的，”本轮已试”只属于这一次请求；首选实例持续异常达到阈值后，才被告警联动挂上”降权”，等探测恢复再按策略重新接入候选。</p>
+<p>请求级排除、健康检查摘除、额度过滤、告警降权，四种机制互不干扰，作用的却是同一个候选池。首选实例持续异常达到阈值后，才被告警联动挂上”降权”，等探测恢复再按策略重新接入候选。</p>
 <hr>
 <h2 id="四、咬合点与边界"><a href="#四、咬合点与边界" class="headerlink" title="四、咬合点与边界"></a>四、咬合点与边界</h2><p>资产侧做决定，流量侧执行决定，中间靠配额和配置衔接；能力图谱则把两边的边界固定下来。</p>
 <h3 id="4-1-配额：资产侧计算，数据面执行"><a href="#4-1-配额：资产侧计算，数据面执行" class="headerlink" title="4.1 配额：资产侧计算，数据面执行"></a>4.1 配额：资产侧计算，数据面执行</h3><p>资产侧掌握模型权限、套餐和成本规则，适合回答”应该给多少”；数据面看到每一次真实请求，适合回答”已经用了多少”。两者不能互换。</p>
@@ -473,11 +473,10 @@
 <h3 id="4-3-能力图谱"><a href="#4-3-能力图谱" class="headerlink" title="4.3 能力图谱"></a>4.3 能力图谱</h3><p>资产侧和流量侧各管一段，边界在哪？起点是一份 13 类能力清单：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">管理能力 · 流量治理 · 连接与超时 · 路由与负载均衡 · 请求改写 · 可观测性</span><br><span class="line">健康检查 · 模型管理 · 安全性 · 多地域 · 协议转换 · 扩展性 · 高可用</span><br></pre></td></tr></table></figure>
 
-<p>拿这 13 类逐项对照传统 API 网关，差异集中在治理与运营，不在转发本身；13 类里条目最密的是可观测性和请求改写。我没有按产品菜单逐项罗列，只按”能力最终在哪里执行”把它们归入 8 个域：</p>
+<p>拿这 13 类逐项对照传统 API 网关，差异集中在治理与运营，不在转发本身；13 类里条目最密的是可观测性和请求改写。按”能力最终在哪里执行”，它们可以归入 8 个域：</p>
 <figure><img src="/images/from-model-management-to-ai-gateway/capability-map-8-domains.png" alt="图 8 · 能力图谱全景（8 域）" loading="lazy" decoding="async" width="2352" height="1050"><figcaption>图 8 · 能力图谱全景（8 域）</figcaption></figure>
 
 <p>这张图要交代的是边界：A–G 决定请求如何执行，H 决定为什么这样执行。传统 API 网关主要覆盖前者；要让模型成为一等公民，后者必须由模型管理与业务控制面补齐。</p>
-<p>归类时我只用一条规则：每项能力都要有明确的执行方、输入和输出；找不到责任边界的先记为缺口，别急着做成菜单项。</p>
 <hr>
 <h2 id="五、反馈如何变成决定"><a href="#五、反馈如何变成决定" class="headerlink" title="五、反馈如何变成决定"></a>五、反馈如何变成决定</h2><p>运行结果会从三个地方往回走，把流量侧的执行结果送回资产侧：</p>
 <table>
@@ -510,7 +509,7 @@
 <p>这也是两条主线的交点：一个模型的一生负责建立和改变资产关系，一次请求的一生负责执行并验证这些关系。少了前者，网关不知道为什么这样转；少了后者，模型管理里的权限和配额只是纸面规则。</p>
 <p>这几件事连起来，模型资产、流量治理与成本管理才构成真正的闭环。</p>
 <hr>
-<h2 id="作者的话"><a href="#作者的话" class="headerlink" title="作者的话"></a>作者的话</h2><p>这套系统从能力盘点、三平面架构设计，到自研插件、模型全生命周期、限流迁移与运维台，都由我负责推进落地。把散在不同系统里的实现放到同一张图上后，一件事变得清楚：”管资产的””算配额的””数请求的”必须各守边界，又能通过控制与反馈两条链路相互闭合。</p>
+<h2 id="作者的话"><a href="#作者的话" class="headerlink" title="作者的话"></a>作者的话</h2><p>这套系统从能力盘点、三平面架构设计，到自研插件、模型全生命周期、限流迁移与运维台，都由我负责推进落地。</p>
 <p>如果你也在做模型平台、AI 网关或 LLMOps，欢迎交流。</p>
 <p><strong>延伸阅读</strong></p>
 <ul>
@@ -660,7 +659,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">861k</span>
+    <span title="站点总字数">864k</span>
   </span>
 </div>
 <div class="busuanzi-count">
