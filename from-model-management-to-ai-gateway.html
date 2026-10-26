@@ -93,7 +93,8 @@
 
 
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/from-model-management-to-ai-gateway.html#article","url":"https://jiankunking.com/from-model-management-to-ai-gateway.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/from-model-management-to-ai-gateway.html"},"headline":"从模型管理到 AI 网关：把资产、流量与成本串成闭环","description":"本文分两条主线展开：一条是模型管理与模型资产，回答模型从哪来、给谁用、何时退出；一条是 AI 网关，把授权与配额落实到每一次请求的鉴权、限流、选路和用量回传。两条线靠配额、配置与反馈闭环咬合在一起。","abstract":"本文分两条主线展开：一条是模型管理与模型资产，回答模型从哪来、给谁用、何时退出；一条是 AI 网关，把授权与配额落实到每一次请求的鉴权、限流、选路和用量回传。两条线靠配额、配置与反馈闭环咬合在一起。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-10-05T13:00:00.000Z","dateModified":"2026-10-24T16:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"AI","keywords":"API7, APISIX, Gateway, Architecture, AI Gateway, Rate Limiting, LLM, Lua, LLMOps","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/from-model-management-to-ai-gateway.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/from-model-management-to-ai-gateway.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"AI","item":"https://jiankunking.com/categories/ai/"},{"@type":"ListItem","position":3,"name":"从模型管理到 AI 网关：把资产、流量与成本串成闭环","item":"https://jiankunking.com/from-model-management-to-ai-gateway.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
-<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="alternate" hreflang="zh-CN" href="https://jiankunking.com/from-model-management-to-ai-gateway.html">
+<link rel="alternate" hreflang="en" href="https://jiankunking.com/en/from-model-management-to-ai-gateway.html"><link rel="stylesheet" href="/css/design-tokens.css">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -393,12 +394,12 @@
 <p>环上有两个方向：决策向下，模型、权限、配额和路由规则经配置面进入网关；结果向上，Token 用量、调用者和调用结果从网关回到资产侧。</p>
 <p>这个环靠三个平面转起来：<strong>业务面</strong>做决定，管模型资产与使用规则；<strong>配置面</strong>翻译并交付决定，把业务规则变成网关能执行的路由、实例和插件配置；<strong>数据面</strong>执行决定并回传结果，以 AI 网关为底座，只管请求链路里的鉴权、限流、选路、改写、转发和记录。三个平面各守边界，业务面不碰推理流量，数据面不制定也不保存资产规则，配置面只做翻译和交付。</p>
 <p>后文统一用两个词：管规则的一侧叫资产侧，对应三平面里的业务面；发请求的一侧叫调用方，既包括低代码智能体平台、微服务这类应用，也包括个人办公的直接调用。</p>
-<figure><img src="/images/from-model-management-to-ai-gateway/three-planes.png" alt="图 1 · 三平面分工" loading="eager" fetchpriority="high" decoding="async" width="2352" height="1666"><figcaption>图 1 · 三平面分工</figcaption></figure>
+<figure><img src="/images/from-model-management-to-ai-gateway/three-planes.png" alt="模型接入的三平面分工：业务面制定资产与使用规则，配置面交付网关配置，数据面执行请求并回传用量" loading="eager" fetchpriority="high" decoding="async" width="2352" height="1666"><figcaption>图 1 · 三平面分工</figcaption></figure>
 
 <p>难点也在这里：同一个模型、令牌和调用方，在资产系统和流量系统里必须指向同一份东西。先看资产侧的一个模型怎么走完一生，再看流量侧的一次请求。</p>
 <hr>
 <h2 id="二、模型管理与模型资产：一个模型的一生"><a href="#二、模型管理与模型资产：一个模型的一生" class="headerlink" title="二、模型管理与模型资产：一个模型的一生"></a>二、模型管理与模型资产：一个模型的一生</h2><p>用一个贯穿的例子：客服团队要给低代码智能体平台接一个新的推理模型。这个模型从进来到退出，要过六道关：</p>
-<figure><img src="/images/from-model-management-to-ai-gateway/model-lifecycle.png" alt="图 2 · 模型生命周期" loading="lazy" decoding="async" width="2352" height="396"><figcaption>图 2 · 模型生命周期</figcaption></figure>
+<figure><img src="/images/from-model-management-to-ai-gateway/model-lifecycle.png" alt="模型生命周期的六个阶段：选型、申请、令牌授权、调用、计费和下线，以及用量、权限与替代模型的反馈回路" loading="lazy" decoding="async" width="2352" height="396"><figcaption>图 2 · 模型生命周期</figcaption></figure>
 
 <h3 id="2-1-选型"><a href="#2-1-选型" class="headerlink" title="2.1 选型"></a>2.1 选型</h3><p>他们先在模型市场里并排试了几个候选：同一个模型，逐个调 <code>Temperature</code>、<code>Top_p</code>、<code>Max_tokens</code>，看参数怎么影响输出；参数定下来后固定住，换模型重跑同一组提示词，只留模型一个变量，比较效果差异。</p>
 <p>选型不只是挑一个模型名，还要判断要不要推理能力、效果要求多高、有没有安全风险。安全风险尤其关键，它直接决定走私有化实例还是云服务，后面的申请和路由方式都跟着变。</p>
@@ -427,7 +428,7 @@
 <p>六个阶段到这里并没有真正结束。图 2 的三条虚线就是回流：用量、质量与成本反馈支撑扩容计划与供应商取舍，权限与配额的调整回到申请环节，下线腾出的位置由替代模型补上，重新进入选型评估。</p>
 <hr>
 <h2 id="三、AI-网关：一次请求的一生"><a href="#三、AI-网关：一次请求的一生" class="headerlink" title="三、AI 网关：一次请求的一生"></a>三、AI 网关：一次请求的一生</h2><p>第二章建立的资产关系，最终要在一次次真实请求里生效——短则毫秒，长则数分钟。</p>
-<figure><img src="/images/from-model-management-to-ai-gateway/request-pipeline-eight-stages.png" alt="图 3 · 请求执行链路" loading="lazy" decoding="async" width="2352" height="628"><figcaption>图 3 · 请求执行链路</figcaption></figure>
+<figure><img src="/images/from-model-management-to-ai-gateway/request-pipeline-eight-stages.png" alt="AI 网关请求执行链路：先确认身份与模型权限，再检查配额、选择实例、改写和转发请求，最后解析真实用量并回传" loading="lazy" decoding="async" width="2352" height="628"><figcaption>图 3 · 请求执行链路</figcaption></figure>
 
 <p>低代码智能体平台正式接入后，企业路径的每个请求进网关，网关都要依次回答五个问题：</p>
 <ol>
@@ -440,7 +441,7 @@
 <p>图 3 把这五问展开为八个阶段，多出来的请求改写和转发属于执行细节。身份和权限要先确认，放行判断在选路之前，真实用量只能在响应后结算——实现可以变，这个先后不能乱。</p>
 <p>这五个问题背后都是第二章的决定：你是谁，来自申请建立的归属；能否调用，来自令牌权限；能否放行，来自配额结论；发到哪里，来自选型与下线确定的实例清单；用了多少，回到计费口径。两条线就在这里咬合。</p>
 <h3 id="3-1-两类调用方，两条链路"><a href="#3-1-两类调用方，两条链路" class="headerlink" title="3.1 两类调用方，两条链路"></a>3.1 两类调用方，两条链路</h3><p>低代码智能体平台走企业路径，个人办公走个人路径。两类调用方的数据来源不同，塞不进同一套鉴权模型：</p>
-<figure><img src="/images/from-model-management-to-ai-gateway/enterprise-vs-personal-paths-v2.png" alt="图 4 · 不同场景域名对应两条调用路径" loading="lazy" decoding="async" width="2352" height="440"><figcaption>图 4 · 不同场景域名对应两条调用路径</figcaption></figure>
+<figure><img src="/images/from-model-management-to-ai-gateway/enterprise-vs-personal-paths-v2.png" alt="企业与个人调用路径对比：企业路径在网关本地检查固定调用方的权限与配额，个人路径由资产侧实时验证令牌与额度" loading="lazy" decoding="async" width="2352" height="440"><figcaption>图 4 · 不同场景域名对应两条调用路径</figcaption></figure>
 
 <ul>
 <li><strong>企业 &#x2F; 应用路径</strong>：令牌绑定固定调用方，网关本地完成身份、模型权限和配额检查。</li>
@@ -451,9 +452,9 @@
 <p>这一步把”请求成功”变成了可运营信息：不光知道调用完没完成，还知道用了哪个实例、烧了多少 Token、算在谁头上。</p>
 <p>请求体和响应体可能带着提示词、业务数据甚至个人信息，”能记录”不等于”默认全量留存”。生产环境还要按场景决定是否采样，并配套相应的脱敏、访问控制和保留周期。</p>
 <h3 id="3-3-实例池"><a href="#3-3-实例池" class="headerlink" title="3.3 实例池"></a>3.3 实例池</h3><p>一个模型可能同时对应自建实例、云服务和备用供应商。转发前，健康状态、剩余额度、告警降权（把实例优先级调低）共同决定实例能不能进候选；转发后，上游返回 429 &#x2F; 5xx 就按重试条件切换候选。这些条件必须走同一套选路和重试逻辑，不能各搞一套——否则健康检查刚摘掉的实例可能被另一套逻辑重新选中，配额耗尽的高优先级实例也可能继续收到流量。</p>
-<figure><img src="/images/from-model-management-to-ai-gateway/fallback-selection-retry-v2.png" alt="图 5 · Fallback 的筛选与重试链路" loading="lazy" decoding="async" width="2352" height="382"><figcaption>图 5 · Fallback 的筛选与重试链路</figcaption></figure>
+<figure><img src="/images/from-model-management-to-ai-gateway/fallback-selection-retry-v2.png" alt="模型实例筛选与故障转移链路：按健康、额度和告警状态筛选候选，遇到上游 429 或 5xx 时按重试条件切换实例" loading="lazy" decoding="async" width="2352" height="382"><figcaption>图 5 · Fallback 的筛选与重试链路</figcaption></figure>
 
-<h3 id="3-4-一次真实的请求"><a href="#3-4-一次真实的请求" class="headerlink" title="3.4 一次真实的请求"></a>3.4 一次真实的请求</h3><figure><img src="/images/from-model-management-to-ai-gateway/ai-request-complete-journey-diagram-hd-v2.gif" alt="图 6 · 一次请求的完整链路：从进门到交账" loading="lazy" decoding="async" width="4320" height="2852"><figcaption>图 6 · 一次请求的完整链路：从进门到交账</figcaption></figure>
+<h3 id="3-4-一次真实的请求"><a href="#3-4-一次真实的请求" class="headerlink" title="3.4 一次真实的请求"></a>3.4 一次真实的请求</h3><figure><img src="/images/from-model-management-to-ai-gateway/ai-request-complete-journey-diagram-hd-v2.gif" alt="一次模型请求的完整链路：首选实例返回 429 后排除本轮已试实例，切换备用实例，并在响应后解析用量与结算" loading="lazy" decoding="async" width="4320" height="2852"><figcaption>图 6 · 一次请求的完整链路：从进门到交账</figcaption></figure>
 
 <p>图里标红的”不可用”实例因为主动健康检查失败，已经移出候选。这次请求先到首选实例，它返回 429——只在本次请求中被排除，图中标为”本轮已试”，不写进健康检查状态。故障转移（Fallback）开着、距上次失败还没超过重试冷却时间、重试次数也没用完，选路器接着改投备用一。低代码智能体平台全程无感：不用自己重试，也不用换地址换凭证。</p>
 <p>请求级排除、健康检查摘除、额度过滤、告警降权，四种机制互不干扰，作用的却是同一个候选池。首选实例持续异常达到阈值后，才被告警联动挂上”降权”，等探测恢复再按策略重新接入候选。</p>
@@ -461,7 +462,7 @@
 <h2 id="四、咬合点与边界"><a href="#四、咬合点与边界" class="headerlink" title="四、咬合点与边界"></a>四、咬合点与边界</h2><p>资产侧做决定，流量侧执行决定，中间靠配额和配置衔接；能力图谱则把两边的边界固定下来。</p>
 <h3 id="4-1-配额：资产侧计算，数据面执行"><a href="#4-1-配额：资产侧计算，数据面执行" class="headerlink" title="4.1 配额：资产侧计算，数据面执行"></a>4.1 配额：资产侧计算，数据面执行</h3><p>资产侧掌握模型权限、套餐和成本规则，适合回答”应该给多少”；数据面看到每一次真实请求，适合回答”已经用了多少”。两者不能互换。</p>
 <p>企业 &#x2F; 应用路径用五步链路把它们接起来（图中”业务侧”即本文的资产侧）：</p>
-<figure><img src="/images/from-model-management-to-ai-gateway/quota-five-step-loop.png" alt="图 7 · 配额生成与执行的五步链路" loading="lazy" decoding="async" width="2352" height="972"><figcaption>图 7 · 配额生成与执行的五步链路</figcaption></figure>
+<figure><img src="/images/from-model-management-to-ai-gateway/quota-five-step-loop.png" alt="企业模型配额的生成与执行：资产侧计算并下发配额结论，网关在调用前检查余量、响应后按真实 Token 用量入账" loading="lazy" decoding="async" width="2352" height="972"><figcaption>图 7 · 配额生成与执行的五步链路</figcaption></figure>
 
 <p>边界很清楚：<strong>企业路径下，网关不持有配额规则，只持有计算后的结论。</strong> 个人路径更彻底，鉴权和额度判断都由资产侧实时给出。</p>
 <p>Token 限流分两段：转发前看还有没有余量，响应后按真实 usage 入账。这样调用前能拒绝、调用后能按实际结算；代价是已经发出去、还没返回的请求不会提前占额度，实际用量可能短时超过阈值。</p>
@@ -474,7 +475,7 @@
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">管理能力 · 流量治理 · 连接与超时 · 路由与负载均衡 · 请求改写 · 可观测性</span><br><span class="line">健康检查 · 模型管理 · 安全性 · 多地域 · 协议转换 · 扩展性 · 高可用</span><br></pre></td></tr></table></figure>
 
 <p>拿这 13 类逐项对照传统 API 网关，差异集中在治理与运营，不在转发本身；13 类里条目最密的是可观测性和请求改写。按”能力最终在哪里执行”，它们可以归入 8 个域：</p>
-<figure><img src="/images/from-model-management-to-ai-gateway/capability-map-8-domains.png" alt="图 8 · 能力图谱全景（8 域）" loading="lazy" decoding="async" width="2352" height="1050"><figcaption>图 8 · 能力图谱全景（8 域）</figcaption></figure>
+<figure><img src="/images/from-model-management-to-ai-gateway/capability-map-8-domains.png" alt="模型接入能力的八域图谱：A–G 负责请求执行，H 负责模型资产与业务控制，区分传统 API 网关和模型管理的职责边界" loading="lazy" decoding="async" width="2352" height="1050"><figcaption>图 8 · 能力图谱全景（8 域）</figcaption></figure>
 
 <p>这张图要交代的是边界：A–G 决定请求如何执行，H 决定为什么这样执行。传统 API 网关主要覆盖前者；要让模型成为一等公民，后者必须由模型管理与业务控制面补齐。</p>
 <hr>
