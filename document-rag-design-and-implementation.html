@@ -400,7 +400,9 @@
 <h2 id="第一条链路：把文件变成可检索的切片"><a href="#第一条链路：把文件变成可检索的切片" class="headerlink" title="第一条链路：把文件变成可检索的切片"></a>第一条链路：把文件变成可检索的切片</h2><h3 id="1-上传接口只负责可靠接收"><a href="#1-上传接口只负责可靠接收" class="headerlink" title="1. 上传接口只负责可靠接收"></a>1. 上传接口只负责可靠接收</h3><p>上传接口不会同步解析文档，只做六件事：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">校验资料库归属</span><br><span class="line">  ↓</span><br><span class="line">清理文件名，检查扩展名和大小</span><br><span class="line">  ↓</span><br><span class="line">以 UUID 对象名保存文件，同时计算 SHA-256</span><br><span class="line">  ↓</span><br><span class="line">按用户、资料库和文件哈希查重</span><br><span class="line">  ↓</span><br><span class="line">事务创建文档记录和 document_parse 任务</span><br><span class="line">  ↓</span><br><span class="line">立即返回文档状态</span><br></pre></td></tr></table></figure>
 
-<p>其中“清理文件名”值得单独说明：文件名完全由客户端提供，属于不可信输入。接口会先只保留路径的最后一段，防止 <code>../</code> 穿越；再去掉控制字符和文件系统不允许的 <code>/ \ : * ? &quot; &lt; &gt; |</code> 等字符，处理首尾空白与结尾的点，并截断到文件系统和数据库列允许的长度；清理后为空则替换为默认名。由于真正落盘的对象名使用 UUID，清理后的文件名只作为元数据保存、展示和导出，但它也是下一步检查扩展名的基础——取最后一个 <code>.</code> 之后的部分并小写化，再与白名单比对。</p>
+<blockquote>
+<p><strong>“清理文件名”指什么</strong>：文件名完全由客户端提供，属于不可信输入。接口会先只保留路径的最后一段，防止 <code>../</code> 穿越；再去掉控制字符和文件系统不允许的 <code>/ \ : * ? &quot; &lt; &gt; |</code> 等字符，处理首尾空白与结尾的点，并截断到文件系统和数据库列允许的长度；清理后为空则替换为默认名。由于真正落盘的对象名使用 UUID，清理后的文件名只作为元数据保存、展示和导出，但它也是下一步检查扩展名的基础——取最后一个 <code>.</code> 之后的部分并小写化，再与白名单比对。</p>
+</blockquote>
 <p>为什么不在 HTTP 请求里直接完成解析？</p>
 <p>因为普通文本也许几百毫秒就能处理完，扫描 PDF 却可能需要逐页渲染、OCR 和 Embedding。如果把这些工作放在上传请求中，就必须同时处理连接长时间占用、请求超时、失败重试、进度查询以及服务重启后的任务恢复。</p>
 <p>所以这里的边界很明确：<strong>HTTP 请求负责把文件可靠地收下来，后台任务负责把文件处理完。</strong></p>
