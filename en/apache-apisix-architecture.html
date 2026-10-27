@@ -323,46 +323,50 @@
     <div class="post-body" itemprop="articleBody">
 
 <aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>Apache APISIX 架构分析：协程、事件驱动与 OpenResty/Envoy 底座比对</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/apache-apisix-architecture.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><blockquote>
-<p>You have surely come across articles about how fast APISIX is. But how is that performance actually achieved?<br>This post is both an analysis and my own study notes from the book “OpenResty: From Beginner to Practice” and the official APISIX documentation.</p>
+<p>You have surely come across articles about how fast APISIX is. But how is that performance actually achieved?<br>
+This post is both an analysis and my own study notes from the book &quot;OpenResty: From Beginner to Practice&quot; and the official APISIX documentation.</p>
 </blockquote>
 <span id="more"></span>
-
-<h2 id="A-first-look"><a href="#A-first-look" class="headerlink" title="A first look"></a>A first look</h2><p>Start with the architecture diagram from the official site:</p>
+<h2 id="A-first-look">A first look</h2>
+<p>Start with the architecture diagram from the official site:</p>
 <p><img src="https://jiankunking.com/images/apache-apisix-architecture/flow-software-architecture.png" alt="APISIX software architecture and request-processing components" loading="eager" fetchpriority="high" decoding="async"></p>
 <p>As the diagram shows, APISIX is built on OpenResty and Nginx.</p>
 <p>One thing to note here: <font color=DeepPink><strong>OpenResty is not a fork of Nginx, nor is it Nginx repackaged with some common libraries bolted on — it simply uses Nginx as an underlying networking library.</strong></font></p>
 <p>So how exactly does it use Nginx as a networking library?</p>
-<p>It’s simple: a few lines of configuration in <code>Nginx.conf</code> route all traffic through the gateway’s Lua code.</p>
+<p>It's simple: a few lines of configuration in <code>Nginx.conf</code> route all traffic through the gateway's Lua code.</p>
 <blockquote>
 <p>Note: Nginx does not support Lua by default — that capability comes from OpenResty.</p>
 </blockquote>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 9080;</span><br><span class="line"></span><br><span class="line">    init_worker_by_lua_block &#123;</span><br><span class="line">        apisix.http_init_worker()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        access_by_lua_block &#123;</span><br><span class="line">            apisix.http_access_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        header_filter_by_lua_block &#123;</span><br><span class="line">            apisix.http_header_filter_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        body_filter_by_lua_block &#123;</span><br><span class="line">            apisix.http_body_filter_phase()</span><br><span class="line">        &#125;</span><br><span class="line">        log_by_lua_block &#123;</span><br><span class="line">            apisix.http_log_phase()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># simplified illustration only; for the full configuration see the nginx.conf file at the end of this article</span><br></pre></td></tr></table></figure>
-
 <p>In this example, the gateway listens on port 9080 and, via <code>location /</code>, intercepts every request to that port, processing each one through the <code>access</code>, <code>rewrite</code>, <code>header filter</code>, <code>body filter</code>, and <code>log</code> phases in order — calling the corresponding plugin function in each phase. The <code>rewrite</code> phase is handled together inside the <code>apisix.http_access_phase</code> function.</p>
 <p>Here is a complete Nginx configuration file: <a href="https://jiankunking.com/attachments/APISIX/apisix_nginx.conf" target="_blank" rel="noopener noreferrer">APISIX Nginx.conf</a></p>
 <p>For reference, the OpenResty phases:</p>
 <p><img src="https://jiankunking.com/images/apache-apisix-architecture/openresty_phases.png" alt="OpenResty request-processing phases" loading="lazy" decoding="async"></p>
 <blockquote>
-<p>To achieve sufficiently high performance, Apache APISIX implements a radix-tree-based route matching algorithm in C, and on top of it uses LuaJIT’s FFI to expose a Lua interface. The flexibility of Lua also lets the APISIX routing module easily support matching sub-routes under the same prefix with expressions and similar methods. The result replaces NGINX’s native routing while delivering dynamic configuration that is both high-performance and highly flexible. For the detailed implementation, see <a href="https://github.com/api7/lua-resty-radixtree">lua-resty-radixtree</a> and <a href="https://github.com/apache/apisix/blob/master/apisix/http/route.lua">route.lua</a>.</p>
+<p>To achieve sufficiently high performance, Apache APISIX implements a radix-tree-based route matching algorithm in C, and on top of it uses LuaJIT's FFI to expose a Lua interface. The flexibility of Lua also lets the APISIX routing module easily support matching sub-routes under the same prefix with expressions and similar methods. The result replaces NGINX's native routing while delivering dynamic configuration that is both high-performance and highly flexible. For the detailed implementation, see <a href="https://github.com/api7/lua-resty-radixtree">lua-resty-radixtree</a> and <a href="https://github.com/apache/apisix/blob/master/apisix/http/route.lua">route.lua</a>.</p>
 </blockquote>
 <p>But how does the Lua layer keep performance high?</p>
-<h3 id="Coroutines-events"><a href="#Coroutines-events" class="headerlink" title="Coroutines + events"></a>Coroutines + events</h3><p>At the OpenResty layer, Lua coroutines work together with Nginx’s event mechanism. When Lua code performs an I&#x2F;O operation — querying a MySQL database, say — it first calls yield to suspend itself and registers a callback with Nginx. Once the I&#x2F;O completes (or times out, or errors out), Nginx calls resume to wake the Lua coroutine back up. That is how Lua coroutines and Nginx’s event-driven model cooperate, avoiding callbacks written by hand in Lua code.</p>
+<h3 id="Coroutines-events">Coroutines + events</h3>
+<p>At the OpenResty layer, Lua coroutines work together with Nginx's event mechanism. When Lua code performs an I/O operation — querying a MySQL database, say — it first calls yield to suspend itself and registers a callback with Nginx. Once the I/O completes (or times out, or errors out), Nginx calls resume to wake the Lua coroutine back up. That is how Lua coroutines and Nginx's event-driven model cooperate, avoiding callbacks written by hand in Lua code.</p>
 <p><img src="https://jiankunking.com/images/apache-apisix-architecture/openresty_lua_%E5%8D%8F%E7%A8%8B_nginx%E4%BA%8B%E4%BB%B6%E6%9C%BA%E5%88%B6-en.png" alt="Lua coroutine yield and resume driven by NGINX events" loading="lazy" decoding="async"></p>
-<h3 id="LuaJIT"><a href="#LuaJIT" class="headerlink" title="LuaJIT"></a>LuaJIT</h3><p>First, where LuaJIT sits in the overall OpenResty architecture:</p>
+<h3 id="LuaJIT">LuaJIT</h3>
+<p>First, where LuaJIT sits in the overall OpenResty architecture:</p>
 <p><img src="https://jiankunking.com/images/apache-apisix-architecture/openresty_luajit.png" alt="OpenResty and LuaJIT architecture" loading="lazy" decoding="async"></p>
-<p>OpenResty’s worker processes are all forked from the master process, and the LuaJIT VM in the master is forked along with it. Every coroutine within a worker shares that one LuaJIT VM, and Lua code executes inside it.</p>
-<h4 id="Standard-Lua-vs-LuaJIT"><a href="#Standard-Lua-vs-LuaJIT" class="headerlink" title="Standard Lua vs LuaJIT"></a>Standard Lua vs LuaJIT</h4><p>Standard Lua actually ships a VM of its own for performance reasons, so Lua code is not interpreted directly: the Lua compiler first compiles it into bytecode, and the Lua virtual machine then executes that bytecode.</p>
-<p>LuaJIT’s runtime, besides an assembly-implemented Lua interpreter, also includes a JIT compiler that can emit machine code directly. At startup, LuaJIT behaves like standard Lua — Lua code is compiled to bytecode, and the bytecode is interpreted by LuaJIT’s interpreter.</p>
-<p>The difference: while interpreting bytecode, LuaJIT’s interpreter records runtime statistics — the actual number of times each Lua function entry point is invoked, and the actual number of iterations of each Lua loop. Once those counts exceed a certain randomized threshold, the corresponding function entry or loop is considered hot enough, and the JIT compiler kicks in.</p>
-<p>The JIT compiler starts from the hot function’s entry point or some point in the hot loop and tries to compile the corresponding Lua code path. Compilation converts LuaJIT bytecode into LuaJIT’s own intermediate representation (IR), and then into machine code for the target architecture.</p>
-<p>So, <strong>LuaJIT performance tuning is, in essence, about getting as much Lua code as possible compiled into machine code by the JIT compiler, instead of falling back to the Lua interpreter’s interpreted mode</strong>.</p>
+<p>OpenResty's worker processes are all forked from the master process, and the LuaJIT VM in the master is forked along with it. Every coroutine within a worker shares that one LuaJIT VM, and Lua code executes inside it.</p>
+<h4 id="Standard-Lua-vs-LuaJIT">Standard Lua vs LuaJIT</h4>
+<p>Standard Lua actually ships a VM of its own for performance reasons, so Lua code is not interpreted directly: the Lua compiler first compiles it into bytecode, and the Lua virtual machine then executes that bytecode.</p>
+<p>LuaJIT's runtime, besides an assembly-implemented Lua interpreter, also includes a JIT compiler that can emit machine code directly. At startup, LuaJIT behaves like standard Lua — Lua code is compiled to bytecode, and the bytecode is interpreted by LuaJIT's interpreter.</p>
+<p>The difference: while interpreting bytecode, LuaJIT's interpreter records runtime statistics — the actual number of times each Lua function entry point is invoked, and the actual number of iterations of each Lua loop. Once those counts exceed a certain randomized threshold, the corresponding function entry or loop is considered hot enough, and the JIT compiler kicks in.</p>
+<p>The JIT compiler starts from the hot function's entry point or some point in the hot loop and tries to compile the corresponding Lua code path. Compilation converts LuaJIT bytecode into LuaJIT's own intermediate representation (IR), and then into machine code for the target architecture.</p>
+<p>So, <strong>LuaJIT performance tuning is, in essence, about getting as much Lua code as possible compiled into machine code by the JIT compiler, instead of falling back to the Lua interpreter's interpreted mode</strong>.</p>
 <p>Worth noting:</p>
 <ul>
 <li>LuaJIT is not complete — there are <a href="https://web.archive.org/web/20220717120825/http://wiki.luajit.org/NYI">NYI (Not Yet Implemented)</a> gaps</li>
-<li>LuaJIT’s author is semi-retired</li>
+<li>LuaJIT's author is semi-retired</li>
 <li>The LuaJIT used by OpenResty is a branch maintained by LuaJIT itself</li>
 </ul>
-<h3 id="Selected-passages"><a href="#Selected-passages" class="headerlink" title="Selected passages"></a>Selected passages</h3><p>While working through “OpenResty: From Beginner to Practice”, a few passages really resonated with me. Quoting them here for mutual encouragement:</p>
+<h3 id="Selected-passages">Selected passages</h3>
+<p>While working through &quot;OpenResty: From Beginner to Practice&quot;, a few passages really resonated with me. Quoting them here for mutual encouragement:</p>
 <blockquote>
 <p>🎯 <strong>In my view, understanding why a technology exists, and figuring out its differences and advantages versus similar technologies, matters far more than merely being fluent in calling its APIs. That kind of technical perspective gives you a measure of foresight and insight — arguably an important difference between an engineer and an architect.</strong></p>
 </blockquote>
@@ -370,30 +374,35 @@
 <p>📚 <strong>No amount of technical coursework can replace careful reading of the official documentation. That slow, unglamorous work cannot be skipped by anyone.</strong></p>
 </blockquote>
 <blockquote>
-<p>🌍 <strong>OpenResty’s official documentation is currently available in English only, so engineers in China will inevitably miss the key points — or even misunderstand the content — because of the language barrier. But precisely because of that, there is no shortcut: you should read the documentation carefully from beginning to end, and when in doubt, work through the test case suites and your own experiments to pin down the answer. That is the right path to learning OpenResty.</strong></p>
+<p>🌍 <strong>OpenResty's official documentation is currently available in English only, so engineers in China will inevitably miss the key points — or even misunderstand the content — because of the language barrier. But precisely because of that, there is no shortcut: you should read the documentation carefully from beginning to end, and when in doubt, work through the test case suites and your own experiments to pin down the answer. That is the right path to learning OpenResty.</strong></p>
 </blockquote>
 <blockquote>
-<p>⚖️ <strong>It’s fine to have preferences when choosing technologies, but we should not turn them into blanket absolutes — there is no silver bullet that fits every caching scenario. Building a minimally viable solution for the actual requirements and growing it step by step is a sound approach.</strong></p>
+<p>⚖️ <strong>It's fine to have preferences when choosing technologies, but we should not turn them into blanket absolutes — there is no silver bullet that fits every caching scenario. Building a minimally viable solution for the actual requirements and growing it step by step is a sound approach.</strong></p>
 </blockquote>
-<h2 id="OpenResty-vs-Envoy-as-a-foundation"><a href="#OpenResty-vs-Envoy-as-a-foundation" class="headerlink" title="OpenResty vs Envoy as a foundation"></a>OpenResty vs Envoy as a foundation</h2><p>With the rise of cloud native, north-south traffic gateways in the Kubernetes stack have become common as well: <a href="https://jiankunking.com/south-north-entry-gateway-selection.html">North–South Entry Gateway Selection</a></p>
+<h2 id="OpenResty-vs-Envoy-as-a-foundation">OpenResty vs Envoy as a foundation</h2>
+<p>With the rise of cloud native, north-south traffic gateways in the Kubernetes stack have become common as well: <a href="https://jiankunking.com/south-north-entry-gateway-selection.html">North–South Entry Gateway Selection</a></p>
 <p>Feature-wise, these gateways may still lag behind Kong or APISIX, which sit on an OpenResty foundation, but the cloud-native community is clearly more active. Below, a comparison across four dimensions — contributors, stars, commits, and releases (data collected 2025-03-22):</p>
 <ul>
-<li>Contributors<ul>
+<li>Contributors
+<ul>
 <li><a href="https://github.com/openresty/openresty">OpenResty</a>: 35</li>
 <li><a href="https://github.com/envoyproxy/envoy">Envoy</a>: 1227</li>
 </ul>
 </li>
-<li>Stars<ul>
+<li>Stars
+<ul>
 <li><a href="https://github.com/openresty/openresty">OpenResty</a>: 12.9k</li>
 <li><a href="https://github.com/envoyproxy/envoy">Envoy</a>: 25.7k</li>
 </ul>
 </li>
-<li>Commits<ul>
+<li>Commits
+<ul>
 <li><a href="https://github.com/openresty/openresty">OpenResty</a>: 1746</li>
 <li><a href="https://github.com/envoyproxy/envoy">Envoy</a>: 24125</li>
 </ul>
 </li>
-<li>Releases<ul>
+<li>Releases
+<ul>
 <li><a href="https://github.com/openresty/openresty">OpenResty</a>: 16</li>
 <li><a href="https://github.com/envoyproxy/envoy">Envoy</a>: 196</li>
 </ul>
@@ -509,7 +518,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">864k</span>
+    <span title="站点总字数">867k</span>
   </span>
 </div>
 <div class="busuanzi-count">
