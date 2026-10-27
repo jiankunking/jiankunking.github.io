@@ -334,12 +334,12 @@
     <div class="post-body" itemprop="articleBody">
 
 <aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>从模型管理到 AI 网关：把资产、流量与成本串成闭环</dd></div><div><dt>原作者/发布方</dt><dd>衣舞晨风 (jiankunking)</dd></div><div><dt>原始来源</dt><dd><a href="https://jiankunking.com/from-model-management-to-ai-gateway.html" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>AI-assisted translation, reviewed by the author</dd></div><div><dt>版权说明</dt><dd>CC BY-NC-SA 4.0</dd></div></dl></aside><blockquote>
-<p>This system has two main lines: one is model management and model assets, answering &quot;who can use what and how much&quot;; the other is the AI gateway, enforcing those decisions on every request. This article follows &quot;the life of a model&quot; and &quot;the life of a request&quot; in turn, and finally sees where the two lines mesh.</p>
+<p>This system has two main lines: one is model management and model assets, answering “who can use what and how much”; the other is the AI gateway, enforcing those decisions on every request. This article follows “the life of a model” and “the life of a request” in turn, and finally sees where the two lines mesh.</p>
 </blockquote>
 <span id="more"></span>
+
 <hr>
-<h2 id="1-Assets-and-traffic">1. Assets and traffic</h2>
-<p>The core object of traditional API management is the interface; the core object of AI platform management is the model. Both appear to handle HTTP requests, yet what they care about differs:</p>
+<h2 id="1-Assets-and-traffic"><a href="#1-Assets-and-traffic" class="headerlink" title="1. Assets and traffic"></a>1. Assets and traffic</h2><p>The core object of traditional API management is the interface; the core object of AI platform management is the model. Both appear to handle HTTP requests, yet what they care about differs:</p>
 <table>
 <thead>
 <tr>
@@ -347,8 +347,7 @@
 <th>What model management additionally cares about</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>Address, protocol, authentication, routing</td>
 <td>Model listing, selection, permissions, quotas, unit price, retirement</td>
 </tr>
@@ -364,48 +363,40 @@
 <td>Who the caller is</td>
 <td>Which application, user and cost center the call belongs to</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>The left column is what the traffic side cares about; the right column is what model management adds. Instance health and remaining quota are ultimately executed on the data plane — the asset side states the requirements and consumes the results. If the people who manage assets and the people who manage traffic were two separate systems, each holding half the picture, they would drift apart: approvals, permissions and quotas would stay inside the asset system and fail to constrain real requests; the gateway would forward traffic without knowing why a model was listed, who is allowed to use it, or whose cost the call books to.</p>
 <p>Their real relationship is a loop:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Model listing → selection and application → authorization and quota generation</span><br><span class="line">        → gateway authentication, rate limiting, routing, rewriting</span><br><span class="line">        → usage and status flow back → cost allocation, scale-out, migration and retirement</span><br></pre></td></tr></table></figure>
+
 <p>The loop runs in two directions: decisions flow down — models, permissions, quotas and routing rules enter the gateway through the configuration plane; results flow up — token usage, callers and call outcomes return from the gateway to the asset side.</p>
 <p>Three planes keep the loop turning: the <strong>business plane</strong> makes decisions and owns model assets and usage rules; the <strong>configuration plane</strong> translates and delivers those decisions, turning business rules into router, instance and plugin configuration the gateway can execute; the <strong>data plane</strong> executes decisions and reports results back — built on an AI gateway, it is responsible only for authentication, rate limiting, routing, rewriting, forwarding and recording along the request path. Each plane keeps to its boundary: the business plane does not touch inference traffic, the data plane does not hold asset rules, and the configuration plane only translates and delivers.</p>
 <p>From here on, this article uses two words: the side that manages the rules is the <strong>asset side</strong>, corresponding to the business plane of the three planes; the side that sends requests is the <strong>caller</strong> — both applications such as low-code agent platforms and microservices, and direct personal office use.</p>
 <p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/three-planes-en.png" alt="Figure 1 · The three planes" loading="eager" fetchpriority="high" decoding="async"></p>
 <p>The hard part is here: the same model, token and caller must point to one and the same thing in both the asset system and the traffic system. Next, two lines: first the life of a model, then the life of a request.</p>
 <hr>
-<h2 id="2-Model-management-and-model-assets-the-life-of-a-model">2. Model management and model assets: the life of a model</h2>
-<p>One running example throughout: the customer support team wants to connect a new inference model to their low-code agent platform. From arrival to exit, the model passes through six gates:</p>
+<h2 id="2-Model-management-and-model-assets-the-life-of-a-model"><a href="#2-Model-management-and-model-assets-the-life-of-a-model" class="headerlink" title="2. Model management and model assets: the life of a model"></a>2. Model management and model assets: the life of a model</h2><p>One running example throughout: the customer support team wants to connect a new inference model to their low-code agent platform. From arrival to exit, the model passes through six gates:</p>
 <p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/model-lifecycle-en.png" alt="Figure 2 · Model lifecycle" loading="lazy" decoding="async"></p>
-<h3 id="2-1-Selection-verify-first-then-add-to-the-asset-catalog">2.1 Selection: verify first, then add to the asset catalog</h3>
-<p>They first tried several candidates side by side in the model marketplace: tuning <code>Temperature</code>, <code>Top_p</code> and <code>Max_tokens</code> one by one to see how the parameters shape the output; once the parameters were settled they were frozen, and the models were swapped while re-running the same set of prompts — keeping the model as the only variable — to compare the differences.</p>
+<h3 id="2-1-Selection-verify-first-then-add-to-the-asset-catalog"><a href="#2-1-Selection-verify-first-then-add-to-the-asset-catalog" class="headerlink" title="2.1 Selection: verify first, then add to the asset catalog"></a>2.1 Selection: verify first, then add to the asset catalog</h3><p>They first tried several candidates side by side in the model marketplace: tuning <code>Temperature</code>, <code>Top_p</code> and <code>Max_tokens</code> one by one to see how the parameters shape the output; once the parameters were settled they were frozen, and the models were swapped while re-running the same set of prompts — keeping the model as the only variable — to compare the differences.</p>
 <p>Selection is not just picking a model name; it also means judging whether reasoning capability is needed, how high the quality bar is, and whether there are security risks. Security risk is especially decisive — it directly determines whether to go with a private deployment or a cloud service, and the later application and routing approach follow from it.</p>
-<h3 id="2-2-Application-establish-ownership-first-then-open-production-access">2.2 Application: establish ownership first, then open production access</h3>
-<p>The application form must state the usage mode (low-code agent platform, microservice calls, or personal office use) and the environment (test or production).</p>
+<h3 id="2-2-Application-establish-ownership-first-then-open-production-access"><a href="#2-2-Application-establish-ownership-first-then-open-production-access" class="headerlink" title="2.2 Application: establish ownership first, then open production access"></a>2.2 Application: establish ownership first, then open production access</h3><p>The application form must state the usage mode (low-code agent platform, microservice calls, or personal office use) and the environment (test or production).</p>
 <p>Production access must be bound to an explicit scenario. Without a scenario, calls stop at the token and never reach the application or cost center, so auditing, cost attribution and problem diagnosis are limited to that coarse layer. So what this step really establishes is the three-way relationship between model, caller, and cost ownership.</p>
-<h3 id="2-3-Tokens-the-carrier-of-permission-not-an-isolated-key">2.3 Tokens: the carrier of permission, not an isolated key</h3>
-<p>One token can carry permissions for multiple models — you do not need a separate key per model. The deletion boundary for tokens is deliberately tight: delete the last model permission and the token is invalidated with it; if an agent still references the token, deletion is refused. <strong>A token that is &quot;still valid but whose user is unknown&quot; must never exist in the system.</strong></p>
-<p>Once the application is approved, the rules continue down the chain. The enterprise/application path issues a token, creates a Consumer (the gateway-side object representing the caller, holding its credentials and plugin configuration), writes model permissions and quota, and adds the route to a whitelist; the personal path only issues a token, with no Consumer — authentication and quota checks happen in real time on the asset side. Until this step is complete, &quot;authorized&quot; in the asset system cannot become &quot;may call&quot; in the request path.</p>
-<h3 id="2-4-Invocation-asset-relationships-carried-into-the-request">2.4 Invocation: asset relationships carried into the request</h3>
-<p>Once real calls begin, the SDK documentation is only the surface; underneath it, model management rules are expressed on the request side:</p>
+<h3 id="2-3-Tokens-the-carrier-of-permission-not-an-isolated-key"><a href="#2-3-Tokens-the-carrier-of-permission-not-an-isolated-key" class="headerlink" title="2.3 Tokens: the carrier of permission, not an isolated key"></a>2.3 Tokens: the carrier of permission, not an isolated key</h3><p>One token can carry permissions for multiple models — you do not need a separate key per model. The deletion boundary for tokens is deliberately tight: delete the last model permission and the token is invalidated with it; if an agent still references the token, deletion is refused. <strong>A token that is “still valid but whose user is unknown” must never exist in the system.</strong></p>
+<p>Once the application is approved, the rules continue down the chain. The enterprise&#x2F;application path issues a token, creates a Consumer (the gateway-side object representing the caller, holding its credentials and plugin configuration), writes model permissions and quota, and adds the route to a whitelist; the personal path only issues a token, with no Consumer — authentication and quota checks happen in real time on the asset side. Until this step is complete, “authorized” in the asset system cannot become “may call” in the request path.</p>
+<h3 id="2-4-Invocation-asset-relationships-carried-into-the-request"><a href="#2-4-Invocation-asset-relationships-carried-into-the-request" class="headerlink" title="2.4 Invocation: asset relationships carried into the request"></a>2.4 Invocation: asset relationships carried into the request</h3><p>Once real calls begin, the SDK documentation is only the surface; underneath it, model management rules are expressed on the request side:</p>
 <ul>
 <li>Exceeding either RPM or TPM causes a rejection, constraining request frequency, model throughput and the cost budget;</li>
 <li>Keeping <code>X-Session-ID</code> constant within a conversation lets consistent hashing land requests on the same instance as much as possible, reusing the KV cache;</li>
 <li>Passing user information via <code>baggage: sentry-user</code> (<code>baggage</code> is the standard request header OpenTelemetry uses to propagate key-value context along a trace) lets the call be correlated with the log field <code>caller_user</code> when the caller carries it as agreed, enabling end-to-end attribution.</li>
 </ul>
 <p>These request headers are not business decoration; they are the carriers through which session, user and cost ownership enter the data plane.</p>
-<h3 id="2-5-Billing-usage-must-flow-back-to-the-asset-relationship">2.5 Billing: usage must flow back to the asset relationship</h3>
-<p>A single user interaction can trigger several model calls; counting by interactions or requests alone cannot explain real consumption, and capacity and cost have to be measured in tokens.</p>
-<p>Token-based measurement supports three things: capacity sizing — production statistics yield the average token consumption per interaction (P95 as well; the mean hides the long tail of multi-turn loops), which is fed into load tests to verify the RPM / TPM, concurrency and latency ceilings so that business volume can be converted into resource requirements; cost allocation aggregates by token to the application or sub-product, drillable down to the user; cost estimation uses <code>DAU × interactions per user per day × average tokens per interaction × unit price</code> to project daily cost — for the latter two, DAU and interaction counts come from product-side instrumentation, while the gateway supplies only the token and unit-price bases, with input and output tokens priced separately.</p>
+<h3 id="2-5-Billing-usage-must-flow-back-to-the-asset-relationship"><a href="#2-5-Billing-usage-must-flow-back-to-the-asset-relationship" class="headerlink" title="2.5 Billing: usage must flow back to the asset relationship"></a>2.5 Billing: usage must flow back to the asset relationship</h3><p>A single user interaction can trigger several model calls; counting by interactions or requests alone cannot explain real consumption, and capacity and cost have to be measured in tokens.</p>
+<p>Token-based measurement supports three things: capacity sizing — production statistics yield the average token consumption per interaction (P95 as well; the mean hides the long tail of multi-turn loops), which is fed into load tests to verify the RPM &#x2F; TPM, concurrency and latency ceilings so that business volume can be converted into resource requirements; cost allocation aggregates by token to the application or sub-product, drillable down to the user; cost estimation uses <code>DAU × interactions per user per day × average tokens per interaction × unit price</code> to project daily cost — for the latter two, DAU and interaction counts come from product-side instrumentation, while the gateway supplies only the token and unit-price bases, with input and output tokens priced separately.</p>
 <p>The gateway is the feedback entry point here: it parses upstream usage, records input and output tokens, model instance, caller and trace information, and hands them to quota settlement, detail queries and cost allocation.</p>
-<h3 id="2-6-Retirement-remove-references-first-then-delete-the-asset">2.6 Retirement: remove references first, then delete the asset</h3>
-<p>A model cannot be retired by deleting it from a list. Published routes, issued tokens, agent references and in-flight migrations must all be handled in sync. The system uses a migration protection list to block new routes being created against the old model, and route creation also validates service template compatibility.</p>
+<h3 id="2-6-Retirement-remove-references-first-then-delete-the-asset"><a href="#2-6-Retirement-remove-references-first-then-delete-the-asset" class="headerlink" title="2.6 Retirement: remove references first, then delete the asset"></a>2.6 Retirement: remove references first, then delete the asset</h3><p>A model cannot be retired by deleting it from a list. Published routes, issued tokens, agent references and in-flight migrations must all be handled in sync. The system uses a migration protection list to block new routes being created against the old model, and route creation also validates service template compatibility.</p>
 <p>The correct order is: switch the calling relationships first, then reclaim tokens and routes, and only then remove the model asset. Doing it in reverse does not work: delete the asset before cutting traffic, and the asset relationships drift apart from real traffic.</p>
 <p>The six stages do not really end here. The three dashed lines in Figure 2 are the feedback flow: usage, quality and cost feedback supports scale-out plans and provider trade-offs; permission and quota adjustments flow back to the application step; and the slot freed by retirement is filled by a replacement model, re-entering selection evaluation.</p>
 <hr>
-<h2 id="3-The-AI-gateway-the-life-of-a-request">3. The AI gateway: the life of a request</h2>
-<p>The asset relationships established in Chapter 2 finally take effect in real requests — some as short as milliseconds, others as long as several minutes.</p>
+<h2 id="3-The-AI-gateway-the-life-of-a-request"><a href="#3-The-AI-gateway-the-life-of-a-request" class="headerlink" title="3. The AI gateway: the life of a request"></a>3. The AI gateway: the life of a request</h2><p>The asset relationships established in Chapter 2 finally take effect in real requests — some as short as milliseconds, others as long as several minutes.</p>
 <p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/request-pipeline-six-stages-en.png" alt="Figure 3 · Request execution pipeline" loading="lazy" decoding="async"></p>
 <p>Once the low-code agent platform is officially connected, every request on the enterprise path enters the gateway, and the gateway must answer five questions in order:</p>
 <ol>
@@ -417,49 +408,41 @@
 </ol>
 <p>Figure 3 expands these five questions into eight stages; the extra request rewriting and forwarding are execution details. Identity and permission must be confirmed first, the admission check comes before routing, and actual usage can only be settled after the response — implementations may vary; this order cannot.</p>
 <p>Behind all five questions are the decisions from Section 2: who you are comes from the ownership established at application time; whether you may call comes from token permissions; whether it is admitted comes from the quota verdict; where it goes comes from the instance list determined by selection and retirement; how much was used returns to the billing basis. The two lines mesh right here.</p>
-<h3 id="3-1-Two-kinds-of-callers-two-paths">3.1 Two kinds of callers, two paths</h3>
-<p>The low-code agent platform takes the enterprise path; personal office use takes the personal path. The two kinds of callers have different data sources and do not fit into one authentication model:</p>
+<h3 id="3-1-Two-kinds-of-callers-two-paths"><a href="#3-1-Two-kinds-of-callers-two-paths" class="headerlink" title="3.1 Two kinds of callers, two paths"></a>3.1 Two kinds of callers, two paths</h3><p>The low-code agent platform takes the enterprise path; personal office use takes the personal path. The two kinds of callers have different data sources and do not fit into one authentication model:</p>
 <p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/enterprise-vs-personal-paths-v2-en.png" alt="Figure 4 · Different scenario domains map to two invocation paths" loading="lazy" decoding="async"></p>
 <ul>
-<li><strong>Enterprise/application path</strong>: the token is bound to a fixed caller, and the gateway completes identity, model permission and quota checks locally.</li>
+<li><strong>Enterprise&#x2F;application path</strong>: the token is bound to a fixed caller, and the gateway completes identity, model permission and quota checks locally.</li>
 <li><strong>Personal path</strong>: no fixed consumer object is created; the asset side validates token and quota in real time, and actual usage is reclaimed after the request ends.</li>
 </ul>
 <p>The two kinds of calls use different scenario domains. By the time a request reaches the gateway, the domain has already determined whether it hits the enterprise route or the personal route — it is not a choice made by route labels after entry.</p>
-<h3 id="3-2-Usage-is-parsed-exactly-once">3.2 Usage is parsed exactly once</h3>
-<p>The gateway parses upstream response usage exactly once, and hands the same result to token quota settlement, personal usage reporting, logs and metrics, avoiding the inconsistent accounting that arises when each of them computes it separately.</p>
-<p>This step turns &quot;the request succeeded&quot; into operational information: not only whether the call completed, but which instance served it, how many tokens it burned, and whose account it books to.</p>
-<p>Request and response bodies may contain prompts, business data, and even personal information; &quot;can be recorded&quot; does not mean &quot;retained in full by default&quot;. In production, sampling decisions must also be made per scenario, together with the corresponding masking, access control and retention periods.</p>
-<h3 id="3-3-Instance-pool">3.3 Instance pool</h3>
-<p>One model may map to self-hosted instances, a cloud service and a backup provider at the same time. Before forwarding, health status, remaining quota and alert-based demotion jointly decide whether an instance may enter the candidate set; after forwarding, an upstream 429/5xx triggers candidate switching according to the retry conditions. These conditions must converge into a single routing-and-retry chain, otherwise an instance just removed by health checks may be re-selected by another logic path, and a high-priority instance that has exhausted its quota may keep receiving traffic.</p>
-<p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/fallback-selection-retry-v2-en.png" alt="Figure 5 · Fallback's filtering and retry chain" loading="lazy" decoding="async"></p>
-<h3 id="3-4-A-real-request">3.4 A real request</h3>
-<p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/ai-request-complete-journey-diagram-hd-v2-en-optimized.webp" alt="Figure 6 · A complete request: from entry to settlement" loading="lazy" decoding="async"></p>
-<p>In the figure, the red-flagged &quot;unavailable&quot; instance was removed from the candidates after failing an active health check. This request first reached the preferred instance, which returned 429 — excluded only for this request, marked &quot;tried this round&quot; in the figure, and not written into health-check state. Fallback is on, the time since the last failure is still within the retry window, and retries remain, so the router then switched to backup one. The low-code agent platform notices nothing: no retry of its own, no need to change address or credentials.</p>
+<h3 id="3-2-Usage-is-parsed-exactly-once"><a href="#3-2-Usage-is-parsed-exactly-once" class="headerlink" title="3.2 Usage is parsed exactly once"></a>3.2 Usage is parsed exactly once</h3><p>The gateway parses upstream response usage exactly once, and hands the same result to token quota settlement, personal usage reporting, logs and metrics, avoiding the inconsistent accounting that arises when each of them computes it separately.</p>
+<p>This step turns “the request succeeded” into operational information: not only whether the call completed, but which instance served it, how many tokens it burned, and whose account it books to.</p>
+<p>Request and response bodies may contain prompts, business data, and even personal information; “can be recorded” does not mean “retained in full by default”. In production, sampling decisions must also be made per scenario, together with the corresponding masking, access control and retention periods.</p>
+<h3 id="3-3-Instance-pool"><a href="#3-3-Instance-pool" class="headerlink" title="3.3 Instance pool"></a>3.3 Instance pool</h3><p>One model may map to self-hosted instances, a cloud service and a backup provider at the same time. Before forwarding, health status, remaining quota and alert-based demotion jointly decide whether an instance may enter the candidate set; after forwarding, an upstream 429&#x2F;5xx triggers candidate switching according to the retry conditions. These conditions must converge into a single routing-and-retry chain, otherwise an instance just removed by health checks may be re-selected by another logic path, and a high-priority instance that has exhausted its quota may keep receiving traffic.</p>
+<p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/fallback-selection-retry-v2-en.png" alt="Figure 5 · Fallback&#39;s filtering and retry chain" loading="lazy" decoding="async"></p>
+<h3 id="3-4-A-real-request"><a href="#3-4-A-real-request" class="headerlink" title="3.4 A real request"></a>3.4 A real request</h3><p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/ai-request-complete-journey-diagram-hd-v2-en-optimized.webp" alt="Figure 6 · A complete request: from entry to settlement" loading="lazy" decoding="async"></p>
+<p>In the figure, the red-flagged “unavailable” instance was removed from the candidates after failing an active health check. This request first reached the preferred instance, which returned 429 — excluded only for this request, marked “tried this round” in the figure, and not written into health-check state. Fallback is on, the time since the last failure is still within the retry window, and retries remain, so the router then switched to backup one. The low-code agent platform notices nothing: no retry of its own, no need to change address or credentials.</p>
 <p>Request-level exclusion, health-check removal, quota filtering and alert-based demotion — four mechanisms that do not interfere with one another, yet all act on the same candidate pool. Only after the preferred instance keeps failing past a threshold is it demoted by alert integration, and it re-enters the candidate set according to policy once probing recovers.</p>
 <hr>
-<h2 id="4-Where-the-two-lines-mesh">4. Where the two lines mesh</h2>
-<p>The asset side makes decisions and the traffic side executes them, connected by quota and configuration; the capability map fixes the boundary between the two sides.</p>
-<h3 id="4-1-Quota-computed-on-the-asset-side-executed-on-the-data-plane">4.1 Quota: computed on the asset side, executed on the data plane</h3>
-<p>The asset side holds model permissions, plans and cost rules, so it is the right place to answer &quot;how much should be granted&quot;; the data plane sees every real request, so it is the right place to answer &quot;how much has been used&quot;. The two are not interchangeable.</p>
-<p>The enterprise/application path connects them with a five-step chain (the &quot;Business side&quot; in the figure is this article's asset side):</p>
+<h2 id="4-Where-the-two-lines-mesh"><a href="#4-Where-the-two-lines-mesh" class="headerlink" title="4. Where the two lines mesh"></a>4. Where the two lines mesh</h2><p>The asset side makes decisions and the traffic side executes them, connected by quota and configuration; the capability map fixes the boundary between the two sides.</p>
+<h3 id="4-1-Quota-computed-on-the-asset-side-executed-on-the-data-plane"><a href="#4-1-Quota-computed-on-the-asset-side-executed-on-the-data-plane" class="headerlink" title="4.1 Quota: computed on the asset side, executed on the data plane"></a>4.1 Quota: computed on the asset side, executed on the data plane</h3><p>The asset side holds model permissions, plans and cost rules, so it is the right place to answer “how much should be granted”; the data plane sees every real request, so it is the right place to answer “how much has been used”. The two are not interchangeable.</p>
+<p>The enterprise&#x2F;application path connects them with a five-step chain (the “Business side” in the figure is this article’s asset side):</p>
 <p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/quota-four-step-loop-en.png" alt="Figure 7 · The five-step chain of quota generation and execution" loading="lazy" decoding="async"></p>
 <p>The core boundary in one sentence: <strong>on the enterprise path, the gateway does not hold quota rules — only the computed verdict.</strong> The personal path goes further: authentication and quota checks are all done in real time on the asset side.</p>
 <p>Token rate limiting has two stages: check remaining headroom before forwarding, then book against real usage after the response. That way a call can be rejected before it happens and settled accurately afterward. The cost is that concurrent in-flight requests have no reserved quota, so actual usage can briefly exceed the threshold.</p>
-<p>To users, this implementation ultimately surfaces only as the rate-limit dimensions RPM / TPM, with exact values on the model marketplace detail page; the performance tiers (standard mode / high-performance mode, etc.) are separate information annotated on the model marketplace page.</p>
-<p>Time-window rate limiting follows the same logic: the time window is a variable read when the request arrives, so busy/off-peak quotas switch at runtime under the same rules, with no daily batch edit of live configuration.</p>
-<h3 id="4-2-Configuration-delivery">4.2 Configuration delivery</h3>
-<p>Model permissions, quotas and instance state all change, but changes cannot be made by overwriting the gateway configuration wholesale — a single business-side delivery could wipe out manual operations adjustments.</p>
-<p>So the configuration stage enforces exactly two boundaries. <strong>Source-of-truth boundary</strong>: managed plugins treat the database as the single source of truth; unmanaged plugins keep their current data-plane state; the gateway is called only after the database transaction commits, and external IO stays out of the transaction. <strong>Failure boundary</strong>: a failed delivery records status, alerts and retries — a database rollback is never used to paper over &quot;not delivered&quot;; if a rollback is genuinely needed, restore the gateway first, then roll back the database.</p>
+<p>To users, this implementation ultimately surfaces only as the rate-limit dimensions RPM &#x2F; TPM, with exact values on the model marketplace detail page; the performance tiers (standard mode &#x2F; high-performance mode, etc.) are separate information annotated on the model marketplace page.</p>
+<p>Time-window rate limiting follows the same logic: the time window is a variable read when the request arrives, so busy&#x2F;off-peak quotas switch at runtime under the same rules, with no daily batch edit of live configuration.</p>
+<h3 id="4-2-Configuration-delivery"><a href="#4-2-Configuration-delivery" class="headerlink" title="4.2 Configuration delivery"></a>4.2 Configuration delivery</h3><p>Model permissions, quotas and instance state all change, but changes cannot be made by overwriting the gateway configuration wholesale — a single business-side delivery could wipe out manual operations adjustments.</p>
+<p>So the configuration stage enforces exactly two boundaries. <strong>Source-of-truth boundary</strong>: managed plugins treat the database as the single source of truth; unmanaged plugins keep their current data-plane state; the gateway is called only after the database transaction commits, and external IO stays out of the transaction. <strong>Failure boundary</strong>: a failed delivery records status, alerts and retries — a database rollback is never used to paper over “not delivered”; if a rollback is genuinely needed, restore the gateway first, then roll back the database.</p>
 <p>The configuration plane only changes target fields and reads back to confirm after delivery. The goal is not that a given call never fails, but that after a failure you still know where the source of truth is and the data plane can re-converge.</p>
-<h3 id="4-3-Capability-map">4.3 Capability map</h3>
-<p>The asset side and the traffic side each hold a segment — where does the boundary lie? The starting point was a list of 13 capability categories:</p>
+<h3 id="4-3-Capability-map"><a href="#4-3-Capability-map" class="headerlink" title="4.3 Capability map"></a>4.3 Capability map</h3><p>The asset side and the traffic side each hold a segment — where does the boundary lie? The starting point was a list of 13 capability categories:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Management · Traffic governance · Connections and timeouts · Routing and load balancing · Request rewriting · Observability</span><br><span class="line">Health checks · Model management · Security · Multi-region · Protocol conversion · Extensibility · High availability</span><br></pre></td></tr></table></figure>
+
 <p>Laid item by item against a traditional API gateway, the differences cluster in governance and operations, not in forwarding — and among the 13 categories, observability and request rewriting were the densest. Grouped by where the capability finally executes, they fall into 8 domains:</p>
 <p><img src="https://jiankunking.com/images/from-model-management-to-ai-gateway/capability-map-8-domains-v2-en.png" alt="Figure 8 · Full capability map (8 domains)" loading="lazy" decoding="async"></p>
 <p>The most important thing about this map is not the number of features but the boundaries: A–G decide how a request executes; H decides why it executes that way. Traditional API gateways mainly cover the former; to make models first-class citizens, the latter must be supplied by model management and the business control plane.</p>
 <hr>
-<h2 id="5-How-feedback-becomes-decisions">5. How feedback becomes decisions</h2>
-<p>Operational results flow back from three places, carrying the traffic side's execution results back to the asset side:</p>
+<h2 id="5-How-feedback-becomes-decisions"><a href="#5-How-feedback-becomes-decisions" class="headerlink" title="5. How feedback becomes decisions"></a>5. How feedback becomes decisions</h2><p>Operational results flow back from three places, carrying the traffic side’s execution results back to the asset side:</p>
 <table>
 <thead>
 <tr>
@@ -468,11 +451,10 @@
 <th>What decision it changes</th>
 </tr>
 </thead>
-<tbody>
-<tr>
-<td>Persistent upstream 429 / 5xx triggering an alert</td>
+<tbody><tr>
+<td>Persistent upstream 429 &#x2F; 5xx triggering an alert</td>
 <td>Data-plane alert integration demotes priority</td>
-<td>The instance's routing priority, directly affecting every subsequent routing decision</td>
+<td>The instance’s routing priority, directly affecting every subsequent routing decision</td>
 </tr>
 <tr>
 <td>Token usage and call details</td>
@@ -484,17 +466,14 @@
 <td>Operations and model operations</td>
 <td>Scale out instances, degrade, or add providers — eventually entering the retirement and migration of 2.6</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>The first row needs no human: once the state changes, routing priority changes with it. The latter two need a human decision: data first becomes bills and dashboards, and only then does someone decide to scale out, switch providers, or retire.</p>
 <hr>
-<h2 id="Conclusion">Conclusion</h2>
-<p>Model management decides who can use what and how much; the AI gateway is responsible for enforcing those decisions on every request; and after each request, usage, callers and outcomes flow back into model management to support cost allocation, scale-out, migration and retirement.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Model management decides who can use what and how much; the AI gateway is responsible for enforcing those decisions on every request; and after each request, usage, callers and outcomes flow back into model management to support cost allocation, scale-out, migration and retirement.</p>
 <p>This is also where the two main lines intersect: the life of a model establishes and changes asset relationships, and the life of a request executes and verifies them. Without the first, the gateway does not know why it routes the way it does; without the second, permissions and quotas in model management are just rules on paper.</p>
 <p>Connect these things, and model assets, traffic governance and cost management finally form a genuine closed loop.</p>
 <hr>
-<h2 id="A-note-from-the-author">A note from the author</h2>
-<p>I drove this system end to end — from the capability inventory and three-plane architecture design, through custom plugins, the full model lifecycle, rate-limiting migration, and the operations console.</p>
+<h2 id="A-note-from-the-author"><a href="#A-note-from-the-author" class="headerlink" title="A note from the author"></a>A note from the author</h2><p>I drove this system end to end — from the capability inventory and three-plane architecture design, through custom plugins, the full model lifecycle, rate-limiting migration, and the operations console.</p>
 <p>If you are also working on model platforms, AI gateways or LLMOps, I would be glad to compare notes.</p>
 <p><strong>Further reading</strong></p>
 <ul>
@@ -608,7 +587,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">867k</span>
+    <span title="站点总字数">865k</span>
   </span>
 </div>
 <div class="busuanzi-count">
