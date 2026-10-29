@@ -314,7 +314,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>3.5k</span>
+      <span>3.7k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -340,9 +340,9 @@
 <span id="more"></span>
 
 <blockquote>
-<p>地址：<br><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/package-summary.html#package.description">https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/package-summary.html#package.description</a><br>翻译JDK8而不是12的原因是JDK8对与内存语义部分讲解更加详细。</p>
+<p>地址：<br><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/package-summary.html#package.description">https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/package-summary.html#package.description</a><br>翻译JDK8而不是12的原因是JDK8 对于内存语义部分讲解更加详细。</p>
 </blockquote>
-<h2 id="包简介与类摘要"><a href="#包简介与类摘要" class="headerlink" title="包简介与类摘要"></a>包简介与类摘要</h2><p><strong>Package java.util.concurrent.atomic 对于单个变量支持无锁、线程安全操作的工具类。</strong></p>
+<h2 id="包简介与类摘要"><a href="#包简介与类摘要" class="headerlink" title="包简介与类摘要"></a>包简介与类摘要</h2><p><strong>Package java.util.concurrent.atomic：一个支持对单个变量进行无锁、线程安全编程的小型工具类集合。</strong></p>
 <p>类摘要：</p>
 <table>
 <thead>
@@ -401,30 +401,35 @@
 </tr>
 <tr>
 <td>DoubleAccumulator</td>
-<td>One or more variables that together maintain a running double value updated using a supplied function.</td>
+<td>一个或多个共同维护“运行中”的 double 值的变量，该值由给定的函数更新。</td>
 </tr>
 <tr>
 <td>DoubleAdder</td>
-<td>One or more variables that together maintain an initially zero double sum.</td>
+<td>一个或多个共同维护初始为零的 double 总和的变量。</td>
 </tr>
 <tr>
 <td>LongAccumulator</td>
-<td>One or more variables that together maintain a running long value updated using a supplied function.</td>
+<td>一个或多个共同维护“运行中”的 long 值的变量，该值由给定的函数更新。</td>
 </tr>
 <tr>
 <td>LongAdder</td>
-<td>One or more variables that together maintain an initially zero long sum.</td>
+<td>一个或多个共同维护初始为零的 long 总和的变量。</td>
 </tr>
 </tbody></table>
 <blockquote>
 <p>DoubleAccumulator、DoubleAdder、LongAccumulator、LongAdder 均是Striped64的子类，内部维护的是一个数组，当并发更新时，每个线程操作的是数组中的元素，从而降低锁的粒度。</p>
 </blockquote>
-<h2 id="原子更新操作：compareAndSet"><a href="#原子更新操作：compareAndSet" class="headerlink" title="原子更新操作：compareAndSet"></a>原子更新操作：compareAndSet</h2><p>本质上，该package下的类扩展了volatile值、字段、数组元素的概念，提供以下形式的原子更新操作：</p>
+<h2 id="原子更新操作：compareAndSet"><a href="#原子更新操作：compareAndSet" class="headerlink" title="原子更新操作：compareAndSet"></a>原子更新操作：compareAndSet</h2><p>本质上，该package下的类扩展了volatile值、字段、数组元素的概念，提供以下形式的原子条件更新操作：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">boolean compareAndSet(expectedValue, updateValue);</span><br></pre></td></tr></table></figure>
 <p>该方法（在不同类中的参数类型不同）原子地将变量设置为updateValue，如果它当前持有expectedValue，更新成功返回true。该包中的类还包含获取和无条件设置（set）值的方法。</p>
 <p>这些方法的规范使实现能够采用当代处理器上可用的高效机器级原子指令。然而，<font color=DeepPink><strong>在某些平台上，支持可能需要某种形式的内部锁定。因此，这些方法不是严格保证是非阻塞的（线程可能在执行操作之前暂时阻塞）。</strong></font></p>
 <p>AtomicBoolean、AtomicInteger、AtomicLong和AtomicReference类的实例都提供对对应类型的单个变量的访问和更新。每个类还提供了适用于该类型的实用方法。例如，类AtomicLong和AtomicInteger提供原子增量方法。 一个应用是生成序列号，如：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">class Sequencer &#123;</span><br><span class="line">  private final AtomicLong sequenceNumber = new AtomicLong(0);</span><br><span class="line">  public long next() &#123;</span><br><span class="line">    return sequenceNumber.getAndIncrement();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>像 getAndIncrement 一样，定义新的、对某个值原子地应用函数的实用方法也很简单。例如，给定如下转换函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">long transform(long input)</span><br></pre></td></tr></table></figure>
+<p>可以这样编写你的实用方法：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">long getAndTransform(AtomicLong var) &#123;</span><br><span class="line">  long prev, next;</span><br><span class="line">  do &#123;</span><br><span class="line">    prev = var.get();</span><br><span class="line">    next = transform(prev);</span><br><span class="line">  &#125; while (!var.compareAndSet(prev, next));</span><br><span class="line">  return prev; // transformAndGet 则返回 next</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h2 id="原子访问的内存语义与-lazySet"><a href="#原子访问的内存语义与-lazySet" class="headerlink" title="原子访问的内存语义与 lazySet"></a>原子访问的内存语义与 lazySet</h2><p>原子性访问和更新内存效果，与volatiles遵循同样的规则，如<a href="https://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.4">The Java Language Specification (17.4 Memory Model)</a>所述：</p>
 <ul>
@@ -442,11 +447,13 @@
 <blockquote>
 <p>weakCompareAndSet JDK 9之后Deprecated，本文已跳过。</p>
 </blockquote>
-<h2 id="其它原子类与使用限制"><a href="#其它原子类与使用限制" class="headerlink" title="其它原子类与使用限制"></a>其它原子类与使用限制</h2><p>除了表示单个值的类之外，package中还包含Updater类，可用于在类的volatile字段上执行compareAndSet操作。 AtomicReferenceFieldUpdater、AtomicIntegerFieldUpdater和AtomicLongFieldUpdater是基于反射的，可提供对相关字段类型的访问。这些主要用于原子数据结构，同一节点的几个volatile字段（例如，树节点的链接）独立地原子更新。<strong>这些类在如何以及何时使用原子更新方面提供了更大的灵活性，但代价是更加笨拙的基于反射的设置、更不方便的使用和更弱的保证。</strong></p>
+<h2 id="其它原子类与使用限制"><a href="#其它原子类与使用限制" class="headerlink" title="其它原子类与使用限制"></a>其它原子类与使用限制</h2><p>除了表示单个值的类之外，package中还包含Updater类，可用于在类的volatile字段上执行compareAndSet操作。 AtomicReferenceFieldUpdater、AtomicIntegerFieldUpdater和AtomicLongFieldUpdater是基于反射的，可提供对相关字段类型的访问。这些主要用在这样的原子数据结构中：同一节点的几个 volatile 字段（例如树节点的链接）各自独立地接受原子更新。<strong>这些类在如何以及何时使用原子更新方面提供了更大的灵活性，但代价是更加笨拙的基于反射的设置、更不方便的使用和更弱的保证。</strong></p>
 <p>AtomicIntegerArray、AtomicLongArray和AtomicReferenceArray类进一步将原子操作支持扩展到这些类型的数组。这些类还<strong>提供了数组元素的volatile访问语义，这是普通数组不支持的。</strong></p>
 <p>AtomicMarkableReference类将单个布尔值与引用相关联。 例如，该位可能在数据结构中使用，表示被引用的对象在逻辑上已被删除。 AtomicStampedReference类将整数值与引用相关联。 例如，这可以用于表示与一系列更新相对应的版本号。</p>
 <p>原子类主要设计为用于实现非阻塞数据结构和相关基础结构类的构建。 compareAndSet方法不是锁定的一般替代方法。 仅当对象的关键更新仅限于单个变量时，它才适用。</p>
 <p>原子类不是java.lang.Integer和相关类的通用替换。它们没有定义equals，hashCode和compareTo等方法（由于原子变量预期会发生变化，所以它们不适合作为哈希表键）。</p>
+<p>此外，该包只为在预期应用中有用的常见类型提供类。例如，没有表示 byte 的原子类。在少数需要的场合，你可以用 AtomicInteger 保存 byte 值，并做适当的强制转换。</p>
+<p>你还可以使用 Float.floatToRawIntBits(float) 和 Float.intBitsToFloat(int) 转换来保存 float，使用 Double.doubleToRawLongBits(double) 和 Double.longBitsToDouble(long) 转换来保存 double。</p>
 <blockquote>
 <p>后续会出文章解析：AtomicLong、Striped64、LongAdder<br>本文的目的主要是从大体上了解atomic及其内存语义</p>
 </blockquote>
@@ -590,7 +597,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">865k</span>
+    <span title="站点总字数">872k</span>
   </span>
 </div>
 <div class="busuanzi-count">

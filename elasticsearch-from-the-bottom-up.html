@@ -316,7 +316,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>5.8k</span>
+      <span>5.9k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -350,40 +350,41 @@
 <li>哪些类型的搜索可以(和不能)有效地完成,以及为什么使用倒排索引来转换问题,直到它们看起来像字符串前缀问题.</li>
 <li>为什么文本处理很重要.</li>
 <li>如何在”段”中构建索引,以及这对搜索和更新有何影响.</li>
-<li>什么构成Lucene-index.<br>*Elasticsearch分片和索引.</li>
+<li>什么构成Lucene-index.</li>
+<li>Elasticsearch分片和索引.</li>
 </ul>
 <p>到那时,我们将了解单个Elasticsearch节点在搜索和索引时会发生什么.本系列的第二篇文章将介绍Elasticsearch的分布式方面.</p>
 <h2 id="Inverted-Indexes-AND-Index-Terms"><a href="#Inverted-Indexes-AND-Index-Terms" class="headerlink" title="Inverted Indexes AND Index Terms"></a>Inverted Indexes AND Index Terms</h2><p><img src="/images/elasticsearch-from-the-bottom-up/inverted-index.svg" alt="Sample documents AND resulting inverted index" loading="eager" fetchpriority="high" decoding="async" width="1554" height="720"></p>
 <p>假设我们有这三个简单的文档:”Winter is coming.”,”Ours is the fury.”和”The choice is yours.”.经过一些简单的文本处理(小写、去掉标点、分词),我们就可以构造出如图所示的”倒排索引”.</p>
-<p>倒排索引将术语映射到包含该术语的文档(以及可能在文档中的位置).由于字典中的术语是排序的,我们可以快速找到一个术语,然后找到它在帖子结构中的出现.这与列出与特定文档相关的术语的”前向索引”相反.</p>
+<p>倒排索引将术语映射到包含该术语的文档(以及可能在文档中的位置).由于字典中的术语是排序的,我们可以快速找到一个术语,然后找到它在postings(倒排表)结构中的出现.这与列出与特定文档相关的术语的”前向索引”相反.</p>
 <blockquote>
 <p>术语英文为term</p>
 </blockquote>
 <p>然后通过查找所有术语和它们的出现来完成一个包含多个术语的简单搜索,并获取出现集的交集(对于AND搜索)或并集(对于OR搜索)以获得文档的结果列表.更复杂类型的查询显然更精细,但方法是一样的:首先对字典进行操作,找到候选词,然后对相应的出现、位置等进行操作.</p>
-<p>因此,索引术语是搜索的单位.我们生成的术语决定了我们可以(和不能)有效地进行哪些类型的搜索.例如,使用上图中的字典,我们可以高效地找到所有以”c”开头的术语.但是,我们无法有效地搜索包含”ours”的所有内容.为此,我们必须遍历所有术语,以发现”yours”也包含子字符串.当索引不是很小时,这是非常昂贵的.</p>
+<p>因此,索引术语是搜索的单位.我们生成的术语决定了我们可以(和不能)有效地进行哪些类型的搜索.例如,使用上图中的字典,我们可以高效地找到所有以”c”开头的术语.但是,我们无法有效地搜索包含”ours”的所有内容.为此,我们必须遍历所有术语,以发现”yours”也包含子字符串.当索引不是很小时,这是非常昂贵的.就复杂度而言,按前缀查找是O(log n),而按任意子串查找是O(n).</p>
 <blockquote>
 <p>索引术语英文为index term</p>
 </blockquote>
 <p>换句话说,我们可以有效地找到给定术语前缀的东西.当我们只有一个倒排索引时,我们希望一切看起来都像一个字符串前缀问题.以下是此类转换的几个示例.有些很简单,最后一个近乎神奇.</p>
 <ul>
 <li>要找到以”tastic”结尾的所有内容,我们可以反向索引(例如”fantastic”→”citsatnaf”)并搜索以”citsat”开头的所有内容.</li>
-<li>查找子字符串通常涉及将术语拆分为更小的术语,称为”n-gram”.例如,”yours”可以拆分为”^yo”、”you”、”our”、”urs”、”rs$”,这意味着我们可以通过搜索”our”和”urs”.</li>
+<li>查找子字符串通常涉及将术语拆分为更小的术语,称为”n-gram”.例如,”yours”可以拆分为”^yo”、”you”、”our”、”urs”、”rs$”,这意味着我们可以通过搜索”our”和”urs”来获得”yours”的出现.</li>
 <li>对于具有复合词的语言,例如挪威语和德语,我们需要将诸如”Donaudampfschiff”之类的词”分解”为例如{“donau”, “dampf”, “schiff”} 以便在搜索”schiff”时找到它.</li>
 <li>诸如(60.6384, 6.5017)之类的地理坐标点可以转换为”地理哈希值”,在本例中为”u4u8gyykk”.字符串越长,精度越高.</li>
 <li>为了启用语音匹配(例如对人名非常有用),有像 <a href="https://en.wikipedia.org/wiki/Metaphone">Metaphone</a>这样的算法可以将”Smith”转换为 {“SM0”、”XMT”} 并将”Schmidt”转换为 {“XMT”、”SMT”}.</li>
-<li>在处理数字数据(和时间戳)时,Lucene会以类似trie的方式自动生成多个具有不同精度的术语,因此可以高效地进行范围搜索<sup>1</sup>.简而言之,数字 123 可以存储为”1”-百位、”12”-十位和”123”.因此,搜索 [100, 199] 范围内的所有内容都是匹配”1”-hundreds-term 的所有内容.当然,这与搜索以”1”开头的所有内容不同,因为这还包括”1234”等.</li>
+<li>在处理数字数据(和时间戳)时,Lucene会以类似trie的方式自动生成多个具有不同精度的术语,因此可以高效地进行范围搜索<sup>1</sup>.简而言之,数字 123 可以存储为”1”-百位、”12”-十位和”123”.因此,搜索 [100, 199] 范围内的所有内容都是匹配百位为”1”的项的所有内容.当然,这与搜索以”1”开头的所有内容不同,因为这还包括”1234”等.</li>
 <li>“Did you mean?”键入搜索并找到接近输入的拼写,可以构建一个”Levenshtein”自动机来有效地遍历字典.这是异常复杂的,<a href="http://blog.mikemccandless.com/2011/03/lucenes-fuzzyquery-is-100-times-faster.html">这里有一个关于它如何在Lucene中结束的引人入胜的故事</a>.</li>
 </ul>
 <p>对文本处理的技术深入研究是未来许多文章的基础,但我们强调了为什么对索引词生成一丝不苟的重要性:获得可以高效执行的搜索.</p>
 <h2 id="Building-Indexes"><a href="#Building-Indexes" class="headerlink" title="Building Indexes"></a>Building Indexes</h2><p>在构建倒排索引时,我们需要优先考虑一些事情:搜索速度、索引紧凑度、索引速度以及新更改变得可见所需的时间.</p>
 <p>搜索速度和索引紧凑度是相关的:当搜索较小的索引时,需要处理的数据较少,更适合内存中处理.正如我们将看到的,两者,尤其是紧凑性,都是以索引速度为代价的.</p>
-<p>为了最小化索引大小,使用了各种压缩技术.例如,当存储帖子(可能会变得非常大)时,Lucene会使用可变数量的字节(小数字可以用一个字节保存),等等.</p>
-<p>保持数据结构小而紧凑意味着牺牲有效更新它们的可能性.事实上,Lucene根本不会更新它们:Lucene写入的索引文档是不可变的,即它们永远不会更新.这与B树完全不同,例如,B树可以更新,并且通常允许您指定一个填充因子来指示您期望的更新量.</p>
+<p>为了最小化索引大小,使用了各种压缩技术.例如,当存储postings(倒排表)(可能会变得非常大)时,Lucene会使用各种技巧,如增量编码([42, 100, 666]存为[42, 58, 566])和可变数量的字节(小数字可以用一个字节保存),等等.</p>
+<p>保持数据结构小而紧凑意味着牺牲有效更新它们的可能性.事实上,Lucene根本不会更新它们:Lucene写入的索引文件是不可变的,即它们永远不会更新.这与B树完全不同,例如,B树可以更新,并且通常允许您指定一个填充因子来指示您期望的更新量.</p>
 <p>例外是删除.当您从索引中删除一个文档时,该文档会在一个特殊的删除文件中被标记为删除文件,该文件实际上只是一个更新成本低的位图.索引结构本身不会更新.</p>
 <p>因此,更新先前索引的文档是删除后重新插入文档.请注意,这意味着更新文档比最初添加文档的成本更高.因此,在Lucene索引中存储诸如快速变化的计数器之类的东西通常不是一个好主意——没有值的就地更新.</p>
-<p>添加新文档时(可能通过更新),索引更改首先缓冲在内存中.最终,索引文档全部刷新到磁盘.请注意,这是”flush”的Lucene含义.Elasticsearch的刷新操作涉及Lucene提交等,在事务日志部分中介绍.</p>
+<p>添加新文档时(可能通过更新),索引更改首先缓冲在内存中.最终,索引文件全部刷新到磁盘.请注意,这是”flush”的Lucene含义.Elasticsearch的刷新操作涉及Lucene提交等,在事务日志部分中介绍.</p>
 <p>何时刷新取决于各种因素:必须多快才能看到更改、可用于缓冲的内存、I&#x2F;O饱和度等.通常,对于索引速度,缓冲区越大越好,只要它们足够小,您的I&#x2F;O可以跟上<sup>2</sup>.我们将在下一节中更详细地介绍.</p>
-<p>写入的文档组成一个索引段.</p>
+<p>写入的文件组成一个索引段.</p>
 <h2 id="Index-Segments"><a href="#Index-Segments" class="headerlink" title="Index Segments"></a>Index Segments</h2><p><font color=DeepPink><strong>Lucene索引由一个或多个不可变索引段组成,本质上是一个”迷你索引”.当您进行搜索时,Lucene会在每个段上进行搜索,过滤掉任何删除内容,并合并所有段的结果.显然,随着段数的增加,这会变得越来越乏味.为了保持段的数量可管理,当添加新段时,Lucene偶尔会根据一些合并策略合并段.<a href="https://blog.mikemccandless.com/2011/02/visualizing-lucenes-segment-merges.html">Lucene极客Michael McCandless 有一篇很好的文章解释和可视化段合并</a><sup>3</sup>.当段被合并时,标记为已删除的文档最终被丢弃.这就是为什么添加更多文档实际上可以导致更小的索引大小:它可以触发合并.</strong></font></p>
 <p>Elasticsearch和Lucene通常可以很好地处理何时合并段.可以通过配置合并设置来调整Elasticsearch的策略.您还可以使用优化API来强制合并.</p>
 <p>在段被刷新到磁盘之前,更改被缓冲在内存中.在过去(Lucene&lt;2.3),每个添加的文档实际上都作为自己的小段存在<sup>4</sup>,并且所有这些都在刷新时合并.现在,有一个DocumentsWriter,它可以从一批文档中创建更大的内存段.在Lucene4中,现在每个线程都可以有一个,通过允许并发刷新来提高索引性能.(以前,索引必须等待刷新完成.)</p>
@@ -402,13 +403,13 @@
 <li>当搜索必须限于某个用户时(例如”搜索您的消息”),将该用户的所有文档路由到同一个分片可能很有用,以减少必须搜索的索引数量.</li>
 </ul>
 <h2 id="Transactions"><a href="#Transactions" class="headerlink" title="Transactions"></a>Transactions</h2><p><font color=DeepPink><strong>虽然Lucene有事务的概念,但Elasticsearch没有.Elasticsearch中的所有操作都会添加到相同的时间线中,这不一定在节点之间完全一致,因为刷新依赖于时间.</strong></font></p>
-<p>在分布式系统中跨节点跨索引管理不同段、缓存等的隔离和可见性非常困难.它没有试图这样做,而是优先考虑快速.</p>
+<p>在分布式系统中跨节点跨索引管理不同段、缓存等的隔离和可见性非常困难.Elasticsearch没有试图这样做,而是优先考虑速度.</p>
 <p>Elasticsearch有一个”事务日志”,其中附加了要索引的文档.附加到日志文档比构建段成本低得多,因此Elasticsearch可以将文档写入索引到持久的地方 - 除了内存缓冲区,该缓冲区在崩溃时会丢失.您还可以指定编制索引时所需的一致性级别.例如,您可以要求每个副本在索引操作返回之前为文档建立索引.</p>
 <h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>总而言之,当涉及到Lucene如何在单个节点上构建、更新和搜索索引时,这些是需要注意的重要属性:</p>
 <ul>
 <li>我们如何处理我们索引的文本决定了我们如何进行搜索.正确的文本分析很重要.</li>
 <li>索引首先在内存中构建,然后偶尔以段的形式刷新到磁盘.</li>
-<li>索引段是不可变的.删除的文件被标记为这样.</li>
+<li>索引段是不可变的.已删除的文档会被标记为已删除.</li>
 <li>索引由多个段组成.对每个段进行搜索,并合并结果.</li>
 <li>段偶尔会合并.</li>
 <li>字段和过滤器缓存是按段的.</li>
@@ -543,7 +544,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">865k</span>
+    <span title="站点总字数">872k</span>
   </span>
 </div>
 <div class="busuanzi-count">
