@@ -308,7 +308,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>4.3k</span>
+      <span>4.5k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -331,6 +331,9 @@
 <aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>ElasticSearch中如何处理关联数据？</dd></div><div><dt>原始来源</dt><dd><a href="https://www.elastic.co/cn/blog/managing-relations-inside-elasticsearch" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>衣舞晨风（jiankunking）</dd></div><div><dt>版权说明</dt><dd>原文版权归原作者或原发布方所有</dd></div></dl></aside><p>Inner Object、Nested、Parent&#x2F;Child、Denormalization</p>
 <span id="more"></span>
 
+<blockquote>
+<p>原文发表于2013年，mapping中的type、string和_parent均是旧版写法。新版父子关系使用join字段；下文保留旧示例，并标出已经变化的查询限制。</p>
+</blockquote>
 <p>现实世界中的数据很少是简单的–通常情况下，数据之间有着错综复杂的联系。</p>
 <p>你如何在 Elasticsearch 中表示关系数据？ 有几种机制可用于提供关系支持。 每个都有其优点和缺点，使它们适用于不同的情况。</p>
 <h2 id="前置"><a href="#前置" class="headerlink" title="前置"></a>前置</h2><p>在 Elasticsearch 中，没有专门的数组数据类型。 <font color=red>默认情况下，任何字段都可以包含零个或多个值，但是数组中的所有值必须具有相同的数据类型。</font> 例如：</p>
@@ -369,13 +372,16 @@
 <p>而嵌套文档则不是这样。每个嵌套的文档保持独立，您可以执行一个查询，比如:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">car.make=Saturn AND car.model=Imprezza</span><br></pre></td></tr></table></figure>
 <p>这样就不会有问题了。</p>
-<p>Elasticsearch 从根本上来说仍然是扁平的，但它在内部维护嵌套关系，从而呈现出层级化的表象。当您创建嵌套文档时，Elasticsearch实际上索引两个单独的文档（根对象和嵌套对象），然后在内部将两者关联起来。 两个文档都存储在同一个分片上的同一个Lucene块中，因此读取性能仍然非常快。</p>
+<p>Elasticsearch在内部通过独立的Lucene文档维护嵌套关系：一个根文档，加上每个nested对象各自的一份文档。上面的两辆车因此对应三份Lucene文档，它们位于同一分片的同一Lucene块中，有利于关联查询。</p>
 <p>这种安排确实有一些缺点。 最明显的是，您只能使用特殊的”嵌套查询”访问这些嵌套文档。另一个大缺点出现在您需要更新文档时——无论是根对象还是其中任何一个内部对象。</p>
 <p>由于所有的文档都存储在同一个Lucene块中，Lucene从不允许对它的段进行随机的写，更新嵌套文档中的一个字段将强制对整个文档进行重新索引。</p>
 <p>这包括根对象和任何其他嵌套对象，即使它们没有被修改。在内部，ES将旧文档标记为已删除，更新字段，然后将所有内容重新索引到一个新的Lucene块中。如果您的数据经常更改，那么嵌套文档重新索引（reindexing）的开销将不可忽略。</p>
 <p>最后，不可能在嵌套文档之间”交叉引用”。一个嵌套文档不能”看到”另一个嵌套文档的属性。例如，您无法在按”A.name”过滤的同时对”B.age”做分面（两者分属不同的嵌套文档）。你可以通过使用’include_in_root’来解决这个问题，它有效地将嵌套的文档复制到根目录中，但这让你回到了内部对象的问题。</p>
-<h3 id="Nested缺点补充-20240320"><a href="#Nested缺点补充-20240320" class="headerlink" title="Nested缺点补充(20240320)"></a>Nested缺点补充(20240320)</h3><h4 id="官网"><a href="#官网" class="headerlink" title="官网"></a>官网</h4><p>对文档进行建模时，应尽可能降低搜索时的成本。</p>
-<p><font color=red>嵌套会使查询速度降低数倍，而父子关系会使查询速度降低数百倍。</font>因此，如果可以通过非规范化文档来回答相同的问题，而无需连接，则可以预期显着的加速。</p>
+<h3 id="Nested缺点补充-20240320"><a href="#Nested缺点补充-20240320" class="headerlink" title="Nested缺点补充(20240320)"></a>Nested缺点补充(20240320)</h3><blockquote>
+<p>上文“无法交叉引用”的说法描述的是当时的限制。新版可用nested、reverse_nested聚合在嵌套文档和根文档之间切换，再进入另一个nested路径；但它们仍不是可以任意互相引用的关系表。</p>
+</blockquote>
+<h4 id="官网"><a href="#官网" class="headerlink" title="官网"></a>官网</h4><p>对文档进行建模时，应尽可能降低搜索时的成本。</p>
+<p><font color=red>嵌套可能使查询慢数倍，父子关系可能慢数百倍。</font>这是官方给出的风险提示，不是每个场景的固定倍率。如果可以通过非规范化文档回答相同的问题，而无需连接，通常值得测试这种方案。</p>
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/tune-for-search-speed.html">https://www.elastic.co/guide/en/elasticsearch/reference/master/tune-for-search-speed.html</a></p>
 <h4 id="stackoverflow"><a href="#stackoverflow" class="headerlink" title="stackoverflow"></a>stackoverflow</h4><p>如果使用嵌套类型且不经常修改，那么它就很好，可以为查询创建更广阔的范围，但如果频繁更改，那么成本就会很高。</p>
 <p>与平面类型映射相比，嵌套类型映射对索引的影响更大。<font color=red>由于 Lucene 没有嵌套对象类型的概念，所有内容都存储为平面对象。</font>因此在编制索引时需要执行额外的操作。</p>
@@ -407,8 +413,11 @@
 <p>Nested的一个大问题是它们的存储:所有内容都存储在同一个Lucene块中。Parent&#x2F;Child通过分离两个文档并松散耦合它们来消除这种限制。这样做有利有弊。松散耦合意味着你可以更自由地更新&#x2F;删除子文档，因为它们对父文档或其他子文档没有影响。</p>
 <p>缺点是Parent&#x2F;Child的性能略低于嵌套。子文档被路由到与父文档相同的shard，所以它们仍然受益于shard级别的缓存和内存过滤。但是它们没有嵌套的那么快，因为它们不在同一个Lucene块中。还有一点内存开销，因为ElasticSearch需要在<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/parent-join.html#_global_ordinals">内存中保留一个”连接表”，用于管理关系</a>。</p>
 <p>最后，坦率地说，您将遇到排序或评分非常困难的情况。例如，不可能知道哪个子文档匹配您的’Has_Child’过滤器，只知道返回的父文档中的一个文档匹配了条件。这可能会令人沮丧，这取决于您的用例。</p>
+<blockquote>
+<p>新版可通过inner_hits返回匹配的子文档，nested查询也支持这一功能。上文“不可能知道哪个子文档匹配”的说法不再适用，但关联排序和评分仍有成本与限制。</p>
+</blockquote>
 <h2 id="Denormalization"><a href="#Denormalization" class="headerlink" title="Denormalization"></a>Denormalization</h2><p>有时最好的选择是在适当的地方简单地对数据进行反规范化。Elasticsearch提供的关系工具非常适合某些场景……但从来没有打算提供您期望从RDBM中得到的健壮关系特性。</p>
-<p>从本质上讲，Elasticsearch是一个扁平的层次结构，试图将关系数据强制放入其中可能非常具有挑战性。有时，最好的解决方案是明智地选择要反规范化的数据，以及可以接受用第二次查询来取回子文档的位置。反规范化能为你提供最大的能力和灵活性。</p>
+<p>从本质上讲，Elasticsearch是一个扁平的层次结构，强行放入关系数据可能很棘手。有时，更好的方案是选择哪些数据需要反规范化，以及哪些场景可以接受再发一次查询来取回子文档。反规范化能提供更大的控制权和灵活性。</p>
 <p>当然，这也带来了管理开销的负担。您可以管理关系，并执行所需的查询&#x2F;过滤器来关联各种类型。</p>
 <h2 id="Conclusion-and-Recap"><a href="#Conclusion-and-Recap" class="headerlink" title="Conclusion and Recap"></a>Conclusion and Recap</h2><p>简单概括一下：</p>
 <h3 id="Inner-Object"><a href="#Inner-Object" class="headerlink" title="Inner Object"></a>Inner Object</h3><ul>
@@ -419,7 +428,7 @@
 <h3 id="Nested-1"><a href="#Nested-1" class="headerlink" title="Nested"></a>Nested</h3><ul>
 <li>嵌套文档存储在同一个Lucene块中，这有助于提高读取&#x2F;查询性能。读取嵌套文档比读取等效的父&#x2F;子文档要快。</li>
 <li>更新嵌套文档(父文档或子文档)中的单个字段将迫使ES重新索引整个嵌套文档。对于大型嵌套文档来说，这可能是非常昂贵的</li>
-<li>“交叉引用”嵌套文档是不可能的</li>
+<li>不能把嵌套文档当作可任意交叉引用的关系表；新版聚合可通过reverse_nested切换上下文</li>
 <li>最适合不经常更改的数据</li>
 </ul>
 <h3 id="Parent-Child-1"><a href="#Parent-Child-1" class="headerlink" title="Parent&#x2F;Child"></a>Parent&#x2F;Child</h3><ul>
@@ -556,7 +565,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">

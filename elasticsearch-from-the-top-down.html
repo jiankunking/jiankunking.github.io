@@ -314,7 +314,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>7.2k</span>
+      <span>7.4k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -335,7 +335,7 @@
     <div class="post-body" itemprop="articleBody">
 
 <aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>自上而下认识Elasticsearch</dd></div><div><dt>原始来源</dt><dd><a href="https://www.elastic.co/cn/blog/found-elasticsearch-top-down" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>衣舞晨风（jiankunking）</dd></div><div><dt>版权说明</dt><dd>原文版权归原作者或原发布方所有</dd></div></dl></aside><blockquote>
-<p>注意:原文发表时间是14年,所以实现有可能与新版不一致.<br>原文地址:<a href="https://www.elastic.co/cn/blog/found-elasticsearch-top-down">https://www.elastic.co/cn/blog/found-elasticsearch-top-down</a></p>
+<p>原文发表于2014年。下文的type、djb2、write_consistency和query_and_fetch均属于当时的实现，不宜直接用于新版Elasticsearch。<br>原文地址:<a href="https://www.elastic.co/cn/blog/found-elasticsearch-top-down">https://www.elastic.co/cn/blog/found-elasticsearch-top-down</a></p>
 </blockquote>
 <span id="more"></span>
 
@@ -343,12 +343,15 @@
 <p>要查看所有这些如何在分布式环境中组合在一起,从另一端开始更容易:从用户的角度观察,从”顶部”开始.</p>
 <p>我们将看看当用户向Elasticsearch发送索引和搜索请求时会发生什么,以及这些请求如何在网络中波动,直到我们到达前面介绍的较低级别的结构.首先,我们将查看接受请求的节点及其作为协调器的角色.我们将看看它如何把索引请求路由到各分片的主分片,以及如何在副本之间为搜索请求做负载均衡.</p>
 <p>在被路由到正确的分片之后,我们将看看在分片级别发生了什么——例如什么构成了”成功”的索引操作,以及将文档和搜索转换为它们的Lucene等价物所需的转换.对于搜索请求,我们还将查看分散&#x2F;聚集过程,这可能发生在多轮中.</p>
-<h2 id="A-Cluster-of-Nodes"><a href="#A-Cluster-of-Nodes" class="headerlink" title="A Cluster of Nodes"></a>A Cluster of Nodes</h2><p>为了描述Elasticsearch的工作原理,我们需要某种集群拓扑.图中的集群描述了我们假设的集群类型.我们有一个带有两个分片的Elasticsearch索引,为了可用性在两个不同”区域”的节点之间进行复制——三个区域中运行的都是仅主节点(master-only节点).此外,我们有两个客户端节点,我们将通过它们发送请求.<br><img src="/images/elasticsearch-top-down/cluster-topology.svg" alt="Sample Cluster Topology" loading="eager" fetchpriority="high" decoding="async" width="1200" height="600"></p>
+<h2 id="A-Cluster-of-Nodes"><a href="#A-Cluster-of-Nodes" class="headerlink" title="A Cluster of Nodes"></a>A Cluster of Nodes</h2><p>为了描述Elasticsearch的工作原理,我们需要某种集群拓扑.图中的集群描述了我们假设的集群类型.我们有一个带有两个分片的Elasticsearch索引,为了可用性在两个不同”区域”的数据节点之间进行复制；专用主节点(master-only节点)则分布在三个区域中.此外,我们有两个客户端节点,我们将通过它们发送请求.<br><img src="/images/elasticsearch-top-down/cluster-topology.svg" alt="Sample Cluster Topology" loading="eager" fetchpriority="high" decoding="async" width="1200" height="600"></p>
 <p>集群中的不同节点可以具有不同的角色(data and&#x2F;or master – or none as a client)以及属性(例如区域&#x2F;zone).我们有数据节点、主节点和客户端节点——在不同的区域,即具有不同的 node.zone 属性.本文中我们关注数据节点.想了解其他类型的节点,推荐阅读《Elasticsearch in Production》和《Java Clients for Elasticsearch》.</p>
 <h2 id="Request-Coordinators"><a href="#Request-Coordinators" class="headerlink" title="Request Coordinators"></a>Request Coordinators</h2><p>当您向Elasticsearch中的节点发送请求时,该节点将成为该请求的协调器.它将决定将请求路由到哪些节点和分片,如何合并不同节点的响应,以及决定请求何时”完成”.虽然Elasticsearch会为您透明地处理这个问题,但高级分区方案需要有关内部处理和路由的知识.上述给定集群,客户端节点将充当协调器.</p>
 <p><font color=DeepPink><strong>为了能够充当协调器,节点需要知道集群的状态.集群状态被复制到集群中的每个节点.它具有分片路由表(哪些节点托管哪些索引和分片)、关于每个节点的元数据(例如它运行的位置和节点具有的属性)以及索引映射(其中可以包含重要的路由配置)和模板.集群状态被复制到所有节点是映射需要合理大小的一个重要原因.</strong></font></p>
 <p>对于搜索请求,协调意味着选择分片的副本、发送请求以进行进一步处理,可能需要多轮处理,我们稍后将对此进行更多研究.选择副本是随机完成的,或者受请求偏好的影响.</p>
-<p>索引请求(即创建、更新或删除文档的请求)略有不同.在这种情况下,请求必须路由到各分片的主分片,以及一定数量的副本——取决于索引请求的write_consistency.写一致性可以是一个、quorum(默认值,除非你有≥2 个副本,否则等同于one)或全部——即要求一个、大多数或每个副本都已确认.</p>
+<p>索引请求(即创建、更新或删除文档的请求)略有不同.请求先路由到主分片,再由主分片复制到副本.旧版的write_consistency可以设为one、quorum或all,用于检查写入前有多少分片副本可用；默认是quorum,但配置的副本数少于2时只要求一个可用分片副本.</p>
+<blockquote>
+<p>译者注：原文把write_consistency的可用性检查与复制完成的确认混在了一起。它不是“收到多数副本确认就返回”的开关。Elasticsearch 5.0起改用wait_for_active_shards，同样是在写入前检查活跃分片数，不代表这些副本已经成功写入。</p>
+</blockquote>
 <h2 id="Index-a-Document-to-an-Index-of-…-Indexes"><a href="#Index-a-Document-to-an-Index-of-…-Indexes" class="headerlink" title="Index a Document to an Index of … Indexes?"></a>Index a Document to an Index of … Indexes?</h2><p>术语”索引”在很多上下文中使用,具有不同的含义.您将文档索引到Elasticsearch索引.<font color=DeepPink><strong>Elasticsearch索引有分片,也就是 Lucene索引</strong></font>.那些有倒排索引.这可能会让人感到困惑.</p>
 <p><font color=DeepPink><strong>一个重要的见解是,从概念上讲,具有两个分片的Elasticsearch索引与每个具有一个分片的两个Elasticsearch索引完全相同.最终,它们是两个Lucene索引.不同之处主要在于Elasticsearch通过其路由功能提供的便利性.仅使用单个分片索引就可以实现相同的”手动”.(不是你应该!)</strong></font></p>
 <p>重要的部分是通过分片的概念,认识到Elasticsearch索引是Lucene索引集合之上的抽象.当您需要考虑更高级的分区策略时,这会有所帮助.</p>
@@ -360,17 +363,17 @@
 <li>tweets和logs的路由配置是什么？这可以通过查看集群状态中的映射来确定.对于tweets,可能存在基于用户的路由,因此tweets的<font color=DeepPink><strong>user</strong></font>属性应确定将文档路由到哪个分片.我们将在下一节中查看一些示例.</li>
 <li>在确定了两条tweets的分片之后,我们什么时候可以认为文档真正被索引了？由于未指定任何内容,因此默认为节点的默认 <font color=DeepPink><strong>action.write_consistency</strong></font>,默认为<font color=DeepPink><strong>quorum</strong></font>.</li>
 <li>logs消息没有与之关联的ID.所有文档都必须有一个,因此协调员必须为其分配一个.文档ID是协调器将用来路由请求的内容,如果操作或映射没有覆盖它的话.(然而,分配ID和具有幂等请求是最佳实践)</li>
-<li>logs操作指定了严格的<font color=DeepPink><strong>_consistency</strong></font>设置,因此在每个副本都返回成功之前无法确认请求.</li>
+<li>logs操作指定了严格的<font color=DeepPink><strong>_consistency</strong></font>设置,要求写入前所有配置的分片副本都可用.</li>
 <li>什么时候可以整体完成批量请求？</li>
 </ul>
 <h2 id="Routing"><a href="#Routing" class="headerlink" title="Routing"></a>Routing</h2><p>路由指定哪些文档去哪里,因此是请求如何在Elasticsearch内部流动的重要部分,包括搜索和索引请求.它是设计适当的数据流和索引分区不可或缺的一部分.在这里,我们专注于机制,因为索引和分片设计是一个大话题.</p>
-<p>文档根据一个路由键(routing key)被路由,放置到编号为 hash(key) mod n 的分片上,其中n是索引中的分片数.(好奇的话:这里使用的哈希函数是djb2)</p>
+<p>文档根据一个路由键(routing key)被路由,放置到编号为hash(key) mod n的分片上,其中n是索引中的分片数.(原文当时使用的哈希函数是djb2；新版已不同.)</p>
 <p>分片设计在很大程度上就是决定这个key是什么.如果我们用上面两条tweets的文档ID作为路由键,并假设tweets索引有两个分片,那么会分别得到 hash(502878691740090369) mod 2 &#x3D; 1 和 hash(475944863175671808) mod 2 &#x3D; 0,这两条tweets会被存放在不同的分片.然而,如果映射改为基于user键路由,我们会发现 hash(mikepluta) mod 2 &#x3D; hash(viktorklang) mod 2 &#x3D; 1,这样两条文档就会被存放在同一个分片.如果我们只想搜索某个特定用户的文档,这就很有帮助.</p>
 <p><img src="/images/elasticsearch-top-down/routing.png" alt="routers" loading="lazy" decoding="async" width="1390" height="457"></p>
 <h2 id="Primary-Concerns"><a href="#Primary-Concerns" class="headerlink" title="Primary Concerns"></a>Primary Concerns</h2><p>当索引操作被路由时,它被转发到该分片的”主”.一个分片只有一个”主”,以及零个或多个副本.在这方面,primary可以被认为是分片的”master”,而replicas可以被认为是”slaves”.</p>
-<p>该分片的主分片将充当这次索引操作的协调器.它会将索引操作发送到相关的副本,并等待所需的数量在指示成功之前得到确认.</p>
+<p>该分片的主分片将充当这次索引操作的协调器.它会将索引操作发送到相关的副本,在同步复制路径上等待参与复制的副本处理完成.</p>
 <p><img src="/images/elasticsearch-top-down/index-sequence.svg" alt="Sequence of an Index Operation" loading="lazy" decoding="async" width="1200" height="553"></p>
-<p>当足够数量的副本已确认时,主分片将成功报告回原始请求协调器,在我们的例子中是客户端节点.对于”quorum”默认的写一致性,三个操作中的两个就足够了,所以不需要等到第三个操作才传递成功.</p>
+<p>复制处理完成后,主分片把结果报告给原始请求协调器,在我们的例子中是客户端节点.原文及上图把quorum解释为“三个操作中两个确认就可以返回”,这里应与前面的写入可用性检查区分开：quorum并不让同步复制忽略第三个参与复制的副本.副本失败的处理和最终响应中的成功数量,还取决于当时的复制实现.</p>
 <p>协调器&#x2F;客户端节点并行地向各个分片的主分片发送操作.当所有操作都返回后,最终返回发起的批量请求.</p>
 <p>“成功”操作的定义值得研究.</p>
 <p>在上一篇文章中,我们了解了索引是如何构建的,以及如何在搜索速度、索引紧凑度、索引速度和操作变得可见所需的时间之间进行权衡.文中还介绍了不可变段等Lucene内部结构,并强调了批量构建这些段、推迟昂贵的磁盘同步操作的重要性.</p>
@@ -385,7 +388,7 @@
 <li>接受请求的节点将成为协调器.它查询映射以确定将请求发送到哪个分片.</li>
 <li>请求被发送到该分片的主分片.</li>
 <li>primary将操作写入其translog,并将请求中继到replicas.</li>
-<li>当足够数量的副本已确认时,主分片返回成功.</li>
+<li>主分片等待复制处理完成,把结果返回协调器.</li>
 <li>当所有子操作(例如批量请求)都成功时,协调器返回成功.</li>
 </ol>
 <p>发生这种情况时,每个分片将持续处理其文档队列,将输入文档转换为Lucene文档.然后将它们添加到索引缓冲区,最终刷新到一个新段中,甚至稍后完全提交.何时发生取决于托管分片的节点.刷新在节点之间不同步,因此搜索者可以在刷新传播时短暂地看到单独的”时间线”.</p>
@@ -435,8 +438,8 @@
 </tr>
 <tr>
 <td>优点</td>
-<td>不占用内存空间</td>
-<td>不占用磁盘空间</td>
+<td>主要存储在磁盘上,减少JVM堆占用,可利用操作系统页缓存</td>
+<td>按需构建,通常不需要额外保存一份doc values文件</td>
 </tr>
 <tr>
 <td>缺点</td>
@@ -586,7 +589,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">

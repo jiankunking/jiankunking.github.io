@@ -318,14 +318,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>4.1k</span>
+      <span>3.7k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>4 分钟</span>
+      <span>3 分钟</span>
     </span>
 </div>
 
@@ -343,8 +343,11 @@
 </blockquote>
 <span id="more"></span>
 
-<p>Java volatile关键字用于将Java变量标记为“存储在主内存中”。更准确地说，这意味着对volatile变量的每次读取都将从计算机的主存中读取，而不是从CPU缓存中读取，而且对volatile变量的每次写入都将写入主存，而不仅仅是写入CPU缓存中。</p>
-<p>实际上，自 Java 5 起，volatile 关键字保证的不仅仅是变量被写入主存和从主存读取。我将在下面的部分中对此进行解释。</p>
+<p>Java volatile关键字用于保证共享变量的可见性。原文用“存储在主内存中”来解释它：读变量时不使用线程保留的旧值，写变量时让其他线程能够看到修改。</p>
+<blockquote>
+<p>译者注：文中的主存、CPU缓存和示意图是简化模型。Java内存模型规定的是可见性与执行顺序，不要求每次volatile访问都绕过缓存、直接读写物理RAM。具体实现还涉及编译器优化、内存屏障和硬件缓存一致性。</p>
+</blockquote>
+<p>实际上，自Java 5起，volatile的保证不仅限于变量本身的可见性，还涉及前后操作的顺序。我将在下面解释。</p>
 <h2 id="变量可见性问题"><a href="#变量可见性问题" class="headerlink" title="变量可见性问题"></a>变量可见性问题</h2><p>Java volatile关键字保证跨线程对变量的更改可见性。这听起来可能有点抽象，所以让我来详细说明一下。</p>
 <p>在对非volatile变量进行操作的多线程应用程序中，出于性能原因，每个线程在处理变量时可能会将它们从主存复制到CPU缓存中。如果您的计算机包含多个CPU，则每个线程可以在不同的CPU上运行。这意味着，每个线程可以将这些变量复制到不同CPU的CPU缓存中。如图所示:</p>
 <p><img src="/images/java-volatile-keyword/java-volatile-1.png" alt="java volatile 1" loading="eager" fetchpriority="high" decoding="async" width="502" height="423"></p>
@@ -354,27 +357,27 @@
 <p>再想象一下，只有线程1增加了计数器变量，但是线程1和线程2都可以不时地读取计数器变量。如果计数器变量未声明为volatile，则无法保证何时将计数器变量的值从CPU缓存写入主存。这意味着，CPU缓存中的计数器变量值可能与主存中的不同。这里说明了这种情况:</p>
 <p><img src="/images/java-volatile-keyword/java-volatile-2.png" alt="java volatile 2" loading="lazy" decoding="async" width="468" height="405"></p>
 <p>线程看不到变量的最新值，因为它还没有被另一个线程写回主存，这种问题称为“可见性”问题。一个线程的更新对其他线程是不可见的。</p>
-<h2 id="Java-volatile可见性保证"><a href="#Java-volatile可见性保证" class="headerlink" title="Java volatile可见性保证"></a>Java volatile可见性保证</h2><p>Java volatile 关键字旨在解决变量可见性问题。通过声明volatile计数器变量，所有对计数器变量的写操作都将立即写回主存。另外，对计数器变量的所有读取都将直接从主存中读取。</p>
+<h2 id="Java-volatile可见性保证"><a href="#Java-volatile可见性保证" class="headerlink" title="Java volatile可见性保证"></a>Java volatile可见性保证</h2><p>Java volatile关键字旨在解决变量可见性问题。把计数器声明为volatile后，对它的写入与后续读取之间就有了Java内存模型规定的同步关系，读取线程不能一直使用先前保留的旧值。</p>
 <p>下面是volatile声明计数器变量的样子:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public class SharedObject &#123;</span><br><span class="line">    public volatile int counter = 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>将变量声明为volatile可以保证其他写入该变量的线程的可见性。</p>
-<p>在上面给出的场景中，一个线程(T1)修改计数器，而另一个线程(T2)读取计数器(但从不修改它)，因此声明计数器变量为volatile就足以保证 T2 能看到对计数器变量的所有写入。</p>
+<p>将变量声明为volatile，可以让其他线程看到对该变量的修改。</p>
+<p>在上面的场景中，T1修改计数器，T2只读取，因此volatile可以解决计数器的可见性问题。但T2不一定能观察到每一次写入；两次读取之间可能已发生多次更新。</p>
 <p>但是，如果T1和T2都在递增计数器变量，那么将计数器变量声明为volatile是不够的。稍后会详细介绍。</p>
-<h2 id="完整的volatile可见性保证"><a href="#完整的volatile可见性保证" class="headerlink" title="完整的volatile可见性保证"></a>完整的volatile可见性保证</h2><p>实际上，Java volatile的可见性保证超出了volatile变量本身。可见性保证如下:</p>
+<h2 id="完整的volatile可见性保证"><a href="#完整的volatile可见性保证" class="headerlink" title="完整的volatile可见性保证"></a>完整的volatile可见性保证</h2><p>实际上，Java volatile的可见性保证超出了volatile变量本身：</p>
 <ul>
-<li><font color=DeepPink><strong>如果线程A写入了一个volatile变量，而线程B随后又读取了同一个volatile变量，那么线程A在写入该volatile变量之前可见的所有变量，在线程B读取了该volatile变量之后也将可见。</strong></font></li>
-<li><font color=DeepPink><strong>如果线程A读取一个volatile变量，那么线程A在读取该volatile变量时可见的所有变量也将从主存中重新读取。</strong></font></li>
+<li><font color=DeepPink><strong>对一个volatile变量的写入，happens-before后续对同一变量的读取。线程A在这次写入之前的操作，在线程B完成对应读取后也具有可见性保证。</strong></font></li>
+<li>这不等于“读取volatile时重新加载所有变量”。它保证的是相关操作之间的顺序和可见性，而不是任意共享数据的一致快照。</li>
 </ul>
 <p>让我用一个代码示例来说明:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class MyClass &#123;</span><br><span class="line">    private int years;</span><br><span class="line">    private int months</span><br><span class="line">    private volatile int days;</span><br><span class="line"></span><br><span class="line">    public void update(int years, int months, int days)&#123;</span><br><span class="line">        this.years  = years;</span><br><span class="line">        this.months = months;</span><br><span class="line">        this.days   = days;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class MyClass &#123;</span><br><span class="line">    private int years;</span><br><span class="line">    private int months;</span><br><span class="line">    private volatile int days;</span><br><span class="line"></span><br><span class="line">    public void update(int years, int months, int days)&#123;</span><br><span class="line">        this.years  = years;</span><br><span class="line">        this.months = months;</span><br><span class="line">        this.days   = days;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>update()方法写入三个变量，其中只有days是volatile变量。</p>
-<p>完整的volatile可见性保证意味着，当一个值写入到days时，所有对线程可见的变量也会写入到主存中。这意味着，当一个值被写入days时，years和months的值也被写入主存。</p>
+<p>在update()中，years和months先写入，days最后写入。读取线程若通过读取days与这次volatile写入建立同步关系，随后就能看到这次写入之前对years和months的修改。</p>
 <p>当读取years、months、days的值时，可以这样做:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">public class MyClass &#123;</span><br><span class="line">    private int years;</span><br><span class="line">    private int months</span><br><span class="line">    private volatile int days;</span><br><span class="line"></span><br><span class="line">    public int totalDays() &#123;</span><br><span class="line">        int total = this.days;</span><br><span class="line">        total += months * 30;</span><br><span class="line">        total += years * 365;</span><br><span class="line">        return total;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void update(int years, int months, int days)&#123;</span><br><span class="line">        this.years  = years;</span><br><span class="line">        this.months = months;</span><br><span class="line">        this.days   = days;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">public class MyClass &#123;</span><br><span class="line">    private int years;</span><br><span class="line">    private int months;</span><br><span class="line">    private volatile int days;</span><br><span class="line"></span><br><span class="line">    public int totalDays() &#123;</span><br><span class="line">        int total = this.days;</span><br><span class="line">        total += months * 30;</span><br><span class="line">        total += years * 365;</span><br><span class="line">        return total;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void update(int years, int months, int days)&#123;</span><br><span class="line">        this.years  = years;</span><br><span class="line">        this.months = months;</span><br><span class="line">        this.days   = days;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>注意，totalDays()方法首先将days的值读入total变量。当读取days的值时，months和years的值也被读入主存。因此，通过上述读取序列，您可以保证看到最新的days、months和years的值。</p>
+<p>注意，totalDays()先读取days，再读取months和years。这个顺序可以获得上面所说的可见性保证。但如果另一个线程不断调用update()，这三个字段仍可能来自不同次更新；volatile不会把多个字段的读取变成原子快照。</p>
 <h2 id="指令重新排序的挑战"><a href="#指令重新排序的挑战" class="headerlink" title="指令重新排序的挑战"></a>指令重新排序的挑战</h2><p>出于性能原因，允许Java VM和CPU对程序中的指令重新排序，只要指令的语义意义保持不变。例如，看看下面的说明:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">int a = 1;</span><br><span class="line">int b = 2;</span><br><span class="line"></span><br><span class="line">a++;</span><br><span class="line">b++;</span><br></pre></td></tr></table></figure>
 
@@ -382,33 +385,36 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">int a = 1;</span><br><span class="line">a++;</span><br><span class="line"></span><br><span class="line">int b = 2;</span><br><span class="line">b++;</span><br></pre></td></tr></table></figure>
 
 <p>但是，当其中一个变量是volatile变量时，指令重新排序就会带来挑战。让我们看看之前Java volatile教程中的例子中的MyClass:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class MyClass &#123;</span><br><span class="line">    private int years;</span><br><span class="line">    private int months</span><br><span class="line">    private volatile int days;</span><br><span class="line"></span><br><span class="line">    public void update(int years, int months, int days)&#123;</span><br><span class="line">        this.years  = years;</span><br><span class="line">        this.months = months;</span><br><span class="line">        this.days   = days;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class MyClass &#123;</span><br><span class="line">    private int years;</span><br><span class="line">    private int months;</span><br><span class="line">    private volatile int days;</span><br><span class="line"></span><br><span class="line">    public void update(int years, int months, int days)&#123;</span><br><span class="line">        this.years  = years;</span><br><span class="line">        this.months = months;</span><br><span class="line">        this.days   = days;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>update()方法将值写入days之后，将新写入years和months的值也写入主存。但是，如果Java VM重新排序指令，像这样:</p>
+<p>update()把days放在最后写入，用它发布此前对years和months的修改。如果没有相应的顺序约束，指令可能被重排成下面这样：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public void update(int years, int months, int days)&#123;</span><br><span class="line">    this.days   = days;</span><br><span class="line">    this.months = months;</span><br><span class="line">    this.years  = years;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>修改days变量时，months和years的值仍然会写入主存，但这一次是在新值写入months和years之前。因此，不能正确地使新值对其他线程可见。重新排序的指令的语义已经改变。</p>
+<p>这样，读取线程可能先看到新的days，却还没看到新的months和years。单线程中的计算结果可能没变，但原本期望的跨线程发布顺序被破坏了。days声明为volatile后，不允许发生这种重排。</p>
 <p>Java有一个解决这个问题的方案，我们将在下一节中看到。</p>
 <h2 id="Java-volatile-Happens-Before-Guarantee"><a href="#Java-volatile-Happens-Before-Guarantee" class="headerlink" title="Java volatile Happens-Before Guarantee"></a>Java volatile Happens-Before Guarantee</h2><p>为了解决指令重新排序的问题，Java volatile关键字除了提供可见性保证外，还提供了“<a href="/java-volatile-aqs.html">happens-before</a>”保证。happens-before 保证如下：</p>
 <ul>
-<li><font color=DeepPink><strong>如果读&#x2F;写是在写volatile变量之前发生的，那么对其他变量的读和写操作不能在写volatile变量之后重新排序。在对volatile变量进行写操作之前的读&#x2F;写操作保证会“happen before”对volatile变量进行写操作之前。注意，它仍然是可能的，例如，对其他变量的读&#x2F;写，位于写入一个volatile之后，重新排序发生在写入volatile之前。</strong></font>只是不是反过来。允许从后到前，但不允许从前到后。</li>
-<li><font color=DeepPink><strong>如果最初的读&#x2F;写发生在读volatile变量之后，那么对其他变量的读和写操作就不能在读volatile变量之前重新排序。请注意，对于在volatile变量读取之前发生的其他变量的读取，可以重新排序为在volatile变量读取之后发生。只是不是反过来。</strong></font>允许从前到后，但不允许从后到前。</li>
+<li><font color=DeepPink><strong>volatile写入之前的普通读写，不能被重排到这次写入之后，破坏原有的发布顺序。</strong></font></li>
+<li><font color=DeepPink><strong>volatile读取之后的普通读写，不能被重排到这次读取之前，破坏原有的读取顺序。</strong></font></li>
 </ul>
+<p>这描述了volatile写的release语义和volatile读的acquire语义，不代表volatile禁止所有指令重排。其他重排仍须满足程序语义和Java内存模型。</p>
 <p>以上happens-before保证确保执行volatile关键字的可见性保证。</p>
-<h2 id="volatile-不适用的场景"><a href="#volatile-不适用的场景" class="headerlink" title="volatile 不适用的场景"></a>volatile 不适用的场景</h2><p>即使volatile关键字保证对volatile变量的所有读操作都直接从主存中读取，并且对volatile变量的所有写操作都直接写入主存中，仍然存在声明volatile变量是不够的情况。</p>
-<p>在前面解释的只有线程1写入共享计数器变量的情况下，将计数器变量声明为volatile就足以确保线程2总是看到最新的写入值。</p>
-<p>事实上，如果写入变量的新值不依赖于它以前的值，多个线程甚至可以写入共享volatile变量，并且仍然将正确的值存储在主内存中。换句话说，如果一个线程向共享volatile变量写入一个值，那么它不需要首先读取它的值来计算下一个值。</p>
-<p>一旦线程需要首先读取volatile变量的值，并根据该值为共享volatile变量生成一个新值，那么volatile变量就不再足以保证正确的可见性。读取volatile变量与写入新值之间的时间间隔很短，这造成了竞争状态，其中多个线程可能会读取volatile变量的相同值，为该变量生成一个新值，并在把新值写回主存时互相覆盖对方的值。</p>
+<h2 id="volatile-不适用的场景"><a href="#volatile-不适用的场景" class="headerlink" title="volatile 不适用的场景"></a>volatile 不适用的场景</h2><p>即使volatile保证变量的可见性，也有仅靠volatile不够的情况。</p>
+<p>只有线程1写入计数器、线程2读取时，volatile可提供所需的可见性保证，但不保证读取发生在某次特定更新之后。</p>
+<p>如果只是独立赋值，新值不依赖旧值，也没有需要共同维护的其他状态，多个线程可以写同一个volatile变量。但业务上若需要保留每次更新、检查条件或维护多个字段之间的约束，仍需额外同步。</p>
+<p>一旦操作需要先读旧值，再计算并写回新值，volatile就不能保证整个过程的原子性。多个线程可能读到相同的旧值，各自计算出新值，随后互相覆盖写入结果。这里的问题是更新丢失，而不是volatile的可见性失效。</p>
 <p>多个线程递增同一个计数器的情况恰恰是一个volatile变量不够用的情况。下面几节将更详细地解释这种情况。</p>
-<p>设想一下，如果线程1将一个值为0的共享计数器变量读入其CPU缓存，将其增量为1，并且不将更改后的值写回主存。然后，线程2可以从主存中读取相同的计数器变量(该变量的值仍然为0)到它自己的CPU缓存中。然后，线程2也可以将计数器增加到1，并且不将计数器写回主存。这一情况如下图所示:</p>
+<p>设想一下，线程1读到计数器值0，计算出1，但还没写回；线程2也读到0，并计算出1。随后两个线程都写入1，最终结果是1，而不是期望的2。即使计数器声明为volatile，这种交错也可能发生。下面的缓存示意图可以帮助理解各线程分别持有中间值的情况，但不应当作硬件读写过程的精确描述：</p>
 <p><img src="/images/java-volatile-keyword/java-volatile-3.png" alt="java volatile 3" loading="lazy" decoding="async" width="465" height="404"></p>
-<p>线程1和线程2现在实际上是不同步的。共享计数器变量的实际值应该是2，但是每个线程的CPU缓存中该变量的值都是1，而在主存中该值仍然是0。真是一团糟!即使线程最终将共享计数器变量的值写回主存，该值也将是错误的。</p>
-<h2 id="volatile-适用的场景"><a href="#volatile-适用的场景" class="headerlink" title="volatile 适用的场景"></a>volatile 适用的场景</h2><p>如前所述，如果两个线程同时读取和写入共享变量，那么使用volatile关键字是不够的。在这种情况下，需要使用synchronized来保证对变量的读写是原子性的。读或写volatile变量不会阻塞线程的读或写。要做到这一点，您必须用 synchronized 把临界区包起来。</p>
+<p>两个线程都完成了一次递增，但其中一次更新被覆盖了。要得到正确结果，需要把读取、计算和写入作为一个整体进行同步，或者使用原子递增操作。</p>
+<h2 id="volatile-适用的场景"><a href="#volatile-适用的场景" class="headerlink" title="volatile 适用的场景"></a>volatile 适用的场景</h2><p>如前所述，多个线程执行counter++这类复合操作时，volatile不够用。可以用synchronized把整个临界区包起来，避免读取、计算和写入被其他线程打断。单次volatile读写并不提供这种互斥保护。</p>
 <p>作为同步块的替代方法，您还可以使用java.util.concurrent中找到的许多<a href="/java-concurrent-atomic-package.html">原子数据类型</a>之一。例如，AtomicLong或AtomicReference或其他的一个。</p>
-<p>如果只有一个线程读取和写入volatile变量的值，而其他线程只读取该变量，那么读取的线程将确保看到写入volatile变量的最新值。如果不使用volatile变量，这将无法得到保证。</p>
-<p>volatile关键字可以保证在32位和64位变量上工作。</p>
-<h2 id="volatile-性能"><a href="#volatile-性能" class="headerlink" title="volatile 性能"></a>volatile 性能</h2><p>对volatile变量的读写会导致该变量被读写到主存中。从主存读取和写入比访问CPU寄存器开销更大。访问volatile变量还会阻止指令重排序，而指令重排序是一种普通的性能增强技术。因此，只有在真正需要增强变量的可见性时，才应该使用volatile变量。</p>
-<p>实际上，CPU寄存器的值通常只会被写入CPU的L1缓存，这已经相当快了——不如写入CPU寄存器快，但仍然很快。据我所知，从L1缓存向下经过L2、L3缓存再同步回主存（RAM），是由独立于CPU的芯片完成的，因此CPU并不会因此背上负担。</p>
+<p>如果只有一个线程更新计数器，其他线程只读取，volatile通常足以满足这个单变量场景。若要等待某次更新或逐次处理所有更新，还需要相应的协调机制。</p>
+<p>volatile读写本身是原子的，这也包括long和double；但counter++、条件判断后赋值等复合操作不在此保证范围内。</p>
+<h2 id="volatile-性能"><a href="#volatile-性能" class="headerlink" title="volatile 性能"></a>volatile 性能</h2><p>volatile访问会限制编译器和处理器的部分优化，并可能引入内存屏障、缓存一致性通信等开销。具体成本取决于硬件、访问方式和竞争程度，不能简单理解为每次都访问RAM。因此，只有需要相应可见性和顺序保证时，才使用volatile。</p>
+<blockquote>
+<p>译者注：原文还提到，L1、L2、L3缓存到RAM的同步由独立芯片完成，因此不会给CPU带来负担。这不是通用结论，缓存及内存控制器的组织取决于具体架构，相关访问仍可能产生等待和资源竞争。此处不沿用这一解释。内存语义以<a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4">JLS 17.4</a>为准。</p>
+</blockquote>
 <p>即便如此，也请只在真正需要时才使用volatile变量。这也会迫使你去详细了解Java volatile变量的工作原理。</p>
 <hr>
 <blockquote>
@@ -547,7 +553,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">

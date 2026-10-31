@@ -312,14 +312,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>3.6k</span>
+      <span>3.9k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>3 分钟</span>
+      <span>4 分钟</span>
     </span>
 </div>
 
@@ -337,11 +337,14 @@
 </blockquote>
 <span id="more"></span>
 
+<blockquote>
+<p>原文发表于 2021 年，讨论的是当时默认保存原始 JSON 的 <code>_source</code>。新版的 synthetic <code>_source</code> 不在本文范围内；文中的性能数据也仅对应这次测试。</p>
+</blockquote>
 <p>在这篇博文中，我想从<strong>性能的角度，探讨 Elasticsearch 为我们提供了哪些存储字段、并在查询时检索它们的方式。</strong> 事实上，Lucene——Elasticsearch 和 Solr 构建的基础库——本身就提供了两种存储和检索字段的机制：stored fields（存储字段）和 docvalues（文档值）。此外，Elasticsearch 默认还会使用 <code>_source</code> 字段：这是一个大 JSON，包含了索引时输入的文档全部字段。</p>
 <p>为什么 Elasticsearch 默认使用 <code>_source</code> 字段？从性能角度看，这些方案之间又有什么差别？让我们一探究竟！</p>
 <h2 id="Stored-And-Docvalues-Fields-In-Lucene"><a href="#Stored-And-Docvalues-Fields-In-Lucene" class="headerlink" title="Stored And Docvalues Fields In Lucene"></a>Stored And Docvalues Fields In Lucene</h2><p>当我们用 Lucene 索引一个文档时，原始字段的值本身并不会被保留。字段会按照 mapping 配置进行分词、转换和索引。如果没有额外的数据结构，搜索时我们只能拿到命中文档的 id，而拿不到原始字段值。为了取回这些信息，就需要额外的数据结构。Lucene 提供了两种选择：stored fields 和 docvalues。</p>
 <h3 id="STORED-FIELDS"><a href="#STORED-FIELDS" class="headerlink" title="STORED FIELDS"></a>STORED FIELDS</h3><p>stored fields 的作用是原样保存字段值（不作任何分析），以便在查询时取回。</p>
-<h3 id="DOCVALUES"><a href="#DOCVALUES" class="headerlink" title="DOCVALUES"></a>DOCVALUES</h3><p>docvalues 最初是为加速 facet（分面）、排序、分组等操作而引入的。它同样可以在查询时返回字段值——唯一的限制是不能用于文本字段。</p>
+<h3 id="DOCVALUES"><a href="#DOCVALUES" class="headerlink" title="DOCVALUES"></a>DOCVALUES</h3><p>docvalues 最初是为加速 facet（分面）、排序、分组等操作而引入的。它同样可以在查询时返回字段值，但 Elasticsearch 的 <code>text</code> 字段不支持 doc values；<code>keyword</code> 等类型则支持。</p>
 <p>stored fields 和 docvalues 都实现在 Lucene 库中，因此在 Solr 和 Elasticsearch 中都可以使用。</p>
 <p>我曾写过一篇博文，在 Solr 中对比过这两种方式的字段检索性能：</p>
 <p><a href="https://sease.io/2020/03/docvalues-vs-stored-fields-apache-solr-features-and-performance-smackdown.html">DocValues VS 存储字段:Apache Solr 功能和性能 SmackDown</a></p>
@@ -355,15 +358,18 @@
 <p>查询时默认返回全部字段。你也可以只指定 <code>_source</code> 中需要返回的字段子集，这理论上能加快响应在网络上的传输速度。</p>
 <p>通过合理配置，还可以把某些字段从 <code>_source</code> 中排除：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">PUT logs</span><br><span class="line">&#123;</span><br><span class="line"> &quot;mappings&quot;: &#123;</span><br><span class="line">  &quot;_source&quot;: &#123;</span><br><span class="line">   &quot;excludes&quot;: [</span><br><span class="line">    &quot;meta.description&quot;,</span><br><span class="line">     &quot;meta.other.*&quot;</span><br><span class="line">   ]</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>从 <code>_source</code> 中排除字段可以节省磁盘空间，但被排除的字段也永远不会出现在响应中。</p>
-<p>注意：禁用 <code>_source</code> 字段后，除非从头重建整个索引，否则无法更新文档。因为更新文档时，Elasticsearch 需要先从旧文档中取出各字段的值。从逻辑上讲，通过 stored fields 或 docvalues 从旧文档取值也是可行的（Solr 的原子更新就是这么做的），但由于设计上的取舍，Elasticsearch 不允许这样做。因此，如果你需要更新文档，就必须在索引配置中启用 <code>_source</code> 字段。</p>
+<p>从 <code>_source</code> 中排除字段可以节省磁盘空间，但这些字段不会再通过 <code>_source</code> 返回。如果字段另有 stored fields 或 doc values，仍可通过相应参数取回。</p>
+<p>注意：禁用 <code>_source</code> 后，无法通过 Update API 更新文档，因为它需要先读取旧文档内容。要修改文档，应用需要提供完整的新内容，并用相同的 <code>_id</code> 重新索引该文档，不必重建整个索引。从逻辑上讲，通过 stored fields 或 docvalues 重建旧文档也是一种方案（Solr 的原子更新有相应支持），但 Elasticsearch 的 Update API 不采用这种方式。</p>
 <h3 id="RETRIEVING-FIELDS"><a href="#RETRIEVING-FIELDS" class="headerlink" title="RETRIEVING FIELDS"></a>RETRIEVING FIELDS</h3><p>在 Elasticsearch 中，你可以启用或关闭 <code>_source</code> 字段，也可以把字段设置为 stored 和&#x2F;或 docvalues。那么，查询时究竟怎么把字段取回来呢？</p>
-<p>默认情况下，只要 <code>_source</code> 是启用的，就会返回完整的 <code>_source</code>。你也可以避免这一点，只返回其中的子集：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"> &quot;fields&quot;: [&quot;field1&quot;, &quot;field2&quot;],</span><br><span class="line"> &quot;_source&quot;: false</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>默认情况下，只要 <code>_source</code> 是启用的，就会返回完整的 <code>_source</code>。如果只需要其中几个字段，可以使用 source filtering：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;_source&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;field1&quot;</span><span class="punctuation">,</span> <span class="string">&quot;field2&quot;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
 
-<p>不过，如果你没有启用 <code>_source</code>，想从 stored fields 或 docvalues 中返回字段，就必须另外告诉 Elasticsearch。针对每种取值来源，需要用各自的参数指定字段列表：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"> &quot;fields&quot;: [&quot;sv1&quot;, &quot;sv2&quot;,...],</span><br><span class="line"> &quot;docvalue_fields&quot;: [&quot;dv1&quot;, &quot;dv2&quot;,...],</span><br><span class="line"> &quot;stored_fields&quot; : [&quot;s1&quot;, &quot;s2&quot;,...],</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>例如，如果某个字段同时开启了 stored 和 docvalues，你就可以选择从 docvalues 还是 stored fields 中检索它。从功能上看两者完全一样，但你的选择可能会影响查询的执行时间。</p>
+<p>如果想从 stored fields 或 docvalues 中取值，需要分别指定 <code>stored_fields</code> 或 <code>docvalue_fields</code>。下面的请求不返回 <code>_source</code>，但会返回所选字段：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;_source&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;docvalue_fields&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;dv1&quot;</span><span class="punctuation">,</span> <span class="string">&quot;dv2&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;stored_fields&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;s1&quot;</span><span class="punctuation">,</span> <span class="string">&quot;s2&quot;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>译者注：原文的示例还使用了 <code>fields</code>。它是按 mapping 取值的接口，普通字段通常仍依赖 <code>_source</code>，不能把它当作 <code>stored_fields</code> 或 <code>docvalue_fields</code> 的别名。请求中的 <code>&quot;_source&quot;: false</code> 只是不返回 <code>_source</code>，与在 mapping 中禁用它是两回事。</p>
+</blockquote>
+<p>例如，如果某个字段同时开启了 stored 和 docvalues，你就可以选择从哪一种结构中检索它，这会影响查询的执行时间。不过两者不保证原样保留相同的多值顺序；keyword 的 doc values 还可能去重，不能完全等同于原始 JSON。</p>
 <h2 id="STORED-FIELDS-DOCVALUES-AND-ELASTICSEARCH-SOURCE-INTERNAL-REPRESENTATION"><a href="#STORED-FIELDS-DOCVALUES-AND-ELASTICSEARCH-SOURCE-INTERNAL-REPRESENTATION" class="headerlink" title="STORED FIELDS, DOCVALUES AND ELASTICSEARCH_SOURCE INTERNAL REPRESENTATION"></a>STORED FIELDS, DOCVALUES AND ELASTICSEARCH_SOURCE INTERNAL REPRESENTATION</h2><p>本节只想简要概述 stored fields、<code>_source</code> 字段和 docvalues 的内部结构，以便为后面预判这几种字段检索方式的性能表现打基础。</p>
 <h3 id="STORED-FIELDS-INTERNALS"><a href="#STORED-FIELDS-INTERNALS" class="headerlink" title="STORED FIELDS INTERNALS"></a>STORED FIELDS INTERNALS</h3><p>stored fields 在磁盘上是按行存储的：每个文档一行，行内依次连续存放该文档的所有 stored fields。</p>
 <p><img src="/images/elasticsearch-source-doc-values-and-store-performance/storedfields.jpg" alt="storedfields" loading="eager" fetchpriority="high" decoding="async" width="631" height="141"></p>
@@ -382,7 +388,7 @@
 <p>对每个查询，我都请求 top 200 文档，并不断改变需要返回的字段数（在我创建的 100 个随机字符串字段中，从 1 个到 100 个），重复测试。</p>
 <p>基准测试结果如下：<br><img src="/images/elasticsearch-source-doc-values-and-store-performance/elastic-benachmarks.jpg" alt="elastic benachmarks" loading="lazy" decoding="async" width="640" height="480"></p>
 <p>结果完全符合预期。<strong>如果每个文档只需要少数几个字段，推荐使用 docvalues</strong>；反过来，<strong>当我们要返回整个文档时，<code>_source</code> 字段是最佳选择</strong>；而 stored fields 则是两者之间的完美折中。</p>
-<p>在我执行的基准测试场景中，<strong>如果只要一个字段，docvalues 几乎比 <code>_source</code> 快 2 倍</strong>；而在另一个极端——需要返回全部字段时，图表显示改用 <code>_source</code> 替代 docvalues，同样有接近 2 倍的提速。</p>
+<p>在我执行的基准测试场景中，<strong>如果只要一个字段，docvalues 的速度接近 <code>_source</code> 的两倍</strong>；而在另一个极端——需要返回全部字段时，改用 <code>_source</code> 替代 docvalues，速度也接近两倍。</p>
 <p>最后要说明的是，性能并不是我们唯一要考虑的因素。正如本文提到的，这几种方式各有使用限制，你可能因为用例本身的约束而被迫只能选其中一种。即便只看性能，也没有一个明显的赢家。</p>
 <p>如果磁盘空间不是问题，<strong>你甚至可以混合使用：把字段同时设为 stored 和 docvalues，并保持 <code>_source</code> 启用。</strong> 查询时，Elasticsearch 允许你指定需要的字段列表，并自由选择从 <code>_source</code>、stored 还是 docvalues 中返回它们。</p>
 <h2 id="译者补充"><a href="#译者补充" class="headerlink" title="译者补充"></a>译者补充</h2><p><code>_source</code> 是 Lucene 中的单个字段。这种结构意味着：即使你只请求 <code>_source</code> 对象的一部分，也必须先加载并解析整个对象。为了避免这个限制，可以考虑其他加载字段的选项：</p>
@@ -516,7 +522,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">

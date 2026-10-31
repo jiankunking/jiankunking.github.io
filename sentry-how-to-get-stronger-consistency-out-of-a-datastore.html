@@ -311,7 +311,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>4.2k</span>
+      <span>4.3k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -336,6 +336,9 @@
 </blockquote>
 <span id="more"></span>
 
+<blockquote>
+<p>原文发表于2019年，描述的是Sentry当时的ClickHouse配置和架构，不是所有ClickHouse部署的默认行为。特别是下文的写入确认、副本选择及同步Distributed写入，都需结合版本和设置阅读。</p>
+</blockquote>
 <p><em>欢迎来到我们的系列博文，这里记录的都是 Sentry 做过的一些“也许不该做”的事。别误会——我们并不后悔这些决定。分享这些笔记，是因为万一你也选择了这条少有人走的路，或许用得上。在本文中，我们把技术推到极限，以便在应对流量高峰的同时看到实时数据。（对 Apache Kafka 和分布式系统一致性模型有基本了解，会有助于读懂本文。）</em></p>
 <p>Sentry 的首要工作是接收用户的错误信息。当用户异常信息大量上报时，Sentry的流量将达到高峰。同时，提供<code>近实时</code>的错误追踪，对于用户是有帮助的。</p>
 <p>这里有两个可能相互冲突的需求：</p>
@@ -352,25 +355,25 @@
 <p>为了将事件保存到 ClickHouse，我们先把事件插入 Kafka 主题中。一些消费者从该主题中读取并以批量插入的方式写入到ClickHouse中。</p>
 <p>在保存了事件之后，我们触发了上面讨论的后处理任务，它需要从ClickHouse读取最新的事件(比如历史数据和我们刚刚处理的事件)才能正常工作。</p>
 <p>且慢。“事件保存后？”。在尝试读取事件之前，我们如何确定该事件已被保存到ClickHouse中？好吧，我们不能完全确定。最后，事件摄入任务只是将事件保存到Kafka主题中。</p>
-<p>为了确保事件在我们尝试读取之前已经被存储(持久化)，我们需要一个提供顺序一致性模型的存储系统（假设事件摄入和后处理发生在单独的进程中），或者读写一致性模型，如果两个操作在同一进程中发生。 （有关<a href="https://jepsen.io/consistency">一致性模型</a>的更多信息。）</p>
+<p>为了确保读取前事件已经写入，原文提出需要顺序一致性（假设事件摄入和后处理在不同进程中），或在两者属于同一进程时提供读己之写（read-your-writes）一致性。（有关<a href="https://jepsen.io/consistency">一致性模型</a>的更多信息。）</p>
 <p>如果一个存储系统的写操作是异步发生的，而读操作与写操作过程不是同步的，那么这个存储系统就不能提供任何一种这样的保证。因此，我们需要用不同的架构来缓解这个问题。</p>
 <p>我们可以把这个问题分成两部分:</p>
 <ul>
 <li>当后处理任务尝试读取时，事件可能根本没有到达ClickHouse。作为一种解决方案，后处理任务需要等待事件通过Kafka到达ClickHouse之后再进行。</li>
-<li>即使在对ClickHouse的写操作发生之后再运行后处理任务，我们也依赖于ClickHouse的一致性保证。ClickHouse是分布式和有<a href="https://clickhouse.tech/docs/en/engines/table-engines/mergetree-family/replication/">副本</a>的，默认情况下不提供自己的读后写一致性。我们需要确保从已经接收到我们想要读取的事件的副本中读取。</li>
+<li>即使等ClickHouse写入后再运行后处理，仍要考虑副本一致性。在这里的分布式、<a href="https://clickhouse.tech/docs/en/engines/table-engines/mergetree-family/replication/">复制</a>配置下，默认读取不保证读己之写；我们需要从已收到目标事件的副本读取。</li>
 </ul>
 <h2 id="写入ClickHouse后，触发后处理任务"><a href="#写入ClickHouse后，触发后处理任务" class="headerlink" title="写入ClickHouse后，触发后处理任务"></a>写入ClickHouse后，触发后处理任务</h2><p>解决这个问题相当于在运行后处理逻辑之前，等待某个主题中的某个 Kafka 消费者把该事件<code>消费并提交</code>。</p>
 <p>对于这个问题，有下面几种解决办法:</p>
 <ul>
 <li>使用<a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html">分布式锁框架</a>使后处理任务等待。虽然这可行，但它需要我们在架构中添加另一个分布式系统框架，从而增加复杂性。</li>
 <li>在写入ClickHouse之后，让<a href="https://blog.sentry.io/2019/05/16/introducing-snuba-sentrys-new-search-infrastructure/">Snuba</a>触发后处理任务。这个解决方案有一个重要的架构含义，Snuba将依赖于Sentry(而不是相反)。添加这种附加依赖关系不是我们所期望的。</li>
-<li>使用Kafka __consumer_offset主题<a href="https://kafka.apache.org/0110/documentation.html#impl_offsettracking">使后处理任务等待</a>。 该策略与我们构建的解决方案没有什么不同。问题主要在实践层面。例如，我们用来访问Kafka的库并没有提供一个抽象来解码关于该主题的消息。</li>
+<li>使用Kafka <code>__consumer_offsets</code>主题<a href="https://kafka.apache.org/0110/documentation.html#impl_offsettracking">使后处理任务等待</a>。该策略与我们构建的解决方案类似，问题主要在实践层面。例如，我们使用的Kafka库没有提供解码该主题消息的抽象。</li>
 <li>将完整的事件传递给需要它的后处理任务，而不是从数据库中重新加载数据。我们实际上是这样做的。不幸的是，这还不够，因为后处理任务需要运行需要读到最新写入数据的聚合查询。</li>
 </ul>
 <h2 id="同步消费者（SynchronizedConsumer）"><a href="#同步消费者（SynchronizedConsumer）" class="headerlink" title="同步消费者（SynchronizedConsumer）"></a>同步消费者（SynchronizedConsumer）</h2><p>我们没有使用这四个解决方案，而是构建了一个系统，该系统允许Kafka消费者暂停自己并等待另一个消费者（在独立消费组上）提交偏移量，然后再使用相同的消息。</p>
 <p><img src="/images/how-to-get-stronger-consistency-out-of-a-datastore/sync_consumer.png" alt="sync consumer" loading="lazy" decoding="async" width="1542" height="702"></p>
 <p>如上图所示，消费事件主题中的事件将触发后处理任务。我们希望只有当Snuba事件消费者将事件存储到ClickHouse时，后处理任务组件才能处理事件，以便后处理任务可以读取事件。</p>
-<p>为了实现这一点，我们需要为Snuba提供一种方式，以便在事件存储到ClickHouse时进行广告（advertise）。广告（advertisement）通过另一个Kafka主题(commit log topic)来传递。Snuba 事件消费者在提交偏移量后在提交主题上写入。</p>
+<p>为此，我们让Snuba在事件写入ClickHouse后发出通告（advertise）。通告通过另一个Kafka主题（commit log topic，提交日志主题）传递，Snuba事件消费者在提交偏移量后向该主题写入消息。</p>
 <p>以下代码段是有关提交日志主题的有效负载示例。消息的键通过提供主题，分区和组来标识事件主题。有效负载本身就是要提交的偏移量。</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">key: events:0:snuba-consumers #topic:partition:group</span><br><span class="line">payload: 70</span><br></pre></td></tr></table></figure>
 
@@ -386,6 +389,9 @@
 <li>复制是异步的，并且最终是一致的→读取可以发生在任何副本上，使用默认的负载平衡模式。在读取时，我们可能会遇到过时的数据，因为我们读取的副本可能未收到最新的写入数据。</li>
 <li>多主复制→写可以发生在任何节点上，并且可能不会以相同的顺序应用在所有副本上。最后，合并处理确保所有副本上的数据是一致的。在写入一个节点和一个副本之后，ClickHouse返回(默认情况下)。因此，仅仅丢失我们写入的那个副本，并不足以造成数据丢失。</li>
 </ul>
+<blockquote>
+<p>原文这段关于写入确认和单副本丢失的描述不能作为通用保证。确认前已写入多少份数据取决于表引擎、insert_quorum等设置；异步复制本身不保证确认时已有第二份副本。</p>
+</blockquote>
 <p>即使我们在开始后处理之前等待Kafka提交(如上所述)，我们仍然可以从ClickHouse副本中读到不是最新的数据;以上的解决方案仍然不够。</p>
 <p>幸运的是，ClickHouse的灵活性更高，它使我们能够为每个查询提供更强的一致性保证，而不会损害不需要强一致性的查询的性能。</p>
 <p>最初的想法是<a href="https://clickhouse.tech/docs/en/operations/settings/settings/#settings-select_sequential_consistency">结合</a>insert_quorum和select_sequential_consistency设置，这将保证给定数量的副本在返回之前收到更新。该组合设置可以保证我们查询的是最新的副本。</p>
@@ -525,7 +531,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">

@@ -9282,7 +9282,9 @@ _source的体积一下就小了，fetch自然变快，查询逻辑也不用动�
 
 这时候查询只要76ms，比最初的5908ms降了98.7%。
 
-另外，既然_id就是code，上面DSL里的docvalue_fields其实也有点多余，直接用ids查询，连docvalues都不用读：
+另外，既然索引里_id就是产品的code，上一版DSL里的docvalue_fields: ["code"]其实也有点多余：它的唯一作用是在hit里回填code的值，而_id本来就随每个hit返回，两者内容完全一样——等于为了拿到”跟_id一模一样的信息”，把一整列docvalues又读了一遍。
+
+这一版直接用ids查询：它是ES专门为_id匹配提供的查询，内部等价于对_id做一次TermInSetQuery，命中的文档列表直接从_id的倒排索引拿到，不需要读docvalues；而返回的code值就藏在_id这个元数据里，也不用再靠docvalue_fields显式取一遍：
 
 1
 2
@@ -9309,6 +9311,14 @@ _source的体积一下就小了，fetch自然变快，查询逻辑也不用动�
 &#125;
 
  |
+
+配合_source: false和stored_fields: "_none_"，fetch阶段基本无事可做，每个hit就只带_id（也就是code），业务侧拿_id去MySQL查详情即可。
+
+两个注意点：
+
+- 这个优化的前提是索引的_id本身就是业务主键code，其他场景不能照搬——如果_id是自动生成的UUID，该读的字段还是得读
+
+- 如果下游之前依赖hit里的fields.code，这一版要改成读_id；另外要查询的id特别多时，请求体本身也会变大，注意分批
 
 结论
 

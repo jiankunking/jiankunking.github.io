@@ -318,14 +318,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>5.1k</span>
+      <span>4.6k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>5 分钟</span>
+      <span>4 分钟</span>
     </span>
 </div>
 
@@ -365,20 +365,20 @@
 <p>这篇博客必然是技术性的，因为我们会深入探讨Elasticsearch如何进行复制的一些核心内容。不过，我们的目的是通过解释&#x2F;定义&#x2F;链接一些术语（即使您可能已经理解了这些术语），让更多读者能够理解这些术语。首先，让我们深入了解Elasticsearch所面临的一些挑战。</p>
 <h2 id="挑战"><a href="#挑战" class="headerlink" title="挑战"></a>挑战</h2><p>在继续深入之前，我们必须先谈谈我们的复制模型以及它的重要性。在Elasticsearch数据索引中，数据被分割成所谓的”分片”，基本上就是索引的子分区。你可以有5个主分片（基本上是索引的5个子分区），每个主分片可以有任意数量的主分片副本（称为<strong>副本</strong>）。但重要的是，每个子分区只有一个”<strong>主分片</strong>“。主分片首先接受索引操作（索引操作包括”添加文档”或”删除文档”等操作），然后<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/docs-replication.html">将索引操作复制到副本</a>。因此，在将每个操作转发给副本之前，不断递增计数器并为每个操作分配一个序列号是非常简单的。只要没有人重启服务器，网络正常运行时间达到100%，硬件不出现故障，没有长时间的Java垃圾回收事件，也没有人升级软件，这种简单易行的方法就能真正奏效。</p>
 <p>但我们生活在现实世界中，当这些假设发生变化时，Elasticsearch就会进入”故障”模式和”<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/indices-recovery.html">恢复</a>“过程。如果它们影响到运行主分片的节点，可能需要主分片停机，由另一个副本取而代之。由于变化来得突然，一些正在进行的索引操作可能尚未完全复制。如果您有2个或更多副本，其中一些操作可能只到达了其中一个副本，而没有到达另一个副本。更糟糕的是，由于Elasticsearch会并发索引文档（这也是Elasticsearch速度如此之快的原因之一！），每个副本都可能有不同的操作集，而这些操作集在另一个副本中并不存在。即使只运行一个副本（Elasticsearch的默认设置），也可能会出现问题。如果旧的主分片回来并被添加为副本，它可能包含从未复制到新主分片的操作。所有这些情况都有一个共同点：主分片失效后，分片上的操作历史可能会发生偏离，我们需要一些方法来解决这个问题。</p>
-<h2 id="PrimaryTerms-Sequence-Numbers"><a href="#PrimaryTerms-Sequence-Numbers" class="headerlink" title="PrimaryTerms &amp; Sequence Numbers"></a>PrimaryTerms &amp; Sequence Numbers</h2><p>我们采取的第一步是能够区分旧的和新的主分片。我们必须有一种方法来识别来自旧主分片的操作与来自新主分片的操作。此外，整个集群需要就此达成一致，以确保在出现问题时不会发生争执。这促使我们实现了<a href="https://github.com/elastic/elasticsearch/pull/14062">主项</a>。这些主项是增量的，并在主分片被提升时更改。它们被持久化在<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/cluster-state.html">集群状态</a>中，因此代表了集群所处的主分片的”版本”或”生成”。有了主项，操作历史中的任何冲突都可以通过查看操作的主项来解决。新术语优于旧术语。我们甚至可以<a href="https://github.com/elastic/elasticsearch/pull/17044">开始拒绝那些太旧的操作</a>，避免混乱的情况发生。</p>
-<p>一旦我们设置了主项的保护机制，我们添加了一个简单的计数器，并开始为每个操作分配一个来自该计数器的<strong>序列号</strong>。因此，这些序列号使我们能够了解在主分片上发生的索引操作的特定顺序，我们可以将其用于接下来几节中将要讨论的各种目的。您可以在响应中看到分配的序列号和主项：</p>
+<h2 id="PrimaryTerms-Sequence-Numbers"><a href="#PrimaryTerms-Sequence-Numbers" class="headerlink" title="PrimaryTerms &amp; Sequence Numbers"></a>PrimaryTerms &amp; Sequence Numbers</h2><p>我们采取的第一步是区分旧主分片和新主分片，并让整个集群对此达成一致。这促使我们实现了<a href="https://github.com/elastic/elasticsearch/pull/14062">主分片任期（primary term）</a>。任期在新的主分片被提升时递增，并持久化在<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/cluster-state.html">集群状态</a>中，代表该分片主副本的“版本”或“代次”。发生历史冲突时，较新的任期优先于较旧的任期。我们甚至可以<a href="https://github.com/elastic/elasticsearch/pull/17044">拒绝任期过旧的操作</a>，避免历史进一步混乱。</p>
+<p>有了主分片任期的保护机制，我们添加了一个简单的计数器，为每个操作分配<strong>序列号</strong>。这些序列号记录了主分片为操作分配的顺序，可用于后面讨论的各种用途。您可以在响应中看到序列号和主分片任期：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">$ curl -H &#x27;Content-Type: application/json&#x27; -XPOST http://127.0.0.1:9200/foo/doc?pretty -d &#x27;&#123; &quot;bar&quot;: &quot;baz&quot; &#125;&#x27;</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">	&quot;_index&quot;: &quot;foo&quot;,</span><br><span class="line">	&quot;_type&quot;: &quot;doc&quot;,</span><br><span class="line">	&quot;_id&quot;: &quot;MlDBm10BditXXu4kjj5E&quot;,</span><br><span class="line">	&quot;_version&quot;: 1,</span><br><span class="line">	&quot;result&quot;: &quot;created&quot;,</span><br><span class="line">	&quot;_shards&quot;: &#123;</span><br><span class="line">		&quot;total&quot;: 2,</span><br><span class="line">		&quot;successful&quot;: 1,</span><br><span class="line">		&quot;failed&quot;: 0</span><br><span class="line">	&#125;,</span><br><span class="line">	&quot;_seq_no&quot;: 19,</span><br><span class="line">	&quot;_primary_term&quot;: 1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>注意返回的响应中现在包含了_seq_no和_primary_term。</p>
-<h3 id="Local-and-Global-Checkpoints"><a href="#Local-and-Global-Checkpoints" class="headerlink" title="Local and Global Checkpoints"></a>Local and Global Checkpoints</h3><p>有了主项和序列号，我们理论上有了检测分片之间差异并在主分片失败时重新对齐它们的工具。拥有主项为x的旧主分片可以通过删除主项为x且不存在于新主分片历史记录中的操作来恢复，并且旧主分片中缺少的、主项（primary term）更高的操作，则可以重新写入旧主分片。</p>
-<p>不幸的是，当您同时每秒索引数十万甚至数百万个事件时，比较数百万次操作的历史记录实际上是不切实际的。存储成本过高，直接比较所需的计算工作将耗时过长。为了解决这个问题，Elasticsearch维护了一个名为<strong>全局检查点</strong>的安全标记。全局检查点是一个序列号，我们知道所有活动分片的历史记录都至少与之对齐。换句话说，所有序列号低于全局检查点的操作都已经被所有活动分片处理，并在各自的历史记录中是相等的。这意味着在主分片失败后，我们只需要比较<a href="https://github.com/elastic/elasticsearch/pull/24841">新主分片和任何剩余副本</a>之间最后已知的全局检查点以上的操作。当旧主分片恢复时，我们取其最后知道的全局检查点，并将其以上的操作与新主分片进行比较。这样，我们只需要比较需要比较的操作，而不是整个历史记录。</p>
-<p>推进全局检查点的责任属于主分片。主分片通过跟踪副本上已完成的操作来实现这一点。一旦检测到所有副本已经超过给定的序列号，主分片将相应地更新全局检查点。分片副本不会一直跟踪所有操作，而是维护一个全局检查点的本地变体，称为<strong>本地检查点</strong>。本地检查点是一个序列号，该副本上处理了所有更低序列号的操作。每当副本确认（或ack）主分片的写操作时，它们也会向主分片提供更新的本地检查点。利用本地检查点，主分片就能更新全局检查点，然后在下一次索引操作中将全局检查点发送给所有分片副本。</p>
+<h3 id="Local-and-Global-Checkpoints"><a href="#Local-and-Global-Checkpoints" class="headerlink" title="Local and Global Checkpoints"></a>Local and Global Checkpoints</h3><p>有了主分片任期和序列号，我们理论上就有了检测历史差异、在主分片失败后重新对齐它们的工具。任期为x的旧主分片可以移除自己任期中不存在于新主分片历史的操作，再补上旧主分片缺失的、任期更高的操作。</p>
+<p>每秒索引数十万甚至数百万个事件时，逐条比较全部历史并不现实。为此，Elasticsearch维护了<strong>全局检查点</strong>：同一分片的所有同步副本（包括主分片）都已处理、且历史一致的连续操作前缀的末尾序列号。也就是说，序列号小于或等于全局检查点的操作都在这个安全范围内。主分片失败后，只需要比较<a href="https://github.com/elastic/elasticsearch/pull/24841">新主分片和剩余副本</a>在最后已知全局检查点之后的操作，而不必比较全部历史。</p>
+<p>主分片负责推进全局检查点。每份分片副本维护<strong>本地检查点</strong>：本地已经处理完的连续操作前缀的末尾序列号，包含检查点本身。它不是已收到的最高序列号，中间有空缺就不能越过。副本确认写入时会报告本地检查点；主分片根据自己跟踪的所有同步副本本地检查点的最小值推进全局检查点，再将它传播给副本。</p>
 <p>下面的动画展示了在面对有损网络和突发故障等并发挑战时，随着序列号和全局&#x2F;本地检查点的增加而发生的情况：</p>
 <p><img src="/images/elasticsearch-sequence-ids-6-0/seqnos_animation.gif" alt="seqnos animation" loading="eager" fetchpriority="high" decoding="async" width="640" height="360"></p>
 <blockquote>
-<p>当索引操作从主分片发送到副本时，我们会跟踪每个副本确认收到的最高序列号，并将其称为全局检查点。主分片会告诉所有副本全局检查点是多少。因此，如果主分片切换，我们只需要比较和可能重新处理自上次全局检查点以来的操作，而不是磁盘上的所有文件。</p>
+<p>主分片跟踪各同步副本的本地检查点，以其中最小的值推进全局检查点，并通知副本。主分片切换后，只需比较或重放最后已知全局检查点之后的相关操作，而不是比较磁盘上的全部文件。</p>
 </blockquote>
-<p>全局检查点还具有另一个很好的特性——它代表了那些被<strong>保证会留下的操作</strong>（它们在所有活动分片的历史记录中），以及<strong>可能</strong>会被<strong>回滚</strong>的操作所在的区域，如果主分片在它们被完全复制并向用户确认之前恰好发生故障。这是一个微妙但重要的特性，对于未来的变更 API 或跨数据中心复制功能将是至关重要的。</p>
+<p>全局检查点还划出了一条边界：一侧是<strong>保证会保留的操作</strong>，它们已在所有同步副本的历史中；另一侧的操作如果在完全复制并向用户确认之前遇到主分片故障，就<strong>可能被回滚</strong>。这个细微但重要的特性，对未来的变更API和跨数据中心复制至关重要。</p>
 <h2 id="第一个好处：更快恢复"><a href="#第一个好处：更快恢复" class="headerlink" title="第一个好处：更快恢复"></a>第一个好处：更快恢复</h2><p>在Elasticsearch6.0之前，我们跳过了实际恢复过程的工作原理。当Elasticsearch在副本处于离线状态后恢复副本时，它必须确保该副本与活动主分片完全相同。非活动分片具有<a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.0/indices-synced-flush.html">同步刷新标记</a>，以便快速进行验证，但具有活动索引的分片则没有任何保证。如果一个分片在仍有活动索引的情况下掉线，那么新的主分片将通过网络复制Lucene段（即磁盘上的文件）。如果这些分片很大，这可能是一个繁重且耗时的操作。这是因为在6.0之前，我们没有跟踪个别写操作（序列号），而在幕后，Lucene会将所有添加&#x2F;更新&#x2F;删除合并到更大的分段中，这样就无法恢复构成更改的单个操作……也就是说，除非你将<strong>事务日志</strong>保留一段时间。</p>
 <p>这就是我们现在所做的：我们保留事务日志，直到它变的”过大”或”过旧”，不再有必要继续保留它。如果副本需要”更新”，我们会使用该副本已知的最后一个全局检查点，仅从主事务日志中回放相关更改，而不是昂贵的大文件复制。如果主事务日志”过大”或”太旧”而无法重放到副本，那么我们将回退到旧的基于文件的恢复方式。</p>
 <p>如果您一直在运行一个大型集群，而该集群经常出现网络断开、重启、升级等情况，我们预计这会让您舒心得多，因为您不必在分片恢复时长时间等待。</p>
@@ -513,7 +513,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">

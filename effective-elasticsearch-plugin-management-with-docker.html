@@ -307,7 +307,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>2.5k</span>
+      <span>2.6k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -332,13 +332,16 @@
 </blockquote>
 <span id="more"></span>
 
+<blockquote>
+<p>原文基于Elasticsearch 2.x，Shield、cloud-aws和bin&#x2F;plugin都是旧版用法。文末7.13.4示例也是特定版本示例，不能直接套用于当前版本。</p>
+</blockquote>
 <p>如果你正在用容器来运行elasticsearch,那么有一些事项需要注意。在管理有状态服务和守护进程时尤其如此——当将数据持久化在临时容器之外变得很重要时。</p>
 <p>在容器中使用 Elasticsearch 插件就是一个例子：这既包括以可重复、可跟踪的方式安装插件，也包括管理插件的配置和数据。</p>
 <p>在这篇文章中，我们将探讨一些在Docker和Elasticsearch中实现合理插件管理的选项。</p>
 <blockquote>
 <p>注意：本指南中引用的是 Docker Hub 上的 Elasticsearch 镜像；该镜像的开发和维护与 Elastic, Inc. 无关。</p>
 </blockquote>
-<h2 id="Docker-持久性入门"><a href="#Docker-持久性入门" class="headerlink" title="Docker 持久性入门"></a>Docker 持久性入门</h2><p>与版本控制系统中的文件变更类似，修改运行中容器的文件系统会在正在运行的镜像中引入差异。如果数据和更改需要在临时容器的范围之外永久保留，则需要采取措施。</p>
+<h2 id="Docker-持久性入门"><a href="#Docker-持久性入门" class="headerlink" title="Docker 持久性入门"></a>Docker 持久性入门</h2><p>与版本控制系统中的文件变更类似，修改运行中容器的文件系统会在容器的可写层中留下差异，不会修改原始镜像。停止、重启同一个容器时这些变化仍在，删除并重建容器时则会丢失。需要跨容器保留的数据应另行持久化。</p>
 <p>尽管可以利用一些更复杂的存储方案来实现容器持久化，但绑定挂载（bind mount）是 Docker 中最直观的做法。例如，通过将<code>-v /data:/usr/share/elasticsearch/data</code>之类的选项传递给<code>docker run</code>命令，将 Elasticsearch 索引长期保存在<code>/data</code>中来实现的，该命令有效地将Elasticsearch数据存储在主机的（不是容器的）<code>/data</code> 目录。</p>
 <p><font color=red>如果更改是永久性的，也就是说，预计它们不会随着时间的推移而改变，那么把变更固化进 <code>Dockerfile</code> 可能更合理。</font>这两种方法在不同情况下都有用。</p>
 <h2 id="管理基础插件"><a href="#管理基础插件" class="headerlink" title="管理基础插件"></a>管理基础插件</h2><p>在以下示例中，我将“基础”插件称为不需要许可证或任何其他特殊组件的插件。 像cloud-aws这样简单的插件只需要在系统上放置一些文件就可以工作。</p>
@@ -368,8 +371,8 @@
 <p>然后我们启动容器，为我们的配置指定挂载卷并公开REST端口：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker run -d -p 9200:9200 -v &quot;$PWD/config&quot;:/usr/share/elasticsearch/config elasticsearch-shield</span><br></pre></td></tr></table></figure>
 
-<p>Elasticsearch 应拒绝未经身份验证的请求，同时放行前面创建的凭据（本例假定 Docker 将端口映射在 localhost 上）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ curl -I -XGET -k https://localhost:9200/_cluster/health</span><br><span class="line">HTTP/1.1 401 Unauthorized</span><br><span class="line">WWW-Authenticate: Basic realm=&quot;shield&quot;</span><br><span class="line">Content-Type: application/json; charset=UTF-8</span><br><span class="line">Content-Length: 389</span><br><span class="line">$ curl -I -XGET -k -u example:password https://localhost:9200/_cluster/health</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: application/json; charset=UTF-8</span><br><span class="line">Content-Length: 389</span><br></pre></td></tr></table></figure>
+<p>Elasticsearch应拒绝未经身份验证的请求，同时放行前面创建的凭据。此时尚未启用TLS，应使用HTTP（原文此处用了HTTPS）。上面的-p 9200:9200通常绑定所有主机地址；仅限本机访问时应写成-p 127.0.0.1:9200:9200。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ curl -I -XGET http://localhost:9200/_cluster/health</span><br><span class="line">HTTP/1.1 401 Unauthorized</span><br><span class="line">WWW-Authenticate: Basic realm=&quot;shield&quot;</span><br><span class="line">Content-Type: application/json; charset=UTF-8</span><br><span class="line">Content-Length: 389</span><br><span class="line">$ curl -I -XGET -u example:password http://localhost:9200/_cluster/health</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: application/json; charset=UTF-8</span><br><span class="line">Content-Length: 389</span><br></pre></td></tr></table></figure>
 
 <h3 id="添加-SSL-TLS"><a href="#添加-SSL-TLS" class="headerlink" title="添加 SSL&#x2F;TLS"></a>添加 SSL&#x2F;TLS</h3><p>与挂载Shield配置文件一样，可以类似地管理SSL和TLS证书。可以遵循<a href="https://www.elastic.co/guide/en/shield/current/ssl-tls.html">Shield SSL&#x2F;TLS</a> 指南中概述的大部分步骤，但请记住：<code>CONFIG_DIR</code> 是我们运行时挂载进容器的目录路径。 CA和证书管理的全部内容不在本教程的讨论范围内，因此我们在此假设您使用的是正确配置的Javakeystore文件，此处称为 <code>node01.jks</code>。</p>
 <p>要暴露 keystore 文件，只需把它放进挂载到容器中的配置目录即可。</p>
@@ -511,7 +514,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">

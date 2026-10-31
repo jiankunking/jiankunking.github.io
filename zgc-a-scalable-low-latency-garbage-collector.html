@@ -308,14 +308,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>3.1k</span>
+      <span>2.6k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>3 分钟</span>
+      <span>2 分钟</span>
     </span>
 </div>
 
@@ -333,16 +333,19 @@
 </blockquote>
 <span id="more"></span>
 
+<blockquote>
+<p>JEP 333在JDK 11中交付，描述的是最初的实验性ZGC。单代、平台限制及解锁实验选项等说法均属于当时版本；ZGC在JDK 15转为正式功能，后续也引入了分代实现。</p>
+</blockquote>
 <h2 id="一、摘要"><a href="#一、摘要" class="headerlink" title="一、摘要"></a>一、摘要</h2><p>Z垃圾收集器，也称为ZGC，是一个可伸缩的低延迟垃圾收集器。</p>
 <h2 id="二、目标"><a href="#二、目标" class="headerlink" title="二、目标"></a>二、目标</h2><ul>
 <li>GC暂停时间不超过10ms</li>
 <li>能处理大小从相对较小(几百MB)到非常大(TB级)的堆</li>
 <li>与使用G1相比，应用程序吞吐量减少不超过15%</li>
-<li>方便日后在此基础上利用彩色指针和内存屏障进一步优化收集器及实现新特性。【原文：Lay a foundation for future GC features and optimizations leveraging colored pointers and load barriers】</li>
+<li>利用彩色指针和读屏障，为后续GC功能和优化打下基础。</li>
 <li>支持平台:Linux&#x2F;x64</li>
 </ul>
 <blockquote>
-<p>注：此处及下文中的内存屏障即load barrier，在ZGC中用的是读屏障。</p>
+<p>load barrier在这里指GC读屏障，即加载对象引用时执行的检查或修正逻辑，不是Java内存模型中用于约束读写顺序的内存屏障。</p>
 </blockquote>
 <p>我们有强烈的雄心在大量相关负载上达成这些目标。但同时也要承认，我们并不把这些目标视为任何可想象的负载都必须满足的硬性要求。</p>
 <blockquote>
@@ -351,14 +354,14 @@
 <h2 id="三、动机"><a href="#三、动机" class="headerlink" title="三、动机"></a>三、动机</h2><p>垃圾收集是Java的主要优势之一。但是，当垃圾收集暂停太长时，就会对应用程序的响应时间产生负面影响。通过大幅度缩短停顿时间，我们可以让Java适用于更多类型的应用程序。</p>
 <p>此外，现代系统中可用的内存数量还在继续增长。<strong>用户和应用程序开发人员希望JVM能够以一种有效的方式充分利用这种内存，并且不会出现很长的GC暂停时间。</strong></p>
 <h2 id="四、-描述"><a href="#四、-描述" class="headerlink" title="四、 描述"></a>四、 描述</h2><p>ZGC是一个并发的、单代（不再区分新生代和老年代）的、基于region的、支持numa的压缩收集器。Stop-the-world阶段仅限于根扫描，所以GC暂停时间不会随着堆或存活对象的多少而增加。</p>
-<p><font color=DeepPink><strong>ZGC的一个核心设计原则是结合使用内存屏障和彩色对象指针。这使得ZGC能够在运行Java应用程序线程时执行并发操作，比如对象重定位。从Java线程的角度来看，在Java对象中加载引用字段的行为受到内存屏障的限制。除了对象地址之外，有色对象指针还包含内存屏障需要的信息，用于确定在允许Java线程使用该指针之前是否需要采取某些操作。</strong></font>例如，对象可能已经被重新定位，在这种情况下，内存屏障将检测情况并采取适当的操作。</p>
+<p><font color=DeepPink><strong>ZGC的核心设计原则之一是结合读屏障和彩色对象指针，让对象重定位等操作与Java应用线程并发执行。Java线程加载对象引用时会经过读屏障。彩色指针除对象地址外，还携带元数据，供读屏障判断线程使用该引用前是否需要采取操作。</strong></font>例如，对象已经被重定位时，读屏障会检测并修正引用。</p>
 <p>与其他技术相比，我们认为颜色指针方案提供了一些非常吸引人的特性。特别是:</p>
 <ul>
-<li><p>这允许我们在移动对象&#x2F;整理内存阶段，在指向可回收&#x2F;重用区域的指针确定之前回收&#x2F;重用这部分内存【原文：It allows us to reclaim and reuse memory during the relocation&#x2F;compaction phase, before pointers pointing into the reclaimed&#x2F;reused regions have been fixed. 】。这有助于降低堆开销。这还意味着不需要实现单独的标记压缩算法来处理完整的GC。</p>
+<li><p>在对象重定位&#x2F;压缩阶段，即使指向待回收区域的指针还没有全部修正，也可以回收并重用该区域的内存。这有助于降低堆开销，也不必另行实现一套标记压缩算法来处理Full GC。</p>
 </li>
 <li><p>这允许我们使用相对较少且简单的GC屏障。这有助于降低运行时开销。这还意味着在解释器和JIT编译器中更容易实现、优化和维护GC barrier代码。</p>
 </li>
-<li><p>我们目前将标记和重新定位相关信息存储在彩色指针中。然而，此方案的通用性允许我们存储任何类型的信息(只要我们能将其放入指针中)，并允许内存屏障根据该信息采取它想要采取的任何操作。我们相信这将为将来的许多特性打下基础。举一个例子，在异构内存环境中，这可以用来跟踪堆访问模式，以指导GC重新定位决策，将很少使用的对象移动到冷存储(不常访问的内存区域)中【原文：To pick one example, in a heterogeneous memory environment, this could be used to track heap access patterns to guide GC relocation decisions to move rarely used objects to cold storage.】。</p>
+<li><p>我们目前将标记和重定位信息存储在彩色指针中，但它也可以携带其他信息（只要指针中有空间），让读屏障据此采取所需的操作。这为后续特性留下了空间。例如，在异构内存环境中，可以跟踪堆访问模式，指导GC把很少使用的对象移到冷存储（不常访问的内存区域）。</p>
 </li>
 </ul>
 <h2 id="五、性能"><a href="#五、性能" class="headerlink" title="五、性能"></a>五、性能</h2><p>我们已经使用SPECjbb 2015[1]做了常规性能测试。从吞吐量和延迟角度来看，性能都很好。下面是使用128G堆在复合模式下比较ZGC和G1的典型基准分数(以百分比为单位，根据ZGC的max-jOPS进行标准化)【原文：Below are typical benchmark scores (in percent, normalized against ZGC’s max-jOPS), comparing ZGC and G1, in composite mode using a 128G heap.】：</p>
@@ -518,7 +521,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">

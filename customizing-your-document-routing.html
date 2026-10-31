@@ -307,7 +307,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>3.2k</span>
+      <span>3.4k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -328,14 +328,14 @@
     <div class="post-body" itemprop="articleBody">
 
 <aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>Elasticsearch自定义文档路由</dd></div><div><dt>原始来源</dt><dd><a href="https://www.elastic.co/cn/blog/customizing-your-document-routing" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>衣舞晨风（jiankunking）</dd></div><div><dt>版权说明</dt><dd>原文版权归原作者或原发布方所有</dd></div></dl></aside><blockquote>
-<p>注意:原文发表时间是13年,所以实现有可能与新版不一致.<br>原文地址:<a href="https://www.elastic.co/cn/blog/customizing-your-document-routing">https://www.elastic.co/cn/blog/customizing-your-document-routing</a></p>
+<p>原文发表于2013年。配置与搜索部分改写为较新的API；父&#x2F;子&#x2F;孙示例仍保留旧版的type和parent参数，用于说明路由关系。<br>原文地址:<a href="https://www.elastic.co/cn/blog/customizing-your-document-routing">https://www.elastic.co/cn/blog/customizing-your-document-routing</a></p>
 </blockquote>
 <span id="more"></span>
 
 <p>本文将介绍 Elasticsearch 的 Routing（路由）特性：什么是路由，以及为什么你可能会考虑使用非默认的路由方案。</p>
 <h2 id="什么是路由"><a href="#什么是路由" class="headerlink" title="什么是路由"></a>什么是路由</h2><p>您的所有数据都存在于集群中某个位置的主分片中。您可能有五个分片或五百个，但任何特定的文档都只位于其中一个。<font color=DeepPink><strong>路由是确定文档将保存到哪个分片中的过程。</strong></font></p>
 <p>Elasticsearch 努力让默认配置对 90% 的用户够用，因此路由是自动处理的。对于大多数用户来说，文档存储在哪里并不重要。</p>
-<p><font color=DeepPink><strong>默认的路由方案对文档的ID进行hash，并使用它来查找分片。这包括用户提供的ID和Elasticsearch随机生成的ID。默认路由使文档在整个分片集中均匀分布 - 不会出现文档集中倾斜到某个分片上形成热点。</strong></font></p>
+<p><font color=DeepPink><strong>默认路由对文档ID进行hash，以此确定分片。这包括用户提供的ID和Elasticsearch生成的ID。它通常能让文档较均匀地分布，但不保证各分片的数据量和请求负载完全相同。</strong></font></p>
 <h2 id="为什么需要自定义路由"><a href="#为什么需要自定义路由" class="headerlink" title="为什么需要自定义路由"></a>为什么需要自定义路由</h2><p>随机路由在大多数情况下都运行良好，但在某些场景下，结合你对自身数据的领域知识，自定义路由能带来更好的性能。想象一个包含 20 个分片的索引（过度分配以支持未来的增长）。</p>
 <p>当在集群上执行搜索请求时会发生什么？</p>
 <ul>
@@ -350,31 +350,32 @@
 <p>您不需要盲目地向所有分片广播，而是告诉 Elasticsearch“嘿！ 搜索这个分片上的数据！ 一切都在那里，我保证！” 例如，您可以根据文档的 user_id 路由文档。或者他们的邮政编码。或者您的应用程序中经常搜索&#x2F;过滤的任何内容。</p>
 <p><font color=DeepPink><strong>路由确保具有相同路由值的所有文档都将定位到同一个分片，从而无需广播搜索。</strong></font></p>
 <p>这一设计模式常被称为“用户数据流”（User Data Flow），由 Shay 在 Berlin Buzzwords 大会上的演讲推广开来。</p>
-<h2 id="自定义路由速度很快"><a href="#自定义路由速度很快" class="headerlink" title="自定义路由速度很快"></a>自定义路由速度很快</h2><p>自定义路由可确保仅查询一个分片。</p>
+<h2 id="自定义路由速度很快"><a href="#自定义路由速度很快" class="headerlink" title="自定义路由速度很快"></a>自定义路由速度很快</h2><p>在本文默认的路由模型下，指定一个路由值可把搜索限制到一个分片。</p>
 <p>如果您的问题适合自定义路由，那么这有可能显着提高性能。</p>
 <p>无论索引中有 20 个还是 100 个分片，自定义路由都可以确保只查询保存数据的分片。</p>
 <h2 id="配置自定义路由"><a href="#配置自定义路由" class="headerlink" title="配置自定义路由"></a>配置自定义路由</h2><p>使用自定义路由时，每当索引、获取、删除或更新文档时提供路由值非常重要。</p>
-<p>忘记路由值会导致文档写入非预期的分片。作为保护措施，可将 <code>_routing</code> 字段设为 <code>required</code>，强制所有 CRUD 操作都必须提供自定义路由值：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">PUT my-index-000002</span><br><span class="line">&#123;</span><br><span class="line">  &quot;mappings&quot;: &#123;</span><br><span class="line">    &quot;_routing&quot;: &#123;</span><br><span class="line">      &quot;required&quot;: true //文章所有操作都需要指定路由</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PUT my-index-000002/_doc/1 </span><br><span class="line">&#123;</span><br><span class="line">  &quot;text&quot;: &quot;No routing value provided&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>忘记路由值可能让文档写入非预期的分片，后续获取、更新或删除也可能找不到它。作为保护措施，可将 <code>_routing</code> 字段设为 <code>required</code>，要求按ID操作文档时提供路由值：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">PUT my-index-000002</span><br><span class="line">&#123;</span><br><span class="line">  &quot;mappings&quot;: &#123;</span><br><span class="line">    &quot;_routing&quot;: &#123;</span><br><span class="line">      &quot;required&quot;: true</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">PUT my-index-000002/_doc/1 </span><br><span class="line">&#123;</span><br><span class="line">  &quot;text&quot;: &quot;No routing value provided&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<p>上面的写入没有携带routing，会报错。正确写法是在请求中提供路由值，例如<code>PUT my-index-000002/_doc/1?routing=user1</code>。</p>
 <blockquote>
-<p>原文该节已经过时，所以没有逐句翻译，以下改写自官方文档：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html">https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html</a><br>另外注意：从文档中提取路由值的功能已在 Elasticsearch v2.0 中移除；即使在旧版本中，它也比在 URI 中直接指定路由更慢——网关节点必须先加载文档、提取路由值，再序列化到目标分片。</p>
+<p>本节配置示例改写自官方文档：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html">https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html</a><br>另外注意：从文档中提取路由值的功能已在 Elasticsearch v2.0 中移除；即使在旧版本中，它也比在 URI 中直接指定路由更慢——网关节点必须先加载文档、提取路由值，再序列化到目标分片。</p>
 </blockquote>
 <h2 id="自定义路由搜索"><a href="#自定义路由搜索" class="headerlink" title="自定义路由搜索"></a>自定义路由搜索</h2><p>自定义路由可以减少搜索的影响。不必将搜索请求发送到索引中的所有分片，而是将请求仅发送到与特定路由值（或多个值）匹配的分片：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">GET my-index-000001/_search?routing=user1,user2 </span><br><span class="line">&#123;</span><br><span class="line">  &quot;query&quot;: &#123;</span><br><span class="line">    &quot;match&quot;: &#123;</span><br><span class="line">      &quot;title&quot;: &quot;document&quot;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">GET my-index-000001/_search?routing=user1,user2</span><br><span class="line">&#123;</span><br><span class="line">  &quot;query&quot;: &#123;</span><br><span class="line">    &quot;bool&quot;: &#123;</span><br><span class="line">      &quot;must&quot;: &#123;</span><br><span class="line">        &quot;match&quot;: &#123; &quot;title&quot;: &quot;document&quot; &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      &quot;filter&quot;: &#123;</span><br><span class="line">        &quot;terms&quot;: &#123; &quot;user_id&quot;: [&quot;user1&quot;, &quot;user2&quot;] &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>此搜索请求将仅在与 user1 和 user2 路由值关联的分片上执行。</p>
+<p>此例假定文档按user_id路由，且user_id映射为keyword。搜索只访问user1和user2对应的分片，再由filter限定用户范围。</p>
 </blockquote>
-<p>注意：仅仅限定路由是不够的，查询里务必加上限定用户范围的过滤条件（如原例中的 filtered query）。</p>
+<p>注意：仅限定路由还不够，查询里也要加上限定用户范围的过滤条件，如上面的terms过滤。</p>
 <p>如果我们只是使用 match_all：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GET my-index-000001/_search?routing=user123</span><br><span class="line">&#123;</span><br><span class="line">  &quot;query&quot;: &#123;</span><br><span class="line">    &quot;match_all&quot;: &#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>你实际上是在要求 Elasticsearch：”匹配路由到 user123 的那个分片上的所有文档”。该分片上几乎肯定还存有不属于 user123 的文档——路由只保证相同路由值的文档都去同一个分片，并不意味着没有其他文档也被路由到该分片。所以请务必在适当的地方加上过滤条件。:)</p>
-<h3 id="搜索多个路由值"><a href="#搜索多个路由值" class="headerlink" title="搜索多个路由值"></a>搜索多个路由值</h3><p>索引文档时，你只能指定一个路由值——一个文档路由到多个分片是没有意义的！但搜索时可以指定多个路由值。想象一个基于 UserGroup 路由的 ACL（访问控制）系统：一个用户可以是多个组的成员，因此搜索时你希望检索该用户有权访问的所有文档。每个 UserGroup 被沙盒在单独的分片中，使用多个路由值即可只搜索相关的分片：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET forum/_search?routing=Admin,Moderator</span><br></pre></td></tr></table></figure>
+<h3 id="搜索多个路由值"><a href="#搜索多个路由值" class="headerlink" title="搜索多个路由值"></a>搜索多个路由值</h3><p>索引文档时只能指定一个路由值，搜索时则可以指定多个。假设文档按UserGroup路由，而一个用户属于多个组，就可以搜索这些组对应的分片。不过不同组可能落到同一个分片，仍要通过过滤条件限定组别。下面假定user_group是keyword字段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">GET forum/_search?routing=Admin,Moderator</span><br><span class="line">&#123;</span><br><span class="line">  &quot;query&quot;: &#123;</span><br><span class="line">    &quot;bool&quot;: &#123;</span><br><span class="line">      &quot;filter&quot;: &#123;</span><br><span class="line">        &quot;terms&quot;: &#123; &quot;user_group&quot;: [&quot;Admin&quot;, &quot;Moderator&quot;] &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>这样就会同时搜索 “Admin” 和 “Moderator” 两个分片，而忽略其他所有 UserGroup。</p>
+<p>这样会搜索Admin和Moderator两个路由值对应的分片；它们也可能是同一个分片。原文用“沙盒”描述组隔离并不准确：routing只减少搜索范围，不能代替ACL。服务端还需要验证用户是否有权访问这些组，并施加相应的过滤条件。</p>
 <h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><p>在使用自定义路由时，您应该注意以下几个问题。</p>
 <h3 id="父-子-孙-三层结构"><a href="#父-子-孙-三层结构" class="headerlink" title="父&#x2F;子&#x2F;孙 三层结构"></a>父&#x2F;子&#x2F;孙 三层结构</h3><p><font color=DeepPink><strong>出于性能原因，父&#x2F;子映射可确保所有子文档都路由到与父文档相同的分片。在内部，Elasticsearch 将子级的路由值设置为等于父级的 ID，确保每个人都位于同一个分片。</strong></font></p>
 <p>但是，如果您添加第三层（孙子），父&#x2F;子映射就会失败。查看这些示例文档：</p>
@@ -437,7 +438,7 @@
 <p>自定义路由将确保MonsterUser的所有文档都指向同一个分片，而不是在集群中均匀分布。这对性能有好处——搜索会很快执行。</p>
 <p>但是，如果MonsterUser2和MonsterUser3也被分配到同一个分片，会发生什么？现在，在一个分片上有三个大用户，而其余的分片只加载了少量。</p>
 <p>情况不太好。这些类型的场景可以而且确实会发生。<font color=DeepPink><strong>针对这些“数据热点”的最佳防御措施是手动识别大用户（或其他急需性能的用户），并将其拆分为自己的索引。然后，您可以设置一个别名，使分离对应用程序透明。</strong></font></p>
-<p>现在，您可以两全其美：自定义路由将大多数用户沙盒在一个分片中，而大用户则被拆分为自己的索引和一组分片。</p>
+<p>这样，大多数用户的数据仍集中在各自路由值对应的分片中，大用户则使用独立索引和一组分片。前者可能与其他用户共用分片，并不是安全隔离。</p>
 <h3 id="You-can-check-out-any-time-you-like-but-you-can-never-leave"><a href="#You-can-check-out-any-time-you-like-but-you-can-never-leave" class="headerlink" title="You can check-out any time you like, but you can never leave!"></a>You can check-out any time you like, but you can never leave!</h3><p>一旦在索引文档时指定了自定义路由，无论何时更新或删除文档，都必须继续指定。您已经从Elasticsearch获得了一些控制权，如果您决定在某个时候停止使用自定义路由，就没有简单办法把这部分控制权交还回去了。唯一的办法是重建索引（不指定自定义路由）。</p>
 <h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>自定义路由是一个强大的功能，可以在特定情况下提高性能。虽然默认路由对大多数人来说已经足够了，但有时您只需要对文档的放置进行更多的控制。</p>
 
@@ -561,7 +562,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">872k</span>
+    <span title="站点总字数">874k</span>
   </span>
 </div>
 <div class="busuanzi-count">
