@@ -332,7 +332,7 @@
 <blockquote>
 <p>🕰️ <strong>Version note</strong>: This post was written in 2025, against an Elasticsearch 7.16.2 cluster. The technology moves fast — read it alongside the version you actually run.</p>
 </blockquote>
-<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In the morning a colleague opened a group chat to report write timeouts on an ES cluster they use. Checking the cluster health showed it was already red.</p>
+<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In the morning a colleague started a group chat to report write timeouts on an ES cluster they use. Checking the cluster health showed it was already red.</p>
 <ul>
 <li>This was a 3 × 8-core, 32 GB cluster (JVM heap configured at 16 GB)</li>
 <li>At the time of the failure the cluster held 5000 indices, each with 6 shards and 1 replica — that is, 12 shards per index<ul>
@@ -343,9 +343,9 @@
 <li>Data volume was roughly 480 GB</li>
 </ul>
 <p>Does any of this feel familiar?</p>
-<p>&#x3D;&gt; <a href="https://jiankunking.com/an-accident-caused-by-not-accepting-the-official-advice-of-elasticsearch.html">Elasticsearch Cluster Lost Its Master: Thread Pools, Packet Capture, and 60,000 Shards</a></p>
+<p>&#x3D;&gt; <a href="https://jiankunking.com/en/elasticsearch-no-master-incident.html">Elasticsearch Cluster Lost Its Master: Thread Pools, Packet Capture, and 60,000 Shards</a></p>
 <p>We contacted the owning service team right away to delete historical data; they confirmed that the 2022 and 2023 data could be deleted.</p>
-<h2 id="Handling"><a href="#Handling" class="headerlink" title="Handling"></a>Handling</h2><h3 id="Speeding-up-recovery"><a href="#Speeding-up-recovery" class="headerlink" title="Speeding up recovery"></a>Speeding up recovery</h3><p>While the team was running the batch deletions, I first raised the cluster’s recovery-related settings:</p>
+<h2 id="Handling"><a href="#Handling" class="headerlink" title="Handling"></a>Handling</h2><h3 id="Speeding-up-recovery"><a href="#Speeding-up-recovery" class="headerlink" title="Speeding up recovery"></a>Speeding up recovery</h3><p>After the team kicked off the batch deletions, I first raised the cluster’s recovery-related settings:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">PUT /_cluster/settings</span><br><span class="line">&#123;</span><br><span class="line">  &quot;persistent&quot;: &#123;</span><br><span class="line">    &quot;cluster.routing.allocation.node_concurrent_recoveries&quot;: 200,</span><br><span class="line">    &quot;indices.recovery.max_bytes_per_sec&quot;: &quot;80mb&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <blockquote>

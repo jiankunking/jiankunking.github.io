@@ -31,6 +31,7 @@
 
 
 
+
 <meta property="article:published_time" content="2026-09-21T13:00:00.000Z">
 <meta property="article:modified_time" content="2026-10-17T16:00:00.000Z">
 <meta property="article:author" content="衣舞晨风（jiankunking）">
@@ -310,14 +311,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>29k</span>
+      <span>30k</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>26 mins.</span>
+      <span>27 mins.</span>
     </span>
 </div>
 
@@ -354,7 +355,7 @@
 <h2 id="Background-the-request-path-and-the-environment"><a href="#Background-the-request-path-and-the-environment" class="headerlink" title="Background: the request path and the environment"></a>Background: the request path and the environment</h2><p>The path is short:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Client (Codex, curl, application code) → API7 gateway (3 nodes) → Azure (GPT-series models)</span><br></pre></td></tr></table></figure>
 
-<p>The three nodes are 10.200.76.54, .55, and .56, 16 cores each. Both problems appeared after the upgrade; below I investigate them one at a time, and then look at the node-to-node difference.</p>
+<p>The three nodes are 192.0.2.54, .55, and .56, 16 cores each. Both problems appeared after the upgrade; below I investigate them one at a time, and then look at the node-to-node difference.</p>
 <h2 id="A-few-terms-that-will-keep-coming-up"><a href="#A-few-terms-that-will-keep-coming-up" class="headerlink" title="A few terms that will keep coming up"></a>A few terms that will keep coming up</h2><p>Readers familiar with OpenResty can skip this section.</p>
 <ul>
 <li><strong>shared dict and its lock</strong>: <code>ngx.shared.DICT</code> is a memory dictionary shared by all workers. To keep concurrent access consistent, every read and write goes through the same mutex (<code>ngx_shmtx_lock</code>) — pure reads included. When multiple workers hit the same dict at high frequency, lock contention and spin-backoff burn user CPU directly; it never shows up as iowait.</li>
@@ -447,7 +448,7 @@
 </tbody></table>
 <p>Why is the cleanup time fixed? Each worker runs cleanup every 3600 seconds from the moment its process starts, so it fires at the same second every hour — for example, 25 minutes and 30 seconds past the hour. A CPU spike can only be called cleanup-related if it appears at that same moment; the dense clusters clearly do not line up.</p>
 <p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-two-patterns-timeline-en.svg" alt="The two CPU patterns: short spikes landing on the timer&#39;s schedule, dense clusters of high-CPU multi-worker spikes unrelated to the timer, plus a counterexample where a large cleanup produced no high CPU" loading="lazy" decoding="async"></p>
-<p>Now compare reclaimed volume against CPU: neither direction lines up. Reclaimed volume is the single-step drop in shared-dict occupied space; CPU is the node peak within ten minutes of the reclaim (rate over a 1-minute window, 30-second step; recomputing with a finer step gives the same result, so smoothing did not erase the spikes):</p>
+<p>Now compare reclaimed volume against CPU: neither direction lines up. Reclaimed volume is the single-step drop in shared-dict occupied space; CPU is the node peak within ±10 minutes of the reclaim (rate over a 1-minute window, 30-second step; recomputing with a finer step gives the same result, so smoothing did not erase the spikes):</p>
 <table>
 <thead>
 <tr>
@@ -565,7 +566,9 @@
 <li>Observe: the worker that initiated the change stays low while the rest simultaneously approach a full core each, for a few seconds to tens of seconds; an <code>ngx_shmtx_lock</code> hotspot is visible in perf;</li>
 <li>Still reproducible with external Prometheus scraping removed.</li>
 </ol>
-<p>The dependency change provided the trigger mechanism, perf pointed to lock contention, the internal counters explained the scan size, and the controlled experiment reproduced the multi-worker high CPU. The vendor’s final report (API7) also confirmed the root cause — only at that point did all the evidence lines truly line up.</p>
+<p>The dependency change provided the trigger mechanism, perf pointed to lock contention, the internal counters explained the scan size, and the controlled experiment reproduced the multi-worker high CPU — only at that point did all the evidence lines truly line up. API7’s subsequent release notes then confirmed, at the product level, the affected versions, the configuration trigger conditions, and the rollback remedy.</p>
+<p>API7 later recorded explicitly in the <a href="https://docs.apiseven.com/api7-gateway/3.9.x/release-notes#3921">3.9.21 official release notes</a>: the <code>nginx-lua-prometheus-api7</code> shipped after upgrading to 3.9.18–3.9.20 could cause gateway worker CPU spikes when metrics were configured with <code>expire</code>, so the metrics library was rolled back to the version used by 3.9.15 and earlier, with no change required to <code>expire</code>. These release notes corroborate the affected versions, the configuration trigger conditions, and the final fix; as for the specific mechanism of the full scan and the shared-dict lock contention, the evidence still comes from the source diff, perf, and the controlled reproduction above.</p>
+<p><a href="https://docs.apiseven.com/api7-gateway/3.9.x/release-notes#3921"><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/api7-3.9.21-prometheus-release-note.png" alt="API7 Gateway 3.9.21 official release notes: the Prometheus metrics library may cause worker CPU spikes when expire is configured, and the fix rolls the library back" loading="lazy" decoding="async"></a></p>
 <h3 id="Stopping-the-bleeding-configuration-mitigation-and-the-code-fix"><a href="#Stopping-the-bleeding-configuration-mitigation-and-the-code-fix" class="headerlink" title="Stopping the bleeding, configuration mitigation, and the code fix"></a>Stopping the bleeding, configuration mitigation, and the code fix</h3><p>First, stop the bleeding: after reading the counters on all three nodes, I deleted and recreated the gateway Pods one at a time. An ordinary reload preserves the shared dict; rebuilding the instance cleared the accumulated index state, and the CPU spikes temporarily stopped. <strong>But this only zeroes state; it does not fix the bug.</strong></p>
 <p>If the code fix cannot be delivered right away, configuration changes can reduce the trigger and amplification conditions:</p>
 <ul>
@@ -625,9 +628,9 @@
 <h2 id="Disclosure-how-tooling-was-used"><a href="#Disclosure-how-tooling-was-used" class="headerlink" title="Disclosure: how tooling was used"></a>Disclosure: how tooling was used</h2><p>Most of the perf-report aggregation, monitoring correlation, and source-code triage in this investigation was done with automated tooling, and this postmortem itself was drafted and polished with an AI assistant (mimo-v2.6-pro). None of that changes the epistemics: judgment had to come back to the evidence on the ground, and no plausible-sounding explanation was allowed to stand when a counterexample contradicted it. For a fuller account of how tooling participated in the analysis, see <a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Runtime Behavior Blind Spots: An AI-Assisted Postmortem of the API7 AI Gateway CPU Saturation Failures</a> (in Chinese).</p>
 <h2 id="Related-posts"><a href="#Related-posts" class="headerlink" title="Related posts"></a>Related posts</h2><ul>
 <li><a href="https://jiankunking.com/en/apisix-504-15-seconds.html">APISIX Gateway 504s After Exactly 15 Seconds: Tracing It to tcp_syn_retries</a></li>
-<li><a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Runtime Behavior Blind Spots: An AI-Assisted Postmortem of the API7 AI Gateway CPU Saturation Failures</a> (in Chinese)</li>
-<li><a href="https://jiankunking.com/how-to-judge-an-ai-gateway-from-boundaries-to-scorecard.html">What Makes a Good AI Gateway? From Boundaries to a Scorecard</a> (in Chinese)</li>
-<li><a href="https://jiankunking.com/from-model-management-to-ai-gateway.html">From Model Management to an AI Gateway: Tying Assets, Traffic, and Cost into a Closed Loop</a> (in Chinese)</li>
+<li><a href="https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html">Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway</a></li>
+<li><a href="https://jiankunking.com/en/how-to-judge-an-ai-gateway.html">How to Judge an AI Gateway: Protocol Compatibility, Traffic Governance, and a Performance Scorecard</a></li>
+<li><a href="https://jiankunking.com/en/from-model-management-to-ai-gateway.html">From Model Management to an AI Gateway: Tying Assets, Traffic and Cost into a Closed Loop</a></li>
 </ul>
 <p><em>This article is the English edition of a post originally published in <a href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html">Chinese</a>.</em></p>
 
