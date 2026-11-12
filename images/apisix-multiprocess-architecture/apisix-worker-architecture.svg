@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-labelledby="apisix-worker-architecture-title apisix-worker-architecture-desc" id="apisix-worker-architecture-root">
+<title id="apisix-worker-architecture-title">单个 worker 的执行模型</title>
+<desc id="apisix-worker-architecture-desc">请求协程 A 当前在 worker 唯一的主线程内执行，B 已挂起等待网络；网络就绪后须由主线程恢复 B，timer 回调也由同一主线程调度，三者不会同时执行普通 Lua 代码。</desc>
+<defs>
+      <style>#apisix-worker-architecture-root { color: #2d2d2d; font-family: Lato,"Noto Sans SC","PingFang SC",sans-serif; }
+      #apisix-worker-architecture-root .diagram-container { width:100%; overflow-x:auto; }
+      #apisix-worker-architecture-root text { font-family:Lato,"Noto Sans SC","PingFang SC",sans-serif; fill:#2d2d2d; }
+      #apisix-worker-architecture-root .name { font-size:18px; font-weight:700; }
+      #apisix-worker-architecture-root .detail { font-size:15px; fill:#686868; }
+      #apisix-worker-architecture-root .small { font-size:14px; fill:#686868; }
+      @media print {
+#apisix-worker-architecture-root .diagram-container { overflow-x:visible; }
+}</style><marker id="apisix-worker-architecture-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#686868"/></marker></defs>
+<rect width="960" height="600" fill="#ffffff"/>
+<text x="24" y="36" font-size="24" font-weight="700">单个 worker 的执行模型</text>
+<text x="24" y="68" class="detail">一个执行位置，多个请求轮流使用；图中只有 A 当前执行，虚线表示后续调度</text>
+<rect x="24" y="92" width="912" height="456" rx="8" fill="#f7f7f7" stroke="#bdbdbd" stroke-dasharray="5 4"/>
+<text x="40" y="116" class="small">一个 worker 进程的边界</text>
+<g fill="none" stroke="#686868" stroke-width="1.5" marker-end="url(#apisix-worker-architecture-arrow)">
+<path d="M800 244 V304" stroke-dasharray="5 4"/>
+<path d="M680 352 H592" stroke-dasharray="5 4"/>
+<path d="M680 504 H640 Q632 504 632 496 V388 Q632 380 624 380 H592" stroke-dasharray="5 4"/>
+</g>
+<path d="M240 404 V452" fill="none" stroke="#686868" stroke-width="1.5"/>
+<g>
+<rect x="808" y="264" width="48" height="24" fill="#f7f7f7"/>
+<text x="832" y="281" text-anchor="middle" class="small">等待</text>
+<rect x="600" y="316" width="72" height="28" fill="#f7f7f7"/>
+<text x="636" y="335" text-anchor="middle" class="small">恢复 B</text>
+<rect x="640" y="420" width="48" height="24" fill="#f7f7f7"/>
+<text x="664" y="437" text-anchor="middle" class="small">调度</text>
+</g>
+<rect x="40" y="144" width="552" height="260" rx="6" fill="#ffffff" stroke="#2d2d2d" stroke-width="2"/>
+<text x="64" y="176" class="name">主线程 · Nginx 事件循环与 Lua 调度</text>
+<text x="64" y="204" class="detail">唯一执行位置：同一时刻只执行一段普通 Lua 代码</text>
+<rect x="64" y="232" width="504" height="88" rx="6" fill="#f7f7f7" stroke="#2d2d2d" stroke-width="1.5"/>
+<text x="80" y="264" class="name">当前执行：请求协程 A 的 Lua 代码</text>
+<text x="80" y="296" class="detail">B 与 timer 回调此刻不在这里执行</text>
+<text x="64" y="376" class="detail">A 不让出时，B 即使网络就绪也要等待</text>
+<rect x="680" y="144" width="240" height="100" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="696" y="176" class="name">等待中的请求协程 B</text>
+<text x="696" y="202" class="detail">已挂起 · 保留请求状态</text>
+<text x="696" y="226" class="small">不是另一个执行线程</text>
+<rect x="680" y="304" width="240" height="96" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="696" y="336" class="name">B 等待的网络 I/O</text>
+<text x="696" y="368" class="small">就绪后由主线程恢复 B</text>
+<text x="696" y="388" class="small">cosocket 非阻塞等待</text>
+<rect x="40" y="452" width="552" height="80" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="56" y="484" class="name">worker 本地 Lua 状态 · 被请求与回调使用</text>
+<text x="56" y="512" class="detail">配置对象 / LRU / 模块变量（不是执行器）</text>
+<rect x="680" y="452" width="240" height="80" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="696" y="484" class="name">待调度的 timer 回调</text>
+<text x="696" y="512" class="small">到期后由同一主线程调度</text>
+<g fill="none">
+<path d="M24 584 H56" stroke="#686868" stroke-width="1.5"/>
+<path d="M296 584 H328" stroke="#686868" stroke-width="1.5" stroke-dasharray="5 4"/>
+</g>
+<text x="64" y="589" class="small">本地状态访问</text>
+<text x="336" y="589" class="small">等待 / 后续恢复与调度</text>
+<text x="672" y="589" class="small">省略其他请求与辅助线程</text>
+</svg>

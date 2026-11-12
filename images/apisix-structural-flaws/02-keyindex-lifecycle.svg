@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="02-keyindex-title 02-keyindex-desc" id="d-02-keyindex-lifecycle-root">
+        <title id="02-keyindex-title">KeyIndex 槽位生命周期</title>
+        <desc id="02-keyindex-desc">指标序列注册时分配槽位 key_N，过期后只做逻辑删除、物理内存不释放，序列重建时分配新槽位，旧槽位不被主动回收，最终字典写满。</desc>
+        <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');
+      #d-02-keyindex-lifecycle-root { --color-paper:  #ffffff;
+      --color-ink:    #2d2d2d;
+      --color-muted:  #686868;
+      --color-accent: #c74b1c;
+      --font-sans:    'Lato', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      --font-mono:    consolas, Menlo, 'PingFang SC', 'Microsoft YaHei', monospace;
+      --font-serif:   Georgia, 'Songti SC', serif; }
+      #d-02-keyindex-lifecycle-root { font-family: var(--font-sans); color: var(--color-ink); }
+      #d-02-keyindex-lifecycle-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#d-02-keyindex-lifecycle-root .diagram-container { overflow-x: visible; }
+}</style>
+          <marker id="d-02-keyindex-lifecycle-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#686868"/></marker>
+          <marker id="d-02-keyindex-lifecycle-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c74b1c"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#ffffff"/>
+
+        <!-- arrows first -->
+        <!-- start -->
+        <line x1="82" y1="200" x2="154" y2="200" stroke="#686868" stroke-width="1.2" marker-end="url(#d-02-keyindex-lifecycle-arrow)"/>
+        <rect x="94" y="180" width="48" height="12" rx="2" fill="#ffffff"/>
+        <text x="118" y="189" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">序列首现</text>
+
+        <!-- S1 -> S2 -->
+        <line x1="320" y1="200" x2="414" y2="200" stroke="#686868" stroke-width="1.2" marker-end="url(#d-02-keyindex-lifecycle-arrow)"/>
+        <rect x="336" y="180" width="64" height="12" rx="2" fill="#ffffff"/>
+        <text x="368" y="189" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">expire 到期</text>
+
+        <!-- S2 -> S3 -->
+        <line x1="620" y1="200" x2="714" y2="200" stroke="#686868" stroke-width="1.2" marker-end="url(#d-02-keyindex-lifecycle-arrow)"/>
+        <rect x="636" y="180" width="64" height="12" rx="2" fill="#ffffff"/>
+        <text x="668" y="189" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">流量再次命中</text>
+
+        <!-- S3 -> S2 (loop back, above) -->
+        <path d="M 820,152 V 108 Q 820,100 812,100 H 528 Q 520,100 520,108 V 152" fill="none" stroke="#686868" stroke-width="1.2" marker-end="url(#d-02-keyindex-lifecycle-arrow)"/>
+        <rect x="632" y="78" width="76" height="12" rx="2" fill="#ffffff"/>
+        <text x="670" y="87" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">新槽位同样会过期</text>
+
+        <!-- S3 -> end -->
+        <line x1="760" y1="248" x2="760" y2="416" stroke="#686868" stroke-width="1.2" marker-end="url(#d-02-keyindex-lifecycle-arrow)"/>
+        <rect x="783" y="334" width="58" height="12" rx="2" fill="#ffffff"/>
+        <text x="812" y="343" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">旧编号不回收</text>
+
+        <!-- start dot -->
+        <circle cx="72" cy="200" r="6" fill="#2d2d2d"/>
+
+        <!-- states -->
+        <rect x="160" y="152" width="160" height="96" rx="8" fill="#ffffff"/>
+        <rect x="160" y="152" width="160" height="96" rx="8" fill="#ffffff" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.30"/>
+        <text x="240" y="194" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">注册序列</text>
+        <text x="240" y="214" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">分配槽位 key_N</text>
+
+        <rect x="420" y="152" width="200" height="96" rx="8" fill="#ffffff"/>
+        <rect x="420" y="152" width="200" height="96" rx="8" fill="#ffffff" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.30"/>
+        <text x="520" y="194" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">TTL 过期</text>
+        <text x="520" y="214" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">逻辑删除，物理不释放</text>
+
+        <!-- S3 focal -->
+        <rect x="720" y="152" width="200" height="96" rx="8" fill="#ffffff"/>
+        <rect x="720" y="152" width="200" height="96" rx="8" fill="#c74b1c" stroke="#c74b1c" stroke-width="1.2" fill-opacity="0.08"/>
+        <text x="820" y="188" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">序列重建</text>
+        <text x="820" y="208" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">新槽位 key_{N+1}</text>
+        <text x="820" y="228" fill="#c74b1c" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">旧槽位滞留</text>
+
+        <!-- end state -->
+        <circle cx="760" cy="428" r="8" fill="none" stroke="#2d2d2d" stroke-width="1.2"/>
+        <circle cx="760" cy="428" r="5" fill="#2d2d2d"/>
+        <text x="760" y="472" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">字典写满</text>
+        <text x="760" y="492" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">free_space → 0 · 约 5–7 天</text>
+
+        <!-- callout -->
+        <text x="480" y="548" fill="#686868" font-size="14" font-family="Georgia, 'Songti SC', serif" font-style="italic" text-anchor="middle">旧的 __ngx_prom__key_M 不被主动回收，key_count 只增不减</text>
+      </svg>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="05-timeout-title 05-timeout-desc" id="d-05-timeout-layers-root">
+        <title id="05-timeout-title">超时预算的四层分布</title>
+        <desc id="05-timeout-desc">超时预算分布在插件配置、cosocket/FFI、C 模块定时器和内核网络栈四层，前三层都正确传递了 600 秒，但内核 SYN 重传在 15 秒时就放弃了连接，责任不在网关。</desc>
+        <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');
+      #d-05-timeout-layers-root { --color-paper:  #ffffff;
+      --color-ink:    #2d2d2d;
+      --color-muted:  #686868;
+      --color-accent: #c74b1c;
+      --font-sans:    'Lato', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      --font-mono:    consolas, Menlo, 'PingFang SC', 'Microsoft YaHei', monospace;
+      --font-serif:   Georgia, 'Songti SC', serif; }
+      #d-05-timeout-layers-root { font-family: var(--font-sans); color: var(--color-ink); }
+      #d-05-timeout-layers-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#d-05-timeout-layers-root .diagram-container { overflow-x: visible; }
+}</style>
+          <marker id="d-05-timeout-layers-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#686868"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#ffffff"/>
+
+        <!-- direction indicator -->
+        <text x="88" y="152" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.14em">超时预算</text>
+        <line x1="88" y1="160" x2="88" y2="416" stroke="#686868" stroke-width="1" marker-end="url(#d-05-timeout-layers-arrow)"/>
+
+        <!-- outer silhouette -->
+        <rect x="120" y="160" width="760" height="268" fill="#ffffff" stroke="#686868" stroke-width="1"/>
+        <line x1="120" y1="224" x2="880" y2="224" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.12"/>
+        <line x1="120" y1="288" x2="880" y2="288" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.12"/>
+        <line x1="120" y1="352" x2="880" y2="352" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.12"/>
+
+        <!-- L4 focal band -->
+        <rect x="120" y="352" width="760" height="76" fill="#c74b1c" stroke="#c74b1c" stroke-width="1.2" fill-opacity="0.08"/>
+
+        <!-- L1 -->
+        <text x="136" y="195" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" letter-spacing="0.14em">L1</text>
+        <text x="180" y="197" fill="#2d2d2d" font-size="14" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif">插件配置 timeout</text>
+        <text x="864" y="196" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="end">应用层 · connect_timeout = 600s</text>
+
+        <!-- L2 -->
+        <text x="136" y="259" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" letter-spacing="0.14em">L2</text>
+        <text x="180" y="261" fill="#2d2d2d" font-size="14" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif">cosocket / FFI</text>
+        <text x="864" y="260" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="end">运行时 · set_timeouts(600000 ×3)</text>
+
+        <!-- L3 -->
+        <text x="136" y="323" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" letter-spacing="0.14em">L3</text>
+        <text x="180" y="325" fill="#2d2d2d" font-size="14" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif">C 模块定时器</text>
+        <text x="864" y="324" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="end">客户端库 · ngx_add_timer(…, 600000)</text>
+
+        <!-- L4 -->
+        <text x="136" y="393" fill="#c74b1c" font-size="8" font-family="consolas, Menlo, monospace" letter-spacing="0.14em">L4</text>
+        <text x="180" y="395" fill="#2d2d2d" font-size="14" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif">TCP SYN 重传</text>
+        <text x="864" y="394" fill="#c74b1c" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="end">内核 · tcp_syn_retries = 3 → 15s 放弃</text>
+
+        <!-- callout -->
+        <text x="500" y="492" fill="#686868" font-size="14" font-family="Georgia, 'Songti SC', serif" font-style="italic" text-anchor="middle">前三层的 600 秒都正确，实际生效域只有内核给的 15 秒</text>
+      </svg>

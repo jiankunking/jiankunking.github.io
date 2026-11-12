@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-labelledby="apisix-process-architecture-title apisix-process-architecture-desc" id="apisix-process-architecture-root">
+<title id="apisix-process-architecture-title">APISIX 进程与状态分布</title>
+<desc id="apisix-process-architecture-desc">示例请求由客户端经过 worker 1 到达上游，master 只管理进程，各 worker 保有本地状态，并可访问具有各自共享区和锁的不同字典。</desc>
+<defs>
+      <style>#apisix-process-architecture-root { color: #2d2d2d; font-family: Lato,"Noto Sans SC","PingFang SC",sans-serif; }
+      #apisix-process-architecture-root .diagram-container { width:100%; overflow-x:auto; }
+      #apisix-process-architecture-root text { font-family:Lato,"Noto Sans SC","PingFang SC",sans-serif; fill:#2d2d2d; }
+      #apisix-process-architecture-root .name { font-size:18px; font-weight:700; }
+      #apisix-process-architecture-root .detail { font-size:15px; fill:#686868; }
+      #apisix-process-architecture-root .small { font-size:14px; fill:#686868; }
+      #apisix-process-architecture-root .tech { font-family:consolas,Menlo,"PingFang SC",monospace; font-size:16px; }
+      @media print {
+#apisix-process-architecture-root .diagram-container { overflow-x:visible; }
+}</style>
+<marker id="apisix-process-architecture-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#686868"/></marker>
+<marker id="apisix-process-architecture-traffic-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#404040"/></marker>
+</defs>
+<rect width="960" height="600" fill="#ffffff"/>
+<text x="24" y="36" font-size="24" font-weight="700">APISIX 进程与状态分布</text>
+<text x="24" y="68" class="detail">worker 框内是各自的运行时与状态；下方是共享存储，访问连线仅示例</text>
+<rect x="176" y="88" width="616" height="476" rx="8" fill="#f7f7f7" stroke="#bdbdbd" stroke-dasharray="5 4"/>
+<text x="192" y="112" class="small">APISIX 实例 · 辅助进程未展开</text>
+<g fill="none" stroke="#404040" stroke-width="2.5" marker-end="url(#apisix-process-architecture-traffic-arrow)">
+<path d="M152 328 H192"/>
+<path d="M368 328 H376 Q384 328 384 320 V256 Q384 248 392 248 H872 Q880 248 880 240 V192"/>
+</g>
+<g fill="none" stroke="#f7f7f7" stroke-width="6">
+<path d="M488 240 a8 8 0 0 0 0 16"/>
+<path d="M696 240 a8 8 0 0 0 0 16"/>
+</g>
+<g fill="none" stroke="#686868" stroke-width="1.5" marker-end="url(#apisix-process-architecture-arrow)">
+<path d="M400 192 V204 Q400 212 392 212 H288 Q280 212 280 220 V272" stroke-dasharray="5 4"/>
+<path d="M488 192 V240 a8 8 0 0 0 0 16 V272" stroke-dasharray="5 4"/>
+<path d="M544 192 V204 Q544 212 552 212 H688 Q696 212 696 220 V240 a8 8 0 0 0 0 16 V272" stroke-dasharray="5 4"/>
+</g>
+<g fill="none" stroke="#686868" stroke-width="1.5">
+<path d="M240 416 V488"/>
+<path d="M448 416 V440 Q448 448 440 448 H320 Q312 448 312 456 V488"/>
+<path d="M656 416 V456 Q656 464 648 464 H424 Q416 464 416 472 V488"/>
+<path d="M736 416 V488"/>
+</g>
+<rect x="328" y="128" width="288" height="64" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="472" y="156" text-anchor="middle" class="name">Nginx master 进程</text>
+<text x="472" y="180" text-anchor="middle" class="small">进程管理与信号处理</text>
+<rect x="24" y="296" width="128" height="64" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="88" y="334" text-anchor="middle" class="name">客户端</text>
+<rect x="816" y="128" width="128" height="64" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="880" y="166" text-anchor="middle" class="name">上游服务</text>
+<rect x="192" y="272" width="176" height="144" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="208" y="300" class="name">worker 1</text>
+<text x="208" y="324" class="small">事件循环 / LuaJIT</text>
+<text x="208" y="348" class="small">本地配置对象</text>
+<text x="208" y="372" class="small">LRU / 模块变量</text>
+<text x="208" y="396" class="small">cosocket 池 / timer</text>
+<rect x="400" y="272" width="176" height="144" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="416" y="300" class="name">worker 2</text>
+<text x="416" y="324" class="small">事件循环 / LuaJIT</text>
+<text x="416" y="348" class="small">本地配置对象</text>
+<text x="416" y="372" class="small">LRU / 模块变量</text>
+<text x="416" y="396" class="small">cosocket 池 / timer</text>
+<text x="592" y="348" text-anchor="middle" font-size="20">…</text>
+<rect x="608" y="272" width="176" height="144" rx="6" fill="#ffffff" stroke="#686868"/>
+<text x="624" y="300" class="name">worker N</text>
+<text x="624" y="324" class="small">事件循环 / LuaJIT</text>
+<text x="624" y="348" class="small">本地配置对象</text>
+<text x="624" y="372" class="small">LRU / 模块变量</text>
+<text x="624" y="396" class="small">cosocket 池 / timer</text>
+<rect x="192" y="488" width="280" height="64" rx="6" fill="#ffffff" stroke="#2d2d2d" stroke-width="1.5"/>
+<text x="208" y="514" class="name">共享字典 A</text>
+<text x="208" y="540" class="small">共享区 A · 读写使用锁 A</text>
+<rect x="504" y="488" width="280" height="64" rx="6" fill="#ffffff" stroke="#2d2d2d" stroke-width="1.5"/>
+<text x="520" y="514" class="name">共享字典 B</text>
+<text x="520" y="540" class="small">共享区 B · 读写使用锁 B</text>
+<g fill="none">
+<path d="M24 584 H56" stroke="#404040" stroke-width="2.5"/>
+<path d="M192 584 H224" stroke="#686868" stroke-width="1.5" stroke-dasharray="5 4"/>
+<path d="M376 584 H408" stroke="#686868" stroke-width="1.5"/>
+</g>
+<text x="64" y="589" class="small">示例请求</text>
+<text x="232" y="589" class="small">进程管理</text>
+<text x="416" y="589" class="small">共享读写</text>
+<text x="608" y="589" class="small">各 worker 独立；省略响应回程</text>
+</svg>

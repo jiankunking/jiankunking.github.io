@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="03-rescan-title 03-rescan-desc" id="d-03-rescan-lock-root">
+        <title id="03-rescan-title">delete_count 失配触发全量重扫</title>
+        <desc id="03-rescan-desc">worker A 将过期槽位重新注册使 delete_count 加一，其他 worker 发现本地快照失配后对全部历史槽位执行 O(key_count) 的 get/ttl 扫描，在共享字典全局锁上互相争抢，CPU 打满。</desc>
+        <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');
+      #d-03-rescan-lock-root { --color-paper:  #ffffff;
+      --color-ink:    #2d2d2d;
+      --color-muted:  #686868;
+      --color-accent: #c74b1c;
+      --font-sans:    'Lato', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      --font-mono:    consolas, Menlo, 'PingFang SC', 'Microsoft YaHei', monospace;
+      --font-serif:   Georgia, 'Songti SC', serif; }
+      #d-03-rescan-lock-root { font-family: var(--font-sans); color: var(--color-ink); }
+      #d-03-rescan-lock-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#d-03-rescan-lock-root .diagram-container { overflow-x: visible; }
+}</style>
+          <marker id="d-03-rescan-lock-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#686868"/></marker>
+          <marker id="d-03-rescan-lock-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c74b1c"/></marker>
+          <marker id="d-03-rescan-lock-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#686868" stroke-width="1.2"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#ffffff"/>
+
+        <!-- lifelines -->
+        <line x1="260" y1="136" x2="260" y2="632" stroke="#2d2d2d" stroke-width="1" stroke-dasharray="3,3" stroke-opacity="0.20"/>
+        <line x1="660" y1="136" x2="660" y2="632" stroke="#2d2d2d" stroke-width="1" stroke-dasharray="3,3" stroke-opacity="0.20"/>
+        <line x1="1060" y1="136" x2="1060" y2="632" stroke="#2d2d2d" stroke-width="1" stroke-dasharray="3,3" stroke-opacity="0.20"/>
+
+        <!-- msg 1: A -> dict -->
+        <line x1="260" y1="210" x2="654" y2="210" stroke="#686868" stroke-width="1.2" marker-end="url(#d-03-rescan-lock-arrow)"/>
+        <rect x="423" y="190" width="74" height="12" rx="2" fill="#ffffff"/>
+        <text x="460" y="199" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">过期槽位重新注册</text>
+
+        <!-- msg 2: dict -> B (async) -->
+        <line x1="666" y1="275" x2="1054" y2="275" stroke="#686868" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#d-03-rescan-lock-arrow-open)"/>
+        <rect x="817" y="255" width="86" height="12" rx="2" fill="#ffffff"/>
+        <text x="860" y="264" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">delete_count +1</text>
+
+        <!-- msg 3: B self -->
+        <path d="M 1060,340 H 1080 Q 1088,340 1088,348 V 356 Q 1088,364 1080,364 H 1064" fill="none" stroke="#686868" stroke-width="1.2" marker-end="url(#d-03-rescan-lock-arrow)"/>
+        <rect x="1098" y="344" width="98" height="12" rx="2" fill="#ffffff"/>
+        <text x="1147" y="353" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">sync()：38 ≠ 40</text>
+
+        <!-- msg 4: B -> dict, accent -->
+        <line x1="1054" y1="430" x2="666" y2="430" stroke="#c74b1c" stroke-width="1.4" marker-end="url(#d-03-rescan-lock-arrow-accent)"/>
+        <rect x="813" y="410" width="94" height="12" rx="2" fill="#ffffff"/>
+        <text x="860" y="419" fill="#c74b1c" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">O(KEY_COUNT) 全量重扫</text>
+
+        <!-- msg 5: dict -> B return -->
+        <line x1="666" y1="490" x2="1054" y2="490" stroke="#686868" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#d-03-rescan-lock-arrow)"/>
+        <rect x="819" y="470" width="82" height="12" rx="2" fill="#ffffff"/>
+        <text x="860" y="479" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">GET/TTL × 57万</text>
+
+        <!-- msg 6: B self -->
+        <path d="M 1060,560 H 1080 Q 1088,560 1088,568 V 576 Q 1088,584 1080,584 H 1064" fill="none" stroke="#686868" stroke-width="1.2" marker-end="url(#d-03-rescan-lock-arrow)"/>
+        <rect x="1098" y="564" width="100" height="12" rx="2" fill="#ffffff"/>
+        <text x="1148" y="573" fill="#c74b1c" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">worker CPU 100%</text>
+
+        <!-- msg 7: A self -->
+        <path d="M 260,560 H 280 Q 288,560 288,568 V 576 Q 288,584 280,584 H 264" fill="none" stroke="#686868" stroke-width="1.2" marker-end="url(#d-03-rescan-lock-arrow)"/>
+        <rect x="298" y="564" width="92" height="12" rx="2" fill="#ffffff"/>
+        <text x="344" y="573" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">发起方 CPU 正常</text>
+
+        <!-- actor boxes -->
+        <rect x="140" y="88" width="240" height="48" rx="6" fill="#ffffff"/>
+        <rect x="140" y="88" width="240" height="48" rx="6" fill="#ffffff" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.30"/>
+        <text x="260" y="110" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">worker A</text>
+        <text x="260" y="126" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">重新注册方（CPU 正常）</text>
+
+        <rect x="540" y="88" width="240" height="48" rx="6" fill="#ffffff"/>
+        <rect x="540" y="88" width="240" height="48" rx="6" fill="#2d2d2d" stroke="#686868" stroke-width="1" fill-opacity="0.05"/>
+        <text x="660" y="110" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">shared dict</text>
+        <text x="660" y="126" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">全局锁 · delete_count</text>
+
+        <rect x="940" y="88" width="240" height="48" rx="6" fill="#ffffff"/>
+        <rect x="940" y="88" width="240" height="48" rx="6" fill="#ffffff" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.30"/>
+        <text x="1060" y="110" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">其他 worker</text>
+        <text x="1060" y="126" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">本地快照 self.deleted</text>
+      </svg>

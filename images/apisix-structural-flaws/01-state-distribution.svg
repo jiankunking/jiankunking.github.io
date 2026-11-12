@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="01-state-title 01-state-desc" id="d-01-state-distribution-root">
+        <title id="01-state-title">APISIX 进程与状态分布</title>
+        <desc id="01-state-desc">多个 worker 进程各自持有 LuaJIT 虚拟机、本地缓存与定时器，唯一的跨 worker 共享状态是一块带全局锁、容量固定的 shared dict。</desc>
+        <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');
+      #d-01-state-distribution-root { --color-paper:  #ffffff;
+      --color-ink:    #2d2d2d;
+      --color-muted:  #686868;
+      --color-accent: #c74b1c;
+      --font-sans:    'Lato', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      --font-mono:    consolas, Menlo, 'PingFang SC', 'Microsoft YaHei', monospace;
+      --font-serif:   Georgia, 'Songti SC', serif; }
+      #d-01-state-distribution-root { font-family: var(--font-sans); color: var(--color-ink); }
+      #d-01-state-distribution-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#d-01-state-distribution-root .diagram-container { overflow-x: visible; }
+}</style>
+          <marker id="d-01-state-distribution-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#686868"/></marker>
+          <marker id="d-01-state-distribution-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c74b1c"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#ffffff"/>
+
+        <!-- arrows first -->
+        <line x1="200" y1="260" x2="314" y2="260" stroke="#686868" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#d-01-state-distribution-arrow)"/>
+        <rect x="222" y="240" width="58" height="12" rx="2" fill="#ffffff"/>
+        <text x="251" y="249" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">watch 配置</text>
+
+        <line x1="200" y1="360" x2="314" y2="360" stroke="#686868" stroke-width="1.2" marker-end="url(#d-01-state-distribution-arrow)"/>
+        <rect x="232" y="340" width="28" height="12" rx="2" fill="#ffffff"/>
+        <text x="246" y="349" fill="#737373" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">请求</text>
+
+        <line x1="720" y1="260" x2="874" y2="260" stroke="#686868" stroke-width="1.2" marker-end="url(#d-01-state-distribution-arrow)"/>
+        <line x1="720" y1="360" x2="874" y2="360" stroke="#c74b1c" stroke-width="1.4" marker-end="url(#d-01-state-distribution-arrow-accent)"/>
+        <rect x="764" y="340" width="72" height="12" rx="2" fill="#ffffff"/>
+        <text x="800" y="349" fill="#c74b1c" font-size="8" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">读写均过全局锁</text>
+        <line x1="720" y1="460" x2="874" y2="460" stroke="#686868" stroke-width="1.2" marker-end="url(#d-01-state-distribution-arrow)"/>
+
+        <!-- zone -->
+        <rect x="280" y="180" width="440" height="356" rx="8" fill="#2d2d2d" stroke="#2d2d2d" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.10"/>
+        <rect x="288" y="184" width="172" height="12" rx="2" fill="#ffffff"/>
+        <text x="374" y="193" fill="#737373" font-size="7" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.14em">WORKER PROCESS ×N · 彼此隔离</text>
+
+        <!-- etcd -->
+        <rect x="40" y="228" width="160" height="64" rx="6" fill="#ffffff"/>
+        <rect x="40" y="228" width="160" height="64" rx="6" fill="#2d2d2d" stroke="#686868" stroke-width="1" fill-opacity="0.05"/>
+        <rect x="48" y="234" width="34" height="12" rx="2" fill="none" stroke="#686868" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="65" y="243" fill="#686868" font-size="7" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.8">配置</text>
+        <text x="120" y="258" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">etcd</text>
+        <text x="120" y="276" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">配置存储</text>
+
+        <!-- client -->
+        <rect x="40" y="328" width="160" height="64" rx="6" fill="#ffffff"/>
+        <rect x="40" y="328" width="160" height="64" rx="6" fill="#686868" stroke="#737373" stroke-width="1" fill-opacity="0.10"/>
+        <rect x="48" y="334" width="34" height="12" rx="2" fill="none" stroke="#737373" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="65" y="343" fill="#737373" font-size="7" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.8">入口</text>
+        <text x="120" y="358" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">客户端</text>
+        <text x="120" y="376" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">请求流量</text>
+
+        <!-- workers -->
+        <rect x="320" y="212" width="400" height="96" rx="6" fill="#ffffff"/>
+        <rect x="320" y="212" width="400" height="96" rx="6" fill="#ffffff" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.30"/>
+        <rect x="328" y="218" width="40" height="12" rx="2" fill="none" stroke="#2d2d2d" stroke-width="0.8" stroke-opacity="0.20"/>
+        <text x="348" y="227" fill="#2d2d2d" font-size="7" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.55">WORKER</text>
+        <text x="520" y="254" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">worker 1</text>
+        <text x="520" y="276" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">LuaJIT VM · lrucache · KeyIndex · 清理 timer</text>
+
+        <rect x="320" y="312" width="400" height="96" rx="6" fill="#ffffff"/>
+        <rect x="320" y="312" width="400" height="96" rx="6" fill="#ffffff" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.30"/>
+        <rect x="328" y="318" width="40" height="12" rx="2" fill="none" stroke="#2d2d2d" stroke-width="0.8" stroke-opacity="0.20"/>
+        <text x="348" y="327" fill="#2d2d2d" font-size="7" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.55">WORKER</text>
+        <text x="520" y="354" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">worker 2</text>
+        <text x="520" y="376" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">LuaJIT VM · lrucache · KeyIndex · 清理 timer</text>
+
+        <rect x="320" y="412" width="400" height="96" rx="6" fill="#ffffff"/>
+        <rect x="320" y="412" width="400" height="96" rx="6" fill="#ffffff" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.30"/>
+        <rect x="328" y="418" width="40" height="12" rx="2" fill="none" stroke="#2d2d2d" stroke-width="0.8" stroke-opacity="0.20"/>
+        <text x="348" y="427" fill="#2d2d2d" font-size="7" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.55">WORKER</text>
+        <text x="520" y="454" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">worker N</text>
+        <text x="520" y="476" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">LuaJIT VM · lrucache · KeyIndex · 清理 timer</text>
+
+        <!-- shared dict (focal) -->
+        <rect x="880" y="160" width="360" height="400" rx="6" fill="#ffffff"/>
+        <rect x="880" y="160" width="360" height="400" rx="6" fill="#c74b1c" stroke="#c74b1c" stroke-width="1.2" fill-opacity="0.08"/>
+        <rect x="888" y="166" width="30" height="12" rx="2" fill="none" stroke="#c74b1c" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="903" y="175" fill="#c74b1c" font-size="7" font-family="consolas, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em" fill-opacity="0.8">共享</text>
+        <text x="1060" y="242" fill="#2d2d2d" font-size="12" font-weight="700" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">shared dict</text>
+        <text x="1060" y="262" fill="#686868" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">ngx.shared.DICT · slab 预分配</text>
+        <line x1="912" y1="290" x2="1208" y2="290" stroke="#2d2d2d" stroke-width="1" stroke-opacity="0.12"/>
+        <text x="1060" y="330" fill="#2d2d2d" font-size="11" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">指标值与键索引 KeyIndex</text>
+        <text x="1060" y="354" fill="#2d2d2d" font-size="11" font-family="Lato, 'Noto Sans SC', sans-serif" text-anchor="middle">限流计数 · 健康检查 · worker 事件</text>
+        <text x="1060" y="410" fill="#c74b1c" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">容量启动时固定 · 过期是惰性的</text>
+        <text x="1060" y="432" fill="#c74b1c" font-size="9" font-family="consolas, Menlo, monospace" text-anchor="middle">一把全局互斥锁，读也要过</text>
+      </svg>
