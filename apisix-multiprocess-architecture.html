@@ -19,12 +19,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="从 master、多 worker、协作式协程与共享内存的架构图出发，分析 APISIX 的副本、同步、调度与隔离成本，进一步讨论 AI 请求代理和流式加工的优势与边界。故障只作旁证，不把组件 bug 当成架构的必然结果。">
+    <meta name="description" content="从两张架构图理解 APISIX 的多 worker 与协程模型，分析本地副本、shared dict 读锁、事件循环和资源隔离，再讨论 AI 流式代理的适用场景与压测重点。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="APISIX 多进程架构：优势、缺点与适用边界">
 <meta property="og:url" content="https://jiankunking.com/apisix-multiprocess-architecture.html">
 <meta property="og:site_name" content="衣舞晨风（jiankunking）">
-<meta property="og:description" content="从 master、多 worker、协作式协程与共享内存的架构图出发，分析 APISIX 的副本、同步、调度与隔离成本，进一步讨论 AI 请求代理和流式加工的优势与边界。故障只作旁证，不把组件 bug 当成架构的必然结果。">
+<meta property="og:description" content="从两张架构图理解 APISIX 的多 worker 与协程模型，分析本地副本、shared dict 读锁、事件循环和资源隔离，再讨论 AI 流式代理的适用场景与压测重点。">
 <meta property="og:locale" content="zh_CN">
 
 
@@ -82,7 +82,7 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/apisix-multiprocess-architecture.html#article","url":"https://jiankunking.com/apisix-multiprocess-architecture.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/apisix-multiprocess-architecture.html"},"headline":"APISIX 多进程架构：优势、缺点与适用边界","description":"从 master、多 worker、协作式协程与共享内存的架构图出发，分析 APISIX 的副本、同步、调度与隔离成本，进一步讨论 AI 请求代理和流式加工的优势与边界。故障只作旁证，不把组件 bug 当成架构的必然结果。","abstract":"从 master、多 worker、协作式协程与共享内存的架构图出发，分析 APISIX 的副本、同步、调度与隔离成本，进一步讨论 AI 请求代理和流式加工的优势与边界。故障只作旁证，不把组件 bug 当成架构的必然结果。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-11-12T13:00:00.000Z","dateModified":"2026-11-12T13:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Architecture","keywords":"API7, APISIX, AI Gateway, OpenResty, Prometheus","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/apisix-multiprocess-architecture.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/apisix-multiprocess-architecture.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Architecture","item":"https://jiankunking.com/categories/architecture/"},{"@type":"ListItem","position":3,"name":"APISIX 多进程架构：优势、缺点与适用边界","item":"https://jiankunking.com/apisix-multiprocess-architecture.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/apisix-multiprocess-architecture.html#article","url":"https://jiankunking.com/apisix-multiprocess-architecture.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/apisix-multiprocess-architecture.html"},"headline":"APISIX 多进程架构：优势、缺点与适用边界","description":"从两张架构图理解 APISIX 的多 worker 与协程模型，分析本地副本、shared dict 读锁、事件循环和资源隔离，再讨论 AI 流式代理的适用场景与压测重点。","abstract":"从两张架构图理解 APISIX 的多 worker 与协程模型，分析本地副本、shared dict 读锁、事件循环和资源隔离，再讨论 AI 流式代理的适用场景与压测重点。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-11-12T13:00:00.000Z","dateModified":"2026-11-12T13:00:00.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Architecture","keywords":"API7, APISIX, OpenResty, AI Gateway, Prometheus","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/apisix-multiprocess-architecture.html#breadcrumb"}},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年至今持续从事后端架构与复杂系统工程实践，专注 AI Gateway、AI Agent 工程、Elasticsearch、云原生网关和稳定性治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"从事大模型应用架构、平台工程、搜索系统、云原生网关与系统稳定性治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/apisix-multiprocess-architecture.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Architecture","item":"https://jiankunking.com/categories/architecture/"},{"@type":"ListItem","position":3,"name":"APISIX 多进程架构：优势、缺点与适用边界","item":"https://jiankunking.com/apisix-multiprocess-architecture.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
 <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
@@ -181,7 +181,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%88%E7%9C%8B%E6%9E%B6%E6%9E%84%EF%BC%9A%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E5%85%B1%E4%BA%AB%EF%BC%8C%E5%93%AA%E4%BA%9B%E4%B8%8D%E5%85%B1%E4%BA%AB"><span class="nav-number">1.</span> <span class="nav-text">1. 先看架构：哪些东西共享，哪些不共享</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#master-%E7%AE%A1%E8%BF%9B%E7%A8%8B%EF%BC%8Cworker-%E5%A4%84%E7%90%86%E8%AF%B7%E6%B1%82"><span class="nav-number">1.1.</span> <span class="nav-text">master 管进程，worker 处理请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#worker-%E5%86%85%E9%83%A8%EF%BC%9A%E5%8D%8F%E7%A8%8B%E5%85%B1%E4%BA%AB%E4%B8%80%E4%B8%AA%E4%B8%BB%E8%A6%81%E6%89%A7%E8%A1%8C%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.2.</span> <span class="nav-text">worker 内部：协程共享一个主要执行线程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%B7%E6%B1%82%E3%80%81%E9%85%8D%E7%BD%AE%E4%B8%8E%E7%8A%B6%E6%80%81%E6%98%AF%E4%B8%8D%E5%90%8C%E8%B7%AF%E5%BE%84"><span class="nav-number">1.3.</span> <span class="nav-text">请求、配置与状态是不同路径</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%BF%99%E5%A5%97%E6%9E%B6%E6%9E%84%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="nav-number">2.</span> <span class="nav-text">2. 这套架构的优势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%A4%9A-worker-%E7%9A%84%E7%BC%BA%E7%82%B9%EF%BC%9A%E5%89%AF%E6%9C%AC%E6%88%90%E6%9C%AC%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%8D%8F%E8%B0%83"><span class="nav-number">3.</span> <span class="nav-text">3. 多 worker 的缺点：副本成本与共享协调</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%AC%E5%9C%B0%E7%8A%B6%E6%80%81%E4%B8%8D%E8%83%BD%E5%85%8D%E8%B4%B9%E5%A4%8D%E7%94%A8"><span class="nav-number">3.1.</span> <span class="nav-text">本地状态不能免费复用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E6%97%A6%E9%9C%80%E8%A6%81%E5%85%A8%E5%B1%80%E7%8A%B6%E6%80%81%EF%BC%8C%E5%B0%B1%E8%A6%81%E4%BB%98%E5%90%8C%E6%AD%A5%E6%88%90%E6%9C%AC"><span class="nav-number">3.2.</span> <span class="nav-text">一旦需要全局状态，就要付同步成本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E6%AC%A1%E6%93%8D%E4%BD%9C%E5%8E%9F%E5%AD%90%EF%BC%8C%E4%B8%8D%E7%AD%89%E4%BA%8E%E5%A4%9A%E6%AD%A5%E9%80%BB%E8%BE%91%E5%8E%9F%E5%AD%90"><span class="nav-number">3.3.</span> <span class="nav-text">单次操作原子，不等于多步逻辑原子</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8D%8F%E4%BD%9C%E5%BC%8F%E8%B0%83%E5%BA%A6%E7%9A%84%E7%BC%BA%E7%82%B9%EF%BC%9A%E9%87%8D%E4%BB%BB%E5%8A%A1%E4%BC%9A%E6%8B%96%E6%85%A2%E5%90%8C%E4%B8%80-worker"><span class="nav-number">4.</span> <span class="nav-text">4. 协作式调度的缺点：重任务会拖慢同一 worker</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%E7%9A%84%E7%BC%BA%E7%82%B9%EF%BC%9A%E5%AE%B9%E9%87%8F%E5%92%8C%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E9%9C%80%E8%A6%81%E5%8D%95%E7%8B%AC%E7%AE%A1%E7%90%86"><span class="nav-number">5.</span> <span class="nav-text">5. 共享内存的缺点：容量和生命周期需要单独管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TTL-%E8%A7%A3%E5%86%B3%E6%9C%89%E6%95%88%E6%80%A7%EF%BC%8C%E4%B8%8D%E4%BF%9D%E8%AF%81%E7%AB%8B%E5%8D%B3%E9%87%8A%E6%94%BE%E7%A9%BA%E9%97%B4"><span class="nav-number">5.1.</span> <span class="nav-text">TTL 解决有效性，不保证立即释放空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A9%BA%E9%97%B4%E4%B8%8D%E8%B6%B3%E6%97%B6%EF%BC%8C%E6%88%90%E5%8A%9F%E5%86%99%E5%85%A5%E4%B9%9F%E5%8F%AF%E8%83%BD%E6%9C%89%E4%BB%A3%E4%BB%B7"><span class="nav-number">5.2.</span> <span class="nav-text">空间不足时，成功写入也可能有代价</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%8F%92%E4%BB%B6%E6%89%A9%E5%B1%95%E7%9A%84%E7%BC%BA%E7%82%B9%EF%BC%9A%E5%8A%9F%E8%83%BD%E8%BE%B9%E7%95%8C%E4%B8%8D%E6%98%AF%E8%B5%84%E6%BA%90%E8%BE%B9%E7%95%8C"><span class="nav-number">6.</span> <span class="nav-text">6. 插件扩展的缺点：功能边界不是资源边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%8A%A8%E6%80%81%E9%85%8D%E7%BD%AE%E7%9A%84%E8%BE%B9%E7%95%8C%EF%BC%9A%E8%83%BD%E7%83%AD%E6%9B%B4%E6%96%B0%EF%BC%8C%E4%B8%8D%E7%AD%89%E4%BA%8E%E5%85%A8%E5%B1%80%E7%9E%AC%E6%97%B6%E5%88%87%E6%8D%A2"><span class="nav-number">7.</span> <span class="nav-text">7. 动态配置的边界：能热更新，不等于全局瞬时切换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-AI-%E8%B4%9F%E8%BD%BD%E5%A6%82%E4%BD%95%E6%94%B9%E5%8F%98%E6%9E%B6%E6%9E%84%E7%9A%84%E6%94%B6%E7%9B%8A%E4%B8%8E%E6%88%90%E6%9C%AC"><span class="nav-number">8.</span> <span class="nav-text">8. AI 负载如何改变架构的收益与成本</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E5%8A%BF%EF%BC%9A%E7%AD%89%E5%BE%85%E5%A4%9A%E3%80%81%E9%80%BB%E8%BE%91%E8%BD%BB%E6%97%B6%EF%BC%8C%E8%BF%99%E5%A5%97%E7%BB%84%E5%90%88%E5%BE%88%E5%90%88%E9%80%82"><span class="nav-number">8.1.</span> <span class="nav-text">优势：等待多、逻辑轻时，这套组合很合适</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%BA%E7%82%B9%EF%BC%9A%E9%95%BF%E8%BF%9E%E6%8E%A5%E6%94%BE%E5%A4%A7%E8%B5%84%E6%BA%90%E5%8D%A0%E7%94%A8%EF%BC%8C%E5%86%85%E5%AE%B9%E5%8A%A0%E5%B7%A5%E6%94%BE%E5%A4%A7%E6%89%A7%E8%A1%8C%E6%88%90%E6%9C%AC"><span class="nav-number">8.2.</span> <span class="nav-text">缺点：长连接放大资源占用，内容加工放大执行成本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%AC%E5%8F%91%E6%B5%81%E4%B8%8E%E5%8A%A0%E5%B7%A5%E6%B5%81%E8%A6%81%E5%88%86%E5%BC%80%E8%AF%84%E4%BC%B0"><span class="nav-number">8.3.</span> <span class="nav-text">转发流与加工流要分开评估</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AI-%E5%AE%B9%E9%87%8F%E8%AF%84%E4%BC%B0%E4%B8%8D%E8%83%BD%E5%8F%AA%E7%9C%8B-QPS"><span class="nav-number">8.4.</span> <span class="nav-text">AI 容量评估不能只看 QPS</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E4%BB%8E%E6%9E%B6%E6%9E%84%E5%88%A4%E6%96%AD%E9%80%82%E7%94%A8%E8%8C%83%E5%9B%B4"><span class="nav-number">9.</span> <span class="nav-text">9. 从架构判断适用范围</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%85%E9%9A%9C%E6%97%81%E8%AF%81%E4%B8%8E%E5%8F%82%E8%80%83"><span class="nav-number">9.1.</span> <span class="nav-text">故障旁证与参考</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%88%E7%9C%8B%E6%9E%B6%E6%9E%84%EF%BC%9A%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E5%85%B1%E4%BA%AB%EF%BC%8C%E5%93%AA%E4%BA%9B%E4%B8%8D%E5%85%B1%E4%BA%AB"><span class="nav-number">1.</span> <span class="nav-text">1. 先看架构：哪些东西共享，哪些不共享</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#master-%E7%AE%A1%E8%BF%9B%E7%A8%8B%EF%BC%8Cworker-%E5%A4%84%E7%90%86%E8%AF%B7%E6%B1%82"><span class="nav-number">1.1.</span> <span class="nav-text">master 管进程，worker 处理请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%A8-worker-%E7%9A%84%E7%8A%B6%E6%80%81%E5%85%B1%E4%BA%AB%EF%BC%9Ashared-dict-%E4%B8%8E%E5%85%B6%E4%BB%96%E6%96%B9%E5%BC%8F"><span class="nav-number">1.2.</span> <span class="nav-text">跨 worker 的状态共享：shared dict 与其他方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#worker-%E5%86%85%E9%83%A8%EF%BC%9A%E5%8D%8F%E7%A8%8B%E5%9C%A8%E5%90%8C%E4%B8%80%E4%B8%BB%E7%BA%BF%E7%A8%8B%E4%B8%8A%E6%89%A7%E8%A1%8C"><span class="nav-number">1.3.</span> <span class="nav-text">worker 内部：协程在同一主线程上执行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%B7%E6%B1%82%E3%80%81%E9%85%8D%E7%BD%AE%E4%B8%8E%E7%8A%B6%E6%80%81%E6%98%AF%E4%B8%8D%E5%90%8C%E8%B7%AF%E5%BE%84"><span class="nav-number">1.4.</span> <span class="nav-text">请求、配置与状态是不同路径</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%BF%99%E5%A5%97%E6%9E%B6%E6%9E%84%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="nav-number">2.</span> <span class="nav-text">2. 这套架构的优势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%A4%9A-worker%EF%BC%9A%E6%9C%AC%E5%9C%B0%E5%89%AF%E6%9C%AC%E4%B8%8E%E5%85%B1%E4%BA%AB%E9%94%81"><span class="nav-number">3.</span> <span class="nav-text">3. 多 worker：本地副本与共享锁</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AF%8F%E4%B8%AA-worker-%E9%83%BD%E8%A6%81%E7%BB%B4%E6%8A%A4%E8%87%AA%E5%B7%B1%E7%9A%84%E6%9C%AC%E5%9C%B0%E7%8A%B6%E6%80%81"><span class="nav-number">3.1.</span> <span class="nav-text">每个 worker 都要维护自己的本地状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#shared-dict-%E5%A6%82%E4%BD%95%E7%BB%84%E7%BB%87%E5%85%B1%E4%BA%AB%E7%8A%B6%E6%80%81"><span class="nav-number">3.2.</span> <span class="nav-text">shared dict 如何组织共享状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-shared-dict-%E8%AF%BB%E5%8F%96%E4%B9%9F%E8%A6%81%E5%8A%A0%E9%94%81%EF%BC%9F"><span class="nav-number">3.3.</span> <span class="nav-text">为什么 shared dict 读取也要加锁？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%81%E7%AB%9E%E4%BA%89%E5%A6%82%E4%BD%95%E5%BD%B1%E5%93%8D-worker"><span class="nav-number">3.4.</span> <span class="nav-text">锁竞争如何影响 worker</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E6%AC%A1%E6%93%8D%E4%BD%9C%E5%8E%9F%E5%AD%90%EF%BC%8C%E4%B8%8D%E7%AD%89%E4%BA%8E%E5%A4%9A%E6%AD%A5%E9%80%BB%E8%BE%91%E5%8E%9F%E5%AD%90"><span class="nav-number">3.5.</span> <span class="nav-text">单次操作原子，不等于多步逻辑原子</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E9%95%BF%E8%AE%A1%E7%AE%97%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E6%8B%96%E6%85%A2%E6%95%B4%E4%B8%AA-worker"><span class="nav-number">4.</span> <span class="nav-text">4. 长计算为什么会拖慢整个 worker</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-shared-dict-%E7%9A%84%E5%AE%B9%E9%87%8F%E3%80%81%E8%BF%87%E6%9C%9F%E4%B8%8E%E6%B7%98%E6%B1%B0"><span class="nav-number">5.</span> <span class="nav-text">5. shared dict 的容量、过期与淘汰</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9D%A1%E7%9B%AE%E8%BF%87%E6%9C%9F%EF%BC%8C%E4%B8%8D%E7%AD%89%E4%BA%8E%E7%A9%BA%E9%97%B4%E7%AB%8B%E5%8D%B3%E5%9B%9E%E6%94%B6"><span class="nav-number">5.1.</span> <span class="nav-text">条目过期，不等于空间立即回收</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A9%BA%E9%97%B4%E4%B8%8D%E8%B6%B3%E6%97%B6%EF%BC%8C%E6%88%90%E5%8A%9F%E5%86%99%E5%85%A5%E4%B9%9F%E5%8F%AF%E8%83%BD%E6%9C%89%E4%BB%A3%E4%BB%B7"><span class="nav-number">5.2.</span> <span class="nav-text">空间不足时，成功写入也可能有代价</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%8F%92%E4%BB%B6%E4%B8%8E%E7%A7%9F%E6%88%B7%E4%B9%8B%E9%97%B4%E6%B2%A1%E6%9C%89%E7%8B%AC%E7%AB%8B%E7%9A%84%E8%B5%84%E6%BA%90%E9%85%8D%E9%A2%9D"><span class="nav-number">6.</span> <span class="nav-text">6. 插件与租户之间没有独立的资源配额</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%85%8D%E7%BD%AE%E7%83%AD%E6%9B%B4%E6%96%B0%E4%B9%9F%E6%9C%89%E4%BC%A0%E6%92%AD%E6%97%B6%E9%97%B4"><span class="nav-number">7.</span> <span class="nav-text">7. 配置热更新也有传播时间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-AI-%E6%B5%81%E5%BC%8F%E8%AF%B7%E6%B1%82%E9%9C%80%E8%A6%81%E9%A2%9D%E5%A4%96%E5%85%B3%E6%B3%A8%E4%BB%80%E4%B9%88"><span class="nav-number">8.</span> <span class="nav-text">8. AI 流式请求需要额外关注什么</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E8%BD%AC%E5%8F%91%E4%B8%8E%E9%80%90%E7%89%87%E6%AE%B5%E5%8A%A0%E5%B7%A5"><span class="nav-number">8.1.</span> <span class="nav-text">直接转发与逐片段加工</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AI-%E5%AE%B9%E9%87%8F%E8%AF%84%E4%BC%B0%E4%B8%8D%E8%83%BD%E5%8F%AA%E7%9C%8B-QPS"><span class="nav-number">8.2.</span> <span class="nav-text">AI 容量评估不能只看 QPS</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E4%BB%8E%E6%9E%B6%E6%9E%84%E5%88%A4%E6%96%AD%E9%80%82%E7%94%A8%E8%8C%83%E5%9B%B4"><span class="nav-number">9.</span> <span class="nav-text">9. 从架构判断适用范围</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%85%E9%9A%9C%E6%A1%88%E4%BE%8B%E4%B8%8E%E5%8F%82%E8%80%83"><span class="nav-number">10.</span> <span class="nav-text">故障案例与参考</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -271,7 +271,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="APISIX 多进程架构：优势、缺点与适用边界 | 衣舞晨风（jiankunking）">
-      <meta itemprop="description" content="从 master、多 worker、协作式协程与共享内存的架构图出发，分析 APISIX 的副本、同步、调度与隔离成本，进一步讨论 AI 请求代理和流式加工的优势与边界。故障只作旁证，不把组件 bug 当成架构的必然结果。">
+      <meta itemprop="description" content="从两张架构图理解 APISIX 的多 worker 与协程模型，分析本地副本、shared dict 读锁、事件循环和资源隔离，再讨论 AI 流式代理的适用场景与压测重点。">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -312,18 +312,18 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>6.3k</span>
+      <span>7.3k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>6 分钟</span>
+      <span>7 分钟</span>
     </span>
 </div>
 
-            <div class="post-description">从 master、多 worker、协作式协程与共享内存的架构图出发，分析 APISIX 的副本、同步、调度与隔离成本，进一步讨论 AI 请求代理和流式加工的优势与边界。故障只作旁证，不把组件 bug 当成架构的必然结果。</div>
+            <div class="post-description">从两张架构图理解 APISIX 的多 worker 与协程模型，分析本地副本、shared dict 读锁、事件循环和资源隔离，再讨论 AI 流式代理的适用场景与压测重点。</div>
         </div>
       </header>
 
@@ -333,7 +333,7 @@
     <div class="post-body" itemprop="articleBody">
 
 <p>APISIX 用 Nginx 多进程处理连接，在 worker 内运行 Lua 协程，通过本地缓存和共享内存管理状态。这套组合支持动态配置和插件扩展，但也带来了副本、同步和调度成本。</p>
-<p>下面从两张架构图看起。这些成本有些属于同类架构的共性，有些来自 OpenResty 的具体机制，并不都是 APISIX 独有的问题，也不意味着一定会发生故障。</p>
+<p>下面从两张架构图看起，先说明 worker 之间如何共享状态、worker 内的请求如何执行，再讨论这些机制对 AI 流式请求的影响。</p>
 <span id="more"></span>
 
 <h2 id="1-先看架构：哪些东西共享，哪些不共享"><a href="#1-先看架构：哪些东西共享，哪些不共享" class="headerlink" title="1. 先看架构：哪些东西共享，哪些不共享"></a>1. 先看架构：哪些东西共享，哪些不共享</h2><h3 id="master-管进程，worker-处理请求"><a href="#master-管进程，worker-处理请求" class="headerlink" title="master 管进程，worker 处理请求"></a>master 管进程，worker 处理请求</h3><p>APISIX 构建在 Nginx&#x2F;OpenResty 之上。master 负责启动和管理 worker、处理信号等工作，业务请求不是先进入 master，再由它转发给 worker。</p>
@@ -345,13 +345,16 @@
 <li><strong>共享字典是另一个存储空间。</strong> 多个 worker 映射同一共享区，通过相应 API 访问；它不是一个所有进程都能直接操作的 Lua table。</li>
 <li><strong>进程隔离不等于资源完全隔离。</strong> worker 仍共用机器的 CPU、内存和网络，也可能访问同一共享字典。</li>
 </ol>
-<p><code>lua_shared_dict</code> 是常用的跨 worker 共享机制，不同字典有各自的共享区和锁。此外也可以使用 IPC 或外部服务通信。</p>
-<h3 id="worker-内部：协程共享一个主要执行线程"><a href="#worker-内部：协程共享一个主要执行线程" class="headerlink" title="worker 内部：协程共享一个主要执行线程"></a>worker 内部：协程共享一个主要执行线程</h3><p>请求进入 worker 后，路由匹配与插件逻辑在相应阶段执行。Lua 协程配合 Nginx 的事件机制，在等待网络等可让出的操作处挂起，让其他请求继续处理。</p>
+<h3 id="跨-worker-的状态共享：shared-dict-与其他方式"><a href="#跨-worker-的状态共享：shared-dict-与其他方式" class="headerlink" title="跨 worker 的状态共享：shared dict 与其他方式"></a>跨 worker 的状态共享：shared dict 与其他方式</h3><p><strong>共享内存是一块多个进程都能访问的存储空间，shared dict 是建立在这块空间上的一种数据结构。</strong> 两者不能画等号，shared dict 也不是跨 worker 共享状态的唯一方式。</p>
+<p>对于普通 Lua 插件，<code>lua_shared_dict</code> 是 OpenResty 内置、最常用的跨 worker 键值容器，也支持原子计数和列表操作。它共享的是字典条目，不是任意 Lua 对象；其内部结构和锁机制在第三节展开。共享范围通常是同一 Nginx 实例，不会自动跨多个网关实例同步。</p>
+<p>在 Nginx 底层，C 模块可以申请共享内存区，实现计数器、队列、树等结构。一些限流、缓存机制就是如此，但并不通过 Lua 的 <code>ngx.shared</code> 字典访问。它们各有自己的同步实现，不能一概套用 shared dict 的字典级锁结论；Lua 插件要访问这些结构，通常需要专门的模块或绑定。</p>
+<p>跨 worker 交换状态还可以使用 Unix socket 等 IPC，或 Redis 等外部服务。这些属于通信或外部存储，不是让多个 worker 直接共享同一个 Lua 对象。</p>
+<h3 id="worker-内部：协程在同一主线程上执行"><a href="#worker-内部：协程在同一主线程上执行" class="headerlink" title="worker 内部：协程在同一主线程上执行"></a>worker 内部：协程在同一主线程上执行</h3><p>请求进入 worker 后，路由匹配与插件逻辑在相应阶段执行。Lua 协程配合 Nginx 的事件机制，在等待网络等可让出的操作处挂起，让其他请求继续处理。</p>
 <p><img src="/images/apisix-multiprocess-architecture/apisix-worker-architecture.svg" alt="单个 worker 的执行模型：主线程内当前执行 A，B 在外等待网络，B 的恢复与 timer 回调都由同一主线程调度" loading="lazy" decoding="async" width="960" height="600"></p>
 <p><strong>协程并发与 CPU 并行是两回事。</strong> 一个 worker 可以同时维持很多进行中的请求，但普通 Lua 请求代码并不是在这个 worker 内同时使用多个核执行。</p>
 <p>Lua timer 回调也在 worker 中执行，不是独立后台线程。FFI 不会自动把调用异步化。OpenResty 虽有辅助线程等能力，普通 Lua 插件并不会自动使用它们。</p>
 <h3 id="请求、配置与状态是不同路径"><a href="#请求、配置与状态是不同路径" class="headerlink" title="请求、配置与状态是不同路径"></a>请求、配置与状态是不同路径</h3><p>常规 HTTP 代理依赖 Nginx 的上游和输出机制，APISIX 在各阶段执行路由与插件。部分插件使用 cosocket 自行读取和转换响应，后文会单独讨论这条路径。</p>
-<p>配置更新不需要跟着每条请求访问 etcd。在常见的 etcd 部署方式下，配置经过同步形成本地对象，供数据面使用；具体同步路径取决于版本和部署模式。</p>
+<p>在常见的 etcd 部署方式下，APISIX 会把配置同步到各 worker，请求处理时主要读取本地配置，而不是每次访问 etcd。具体同步路径取决于版本和部署模式。</p>
 <table>
 <thead>
 <tr>
@@ -381,48 +384,98 @@
 <td>通过同步或网络访问取得数据</td>
 </tr>
 </tbody></table>
-<h2 id="2-这套架构的优势"><a href="#2-这套架构的优势" class="headerlink" title="2. 这套架构的优势"></a>2. 这套架构的优势</h2><p><strong>成熟的网络底座。</strong> Nginx 的事件驱动模型适合大量并发连接，OpenResty 提供 Lua 执行与非阻塞网络 API，LuaJIT 降低许多 Lua 计算的开销。</p>
+<h2 id="2-这套架构的优势"><a href="#2-这套架构的优势" class="headerlink" title="2. 这套架构的优势"></a>2. 这套架构的优势</h2><p><strong>连接处理。</strong> Nginx 的事件驱动模型适合大量并发连接，OpenResty 提供 Lua 执行与非阻塞网络 API，LuaJIT 降低许多 Lua 计算的开销。</p>
 <p><strong>本地处理。</strong> 常用配置和缓存留在 worker 内，减少了路由匹配与对象读取的共享访问；多个 worker 则可以利用多核。</p>
 <p><strong>动态配置。</strong> 路由、上游和常用插件配置可以在运行中更新，不必每次 reload Nginx。路由多、变更频繁时，这比每次修改都重载进程更方便。</p>
-<p><strong>扩展效率。</strong> Lua 插件可以复用网关阶段和已有能力，cosocket 允许用接近同步代码的方式组织非阻塞 I&#x2F;O。很多业务策略不必下沉到 C 模块。</p>
-<h2 id="3-多-worker-的缺点：副本成本与共享协调"><a href="#3-多-worker-的缺点：副本成本与共享协调" class="headerlink" title="3. 多 worker 的缺点：副本成本与共享协调"></a>3. 多 worker 的缺点：副本成本与共享协调</h2><h3 id="本地状态不能免费复用"><a href="#本地状态不能免费复用" class="headerlink" title="本地状态不能免费复用"></a>本地状态不能免费复用</h3><p>回到第一张图，每个 worker 都有本地缓存。相同的配置派生对象和热点缓存，可能在多个 worker 中分别构建；cosocket 连接池通常也是 worker 级的，一个 worker 的空闲连接不能直接供另一个 worker 使用。</p>
+<p><strong>插件开发。</strong> Lua 插件可以复用网关阶段和已有能力，cosocket 允许用接近同步代码的方式组织非阻塞 I&#x2F;O。很多业务策略不必下沉到 C 模块。</p>
+<h2 id="3-多-worker：本地副本与共享锁"><a href="#3-多-worker：本地副本与共享锁" class="headerlink" title="3. 多 worker：本地副本与共享锁"></a>3. 多 worker：本地副本与共享锁</h2><h3 id="每个-worker-都要维护自己的本地状态"><a href="#每个-worker-都要维护自己的本地状态" class="headerlink" title="每个 worker 都要维护自己的本地状态"></a>每个 worker 都要维护自己的本地状态</h3><p>回到第一张图，每个 worker 都有本地缓存。根据同一份配置构建的对象和热点缓存，可能在多个 worker 中分别创建；cosocket 连接池通常也是 worker 级的，一个 worker 的空闲连接不能直接供另一个 worker 使用。</p>
 <p>增加 worker 数，可能同时增加缓存副本、空闲连接和初始化工作。流量分布不均匀时，各 worker 的缓存命中率和连接复用效率也可能不同。</p>
 <p>这并不意味着所有内存都按 worker 数线性增长：共享页、共享字典和独占对象要分开看，也不能把各 worker 的 RSS 简单相加。连接池容量则主要约束池内保留的空闲连接，不能直接当作活跃连接总数上限。</p>
-<h3 id="一旦需要全局状态，就要付同步成本"><a href="#一旦需要全局状态，就要付同步成本" class="headerlink" title="一旦需要全局状态，就要付同步成本"></a>一旦需要全局状态，就要付同步成本</h3><p>限流、计数和共享缓存不能总是各算各的。把状态放入 shared dict，可以避免每次都访问外部服务，但常见的 <code>get</code>、<code>set</code>、<code>incr</code> 等操作需要获取字典级共享互斥锁。<strong>读取也不是无锁操作：同一字典内，读读、读写和写写都可能竞争，即使访问的是不同 key。</strong> 不同字典则有各自的锁。</p>
-<p>当共享访问较少时，这笔成本通常可控；当多个 worker 高频访问同一字典，或者成批遍历共享条目时，增加 worker 也会增加竞争者。扩展性此时取决于共享访问比例，而不只是 CPU 核数。</p>
+<h3 id="shared-dict-如何组织共享状态"><a href="#shared-dict-如何组织共享状态" class="headerlink" title="shared dict 如何组织共享状态"></a>shared dict 如何组织共享状态</h3><p>限流、计数和缓存有时需要跨 worker 共享，不能各算各的。shared dict 可以避免每次访问外部服务，但也需要协调多个 worker 的读写。</p>
+<p>先看它如何使用。shared dict 是一个<strong>容量固定、支持过期和淘汰的键值容器</strong>，在 Nginx 的 <code>http</code> 配置块中声明：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">lua_shared_dict</span> state <span class="number">10m</span>;</span><br></pre></td></tr></table></figure>
+
+<p>各 worker 通过同一个名字访问这块共享区：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">local</span> dict = ngx.shared.state</span><br><span class="line">dict:set(<span class="string">&quot;user:1001&quot;</span>, <span class="string">&quot;张三&quot;</span>, <span class="number">60</span>)  <span class="comment">-- 保存字符串，60 秒后过期</span></span><br><span class="line"><span class="keyword">local</span> name = dict:get(<span class="string">&quot;user:1001&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>一个 worker 写入的条目，其他 worker 可以读取。Lua 变量 <code>dict</code> 和取出的 <code>name</code> 仍属于各自 worker。字典也提供 <code>incr</code> 原子计数，以及 <code>lpush</code>、<code>rpop</code> 等列表操作，但不能直接保存任意 Lua table；复杂对象通常需要序列化。</p>
+<p><strong>接口像字典，底层却不是 Lua table，也不是普通哈希表。</strong> 它的主要组成包括：</p>
+<table>
+<thead>
+<tr>
+<th>内部组成</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>条目节点</td>
+<td>保存 key、值类型、value、过期时间等信息</td>
+</tr>
+<tr>
+<td>红黑树</td>
+<td>按 key 的哈希值和 key 内容组织节点，用于查找条目</td>
+</tr>
+<tr>
+<td>LRU 队列</td>
+<td>记录最近访问顺序，在需要淘汰时优先考虑较久未访问的条目</td>
+</tr>
+<tr>
+<td>slab 内存分配器</td>
+<td>在配置的共享区中为条目分配和回收空间</td>
+</tr>
+<tr>
+<td>字典级互斥锁</td>
+<td>协调多个 worker 对上述结构的访问和修改</td>
+</tr>
+</tbody></table>
+<p>常见的 <code>get</code>、<code>set</code>、<code>incr</code> 等操作会获取字典级互斥锁。不同字典有各自的锁；同一字典内，即使访问不同 key，也可能竞争。</p>
+<h3 id="为什么-shared-dict-读取也要加锁？"><a href="#为什么-shared-dict-读取也要加锁？" class="headerlink" title="为什么 shared dict 读取也要加锁？"></a>为什么 shared dict 读取也要加锁？</h3><p><strong>读操作加锁，不是为了防止它修改 value，而是为了防止其他 worker 在它读到一半时修改或删除数据。</strong> 共享内存只保证多个进程能访问同一块内存，并不自动保证一次字典读取的完整性。</p>
+<p><code>get(&quot;user&quot;)</code> 不是一次简单的内存读取，而是先查找节点，再把值复制出来。如果没有同步保护，就可能发生：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">worker A：找到 &quot;user&quot; 对应的节点，准备复制值</span><br><span class="line">worker B：删除 &quot;user&quot;，释放这个节点的内存</span><br><span class="line">worker C：写入另一个 key，复用这块内存</span><br><span class="line">worker A：继续从原来的位置读取，内容已经不是原来的值</span><br></pre></td></tr></table></figure>
+
+<p>所以，读取期间需要保证查找路径和节点仍然有效，值也不会在复制到一半时被修改。shared dict 的锁保护的不只是某个 value，还包括内部红黑树、队列和节点生命周期。</p>
+<p><strong>只给写操作加锁，为什么不够？</strong> 锁不是给整块内存自动套上一层保护罩，它只能约束同样会获取这把锁的操作。写操作拿着锁时，一个根本不拿锁的读操作仍然可以访问内存，读写依然可能同时发生。因此，当前实现让读写双方都获取同一把锁：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">worker A：获取字典锁 → 查找节点 → 复制值 → 释放锁</span><br><span class="line">worker B：想修改或删除 → 等待同一把锁 → A 读完后才能操作</span><br></pre></td></tr></table></figure>
+
+<p>锁只保护这一次读取；<code>get</code> 返回后，其他 worker 仍然可以更新字典。</p>
+<p><strong>那为什么两个读取也会竞争？</strong> 因为业务上的“读”，在 shared dict 内部还包含“写”：查找到有效条目时，会把它移到 LRU 队列前面，记录最近访问顺序，供后续淘汰使用。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">读取前：最近访问 → A → B → C → 最久没访问</span><br><span class="line">读取 C：最近访问 → C → A → B → 最久没访问</span><br></pre></td></tr></table></figure>
+
+<p>两个 worker 即使读取不同 key，也可能同时修改同一条 LRU 队列。当前实现使用字典级互斥锁，因此读读也会互相等待。由于读取包含内部写操作，仅换成读写锁并不能让它们直接并行。</p>
+<p>锁由 shared dict API 内部获取和释放，调用者不需要为了执行一次 <code>get</code> 再手动加锁。<strong>不是共享内存天然要求读加锁，而是 shared dict 当前的实现需要这样做。</strong> 只读共享数据、原子变量，或专门的无锁读取与安全回收机制，可以采用不同设计。</p>
+<h3 id="锁竞争如何影响-worker"><a href="#锁竞争如何影响-worker" class="headerlink" title="锁竞争如何影响 worker"></a>锁竞争如何影响 worker</h3><p>当共享访问较少时，这笔成本通常可控；当多个 worker 高频访问同一字典，或者成批遍历共享条目时，增加 worker 也会增加竞争者。扩展性此时取决于共享访问比例，而不只是 CPU 核数。</p>
 <p>这种锁等待不会像 cosocket 等待网络那样挂起 Lua 协程。竞争严重时，调用所在的 worker 无法及时处理其他请求。<code>get_keys(0)</code> 会在持锁期间遍历整个字典，不宜在请求路径或高频 timer 中对大字典反复执行。</p>
-<p>这是 OpenResty shared dict 的具体机制，并非 APISIX 独有。其他共享存储也有协调成本，但锁粒度、分片方式和读写并发能力可能不同。</p>
 <p>本地副本减少了共享读取，却需要处理失效、版本变化和同步。增量更新可以摊薄工作量，全量重建则可能产生较大的单次开销。</p>
-<p>本地参考 Counter 实现先在 worker 内累计增量，再由 timer 批量同步到共享字典。这样减少了共享更新次数，但需要处理同步延迟和失败。</p>
-<h3 id="单次操作原子，不等于多步逻辑原子"><a href="#单次操作原子，不等于多步逻辑原子" class="headerlink" title="单次操作原子，不等于多步逻辑原子"></a>单次操作原子，不等于多步逻辑原子</h3><p><code>incr</code>、<code>add</code> 等单次操作提供原子语义，不代表“读取状态 → 修改指标值 → 注册索引”整体成为一个事务。多个 worker 仍可能在操作之间交错执行。</p>
+<p>计数器也可以先在 worker 内累计增量，再由 timer 批量同步到共享字典，以减少共享更新次数。这种做法需要接受同步延迟，并处理同步失败。</p>
+<h3 id="单次操作原子，不等于多步逻辑原子"><a href="#单次操作原子，不等于多步逻辑原子" class="headerlink" title="单次操作原子，不等于多步逻辑原子"></a>单次操作原子，不等于多步逻辑原子</h3><p><code>incr</code>、<code>add</code> 等单次操作提供原子语义，不代表多个 API 调用组成的逻辑也成为一个事务。多个 worker 仍可能在调用之间交错执行。</p>
 <p>例如，用 <code>get</code> 后接 <code>set(value + 1)</code> 更新计数器，两个 worker 可能都读到 10、都写入 11，丢失一次增量。单 key 计数应使用 <code>incr</code>；多 key 或跨字典更新仍需额外协调。</p>
-<p>同一 worker 内也有类似问题：模块变量虽然没有被多个普通 Lua 线程同时执行，协程 yield 后，其他请求仍可能修改它。局部计算中的临时值，不能随意变成跨请求共享变量。</p>
-<h2 id="4-协作式调度的缺点：重任务会拖慢同一-worker"><a href="#4-协作式调度的缺点：重任务会拖慢同一-worker" class="headerlink" title="4. 协作式调度的缺点：重任务会拖慢同一 worker"></a>4. 协作式调度的缺点：重任务会拖慢同一 worker</h2><p>第二张图中，多个请求最终使用同一个主事件循环。一段长时间不让出执行权的 Lua 代码，会延迟这个 worker 上其他请求的处理，即使那些请求与它没有业务关系。</p>
-<p>大 JSON 解析、复杂匹配、长循环、共享字典扫描，都可能产生这种影响。LuaJIT 可以让许多计算更快，但不会把它们变成自动可抢占的请求任务。</p>
+<p>同一 worker 内也有类似问题：如果把请求临时状态放进模块变量，协程 yield 后，其他请求可能覆盖它；恢复执行时，读到的就不再是本请求的状态。</p>
+<h2 id="4-长计算为什么会拖慢整个-worker"><a href="#4-长计算为什么会拖慢整个-worker" class="headerlink" title="4. 长计算为什么会拖慢整个 worker"></a>4. 长计算为什么会拖慢整个 worker</h2><p>第二张图中，多个请求最终使用同一个主事件循环。一段长时间不让出执行权的 Lua 代码，会延迟这个 worker 上其他请求的处理，即使那些请求与它没有业务关系。</p>
+<p>大 JSON 解析、复杂匹配、长循环、共享字典扫描，都可能产生这种影响。LuaJIT 可以让许多计算更快，但不会让长计算自动让出执行权。</p>
 <p><strong>循环里有 cosocket 读取，也不保证每轮都会让出。</strong> 数据已经在缓冲区时，读取可能立即返回，随后连续解析、拼接、统计，仍可能长时间占用 worker。</p>
 <p>加入 <code>ngx.sleep(0)</code> 可以增加其他协程获得执行机会，但不减少总计算量，也不是严格的公平保证。更根本的处理是减少重复工作、限制单次批量规模，必要时把重计算移出普通请求执行路径。</p>
-<p>如果每个 worker 都创建同一个 timer，任务还可能重复执行。需要从组件实现确认是否做了单例协调，以及单次处理有没有批量上限。</p>
-<p>这项缺点对尾延迟尤其重要：平均吞吐可能正常，少量重任务却已经让同 worker 的轻请求变慢。</p>
-<p>长计算阻碍事件循环是同类模型的共性。独立执行池可以缩小影响，但仍需要限制任务数量和排队长度。</p>
-<h2 id="5-共享内存的缺点：容量和生命周期需要单独管理"><a href="#5-共享内存的缺点：容量和生命周期需要单独管理" class="headerlink" title="5. 共享内存的缺点：容量和生命周期需要单独管理"></a>5. 共享内存的缺点：容量和生命周期需要单独管理</h2><p>shared dict 无需网络往返，但容量由配置确定，条目不由 Lua GC 回收。</p>
-<p>它可以存储字符串、数字、布尔值等支持的值类型，不能直接共享任意 Lua table。复杂对象放入共享字典通常需要编码与解码；留在 lrucache 中则可以直接使用，但会回到前面的副本问题。</p>
-<h3 id="TTL-解决有效性，不保证立即释放空间"><a href="#TTL-解决有效性，不保证立即释放空间" class="headerlink" title="TTL 解决有效性，不保证立即释放空间"></a>TTL 解决有效性，不保证立即释放空间</h3><p>TTL 到期后，条目不再按普通有效值读取；物理空间何时回收，还受访问、分配路径和显式清理影响。</p>
+<p>timer 通常由各 worker 分别创建。如果任务只需要在实例内执行一次，例如一次共享字典扫描，就要避免所有 worker 重复扫描；用于同步各自本地增量的任务，则需要每个 worker 分别执行。无论哪种任务，都应限制单次处理量，避免长时间占用事件循环。</p>
+<p>这对尾延迟尤其重要：平均吞吐可能正常，少量重任务却已经让同 worker 的轻请求变慢。</p>
+<h2 id="5-shared-dict-的容量、过期与淘汰"><a href="#5-shared-dict-的容量、过期与淘汰" class="headerlink" title="5. shared dict 的容量、过期与淘汰"></a>5. shared dict 的容量、过期与淘汰</h2><p>shared dict 无需网络往返，但容量由配置确定，条目不由 Lua GC 回收。</p>
+<p>复杂对象放入共享字典通常需要编码与解码；留在 lrucache 中可以直接使用 Lua 对象，但需要在各 worker 分别保存。</p>
+<h3 id="条目过期，不等于空间立即回收"><a href="#条目过期，不等于空间立即回收" class="headerlink" title="条目过期，不等于空间立即回收"></a>条目过期，不等于空间立即回收</h3><p>TTL 到期后，普通 <code>get</code> 不再返回该条目的值，但它占用的空间不一定立即释放。回收可能发生在后续访问、写入或显式清理时。</p>
 <p>组件维护的索引、版本记录或本地引用还需要单独清理。经历反复生成、过期、重建后，应检查内存和维护工作量是否持续增长。</p>
-<p>因此，容量规划不只看当前活着多少条目，还要看序列更替速度、键长度、分配开销和内部索引。经典直方图有 B 个有限桶时，每组标签最多展开 B+3 条序列；本地报告中 15 个有限桶对应 18 条。长标签又会增加每条完整键的成本，在参考实现中还可能被值条目和索引分别保存。</p>
+<p>容量规划不只看当前有效条目数，还要看条目更替速度、键长度、分配开销，以及组件额外维护的索引。</p>
+<p>以 Prometheus 指标为例，一个标签组合可能展开成多条序列：经典直方图有 B 个有限桶时，加上 <code>+Inf</code> 桶、<code>sum</code> 和 <code>count</code>，通常对应 B+3 条序列。如果指标库将这些序列存入共享字典，实际容量还取决于存储方式和额外索引。长标签也会增加键的存储成本，不能只按业务对象数量估算空间。</p>
 <h3 id="空间不足时，成功写入也可能有代价"><a href="#空间不足时，成功写入也可能有代价" class="headerlink" title="空间不足时，成功写入也可能有代价"></a>空间不足时，成功写入也可能有代价</h3><p>普通 <code>set</code> 在必要时可能强制淘汰尚未过期的条目，并返回 <code>forcible=true</code>；<code>safe_set</code> 避免这种强制淘汰，空间不足时可能失败。</p>
-<p>写入成本也取决于条目是否需要创建。不断写入新 key，会涉及内存分配和内部索引维护；容量紧张时还可能触发回收或淘汰，增加持锁时间。同样的写入频率，更新少量已有计数器与持续创建、过期、重建条目，开销可能明显不同。</p>
-<p>指标、限流和缓存对丢失的容忍度不同，不能只看写入是否成功。<code>free_space()</code> 反映空闲页空间，也不能直接当成精确的剩余可写容量。</p>
-<p>共享区大小不像路由配置那样可以随意动态调整。其调整需要考虑目标版本的 reload 和重建约束。扩容可以缓解容量压力，却不能修复一个不收敛的索引或回收算法。</p>
-<h2 id="6-插件扩展的缺点：功能边界不是资源边界"><a href="#6-插件扩展的缺点：功能边界不是资源边界" class="headerlink" title="6. 插件扩展的缺点：功能边界不是资源边界"></a>6. 插件扩展的缺点：功能边界不是资源边界</h2><p>鉴权、请求转换、流式解析和部分指标维护，可能共用一个 worker 的执行资源。即使指标使用独立字典，其维护任务仍可能占用业务请求所在的事件循环。</p>
+<p>写入成本也取决于条目是否需要创建。不断写入新 key，需要分配内存、更新红黑树和 LRU 队列；容量紧张时还可能触发回收或淘汰，增加持锁时间。同样的写入频率，更新已有计数器与持续创建、过期、重建条目，开销可能明显不同。</p>
+<p>指标、限流和缓存对丢失的容忍度不同，不能只看写入是否成功，还要检查是否淘汰了其他有效条目。</p>
+<p><code>free_space()</code> 统计空闲页空间；已经分配的页内还可能有可用槽位，而新条目能否写入也取决于分配规格，因此它不是精确的剩余可写容量。</p>
+<p>共享区大小不能像路由配置那样热更新，调整时需要确认目标版本对 reload 和共享区重建的要求。如果索引持续增长或旧条目无法有效清理，扩容也只是延后耗尽时间。</p>
+<h2 id="6-插件与租户之间没有独立的资源配额"><a href="#6-插件与租户之间没有独立的资源配额" class="headerlink" title="6. 插件与租户之间没有独立的资源配额"></a>6. 插件与租户之间没有独立的资源配额</h2><p>鉴权、请求转换、流式解析和部分指标维护，可能共用一个 worker 的执行资源。即使指标使用独立字典，其维护任务仍可能占用业务请求所在的事件循环。</p>
 <p>进程隔离保护的是 worker 之间的地址空间，普通 Lua 插件没有因此获得独立的 CPU 配额或内存预算。不同租户的请求也一样：租户 A 长时间计算时，租户 B 的轻请求可能等待。入口限流控制进入的请求数量，无法保证每个请求的计算成本相同。</p>
-<p><strong>共用执行资源造成的租户相互影响，并非 APISIX 独有。</strong> 多线程或可抢占调度可以改变影响方式，但不会自动提供租户 CPU 配额。要求强隔离时，可以按租户或负载拆分实例，并配置资源配额，代价是额外的资源和运维工作。</p>
-<h2 id="7-动态配置的边界：能热更新，不等于全局瞬时切换"><a href="#7-动态配置的边界：能热更新，不等于全局瞬时切换" class="headerlink" title="7. 动态配置的边界：能热更新，不等于全局瞬时切换"></a>7. 动态配置的边界：能热更新，不等于全局瞬时切换</h2><p>新配置需要同步到数据面、更新本地对象，并使旧缓存失效。多个 worker、多个实例应用更新存在传播过程，其间可能短暂使用不同版本；集中重建缓存也有开销。要求跨路由、跨实例同时切换的业务，需要验证目标部署是否提供相应保证。</p>
-<p>同样，路由配置、Lua 代码、底层 Nginx 配置和共享内存容量，不属于同一种更新机制。长连接场景中，涉及进程更替的升级还需要规划连接排空和旧 worker 的退出，而不只是确认新实例启动成功。</p>
-<h2 id="8-AI-负载如何改变架构的收益与成本"><a href="#8-AI-负载如何改变架构的收益与成本" class="headerlink" title="8. AI 负载如何改变架构的收益与成本"></a>8. AI 负载如何改变架构的收益与成本</h2><p>等待模型首字和后续输出，适合事件驱动模型；如果网关还要持续解析和修改内容，就需要评估额外的 CPU 与缓冲开销。</p>
-<h3 id="优势：等待多、逻辑轻时，这套组合很合适"><a href="#优势：等待多、逻辑轻时，这套组合很合适" class="headerlink" title="优势：等待多、逻辑轻时，这套组合很合适"></a>优势：等待多、逻辑轻时，这套组合很合适</h3><p><strong>等待上游时可以处理其他请求。</strong> 大量进行中的模型请求不必对应大量请求线程，但连接仍占用文件描述符、缓冲区和请求状态。</p>
-<p><strong>模型路由调整方便。</strong> 切换供应商地址、修改流量权重等常用操作，可以通过动态配置完成，无需重载网关进程。但自动故障切换、额度管理等能力，仍取决于具体插件和策略。</p>
-<p><strong>简单接口适配容易扩展。</strong> 不同供应商的鉴权方式、模型名称和请求字段存在差异，可以通过 Lua 插件进行改写，无需修改底层网络代码。</p>
-<h3 id="缺点：长连接放大资源占用，内容加工放大执行成本"><a href="#缺点：长连接放大资源占用，内容加工放大执行成本" class="headerlink" title="缺点：长连接放大资源占用，内容加工放大执行成本"></a>缺点：长连接放大资源占用，内容加工放大执行成本</h3><table>
+<p>要求强隔离时，可以按租户或负载拆分实例，并配置资源配额，代价是额外的资源和运维工作。仅改成多线程或可抢占调度，并不会自动获得租户 CPU 配额。</p>
+<h2 id="7-配置热更新也有传播时间"><a href="#7-配置热更新也有传播时间" class="headerlink" title="7. 配置热更新也有传播时间"></a>7. 配置热更新也有传播时间</h2><p>新配置需要同步到数据面、更新本地对象，并使旧缓存失效。多个 worker、多个实例应用更新存在传播过程，其间可能短暂使用不同版本；集中重建缓存也有开销。要求跨路由、跨实例同时切换的业务，需要验证目标部署是否提供相应保证。</p>
+<p>路由配置、Lua 代码、底层 Nginx 配置和共享内存容量，也不属于同一种更新机制。涉及进程更替的升级还需要规划长连接排空和旧 worker 的退出，而不只是确认新实例启动成功。</p>
+<h2 id="8-AI-流式请求需要额外关注什么"><a href="#8-AI-流式请求需要额外关注什么" class="headerlink" title="8. AI 流式请求需要额外关注什么"></a>8. AI 流式请求需要额外关注什么</h2><h3 id="直接转发与逐片段加工"><a href="#直接转发与逐片段加工" class="headerlink" title="直接转发与逐片段加工"></a>直接转发与逐片段加工</h3><p>等待上游时，worker 可以处理其他请求，大量模型请求不必对应大量请求线程；但每条连接仍占用文件描述符、缓冲区和请求状态。如果只是转发并改写少量鉴权信息、模型名称或请求字段，处理逻辑通常较轻。逐片段解析和加工内容则会持续增加 CPU 工作量。</p>
+<p>直接代理 SSE，较多复用 Nginx 的代理和输出机制，需要正确配置超时与缓冲。自行读取 SSE、逐事件解析、修改内容、统计用量、再重新输出，则需要插件控制单轮解析量和消息暂存上限，在下游变慢时放慢读取，取消后停止上游活动，并区分“暂时无完整消息”和“连接失败”。</p>
+<p>普通代理的吞吐不能直接代表流式加工的性能，测试应使用实际启用的插件与处理路径。具体可关注：</p>
+<table>
 <thead>
 <tr>
 <th>AI 负载特征</th>
@@ -462,52 +515,24 @@
 </tr>
 </tbody></table>
 <p>连接时间长本身不会让 CPU 持续繁忙。等待、计算、缓冲和共享状态维护，需要分别测量。</p>
-<h3 id="转发流与加工流要分开评估"><a href="#转发流与加工流要分开评估" class="headerlink" title="转发流与加工流要分开评估"></a>转发流与加工流要分开评估</h3><p>直接代理 SSE，与读取 SSE、逐事件解析、修改内容、统计用量、再重新输出，不是同一种负载。</p>
-<p>前者较多复用 Nginx 的代理和输出机制，需要正确配置超时与缓冲。后者除了转换内容，还要控制单轮解析量和消息暂存上限，在下游变慢时放慢读取，取消后停止上游活动，并区分“暂时无完整消息”和“连接失败”。这些都需要插件实现与测试。</p>
-<p>普通代理的吞吐不能直接代表流式加工的性能。测试应使用实际启用的插件与处理路径。</p>
 <h3 id="AI-容量评估不能只看-QPS"><a href="#AI-容量评估不能只看-QPS" class="headerlink" title="AI 容量评估不能只看 QPS"></a>AI 容量评估不能只看 QPS</h3><p>在稳定状态下，在途请求数大致等于请求到达率乘以平均持续时间。每秒进入 20 个请求、平均持续 60 秒，对应约 1,200 个在途请求。</p>
 <p>除 QPS 外，还应观察在途流数量、每个 worker 的 CPU、请求体大小、分片处理频率和缓冲占用。首字延迟与输出间隔受模型上游影响，应对照直连上游或基线代理，辨别网关增加的开销。再加入慢客户端、取消和轻请求混跑，检查缓冲是否受控、上游是否及时停止、轻请求是否被拖慢。</p>
-<h2 id="9-从架构判断适用范围"><a href="#9-从架构判断适用范围" class="headerlink" title="9. 从架构判断适用范围"></a>9. 从架构判断适用范围</h2><p>如果主要工作是等待上游响应、本地配置读取和简单改写，APISIX 比较合适。大量共享更新、重计算和持续流式加工，则需要额外评估同步、调度与隔离。</p>
-<p>这些问题也应带到其他网关的选型中：</p>
-<table>
-<thead>
-<tr>
-<th>通用问题</th>
-<th>APISIX&#x2F;OpenResty 中的具体表现</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>本地副本与共享协调</td>
-<td>worker 级 Lua 状态、cosocket 池，跨进程使用共享字典等机制</td>
-</tr>
-<tr>
-<td>长计算影响事件循环</td>
-<td>Lua 协作式调度、worker 内的 timer 回调</td>
-</tr>
-<tr>
-<td>有限容量与状态回收</td>
-<td>shared dict 的锁、TTL、淘汰与索引维护</td>
-</tr>
-<tr>
-<td>插件和租户共用执行资源</td>
-<td>普通 Lua 插件运行在 worker 内，强隔离需另行设计</td>
-</tr>
-<tr>
-<td>配置传播与升级</td>
-<td>本地对象更新、缓存失效、旧 worker 与长连接退出</td>
-</tr>
-</tbody></table>
-<p>上线前比较不同 worker 数下的吞吐、尾延迟、独占内存和连接复用，并让状态测试覆盖多轮过期、清理和重建。短时压测看不到历史状态积累的成本。</p>
-<p>换架构可能减少某项成本，也可能把它转移到同步、排队或部署上。判断依据应是目标实现和自己的负载，而不是语言名称、线程数量，或某一次组件故障。</p>
+<h2 id="9-从架构判断适用范围"><a href="#9-从架构判断适用范围" class="headerlink" title="9. 从架构判断适用范围"></a>9. 从架构判断适用范围</h2><p>如果主要工作是等待上游响应、本地配置读取和简单改写，APISIX 比较合适。大量共享更新、重计算和持续流式加工，则需要重点检查锁竞争、事件循环阻塞和租户间相互影响。</p>
+<p>上线前比较不同 worker 数下的吞吐、尾延迟、独占内存和连接复用，并让状态测试覆盖多轮过期、清理和重建。短时压测容易漏掉历史状态积累的成本。</p>
+<p>增加 worker 能分担请求，却不一定能解决共享锁竞争；把任务放进 timer，也不会让它脱离 worker 的事件循环。遇到性能问题时，应先确认时间花在计算、锁等待还是网络等待上，再决定如何调整。</p>
 <hr>
-<h3 id="故障旁证与参考"><a href="#故障旁证与参考" class="headerlink" title="故障旁证与参考"></a>故障旁证与参考</h3><p>我们的生产案例全部来自 API7 AI 网关，涉及的企业版实现不能直接等同于所有开源 APISIX 版本。这里只保留它们与架构的关系，不展开排查过程：</p>
+<h2 id="故障案例与参考"><a href="#故障案例与参考" class="headerlink" title="故障案例与参考"></a>故障案例与参考</h2><p>以下是我们在 API7 AI 网关中遇到的几个相关问题。案例涉及企业版实现和特定依赖版本，阅读时需要注意与开源 APISIX 的差异：</p>
 <ul>
-<li><a href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html">9 月升级后的索引同步回归</a>：特定指标库版本全量扫描约 57 万历史槽，说明共享访问与连续执行可以放大组件算法的代价；直接缺陷在该版本，最终回退的是依赖。</li>
-<li><a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">调度、取消与重复解析问题</a>：用于理解复杂插件的执行和资源边界。流式 500 的暂态误判是另一个独立实现错误，不是协程模型必然产生的结果。</li>
-<li>11 月共享字典满：存活序列约 3.9 万至 4.6 万，剩余空间仍减少，说明当前序列数不足以描述状态成本。约 240 MB 未解释占用是估算，不能直接认定为过期索引；Counter 回落也不能单独证明过期重建。</li>
-<li><a href="https://jiankunking.com/APISIX-504-troubleshooting.html">15 秒 504</a> 来自该环境的内核 SYN 重传策略，不属于本文的架构缺点。</li>
+<li><a href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html">9 月升级后的索引同步回归</a>：特定指标库版本全量扫描约 57 万历史槽，共享访问与连续执行放大了扫描成本，最终通过回退依赖处理。</li>
+<li><a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">调度、取消与重复解析问题</a>：展示自定义流式插件中的解析、调度与清理问题，如何影响 worker 的执行时间和资源占用。</li>
+<li>11 月共享字典满：存活序列约 3.9 万至 4.6 万，剩余空间仍持续减少，提示容量评估还需要检查历史条目和维护索引，不能只看当前序列数。具体占用原因尚未完全确认。</li>
 </ul>
-<p>机制参考：温铭<a href="https://learn.lianglianglee.com/%E4%B8%93%E6%A0%8F/OpenResty%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E5%AE%9E%E6%88%98">《OpenResty 从入门到实战》</a>第 18、19、20、31、39、41 讲；<a href="https://jiankunking.com/apache-apisix-architecture.html">《Apache APISIX 架构分析》</a>；本地 APISIX 的 lrucache 封装及 Prometheus Counter、KeyIndex 参考实现。教材和本地开源代码用于解释机制，不替代生产版本取证。本文两张架构图为新绘，刻意省略非主线组件。</p>
+<p>机制参考：</p>
+<ul>
+<li>温铭<a href="https://learn.lianglianglee.com/%E4%B8%93%E6%A0%8F/OpenResty%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E5%AE%9E%E6%88%98">《OpenResty 从入门到实战》</a>第 18、19、20、31、39、41 讲。</li>
+<li><a href="https://jiankunking.com/apache-apisix-architecture.html">《Apache APISIX 架构分析》</a>。</li>
+<li>OpenResty <a href="https://github.com/openresty/lua-nginx-module/blob/master/src/ngx_http_lua_shdict.c">shared dict 源码</a>：<code>ngx_http_lua_shdict_lookup</code> 中可见有效条目命中后的 LRU 队列更新。源码链接指向主分支，排查生产问题时应核对实际版本。</li>
+</ul>
 
     </div>
 
@@ -581,8 +606,8 @@
           <div class="post-tags">
               <a href="/tags/api7/" rel="tag"># API7</a>
               <a href="/tags/apisix/" rel="tag"># APISIX</a>
-              <a href="/tags/ai-gateway/" rel="tag"># AI Gateway</a>
               <a href="/tags/openresty/" rel="tag"># OpenResty</a>
+              <a href="/tags/ai-gateway/" rel="tag"># AI Gateway</a>
               <a href="/tags/prometheus/" rel="tag"># Prometheus</a>
           </div>
 
@@ -628,7 +653,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">879k</span>
+    <span title="站点总字数">880k</span>
   </span>
 </div>
 <div class="busuanzi-count">
