@@ -314,14 +314,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>3.5k</span>
+      <span>6.5k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>3 分钟</span>
+      <span>6 分钟</span>
     </span>
 </div>
 
@@ -338,9 +338,116 @@
 <span id="more"></span>
 
 <p>TCP的三次握手、TCP四次挥手、TCP状态机</p>
+<p>下面三张图展示正常建连和一端先发 FIN 的典型关闭流程，不展开丢包重传、同时打开或同时关闭。时间从上往下，图上间距不代表实际耗时。</p>
 <!-- >SYN是发起一个连接,ACK是回复,RST是重新连接,FIN是结束连接 -->
 
-<h2 id="TCP的三次握手"><a href="#TCP的三次握手" class="headerlink" title="TCP的三次握手"></a>TCP的三次握手</h2><p><img src="/images/tcp-state-diagram/TCP%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.png" alt="TCP三次握手" loading="eager" fetchpriority="high" decoding="async" width="670" height="401"></p>
+<h2 id="TCP的三次握手"><a href="#TCP的三次握手" class="headerlink" title="TCP的三次握手"></a>TCP的三次握手</h2>
+<style>
+  .tcp-diagram-switch {
+    min-inline-size: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
+  .tcp-diagram-switch > input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
+  }
+  .tcp-diagram-switch > label {
+    display: inline-block;
+    padding: 0.2em 0.7em;
+    border: 1px solid var(--site-border-strong, #bdbdbd);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .tcp-diagram-switch > input:checked + label {
+    color: var(--site-surface, #fff);
+    background: var(--site-ink, #2d2d2d);
+    border-color: var(--site-ink, #2d2d2d);
+  }
+  .tcp-diagram-switch > input:focus-visible + label {
+    outline: 2px solid var(--site-ink, #2d2d2d);
+    outline-offset: 2px;
+  }
+  .tcp-diagram-switch > [data-view] { display: none; }
+  .tcp-diagram-switch > input[value="new"]:checked ~ [data-view="new"],
+  .tcp-diagram-switch > input[value="original"]:checked ~ [data-view="original"] { display: block; }
+  .tcp-diagram-switch > [data-view="original"] { margin: 0.75em 0; }
+  .tcp-diagram-canvas { overflow-x: auto; }
+  .tcp-diagram-canvas > svg { display: block; width: 100%; min-width: var(--tcp-diagram-width); height: auto; }
+  .post-body .tcp-diagram-switch .tcp-diagram-scroll-note { display: none; }
+  @media (max-width: 720px) {
+    .tcp-diagram-canvas > svg { min-width: var(--tcp-diagram-compact-width); }
+  }
+  @media (max-width: 600px) {
+    .post-body .tcp-diagram-switch .tcp-diagram-scroll-note {
+      display: block;
+      color: var(--site-muted, #686868);
+      font-size: 0.875em;
+      margin: 0 0 0.25em;
+    }
+  }
+  .post-body .tcp-diagram-switch [data-view] > figcaption {
+    color: var(--site-muted, #686868);
+    font-weight: normal;
+    line-height: 1.5;
+    margin: 0.5em 0 0;
+    text-align: left;
+  }
+</style>
+<fieldset class="tcp-diagram-switch" aria-label="切换 TCP 三次握手图">
+<input type="radio" name="tcp-handshake-view" id="tcp-handshake-new" value="new" checked>
+<label for="tcp-handshake-new">新版时序图</label>
+<input type="radio" name="tcp-handshake-view" id="tcp-handshake-original" value="original">
+<label for="tcp-handshake-original">原图</label>
+<figure data-view="new" style="width: min(100%, 680px); margin: 0.75em auto;">
+  <p class="tcp-diagram-scroll-note">窄屏可左右滑动看完整图。</p>
+  <div class="tcp-diagram-canvas" style="--tcp-diagram-width: 670px; --tcp-diagram-compact-width: 550px;" tabindex="0" role="region" aria-label="TCP 三次握手时序图，窄屏可横向滚动">
+    <svg viewBox="0 0 670 404" role="img" aria-labelledby="tcp-handshake-title tcp-handshake-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="tcp-handshake-title">TCP 三次握手时序图</title>
+      <desc id="tcp-handshake-desc">时间从上往下。客户端和服务端初始均为 CLOSED，服务端先进入 LISTEN。客户端发送序列号为 x 的 SYN 后进入 SYN_SENT；服务端回序列号为 y、确认号为 x 加 1 的 SYN 加 ACK 后进入 SYN_RECEIVED。客户端进入 ESTABLISHED 并发出序列号为 x 加 1、确认号为 y 加 1 的 ACK。服务端收到后也进入 ESTABLISHED，双方可以传输数据。</desc>
+      <defs>
+        <marker id="tcp-handshake-arrow" viewBox="0 0 10 8" refX="10" refY="4" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 4 0 8Z" fill="#404040"/></marker>
+      </defs>
+      <rect width="670" height="404" fill="#fff"/>
+      <g fill="#f7f7f7">
+        <path d="M28 88H194V238H28zM482 144H646V294H482z"/>
+      </g>
+      <g fill="none" stroke="#404040" stroke-width="2">
+        <path d="M28 32H194V390H28zM482 32H646V382H482z"/>
+        <path d="M28 88H194M28 238H194M482 88H646M482 144H646M482 294H646"/>
+      </g>
+      <g fill="none" stroke="#404040" stroke-width="2" marker-end="url(#tcp-handshake-arrow)">
+        <path d="M194 88L482 144"/><path d="M482 144L194 238"/><path d="M194 238L482 294"/>
+        <path d="M194 356H482" marker-start="url(#tcp-handshake-arrow)"/>
+      </g>
+      <g text-anchor="middle" fill="#2d2d2d">
+        <g font-family="system-ui, sans-serif" font-size="15" font-weight="600">
+          <text x="111" y="21">客户端</text><text x="564" y="21">服务端</text><text x="338" y="345">数据传输</text>
+        </g>
+        <g font-family="ui-monospace, monospace" font-size="15">
+          <text x="111" y="65">CLOSED</text><text x="564" y="65">CLOSED</text>
+          <text x="111" y="168">SYN_SENT</text><text x="564" y="121">LISTEN</text>
+          <text x="111" y="319">ESTABLISHED</text><text x="564" y="224">SYN_RECEIVED</text><text x="564" y="344">ESTABLISHED</text>
+        </g>
+        <g font-family="ui-monospace, monospace" font-size="14">
+          <text transform="translate(338 116) rotate(11)" y="-8"><tspan font-weight="700">SYN</tspan>, seq=x</text>
+          <text transform="translate(338 191) rotate(-18.08)" y="16"><tspan font-weight="700">SYN, ACK</tspan>, seq=y, ack=x+1</text>
+          <text transform="translate(338 266) rotate(11)" y="16"><tspan font-weight="700">ACK</tspan>, seq=x+1, ack=y+1</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <figcaption><code>x</code> 和 <code>y</code> 分别是客户端和服务端选择的初始序列号。SYN 占用一个序列号，所以对端分别用 <code>x+1</code> 和 <code>y+1</code> 确认。原图的 <code>SYN-RCVD</code> 即 <code>SYN_RECEIVED</code>。</figcaption>
+</figure>
+<div data-view="original">
+<img src="/images/tcp-state-diagram/TCP三次握手.png" alt="TCP 三次握手原图，标有各报文的序列号和确认号" loading="lazy" decoding="async" width="670" height="401">
+</div>
+</fieldset>
+
+
 <h2 id="TCP四次挥手"><a href="#TCP四次挥手" class="headerlink" title="TCP四次挥手"></a>TCP四次挥手</h2><!-- ## 1
 
 ![](/images/tcp-state-diagram/TCP四次挥手.png)
@@ -358,8 +465,162 @@ A直接跑路还有一个问题是,A的端口就直接空出来了,但是B不知
 还有一个异常情况就是,B超过了2MSL的时间,依然没有收到它发的FIN的ACK,怎么办呢？按照TCP的原理,B当然还会重发FIN,这个时候A再收到这个包之后,A就表示,我已经在这里等了这么长时间了,已经仁至义尽了,之后的我就都不认了,于是就直接发送RST,B就知道A早就跑了。
 
 ### 2 -->
-<p><img src="/images/tcp-state-diagram/TCP%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B.png" alt="TCP四次挥手" loading="lazy" decoding="async" width="641" height="553"></p>
-<p><img src="/images/tcp-state-diagram/tcp-close.png" alt="tcp close" loading="lazy" decoding="async" width="666" height="556"></p>
+
+
+<fieldset class="tcp-diagram-switch" aria-label="切换 TCP 四次挥手图">
+<input type="radio" name="tcp-close-view" id="tcp-close-new" value="new" checked>
+<label for="tcp-close-new">新版时序图</label>
+<input type="radio" name="tcp-close-view" id="tcp-close-original" value="original">
+<label for="tcp-close-original">原图</label>
+<figure data-view="new" style="width: min(100%, 680px); margin: 0.75em auto;">
+  <p class="tcp-diagram-scroll-note">窄屏可左右滑动看完整图。</p>
+  <div class="tcp-diagram-canvas" style="--tcp-diagram-width: 642px; --tcp-diagram-compact-width: 550px;" tabindex="0" role="region" aria-label="TCP 四次挥手时序图，窄屏可横向滚动">
+    <svg viewBox="0 0 642 572" role="img" aria-labelledby="tcp-close-title tcp-close-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="tcp-close-title">TCP 四次挥手时序图</title>
+      <desc id="tcp-close-desc">时间从上往下。A 先发 FIN，B 回 ACK，连接进入半关闭：B 仍可发送数据，A 仍可接收并回复 ACK。等 B 也发完数据，再向 A 发 FIN。A 回最后一个 ACK 后进入 TIME_WAIT，B 收到后关闭，A 等待 2MSL 后关闭。</desc>
+      <defs>
+        <marker id="tcp-close-arrow" viewBox="0 0 10 8" refX="10" refY="4" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 4 0 8Z" fill="#404040"/></marker>
+      </defs>
+      <rect width="642" height="572" fill="#fff"/>
+      <g fill="#f7f7f7">
+        <path d="M16 90H178V498H16zM466 184H628V480H466z"/>
+      </g>
+      <g fill="none" stroke="#404040" stroke-width="2">
+        <path d="M16 30H178V556H16zM466 30H628V556H466z"/>
+        <path d="M16 90H178M16 268H178M16 348H178M16 498H178M466 184H628M466 262H628M466 480H628"/>
+      </g>
+      <g fill="none" stroke="#404040" stroke-width="2" marker-end="url(#tcp-close-arrow)">
+        <path d="M178 60H466" marker-start="url(#tcp-close-arrow)"/>
+        <path d="M178 90L466 184"/><path d="M466 184L178 268"/>
+        <path d="M466 262L178 348"/><path d="M178 348L466 480"/>
+      </g>
+      <g fill="#fff">
+        <rect x="286" y="50" width="72" height="20"/>
+        <rect x="271" y="127" width="102" height="20"/><rect x="262" y="216" width="120" height="20"/>
+        <rect x="208" y="295" width="228" height="20"/><rect x="262" y="404" width="120" height="20"/>
+      </g>
+      <rect x="252" y="250" width="140" height="32" rx="4" fill="#f7f7f7" stroke="#e6e6e6"/>
+      <g text-anchor="middle" fill="#2d2d2d">
+        <g font-family="system-ui, sans-serif" font-size="15">
+          <text x="97" y="20" font-weight="600">A · 主动关闭方</text><text x="547" y="20" font-weight="600">B · 被动关闭方</text>
+          <text x="322" y="65" font-weight="600">数据传输</text><text x="97" y="439">（等待 2MSL）</text>
+        </g>
+        <g font-family="system-ui, sans-serif" font-size="11">
+          <text x="322" y="263"><tspan font-weight="600">半关闭：</tspan>B 仍可发送数据</text>
+          <text x="322" y="277">A 仍可接收并回复 ACK</text>
+        </g>
+        <g font-family="ui-monospace, monospace" font-size="15">
+          <text x="97" y="65">ESTABLISHED</text><text x="547" y="112">ESTABLISHED</text>
+          <text x="97" y="184">FIN_WAIT_1</text><text x="547" y="228">CLOSE_WAIT</text>
+          <text x="97" y="313">FIN_WAIT_2</text><text x="547" y="376">LAST_ACK</text>
+          <text x="97" y="419">TIME_WAIT</text><text x="97" y="532">CLOSED</text><text x="547" y="524">CLOSED</text>
+          <text x="322" y="142">FIN, seq=p</text><text x="322" y="231">ACK, ack=p+1</text>
+          <text x="322" y="310">FIN, ACK, seq=q, ack=p+1</text><text x="322" y="419">ACK, ack=q+1</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <figcaption>第一次 FIN 只结束 A 的发送方向。<code>p</code> 和 <code>q</code> 分别是 A 和 B 发送 FIN 时的序列号；FIN 占用一个序列号。原图的 <code>FIN-WAIT2</code>、<code>CLOSED-WAIT</code> 分别写作 <code>FIN_WAIT_2</code>、<code>CLOSE_WAIT</code>。</figcaption>
+</figure>
+<div data-view="original">
+<img src="/images/tcp-state-diagram/TCP四次挥手.png" alt="TCP 四次挥手原图，标有各报文的序列号和确认号" loading="lazy" decoding="async" width="641" height="553">
+</div>
+</fieldset>
+
+
+<p>图中只标出关键标志位；如果 B 确认 A 的 FIN 时也已经发完数据，第 2、3 步可以合成一个 <code>FIN + ACK</code> 报文。</p>
+
+<fieldset class="tcp-diagram-switch" aria-label="切换 TCP 关闭状态迁移图">
+<input type="radio" name="tcp-close-states-view" id="tcp-close-states-new" value="new" checked>
+<label for="tcp-close-states-new">新版状态图</label>
+<input type="radio" name="tcp-close-states-view" id="tcp-close-states-original" value="original">
+<label for="tcp-close-states-original">原图</label>
+<figure data-view="new" style="width: min(100%, 680px); margin: 0.75em auto;">
+  <p class="tcp-diagram-scroll-note">窄屏可左右滑动看完整图。</p>
+  <div class="tcp-diagram-canvas" style="--tcp-diagram-width: 666px; --tcp-diagram-compact-width: 600px;" tabindex="0" role="region" aria-label="TCP 关闭状态图，窄屏可横向滚动">
+    <svg viewBox="0 0 666 560" role="img" aria-labelledby="tcp-close-states-title tcp-close-states-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="tcp-close-states-title">TCP 关闭时两端的状态迁移</title>
+      <desc id="tcp-close-states-desc">客户端和服务端起初都处于 ESTABLISHED。客户端应用发起关闭后，客户端发送 FIN，进入 FIN_WAIT_1。服务端收到 FIN 后回复 ACK，进入 CLOSE_WAIT。服务端应用读完已收数据后读到 EOF，但仍可发送数据。客户端收到对本端 FIN 的 ACK 后进入 FIN_WAIT_2，等待服务端发 FIN。服务端等本端应用关闭发送方向后发 FIN，进入 LAST_ACK。客户端收到 FIN 后回 ACK，进入 TIME_WAIT；服务端收到 ACK 后关闭，客户端等待 2MSL 后关闭。圆形编号标记客户端 FIN 和对应的 ACK，方形编号标记服务端 FIN 和对应的 ACK。</desc>
+      <defs>
+        <marker id="tcp-close-states-client" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="6" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#2355b5"/></marker>
+        <marker id="tcp-close-states-server" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="6" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#733bb0"/></marker>
+        <marker id="tcp-close-states-step" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#404040"/></marker>
+      </defs>
+      <rect width="666" height="560" fill="#fff"/>
+      <g fill="#f7f7f7" stroke="#404040" stroke-width="2">
+        <rect x="4" y="40" width="238" height="512"/><rect x="421" y="40" width="241" height="512"/>
+      </g>
+      <g fill="none" stroke-width="2">
+        <g stroke="#2355b5" marker-end="url(#tcp-close-states-client)"><path d="M242 120L421 160"/><path d="M242 340L421 381"/></g>
+        <g stroke="#733bb0" marker-end="url(#tcp-close-states-server)"><path d="M421 180L242 220"/><path d="M421 281L242 320"/></g>
+      </g>
+      <g fill="none" stroke="#404040" stroke-width="1.6" marker-end="url(#tcp-close-states-step)">
+        <path d="M58 109V132"/><path d="M58 169V213"/><path d="M58 248V333"/>
+        <path d="M58 408V503" stroke-dasharray="3 5"/>
+        <path d="M608 109V183"/><path d="M608 220V283"/><path d="M608 320V373"/>
+      </g>
+      <g stroke="#404040" stroke-width="1.5">
+        <path d="M12 80H104V104H12zM562 80H654V104H562z" fill="#e4f5dc"/>
+        <path d="M12 140H104V164H12zM12 220H104V244H12zM12 340H104V364H12z" fill="#fff0da"/>
+        <path d="M562 190H654V214H562zM562 290H654V314H562z" fill="#fce6e3"/>
+        <path d="M12 510H104V534H12zM562 380H654V404H562z" fill="#ededed"/>
+      </g>
+      <g stroke="#775716" stroke-width="1.4">
+        <path d="M55 374H61M58 374V379M64 381L67 378" fill="none"/>
+        <circle cx="58" cy="389" r="10" fill="#ffe08a"/>
+        <path d="M58 383V389L62 392" fill="none"/>
+      </g>
+      <g fill="#fff" stroke="#404040" stroke-width="1.4">
+        <circle cx="331.5" cy="115" r="13"/><circle cx="331.5" cy="174" r="13"/>
+        <rect x="318.5" y="261" width="26" height="26"/><rect x="318.5" y="321" width="26" height="26"/>
+      </g>
+      <path d="M309 132H354V149H309zM309 192H354V209H309zM309 290H354V309H309zM309 351H354V370H309z" fill="#fff"/>
+      <g fill="#2d2d2d" font-family="system-ui, sans-serif">
+        <g text-anchor="middle" font-size="18" font-weight="600">
+          <text x="123" y="27">客户端</text><text x="541" y="27">服务端</text>
+        </g>
+        <g font-size="13" font-weight="600" text-decoration="underline">
+          <text x="12" y="65">客户端状态</text><text x="654" y="65" text-anchor="end">服务端状态</text>
+        </g>
+        <g font-size="13">
+          <g text-anchor="end">
+            <text x="230" y="108">收到本端应用的</text><text x="230" y="125">关闭请求</text><text x="230" y="142">发送 FIN</text>
+            <text x="230" y="175">等待本端 FIN</text><text x="230" y="192">被服务端确认</text>
+            <text x="230" y="224">收到对 FIN 的 ACK</text><text x="230" y="276">等待服务端的 FIN</text>
+            <text x="230" y="326">收到 FIN</text><text x="230" y="345">回复 ACK</text>
+            <text x="230" y="427">等待两倍报文</text><text x="230" y="444">最大生存时间（MSL）</text><text x="230" y="461">即 2MSL</text>
+          </g>
+          <text x="433" y="124">正常通信</text>
+          <text x="433" y="157">收到 FIN</text><text x="433" y="174">回复 ACK</text><text x="433" y="191">读完数据后见 EOF</text>
+          <text x="433" y="235">等待本端应用关闭</text><text x="433" y="252">此时仍可发送数据</text>
+          <text x="433" y="273">应用关闭发送方向</text><text x="433" y="292">发送 FIN</text>
+          <text x="433" y="338">等待对 FIN 的确认</text><text x="433" y="355">（ACK）</text>
+          <text x="433" y="385">收到 ACK</text>
+        </g>
+      </g>
+      <g text-anchor="middle" fill="#2d2d2d" font-family="ui-monospace, monospace" font-size="12" font-weight="600">
+        <text x="58" y="96">ESTABLISHED</text><text x="608" y="96">ESTABLISHED</text>
+        <text x="58" y="156">FIN_WAIT_1</text><text x="58" y="236">FIN_WAIT_2</text><text x="58" y="356">TIME_WAIT</text><text x="58" y="526">CLOSED</text>
+        <text x="608" y="206">CLOSE_WAIT</text><text x="608" y="306">LAST_ACK</text><text x="608" y="396">CLOSED</text>
+        <text x="331.5" y="119">#1</text><text x="331.5" y="178">#2</text><text x="331.5" y="278">#1</text><text x="331.5" y="338">#2</text>
+        <g font-size="14" font-style="italic">
+          <text x="331.5" y="145" fill="#2355b5">FIN</text><text x="331.5" y="205" fill="#733bb0">ACK</text>
+          <text x="331.5" y="305" fill="#733bb0">FIN</text><text x="331.5" y="365" fill="#2355b5">ACK</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <figcaption><strong>圆形：</strong>客户端发 FIN，服务端回 ACK。<br>
+  <strong>方形：</strong>服务端发 FIN，客户端回 ACK。<br>
+  两组各自编号：#1 是 FIN，#2 是对它的 ACK。图中以客户端先关闭为例，服务端也可以先发 FIN。<br>
+  原图来源：The TCP/IP Guide。</figcaption>
+</figure>
+<div data-view="original">
+<img src="/images/tcp-state-diagram/tcp-close.png" alt="TCP 关闭状态迁移原图，展示客户端与服务端的状态及报文交换" loading="lazy" decoding="async" width="666" height="556">
+</div>
+</fieldset>
+
+
 <h3 id="CLOSE-WAIT-堆积的危害"><a href="#CLOSE-WAIT-堆积的危害" class="headerlink" title="CLOSE_WAIT 堆积的危害"></a>CLOSE_WAIT 堆积的危害</h3><p>每个 CLOSE_WAIT 连接会占据一个文件描述，堆积大量的 CLOSE_WAIT 可能造成文件描述符不够用，导致建连或打开文件失败，报错 <code>too many open files</code>:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dial udp 9.215.0.48:9073: socket: too many open files</span><br></pre></td></tr></table></figure>
 
@@ -551,7 +812,7 @@ A直接跑路还有一个问题是,A的端口就直接空出来了,但是B不知
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="站点总字数">880k</span>
+    <span title="站点总字数">883k</span>
   </span>
 </div>
 <div class="busuanzi-count">

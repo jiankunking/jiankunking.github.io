@@ -29948,9 +29948,100 @@ Article text:
 
 TCP的三次握手、TCP四次挥手、TCP状态机
 
+下面三张图展示正常建连和一端先发 FIN 的典型关闭流程，不展开丢包重传、同时打开或同时关闭。时间从上往下，图上间距不代表实际耗时。
+
 TCP的三次握手
 
+新版时序图
+
+原图
+
+ 窄屏可左右滑动看完整图。
+
+ TCP 三次握手时序图
+ 时间从上往下。客户端和服务端初始均为 CLOSED，服务端先进入 LISTEN。客户端发送序列号为 x 的 SYN 后进入 SYN_SENT；服务端回序列号为 y、确认号为 x 加 1 的 SYN 加 ACK 后进入 SYN_RECEIVED。客户端进入 ESTABLISHED 并发出序列号为 x 加 1、确认号为 y 加 1 的 ACK。服务端收到后也进入 ESTABLISHED，双方可以传输数据。
+
+ 客户端服务端数据传输
+
+ CLOSEDCLOSED
+ SYN_SENTLISTEN
+ ESTABLISHEDSYN_RECEIVEDESTABLISHED
+
+ SYN, seq=x
+ SYN, ACK, seq=y, ack=x+1
+ ACK, seq=x+1, ack=y+1
+
+ x 和 y 分别是客户端和服务端选择的初始序列号。SYN 占用一个序列号，所以对端分别用 x+1 和 y+1 确认。原图的 SYN-RCVD 即 SYN_RECEIVED。
+
 TCP四次挥手
+
+新版时序图
+
+原图
+
+ 窄屏可左右滑动看完整图。
+
+ TCP 四次挥手时序图
+ 时间从上往下。A 先发 FIN，B 回 ACK，连接进入半关闭：B 仍可发送数据，A 仍可接收并回复 ACK。等 B 也发完数据，再向 A 发 FIN。A 回最后一个 ACK 后进入 TIME_WAIT，B 收到后关闭，A 等待 2MSL 后关闭。
+
+ A · 主动关闭方B · 被动关闭方
+ 数据传输（等待 2MSL）
+
+ 半关闭：B 仍可发送数据
+ A 仍可接收并回复 ACK
+
+ ESTABLISHEDESTABLISHED
+ FIN_WAIT_1CLOSE_WAIT
+ FIN_WAIT_2LAST_ACK
+ TIME_WAITCLOSEDCLOSED
+ FIN, seq=pACK, ack=p+1
+ FIN, ACK, seq=q, ack=p+1ACK, ack=q+1
+
+ 第一次 FIN 只结束 A 的发送方向。p 和 q 分别是 A 和 B 发送 FIN 时的序列号；FIN 占用一个序列号。原图的 FIN-WAIT2、CLOSED-WAIT 分别写作 FIN_WAIT_2、CLOSE_WAIT。
+
+图中只标出关键标志位；如果 B 确认 A 的 FIN 时也已经发完数据，第 2、3 步可以合成一个 FIN + ACK 报文。
+
+新版状态图
+
+原图
+
+ 窄屏可左右滑动看完整图。
+
+ TCP 关闭时两端的状态迁移
+ 客户端和服务端起初都处于 ESTABLISHED。客户端应用发起关闭后，客户端发送 FIN，进入 FIN_WAIT_1。服务端收到 FIN 后回复 ACK，进入 CLOSE_WAIT。服务端应用读完已收数据后读到 EOF，但仍可发送数据。客户端收到对本端 FIN 的 ACK 后进入 FIN_WAIT_2，等待服务端发 FIN。服务端等本端应用关闭发送方向后发 FIN，进入 LAST_ACK。客户端收到 FIN 后回 ACK，进入 TIME_WAIT；服务端收到 ACK 后关闭，客户端等待 2MSL 后关闭。圆形编号标记客户端 FIN 和对应的 ACK，方形编号标记服务端 FIN 和对应的 ACK。
+
+ 客户端服务端
+
+ 客户端状态服务端状态
+
+ 收到本端应用的关闭请求发送 FIN
+ 等待本端 FIN被服务端确认
+ 收到对 FIN 的 ACK等待服务端的 FIN
+ 收到 FIN回复 ACK
+ 等待两倍报文最大生存时间（MSL）即 2MSL
+
+ 正常通信
+ 收到 FIN回复 ACK读完数据后见 EOF
+ 等待本端应用关闭此时仍可发送数据
+ 应用关闭发送方向发送 FIN
+ 等待对 FIN 的确认（ACK）
+ 收到 ACK
+
+ ESTABLISHEDESTABLISHED
+ FIN_WAIT_1FIN_WAIT_2TIME_WAITCLOSED
+ CLOSE_WAITLAST_ACKCLOSED
+ #1#2#1#2
+
+ FINACK
+ FINACK
+
+ 圆形：客户端发 FIN，服务端回 ACK。
+
+ 方形：服务端发 FIN，客户端回 ACK。
+
+ 两组各自编号：#1 是 FIN，#2 是对它的 ACK。图中以客户端先关闭为例，服务端也可以先发 FIN。
+
+ 原图来源：The TCP/IP Guide。
 
 CLOSE_WAIT 堆积的危害
 
