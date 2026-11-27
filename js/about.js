@@ -36,8 +36,15 @@
   }
 
   document.querySelectorAll('[data-modal-target]').forEach(function (trigger) {
-    trigger.addEventListener('click', function () {
-      openModal(document.getElementById(trigger.getAttribute('data-modal-target')), trigger);
+    var modal = document.getElementById(trigger.getAttribute('data-modal-target'));
+    if (!modal) return;
+
+    trigger.setAttribute('aria-haspopup', 'dialog');
+    trigger.setAttribute('aria-controls', modal.id);
+    trigger.addEventListener('click', function (event) {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      openModal(modal, trigger);
     });
   });
 

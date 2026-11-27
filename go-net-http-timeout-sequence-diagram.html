@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="翻译介绍 Go net&#x2F;http 的各类超时设置，通过时序分析区分服务器端和客户端不同阶段的超时行为。">
 <meta property="og:type" content="article">
@@ -66,8 +66,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
 <script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
-<script src="/js/third-party/search/local-search.js" defer></script>
+  
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" defer></script>
+<script src="/js/site-search.js" defer></script>
 
 
 
@@ -102,9 +103,9 @@
       <header class="header" itemscope itemtype="http://schema.org/WPHeader">
 <div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏" role="button">
+    <button type="button" class="toggle" aria-label="切换导航栏" aria-controls="site-nav" aria-expanded="false">
       <span class="toggle-line"></span><span class="toggle-line"></span><span class="toggle-line"></span>
-    </div>
+    </button>
   </div>
   <div class="site-meta">
     
@@ -119,48 +120,41 @@
     <p class="site-subtitle" itemprop="description">AI 网关与后端稳定性实践</p>
     
   </div>
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger" aria-label="搜索" role="button">
-      <i class="fa fa-search fa-fw fa-lg"></i>
+  
+    <div class="site-nav-right">
+      <button type="button" class="toggle popup-trigger" aria-label="搜索" aria-haspopup="dialog" aria-controls="site-search">
+        <i class="fa fa-search fa-fw fa-lg" aria-hidden="true"></i>
+      </button>
     </div>
-  </div>
+  
 </div>
 
 
 
-<nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li><li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li><li class="menu-item menu-item-英文"><a href="/en/" rel="section"><i class="fa-solid fa-language fa-fw"></i>英文</a></li><li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li><li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li><li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+
+<nav class="site-nav" id="site-nav">
+  <ul class="main-menu menu">
+    <li class="menu-item menu-item-首页"><a href="/" rel="section"><i class="fa-solid fa-home fa-fw"></i>首页</a></li>
+    <li class="menu-item menu-item-专题"><a href="/topics/" rel="section"><i class="fa-solid fa-compass fa-fw"></i>专题</a></li>
+    <li class="menu-item menu-item-归档"><a href="/archives/" rel="section"><i class="fa-solid fa-box-archive fa-fw"></i>归档</a></li>
+    <li class="menu-item menu-item-读书"><a href="/books/" rel="section"><i class="fa-solid fa-book-open fa-fw"></i>读书</a></li>
+    <li class="menu-item menu-item-英文"><a href="/en/" rel="section"><i class="fa-solid fa-language fa-fw"></i>英文</a></li>
+    <li class="menu-item menu-item-友链"><a href="/links/" rel="section"><i class="fa-solid fa-link fa-fw"></i>友链</a></li>
+    <li class="menu-item menu-item-关于"><a href="/about/" rel="section"><i class="fa-solid fa-user fa-fw"></i>关于</a></li>
+    <li class="menu-item menu-item-分类"><a href="/categories/" rel="section"><i class="fa-solid fa-folder fa-fw"></i>分类</a></li>
+    <li class="menu-item menu-item-标签"><a href="/tags/" rel="section"><i class="fa-solid fa-tags fa-fw"></i>标签</a></li>
+    
+    
       <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
-        </a>
+        <button type="button" class="popup-trigger" aria-haspopup="dialog" aria-controls="site-search"><i class="fa fa-search fa-fw" aria-hidden="true"></i>搜索
+        </button>
       </li>
+    
   </ul>
 </nav>
 
 
 
-  <div class="search-pop-overlay">
-    <div class="popup search-popup">
-      <div class="search-header">
-        <span class="search-icon">
-          <i class="fa fa-search"></i>
-        </span>
-        <div class="search-input-container">
-          <input autocomplete="off" autocapitalize="off" maxlength="80"
-                placeholder="搜索..." spellcheck="false"
-                type="search" class="search-input">
-        </div>
-        <span class="popup-btn-close" role="button">
-          <i class="fa fa-times-circle"></i>
-        </span>
-      </div>
-      <div class="search-result-container">
-        <div class="search-result-icon">
-          <i class="fa fa-spinner fa-pulse fa-5x"></i>
-        </div>
-      </div>
-    </div>
-  </div>
 
 
 </header>
@@ -188,7 +182,7 @@
         <div class="site-overview-wrap sidebar-panel">
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="衣舞晨风（jiankunking）"
-      src="/images/avatar/avatar.png" decoding="async" width="96" height="96">
+      src="/images/avatar/avatar-192.webp" decoding="async" width="96" height="96">
   <p class="site-author-name" itemprop="name">衣舞晨风（jiankunking）</p>
   <div class="site-description" itemprop="description">衣舞晨风（jiankunking）的工程实践博客，记录 AI 网关、APISIX / API7、Elasticsearch 和 Go 系统中的真实故障、架构取舍与性能优化，分享源码、实验和监控支撑的排查过程。</div>
 </div>
@@ -260,7 +254,7 @@
     <link itemprop="mainEntityOfPage" href="https://jiankunking.com/go-net-http-timeout-sequence-diagram.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar/avatar.png">
+      <meta itemprop="image" content="/images/avatar/avatar-192.webp">
       <meta itemprop="name" content="衣舞晨风（jiankunking）">
     </span>
 
@@ -306,6 +300,9 @@
       <span class="post-meta-item-text">阅读次数：</span>
       <span id="busuanzi_value_page_pv"></span>
     </span>
+    
+    
+  
     <span class="post-meta-break"></span>
     <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
@@ -332,6 +329,12 @@
     
     <div class="post-body" itemprop="articleBody">
 
+<aside class="post-reading-context" aria-label="阅读提示">
+  <a class="post-reading-context__topic" href="/topics/backend-cloud-native/">后端与云原生 <span aria-hidden="true">→</span></a>
+  <p><strong>阅读范围</strong> 原文主要基于 Go 1.6 / 1.7；移植旧接口或流式响应示例前，先读文中的译者注并核对当前 Go 版本。</p>
+  <p><strong>先看结论</strong> 先识别请求耗时落在哪个阶段，再选择连接、响应头或整体请求的超时控制。</p>
+</aside>
+
 <aside class="post-provenance post-provenance--translation" aria-label="翻译说明"><strong>翻译说明</strong><dl><div><dt>原作标题</dt><dd>The complete guide to Go net/http timeouts</dd></div><div><dt>原始来源</dt><dd><a href="https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/" target="_blank" rel="noopener noreferrer">查看原始来源</a></dd></div><div><dt>译者</dt><dd>衣舞晨风（jiankunking）</dd></div><div><dt>版权说明</dt><dd>原文版权归原作者或原发布方所有</dd></div></dl></aside><blockquote>
 <p>翻译自：The complete guide to Go net&#x2F;http timeouts<br>地址：<a href="https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/">https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/</a></p>
 </blockquote>
@@ -348,7 +351,7 @@
 <p>Deadlines不是超时。一旦设置，它们就会永久生效(直到下一次调用SetDeadline)，不管在此期间是否使用连接以及如何使用连接。因此，要使用SetDeadline建立超时，您必须在每次读&#x2F;写操作之前调用它。</p>
 <p>实际开发中，你通常不需要直接调用SetDeadline，而是在标准库net&#x2F;http中使用更高层次的超时设置。这里讨论的网络读写超时基于 Deadline，并不会在每次发送或接收数据时自动重置；Context 和 Client.Timeout 还会通过计时器、取消信号控制请求生命周期。</p>
 <h2 id="Server-Timeouts"><a href="#Server-Timeouts" class="headerlink" title="Server Timeouts"></a>Server Timeouts</h2><p><a href="https://blog.cloudflare.com/exposing-go-on-the-internet/">“So you want to expose Go on the Internet”</a>一文提供了有关服务器超时的更多信息，尤其是关于 HTTP&#x2F;2 和 Go 1.7 bug 的内容。</p>
-<p><img src="/images/go-net-http-timeout-sequence-diagram/%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%B6%85%E6%97%B6.png" alt="服务器超时" loading="eager" fetchpriority="high" decoding="async" width="2215" height="648"></p>
+<p><img src="/images/go-net-http-timeout-sequence-diagram/%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%B6%85%E6%97%B6.png" alt="Go HTTP 服务端的请求时序，以及 ReadTimeout 和 WriteTimeout 覆盖的阶段" loading="eager" fetchpriority="high" decoding="async" width="2215" height="648"></p>
 <p>对于暴露于Internet的HTTP服务器来说，设置客户端连接超时，是至关重要的。否则，非常缓慢或消失的客户端可能会泄漏文件描述符，最终导致以下情况:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http: Accept error: accept tcp [::]:80: accept4: too many open files; retrying in 5ms</span><br></pre></td></tr></table></figure>
 
@@ -369,8 +372,8 @@
 <blockquote>
 <p>译者注：HTTP&#x2F;1.x 下可以通过 Hijack 接管底层连接，但接管后就不能继续按普通 ResponseWriter 的方式处理响应，HTTP&#x2F;2 也不支持 Hijack，因此它不是这里的直接替代方案。Go 1.20 起提供了 <a href="https://pkg.go.dev/net/http#ResponseController">http.ResponseController</a>，可在支持的 ResponseWriter 上设置读写 Deadline；不支持时会返回错误。流式响应可以据此设置逐次写入的空闲超时。现代 Server 还提供 ReadHeaderTimeout、IdleTimeout，TLS 握手的超时处理也应以实际版本为准。</p>
 </blockquote>
-<p><img src="/images/go-net-http-timeout-sequence-diagram/Hijack%E8%8E%B7%E5%8F%96conn.png" alt="Hijack获取conn" loading="lazy" decoding="async" width="684" height="309"></p>
-<h2 id="Client-Timeouts"><a href="#Client-Timeouts" class="headerlink" title="Client Timeouts"></a>Client Timeouts</h2><p><img src="/images/go-net-http-timeout-sequence-diagram/%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B6%85%E6%97%B6.png" alt="客户端超时" loading="lazy" decoding="async" width="2234" height="603"></p>
+<p><img src="/images/go-net-http-timeout-sequence-diagram/Hijack%E8%8E%B7%E5%8F%96conn.png" alt="HTTP Handler 通过 Hijack 接管底层连接的示例" loading="lazy" decoding="async" width="684" height="309"></p>
+<h2 id="Client-Timeouts"><a href="#Client-Timeouts" class="headerlink" title="Client Timeouts"></a>Client Timeouts</h2><p><img src="/images/go-net-http-timeout-sequence-diagram/%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B6%85%E6%97%B6.png" alt="Go HTTP 客户端从建连、TLS 握手到读取响应的时序与超时设置" loading="lazy" decoding="async" width="2234" height="603"></p>
 <p>客户端超时，可以很简单，也可以很复杂，取决于你怎么用。但同样重要的是：要防止资源泄漏和阻塞。</p>
 <p>最简单的使用超时的方式是<a href="https://golang.org/pkg/net/http/#Client">http.Client</a>。它涵盖整个交互过程，从发起连接(如果未重用连接)到读完响应体（body）。</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">c := &amp;http.Client&#123;</span><br><span class="line">    Timeout: 15 * time.Second,</span><br><span class="line">&#125;</span><br><span class="line">resp, err := c.Get(&quot;https://jiankunking.com&quot;)</span><br></pre></td></tr></table></figure>
@@ -410,6 +413,21 @@
     
 
     <footer class="post-footer">
+
+<section class="post-discovery" aria-labelledby="post-discovery-title">
+  <div class="home-section-heading">
+    <h2 id="post-discovery-title">沿这个问题继续读</h2>
+    <a href="/topics/backend-cloud-native/">后端与云原生专题 <span aria-hidden="true">→</span></a>
+  </div>
+  <ul class="post-discovery__list">
+    
+    <li><a href="/tuning-the-go-http-client-library.html">Go HTTP Client 大量 TIME_WAIT：连接复用与 Transport 调优实录</a><p>把超时与连接生命周期结合起来，定位连接没有复用的场景。</p></li>
+    
+    <li><a href="/APISIX-504-troubleshooting.html">APISIX 504 为什么总在 15 秒出现？一次 SYN 重传超时排查</a><p>看一例请求还没收到响应头、却固定在 15 秒报错的线上排查。</p></li>
+    
+  </ul>
+  <p class="post-discovery__contact">也在处理类似问题？<a href="/about/#contact">联系我交流</a>，可以附上脱敏后的版本、现象和排查过程。</p>
+</section>
 
 
           <div class="reward-container">
@@ -502,7 +520,7 @@
 
 
 
-    <div class="comments giscus-container"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
+    <div id="giscus-comments" class="comments giscus-container" tabindex="-1"><script src="https://giscus.app/client.js" data-repo="jiankunking/blog-comments" data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MTA0MTg=" data-category="Announcements" data-category-id="DIC_kwDOEcA58s4DFvOq" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async></script></div>
 </div>
   </main>
 
@@ -568,5 +586,21 @@
   <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
 </noscript>
 
+  
+  <dialog id="site-search" class="site-search" aria-labelledby="site-search-title" data-preview="/search-preview.json">
+    <header class="site-search__header">
+      <h2 id="site-search-title">搜索</h2>
+      <form method="dialog"><button type="submit" class="site-search__close">关闭</button></form>
+    </header>
+    <input type="search" class="search-input" aria-label="搜索文章" placeholder="搜索..." maxlength="80" autocomplete="off" spellcheck="false" autofocus>
+    <div class="site-search__options">
+      <label><input type="checkbox" class="site-search__full"> 搜索正文</label>
+      <button type="button" class="site-search__retry" hidden>重试</button>
+    </div>
+    <p class="site-search__status" role="status"></p>
+    <div class="site-search__results"></div>
+  </dialog>
+
+<script src="/js/site-controls.js" defer></script>
 </body>
 </html>
