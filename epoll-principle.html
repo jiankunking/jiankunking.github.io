@@ -14,7 +14,8 @@
 
 
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous"></noscript>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
@@ -22,7 +23,7 @@
     <meta name="description" content="从网卡收包、CPU 中断和进程调度出发，分析 select、poll 到 epoll 的演进过程及高性能事件通知原理。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[转]Epoll 的本质是什么？">
-<meta property="og:url" content="https://jiankunking.com/epoll-principle.html">
+<meta property="og:url" content="https://my.oschina.net/editorial-story/blog/3052308">
 <meta property="og:site_name" content="衣舞晨风（jiankunking）">
 <meta property="og:description" content="从网卡收包、CPU 中断和进程调度出发，分析 select、poll 到 epoll 的演进过程及高性能事件通知原理。">
 <meta property="og:locale" content="zh_CN">
@@ -57,7 +58,7 @@
 
 
 
-<link rel="canonical" href="https://jiankunking.com/epoll-principle.html">
+<link rel="canonical" href="https://my.oschina.net/editorial-story/blog/3052308">
 
 
 <script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jiankunking.com/epoll-principle.html","path":"epoll-principle.html","title":"[转]Epoll 的本质是什么？"}</script>
@@ -100,22 +101,23 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/epoll-principle.html#article","url":"https://jiankunking.com/epoll-principle.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/epoll-principle.html"},"headline":"[转]Epoll 的本质是什么？","description":"从网卡收包、CPU 中断和进程调度出发，分析 select、poll 到 epoll 的演进过程及高性能事件通知原理。","abstract":"从网卡收包、CPU 中断和进程调度出发，分析 select、poll 到 epoll 的演进过程及高性能事件通知原理。","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2019-05-24T10:30:48.000Z","dateModified":"2019-05-24T10:30:48.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"contributor":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Linux","keywords":"Linux, Epoll","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/epoll-principle.html#breadcrumb"},"isBasedOn":{"@type":"CreativeWork","name":"Epoll 的本质是什么？","url":"https://my.oschina.net/editorial-story/blog/3052308"},"citation":"https://my.oschina.net/editorial-story/blog/3052308","creditText":"Epoll 的本质是什么？","copyrightNotice":"原文版权归原作者或原发布方所有"},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年开始从事后端开发，后来转向平台工程与架构设计，目前从事大模型应用架构，关注 AI 网关、模型接入与系统稳定性。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"目前从事大模型应用架构，关注模型接入、网关流量与成本治理，以及生产环境的可观测性和稳定性。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/epoll-principle.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Linux","item":"https://jiankunking.com/categories/linux/"},{"@type":"ListItem","position":3,"name":"[转]Epoll 的本质是什么？","item":"https://jiankunking.com/epoll-principle.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://my.oschina.net/editorial-story/blog/3052308#article","url":"https://my.oschina.net/editorial-story/blog/3052308","mainEntityOfPage":{"@type":"WebPage","@id":"https://my.oschina.net/editorial-story/blog/3052308"},"headline":"[转]Epoll 的本质是什么？","description":"从网卡收包、CPU 中断和进程调度出发，分析 select、poll 到 epoll 的演进过程及高性能事件通知原理。","abstract":"从网卡收包、CPU 中断和进程调度出发，分析 select、poll 到 epoll 的演进过程及高性能事件通知原理。","image":["https://jiankunking.com/images/linux-epoll/%E9%A6%96%E9%A1%B5%E5%9B%BE.jpg"],"datePublished":"2019-05-24T10:30:48.000Z","dateModified":"2019-05-24T10:30:48.000Z","author":{"@id":"https://jiankunking.com/about/#person"},"contributor":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"articleSection":"Linux","keywords":"Linux, Epoll","inLanguage":"zh-CN","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://my.oschina.net/editorial-story/blog/3052308#breadcrumb"},"isBasedOn":{"@type":"CreativeWork","name":"Epoll 的本质是什么？","url":"https://my.oschina.net/editorial-story/blog/3052308"},"citation":"https://my.oschina.net/editorial-story/blog/3052308","creditText":"Epoll 的本质是什么？","copyrightNotice":"原文版权归原作者或原发布方所有"},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"13 年后端与架构经验，先后主导 PaaS 平台、多云云原生网关与企业级 AI 网关的架构设计与生产落地，目前聚焦大模型统一接入与流量成本治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"主导 PaaS 平台、多云云原生网关与企业级 AI 网关建设，目前负责大模型统一接入与流量成本治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://my.oschina.net/editorial-story/blog/3052308#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Linux","item":"https://jiankunking.com/categories/linux/"},{"@type":"ListItem","position":3,"name":"[转]Epoll 的本质是什么？","item":"https://my.oschina.net/editorial-story/blog/3052308"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
 <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="stylesheet" href="/css/design-tokens.css">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="衣舞晨风（jiankunking）" type="application/atom+xml">
-<meta property="og:image" content="https://jiankunking.com/images/og-default.png">
+<meta property="og:image" content="https://jiankunking.com/images/linux-epoll/%E9%A6%96%E9%A1%B5%E5%9B%BE.jpg">
 <meta property="og:image:alt" content="[转]Epoll 的本质是什么？">
-<meta name="twitter:image" content="https://jiankunking.com/images/og-default.png">
+<meta name="twitter:image" content="https://jiankunking.com/images/linux-epoll/%E9%A6%96%E9%A1%B5%E5%9B%BE.jpg">
 <meta name="twitter:image:alt" content="[转]Epoll 的本质是什么？">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
+<a class="skip-link" href="#main">跳到主内容</a>
   <div class="headband"></div>
 
-  <main class="main">
+  <main id="main" class="main">
     <div class="column">
       <header class="header" itemscope itemtype="http://schema.org/WPHeader">
 <div class="site-brand-container">
@@ -320,6 +322,16 @@
     
     
   
+  
+    
+    
+  
+  <span class="post-meta-item post-content-type post-content-type--repost" title="内容类型：转载">
+    <span class="post-meta-item-icon"><i class="fa-solid fa-share-nodes" aria-hidden="true"></i></span>
+    <span>转载</span>
+  </span>
+
+
     <span class="post-meta-break"></span>
     <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
@@ -376,12 +388,12 @@
 <em>中断程序调用</em></p>
 <p>以键盘为例，当用户按下键盘某个按键时，键盘会给 CPU 的中断引脚发出一个高电平，CPU能够捕获这个信号，然后执行键盘中断程序。下图展示了各种硬件通过中断与 CPU 交互的过程。<br>
 <img src="/images/linux-epoll/CPU%E4%B8%AD%E6%96%AD.jpg" alt="CPU中断" loading="lazy" decoding="async" width="569" height="410"><br>
-<em>CPU 中断（图片来源：<a href="http://net.pku.edu.cn">net.pku.edu.cn</a>）</em></p>
+<em>CPU 中断（图片来源：<a target="_blank" rel="noopener" href="http://net.pku.edu.cn">net.pku.edu.cn</a>）</em></p>
 <p>现在可以回答“<strong>如何知道接收了数据？</strong>”这个问题了：<font color=DeepPink><strong>当网卡把数据写入到内存后，网卡向 CPU 发出一个中断信号，操作系统便能得知有新数据到来，再通过网卡中断程序去处理数据。</strong></font></p>
 <h2 id="三、进程阻塞为什么不占用-CPU-资源？">三、进程阻塞为什么不占用 CPU 资源？</h2>
 <p>了解 epoll 本质的第三步，要从操作系统进程调度的角度来看数据接收。<font color=DeepPink><strong>阻塞是进程调度的关键一环，指的是进程在等待某事件（如接收到网络数据）发生之前的等待状态，recv、select 和 epoll 都是阻塞方法</strong></font>。下边分析一下进程阻塞为什么不占用 CPU 资源？</p>
 <p>为简单起见，我们从普通的 recv 接收开始分析，先看看下面代码：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">//创建socket</span><br><span class="line">int s = socket(AF_INET, SOCK_STREAM, 0);   </span><br><span class="line">//绑定</span><br><span class="line">bind(s, ...)</span><br><span class="line">//监听</span><br><span class="line">listen(s, ...)</span><br><span class="line">//接受客户端连接</span><br><span class="line">int c = accept(s, ...)</span><br><span class="line">//接收客户端数据</span><br><span class="line">recv(c, ...);</span><br><span class="line">//将数据打印出来</span><br><span class="line">printf(...)</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">//创建socket</span><br><span class="line">int s = socket(AF_INET, SOCK_STREAM, 0);   </span><br><span class="line">//绑定</span><br><span class="line">bind(s, ...)</span><br><span class="line">//监听</span><br><span class="line">listen(s, ...)</span><br><span class="line">//接受客户端连接</span><br><span class="line">int c = accept(s, ...)</span><br><span class="line">//接收客户端数据</span><br><span class="line">recv(c, ...);</span><br><span class="line">//将数据打印出来</span><br><span class="line">printf(...)</span><br></pre></td></tr></table></div></figure>
 <p>这是一段最基础的网络编程代码，先新建 socket 对象，依次调用 bind、listen 与 accept，最后调用 recv 接收数据。recv 是个阻塞方法，当程序运行到 recv 时，它会一直等待，直到接收到数据才往下执行。</p>
 <p>那么阻塞的原理是什么？</p>
 <h3 id="工作队列">工作队列</h3>
@@ -423,7 +435,7 @@
 <p>先理解不太高效的 select，才能够更好地理解 epoll 的本质。</p>
 <p>假如能够预先传入一个 socket 列表，如果列表中的 socket 都没有数据，挂起进程，直到有一个 socket 收到数据，唤醒进程。这种方法很直接，也是 select 的设计思想。</p>
 <p>为方便理解，我们先复习 select 的用法。在下边的代码中，先准备一个数组 fds，让 fds 存放着所有需要监视的 socket。然后调用 select，如果 fds 中的所有 socket 都没有数据，select 会阻塞，直到有一个 socket 接收到数据，select 返回，唤醒进程。用户可以遍历 fds，通过 FD_ISSET 判断具体哪个 socket 收到数据，然后做出处理。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">int s = socket(AF_INET, SOCK_STREAM, 0);  </span><br><span class="line">bind(s, ...);</span><br><span class="line">listen(s, ...);</span><br><span class="line">int fds[] =  存放需要监听的socket;</span><br><span class="line">while(1)&#123;</span><br><span class="line">    int n = select(..., fds, ...)</span><br><span class="line">    for(int i=0; i &lt; fds.count; i++)&#123;</span><br><span class="line">        if(FD_ISSET(fds[i], ...))&#123;</span><br><span class="line">            //fds[i]的数据处理</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">int s = socket(AF_INET, SOCK_STREAM, 0);  </span><br><span class="line">bind(s, ...);</span><br><span class="line">listen(s, ...);</span><br><span class="line">int fds[] =  存放需要监听的socket;</span><br><span class="line">while(1)&#123;</span><br><span class="line">    int n = select(..., fds, ...)</span><br><span class="line">    for(int i=0; i &lt; fds.count; i++)&#123;</span><br><span class="line">        if(FD_ISSET(fds[i], ...))&#123;</span><br><span class="line">            //fds[i]的数据处理</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;&#125;</span><br></pre></td></tr></table></div></figure>
 <h3 id="select-的流程">select 的流程</h3>
 <p>select 的实现思路很直接，假如程序同时监视如下图的 sock1、sock2 和 sock3 三个 socket，那么在调用 select 之后，操作系统把进程 A 分别加入这三个 socket 的等待队列中。<br>
 <img src="/images/linux-epoll/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%8A%8A%E8%BF%9B%E7%A8%8BA%E5%88%86%E5%88%AB%E5%8A%A0%E5%85%A5%E8%BF%99%E4%B8%89%E4%B8%AAsocket%E7%9A%84%E7%AD%89%E5%BE%85%E9%98%9F%E5%88%97%E4%B8%AD.jpg" alt="操作系统把进程A分别加入这三个socket的等待队列中" loading="lazy" decoding="async" width="484" height="352"><br>
@@ -453,7 +465,7 @@
 <img src="/images/linux-epoll/%E7%9B%B8%E6%AF%94selectepoll%E6%8B%86%E5%88%86%E4%BA%86%E5%8A%9F%E8%83%BD.jpg" alt="相比selectepoll拆分了功能" loading="lazy" decoding="async" width="303" height="288"></p>
 <p><em>相比 select，epoll 拆分了功能</em></p>
 <p>为方便理解后续的内容，我们先了解一下 epoll 的用法。如下的代码中，先用 epoll_create 创建一个 epoll 对象 epfd，再通过 epoll_ctl 将需要监视的 socket 添加到 epfd 中，最后调用 epoll_wait 等待数据：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">int s = socket(AF_INET, SOCK_STREAM, 0);   </span><br><span class="line">bind(s, ...)</span><br><span class="line">listen(s, ...)</span><br><span class="line"></span><br><span class="line">int epfd = epoll_create(...);</span><br><span class="line">epoll_ctl(epfd, ...); //将所有需要监听的socket添加到epfd中</span><br><span class="line"></span><br><span class="line">while(1)&#123;</span><br><span class="line">    int n = epoll_wait(...)</span><br><span class="line">    for(接收到数据的socket)&#123;</span><br><span class="line">        //处理</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">int s = socket(AF_INET, SOCK_STREAM, 0);   </span><br><span class="line">bind(s, ...)</span><br><span class="line">listen(s, ...)</span><br><span class="line"></span><br><span class="line">int epfd = epoll_create(...);</span><br><span class="line">epoll_ctl(epfd, ...); //将所有需要监听的socket添加到epfd中</span><br><span class="line"></span><br><span class="line">while(1)&#123;</span><br><span class="line">    int n = epoll_wait(...)</span><br><span class="line">    for(接收到数据的socket)&#123;</span><br><span class="line">        //处理</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></div></figure>
 <p>功能分离，使得 epoll 有了优化的可能。</p>
 <h3 id="措施二：就绪列表">措施二：就绪列表</h3>
 <p>select 低效的另一个原因在于程序不知道哪些 socket 收到数据，只能一个个遍历。如果内核维护一个“就绪列表”，引用收到数据的 socket，就能避免遍历。如下图所示，计算机共有三个 socket，收到数据的 sock2 和 sock3 被就绪列表 rdlist 所引用。当进程被唤醒后，只要获取 rdlist 的内容，就能够知道哪些 socket 收到数据。<br>
@@ -500,7 +512,7 @@
 <h2 id="九、小结">九、小结</h2>
 <p>epoll 在 select 和 poll 的基础上引入了 eventpoll 作为中间层，使用了先进的数据结构，是一种高效的多路复用技术。这里也以表格形式简单对比一下 select、poll 与 epoll，结束此文。希望读者能有所收获。</p>
 <p><img src="/images/linux-epoll/%E5%B0%8F%E7%BB%93.jpg" alt="小结" loading="lazy" decoding="async" width="720" height="335"></p>
-<p>原文地址：<a href="https://my.oschina.net/editorial-story/blog/3052308">https://my.oschina.net/editorial-story/blog/3052308</a></p>
+<p>原文地址：<a target="_blank" rel="noopener" href="https://my.oschina.net/editorial-story/blog/3052308">https://my.oschina.net/editorial-story/blog/3052308</a></p>
 
     </div>
 
@@ -518,7 +530,7 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） 微信" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay-optimized.webp" alt="衣舞晨风（jiankunking） 微信" loading="lazy" decoding="async" width="1118" height="1534">
         <span>微信</span>
       </div>
 
@@ -669,7 +681,13 @@
   <dialog id="site-search" class="site-search" aria-labelledby="site-search-title" data-preview="/search-preview.json">
     <header class="site-search__header">
       <h2 id="site-search-title">搜索</h2>
-      <form method="dialog"><button type="submit" class="site-search__close">关闭</button></form>
+      <form method="dialog">
+        <button type="submit" class="site-search__close" aria-label="关闭搜索">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18"/>
+          </svg>
+        </button>
+      </form>
     </header>
     <input type="search" class="search-input" aria-label="搜索文章" placeholder="搜索..." maxlength="80" autocomplete="off" spellcheck="false" autofocus>
     <div class="site-search__options">

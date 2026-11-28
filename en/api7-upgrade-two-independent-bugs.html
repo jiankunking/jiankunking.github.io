@@ -14,17 +14,18 @@
 
 
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous"></noscript>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/5.0.31/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff, and perf data proved they were two independent bugs.">
+    <meta name="description" content="An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff">
 <meta property="og:type" content="website">
 <meta property="og:title" content="API7 Gateway Upgrade Postmortem: Streaming 500s and Low-Traffic CPU Saturation From Two Independent Bugs">
 <meta property="og:url" content="https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html">
 <meta property="og:site_name" content="衣舞晨风（jiankunking）">
-<meta property="og:description" content="An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff, and perf data proved they were two independent bugs.">
+<meta property="og:description" content="An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff">
 <meta property="og:locale" content="en_US">
 
 
@@ -83,9 +84,10 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html#article","url":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html"},"headline":"API7 Gateway Upgrade Postmortem: Streaming 500s and Low-Traffic CPU Saturation From Two Independent Bugs","description":"An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff, and perf data proved they were two in","abstract":"An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff, and perf data proved they were two in","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-09-21T13:00:00.000Z","dateModified":"2026-10-17T16:00:00.000Z","author":{"@type":"Person","name":"衣舞晨风 (jiankunking)"},"contributor":{"@id":"https://jiankunking.com/about/#person"},"translator":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"keywords":"AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化","inLanguage":"en","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html#breadcrumb"},"isBasedOn":{"@type":"CreativeWork","name":"API7 AI 网关升级故障复盘：流式 500 与低流量 CPU 打满","url":"https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html"},"citation":"https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html","creditText":"API7 AI 网关升级故障复盘：流式 500 与低流量 CPU 打满；衣舞晨风 (jiankunking)","copyrightNotice":"CC BY-NC-SA 4.0"},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年开始从事后端开发，后来转向平台工程与架构设计，目前从事大模型应用架构，关注 AI 网关、模型接入与系统稳定性。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"目前从事大模型应用架构，关注模型接入、网关流量与成本治理，以及生产环境的可观测性和稳定性。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"API7 Gateway Upgrade Postmortem: Streaming 500s and Low-Traffic CPU Saturation From Two Independent ","item":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html#article","url":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html"},"headline":"API7 Gateway Upgrade Postmortem: Streaming 500s and Low-Traffic CPU Saturation From Two Independent Bugs","description":"An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff","abstract":"An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-09-21T13:00:00.000Z","dateModified":"2026-10-17T16:00:00.000Z","author":{"@type":"Person","name":"衣舞晨风 (jiankunking)"},"contributor":{"@id":"https://jiankunking.com/about/#person"},"translator":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"keywords":"AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化","inLanguage":"en","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html#breadcrumb"},"isBasedOn":{"@type":"CreativeWork","name":"API7 AI 网关升级故障复盘：流式 500 与低流量 CPU 打满","url":"https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html"},"citation":"https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html","creditText":"API7 AI 网关升级故障复盘：流式 500 与低流量 CPU 打满；衣舞晨风 (jiankunking)","copyrightNotice":"CC BY-NC-SA 4.0"},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"13 年后端与架构经验，先后主导 PaaS 平台、多云云原生网关与企业级 AI 网关的架构设计与生产落地，目前聚焦大模型统一接入与流量成本治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"主导 PaaS 平台、多云云原生网关与企业级 AI 网关建设，目前负责大模型统一接入与流量成本治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"API7 Gateway Upgrade Postmortem: Streaming 500s and Low-Traffic CPU Saturation From Two Independent","item":"https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
 <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="alternate" hreflang="zh-CN" href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html">
-<link rel="alternate" hreflang="en" href="https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html"><link rel="stylesheet" href="/css/design-tokens.css">
+<link rel="alternate" hreflang="en" href="https://jiankunking.com/en/api7-upgrade-two-independent-bugs.html">
+<link rel="alternate" hreflang="x-default" href="https://jiankunking.com/one-upgrade-two-independent-bugs-api7-gateway.html"><link rel="stylesheet" href="/css/design-tokens.css">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -97,9 +99,10 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
+<a class="skip-link" href="#main">跳到主内容</a>
   <div class="headband"></div>
 
-  <main class="main">
+  <main id="main" class="main">
     <div class="column">
       <header class="header" itemscope itemtype="http://schema.org/WPHeader">
 <div class="site-brand-container">
@@ -266,7 +269,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="API7 Gateway Upgrade Postmortem: Streaming 500s and Low-Traffic CPU Saturation From Two Independent Bugs | 衣舞晨风（jiankunking）">
-      <meta itemprop="description" content="An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff, and perf data proved they were two independent bugs.">
+      <meta itemprop="description" content="An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -302,6 +305,16 @@
     
     <span class="post-meta-item post-language"><a href="/one-upgrade-two-independent-bugs-api7-gateway.html" hreflang="zh-CN" lang="zh-CN">中文原文</a></span>
   
+  
+    
+    
+  
+  <span class="post-meta-item post-content-type post-content-type--translation" title="内容类型：翻译">
+    <span class="post-meta-item-icon"><i class="fa-solid fa-language" aria-hidden="true"></i></span>
+    <span>翻译</span>
+  </span>
+
+
     <span class="post-meta-break"></span>
     <span class="post-meta-item" title="Word count in article">
       <span class="post-meta-item-icon">
@@ -319,7 +332,7 @@
     </span>
 </div>
 
-            <div class="post-description">An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff, and perf data proved they were two independent bugs.</div>
+            <div class="post-description">An API7 upgrade introduced streaming 500s and CPU saturation under low traffic. Controlled experiments, a dependency diff</div>
         </div>
       </header>
 
@@ -350,7 +363,7 @@
 </blockquote>
 <h2 id="Background-the-request-path-and-the-environment">Background: the request path and the environment</h2>
 <p>The path is short:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Client (Codex, curl, application code) → API7 gateway (3 nodes) → Azure (GPT-series models)</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Client (Codex, curl, application code) → API7 gateway (3 nodes) → Azure (GPT-series models)</span><br></pre></td></tr></table></div></figure>
 <p>The three nodes are 192.0.2.54, .55, and .56, 16 cores each. Both problems appeared after the upgrade; below I investigate them one at a time, and then look at the node-to-node difference.</p>
 <h2 id="A-few-terms-that-will-keep-coming-up">A few terms that will keep coming up</h2>
 <p>Readers familiar with OpenResty can skip this section.</p>
@@ -370,7 +383,7 @@
 <p>Conclusion first: patch.1 reworked the common streaming path, and the cooperation between message reassembly and the periodic flush turned out to be defective. Combined, they make the code <strong>misread &quot;nothing to flush&quot; as a client disconnect</strong>, aborting the upstream read. Because the error happens before the response is emitted, the symptom is a client that receives nothing and a 500 in the logs.</p>
 <h3 id="Symptom-and-three-controlled-comparisons">Symptom and three controlled comparisons</h3>
 <p>After configuring Codex to use the GPT-series models proxied through API7, errors started appearing in normal use — the client received nothing. The gateway access logs recorded 500 for the corresponding requests. I ran three comparisons first:</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Comparison</th>
@@ -395,7 +408,7 @@
 <td>Focus on the streaming processing path</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>I took a detour here: the second comparison sent me down the wrong path for a while — I suspected some non-standard parameter inside <code>tools</code>. Only later did I learn it had merely avoided the trigger. Change the request shape and the relative order of chunk arrival and periodic flush changes with it, so whether you hit the bug is purely a timing question; <code>tools</code> itself was never invalid. Controlled comparisons narrow the search space, but the root cause still requires reproduction and code confirmation.</p>
 <h3 id="Reproduction">Reproduction</h3>
 <p>At first, switching upstreams failed to reproduce it. Once I had the full curl command, gateway logs, route configuration, and Azure streaming response, and replayed them against the same version image (3.9.19-patch.1), the problem appeared immediately. <strong>The key is preserving the original request and environment</strong> — omit either one and it may not reproduce.</p>
@@ -409,12 +422,12 @@
 <p>There is one more trap that inflated the debugging cost: the misjudged-disconnect record is logged at INFO level, while production is configured at WARN, so no corresponding log line was visible. The eventual diagnosis rested on the reproduction result compared against the streaming-path code, not on logs. <strong>The absence of an error log does not mean the error path did not run.</strong></p>
 <h3 id="Mitigation-and-fix">Mitigation and fix</h3>
 <p>The temporary mitigation was to set <code>streaming_flush_interval_ms</code> to <code>0</code> on the affected routes. It proved effective in production, with no need to drop <code>tools</code> or disable streaming.</p>
-<p>The parameter belongs to the <code>ai-proxy</code> plugin; <code>ai-proxy-multi</code> exposes it as well. The <a href="https://apisix.apache.org/docs/apisix/plugins/ai-proxy/">official documentation</a> lists a default of <code>10</code>, with values of 0 or greater. The two flush paths involved here:</p>
+<p>The parameter belongs to the <code>ai-proxy</code> plugin; <code>ai-proxy-multi</code> exposes it as well. The <a target="_blank" rel="noopener" href="https://apisix.apache.org/docs/apisix/plugins/ai-proxy/">official documentation</a> lists a default of <code>10</code>, with values of 0 or greater. The two flush paths involved here:</p>
 <ul>
 <li><strong>Greater than 0</strong>: a background timer calls <code>ngx.flush(false)</code> every N milliseconds, batching prepared output into periodic flushes.</li>
 <li><strong>Equal to 0</strong>: the background flush timer is not enabled; flushing goes through the synchronous <code>ngx.flush(true)</code> path instead.</li>
 </ul>
-<p>Setting 0 avoids the problematic background path, but giving up batching may increase send overhead, so actual CPU changes need watching. <code>ngx.flush(true)</code> suspends the current request's coroutine while waiting, not the whole Nginx worker; a slow client can still delay subsequent upstream reads for the current request — see <a href="https://blog.openresty.com/en/stream-resp/">OpenResty's notes on streaming responses</a>.</p>
+<p>Setting 0 avoids the problematic background path, but giving up batching may increase send overhead, so actual CPU changes need watching. <code>ngx.flush(true)</code> suspends the current request's coroutine while waiting, not the whole Nginx worker; a slow client can still delay subsequent upstream reads for the current request — see <a target="_blank" rel="noopener" href="https://blog.openresty.com/en/stream-resp/">OpenResty's notes on streaming responses</a>.</p>
 <p>The rollout touched only the affected routes, watching 5xx, 499, client time-to-first-byte, worker CPU, and upstream latency. Once patch.3, which contains the code fix, passed validation, the temporary setting was removed and the default of 10 milliseconds restored.</p>
 <p>The code fix has two parts: schedule a flush only after content has been handed to the downstream response handler, and when the flush reports &quot;nothing to flush,&quot; keep waiting instead of treating it as a disconnect. The SSE reassembly logic remains; the key to the fix is <strong>distinguishing &quot;temporarily nothing to flush&quot; from &quot;the client is gone.&quot;</strong></p>
 <h2 id="Problem-2-multiple-workers-pegged-while-traffic-stayed-low">Problem 2: multiple workers pegged while traffic stayed low</h2>
@@ -422,7 +435,7 @@
 <p>The hourly <code>flush_expired()</code> is a separate path. The counterexample from monitoring (below) shows that the amount reclaimed is unrelated to CPU; the cleanup is more like the trigger for short hourly spikes than the CPU cost itself. Rebuilding the Pods to zero the index state counts as stopping the bleeding; the real cure was rolling back that dependency.</p>
 <h3 id="Symptom-and-what-we-ruled-out">Symptom and what we ruled out</h3>
 <p>After upgrading to patch.1, node 56 began showing CPU spikes of one or two minutes every hour, later escalating into dense clusters of repeated multi-worker saturation. In that snapshot, 9 of the OpenResty workers were above 99% and the 10th around 38%, for about 9.3 cores total — not a brief blip in a single worker, but 9 of 10 workers pegged simultaneously, nearly hitting the 10-core ceiling the license allows.</p>
-<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/node-cpu-comparison-20260920.png" alt="OpenResty CPU on node 56 versus the other two nodes (2026-09-20 08:45–11:45; red line is node 56, yellow and light blue are 54 and 55)" loading="lazy" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/node-cpu-comparison-20260920-optimized.webp" alt="OpenResty CPU on node 56 versus the other two nodes (2026-09-20 08:45–11:45; red line is node 56, yellow and light blue are 54 and 55)" loading="lazy" decoding="async"></p>
 <p>A traffic surge was the first hypothesis. But at peak, QPS on the three nodes was 77.5, 74.6, and 52.3 — node 56 had the <em>lowest</em> traffic yet drove CPU to about 9 cores (red line above), approaching the 10-core license ceiling, while the other two sat at 1.1 to 1.4 cores. The Elasticsearch logs showed no surge in request count, streaming requests, bytes in and out, or tokens either.</p>
 <p>No matching anomaly in network, memory, or disk: soft interrupts were low, no packet loss or queue overflows, memory was plentiful with no swap, and iowait was near zero. During the anomalous window, roughly 97%–98% of CPU consumption was in user mode, so the investigation turned to OpenResty's user-space execution path.</p>
 <p>Nothing on the application side failed along with it: apart from the streaming 500s in Problem 1, no increase in 5xx was observed during the CPU spikes; the main user-visible impact was slightly higher response times, which we did not quantify separately. The symptom showed up as latency, not as errors — and precisely because nothing throws errors, problems like this are mostly discoverable only through CPU alerts and latency curves.</p>
@@ -430,7 +443,7 @@
 <h3 id="A-monitoring-counterexample-reclaimed-volume-does-not-track-CPU">A monitoring counterexample: reclaimed volume does not track CPU</h3>
 <p>The most obvious suspect was that hourly cleanup timer. Test it first: is the CPU spike really caused by <code>flush_expired()</code>?</p>
 <p>Aggregating two days of monitoring by minute shows that the CPU curve actually has two distinct shapes:</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Comparison</th>
@@ -455,11 +468,11 @@
 <td>not at all</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>Why is the cleanup time fixed? Each worker runs cleanup every 3600 seconds from the moment its process starts, so it fires at the same second every hour — for example, 25 minutes and 30 seconds past the hour. A CPU spike can only be called cleanup-related if it appears at that same moment; the dense clusters clearly do not line up.</p>
 <p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-two-patterns-timeline-en.svg" alt="The two CPU patterns: short spikes landing on the timer's schedule, dense clusters of high-CPU multi-worker spikes unrelated to the timer, plus a counterexample where a large cleanup produced no high CPU" loading="lazy" decoding="async"></p>
 <p>Now compare reclaimed volume against CPU: neither direction lines up. Reclaimed volume is the single-step drop in shared-dict occupied space; CPU is the node peak within ±10 minutes of the reclaim (rate over a 1-minute window, 30-second step; recomputing with a finer step gives the same result, so smoothing did not erase the spikes):</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Time (node 56)</th>
@@ -494,30 +507,30 @@
 <td>0.76 cores, all 10 workers above 0.5 cores simultaneously</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>The first two rows come from the 5-worker era; on the evening of September 17 the license per node was raised from 5 cores to 10 and the worker count went up to 10, so the last two rows are from the 10-worker era.</p>
 <p>A large reclaim can cost almost no CPU. The 12:25:30 hourly cleanup ran as scheduled and shared-dict occupancy dropped a step — <strong>17.07 MiB reclaimed in a single pass, the largest scheduled cleanup of the day, yet the node CPU peak was only 1.35 cores, with every worker under 0.2 cores</strong>. The same day at 12:22 and 12:29, the other two nodes reclaimed 19.75 and 18.82 MiB respectively, with CPU peaks of only 0.96 and 0.72 cores. A small reclaim can be expensive: at 14:45:00 only 5.30 MiB was reclaimed, yet node CPU shot to 7.35 cores.</p>
 <p>Treating &quot;5.5–21.8 MiB reclaimed per hour accompanied by 2.4–4.7 cores&quot; on September 16 daytime as a rule means mistaking coincidence at the same moment for causation: later that night, at 22:22 and 23:22, two comparable reclaims of 8.14 and 12.53 MiB produced CPU of only 0.75 and 0.78 cores.</p>
 <p>Tables alone can look cherry-picked, so here is node 56's entire day on September 20 plotted on a single timeline: node CPU on top, each reclaim's time and size below. Reclaims range from 1 MiB to 18 MiB and occur almost every hour outside the 3 a.m.–9 a.m. gap; yet the dense spike clusters appear only in the two blocks after 10 a.m. and after 1 p.m. The 17.07 MiB reclaim at 12:25 falls right in a quiet stretch, and the evening's 8–18 MiB reclaims raised no spikes either. The orange reclaims in the chart — those outside the cleanup schedule — all sit <em>under</em> the spike clusters instead. Finally, pooling all 522 reclaim events of ≥1 MiB across the three nodes from 9/14 to 9/22, the correlation between reclaimed volume and the CPU peak within ±10 minutes is only 0.18.</p>
-<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-vs-reclaim-timeline-20260920-en.png" alt="Node 56 timeline for 9/20: node CPU on top, each reclaim's time and size below; large reclaims land in quiet stretches, and reclaims outside the cleanup schedule (orange) concentrate in the dense spike windows" loading="lazy" decoding="async"></p>
+<p><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/cpu-vs-reclaim-timeline-20260920-en-optimized.webp" alt="Node 56 timeline for 9/20: node CPU on top, each reclaim's time and size below; large reclaims land in quiet stretches, and reclaims outside the cleanup schedule (orange) concentrate in the dense spike windows" loading="lazy" decoding="async"></p>
 <p>It is worth separating the sources as well: &quot;space reclaimed&quot; in monitoring does not come from a single path. What lands on the cleanup's timestamp is <code>flush_expired()</code>'s batch cleanup; reclaims off that schedule (like the 14:45:00 one) are more likely LRU eviction from the write path — two sides of the same churn that produces the dense spikes. Mix them into one metric and you get the odd result of &quot;same reclaim volume, completely different CPU.&quot;</p>
 <p>So &quot;how much was reclaimed&quot; is not the independent variable: the scheduled cleanup at best explains <em>when</em> short spikes happen, not their magnitude, and certainly not the dense clusters. A second trigger path had to be found.</p>
 <h3 id="Dependency-diff-two-commits-two-paths">Dependency diff: two commits, two paths</h3>
 <p>Next, diff the full change surface of the upgrade — indirect dependencies included:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">3.9.14                    nginx-lua-prometheus-api7 0.20250302-1</span><br><span class="line">3.9.19-patch.1, patch.3   nginx-lua-prometheus-api7 1.0.0-1</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">3.9.14                    nginx-lua-prometheus-api7 0.20250302-1</span><br><span class="line">3.9.19-patch.1, patch.3   nginx-lua-prometheus-api7 1.0.0-1</span><br></pre></td></tr></table></div></figure>
 <p>The leads landed on two commits between those versions:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">845084f 2026-06-23  bump the global delete_count in KeyIndex:add() when an expired metric reappears</span><br><span class="line">5f68f6c 2026-07-27  add self.dict:flush_expired() at the end of remove_expired_keys()</span><br></pre></td></tr></table></figure>
-<p>First: the full scan after a counter change. The key branch of <code>KeyIndex:sync()</code> is below (simplified excerpt, keeping only the branches relevant to the incident; for the full implementation see upstream <a href="https://github.com/knyar/nginx-lua-prometheus/blob/main/prometheus_keys.lua"><code>prometheus_keys.lua</code>'s <code>KeyIndex</code></a>; API7's fork is published as the LuaRocks package <a href="https://luarocks.org/modules/membphis/nginx-lua-prometheus-api7"><code>nginx-lua-prometheus-api7</code></a>):</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- N is the current upper bound of known slots; it grows with key_count</span></span><br><span class="line"><span class="keyword">if</span> <span class="built_in">self</span>.deleted ~= delete_count <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:sync_range(<span class="number">0</span>, N)         <span class="comment">-- rescan all historical slots, O(key_count)</span></span><br><span class="line">    <span class="built_in">self</span>.deleted = delete_count</span><br><span class="line"><span class="keyword">elseif</span> N ~= <span class="built_in">self</span>.last <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:sync_range(<span class="built_in">self</span>.last, N) <span class="comment">-- sync only newly added slots</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">845084f 2026-06-23  bump the global delete_count in KeyIndex:add() when an expired metric reappears</span><br><span class="line">5f68f6c 2026-07-27  add self.dict:flush_expired() at the end of remove_expired_keys()</span><br></pre></td></tr></table></div></figure>
+<p>First: the full scan after a counter change. The key branch of <code>KeyIndex:sync()</code> is below (simplified excerpt, keeping only the branches relevant to the incident; for the full implementation see upstream <a target="_blank" rel="noopener" href="https://github.com/knyar/nginx-lua-prometheus/blob/main/prometheus_keys.lua"><code>prometheus_keys.lua</code>'s <code>KeyIndex</code></a>; API7's fork is published as the LuaRocks package <a target="_blank" rel="noopener" href="https://luarocks.org/modules/membphis/nginx-lua-prometheus-api7"><code>nginx-lua-prometheus-api7</code></a>):</p>
+<figure class="highlight lua"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- N is the current upper bound of known slots; it grows with key_count</span></span><br><span class="line"><span class="keyword">if</span> <span class="built_in">self</span>.deleted ~= delete_count <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:sync_range(<span class="number">0</span>, N)         <span class="comment">-- rescan all historical slots, O(key_count)</span></span><br><span class="line">    <span class="built_in">self</span>.deleted = delete_count</span><br><span class="line"><span class="keyword">elseif</span> N ~= <span class="built_in">self</span>.last <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">self</span>:sync_range(<span class="built_in">self</span>.last, N) <span class="comment">-- sync only newly added slots</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></div></figure>
 <p>The trigger chain: a metric slot configured with <code>expire: 1800</code> expires and is physically reclaimed, but some worker's local index still holds it; when a later request tries to renew it, <code>dict:expire()</code> returns <code>not found</code>, so <code>add()</code> re-registers it and the global <code>delete_count</code> increments. The next time other workers run <code>sync()</code> and find their local <code>self.deleted</code> out of sync, they execute <code>sync_range(0, N)</code>:</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i = <span class="number">0</span>, N <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> v = <span class="built_in">self</span>.dict:get(<span class="built_in">self</span>.key_prefix .. i)      <span class="comment">-- at least one get per historical slot</span></span><br><span class="line">    <span class="keyword">if</span> v <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">local</span> ttl = <span class="built_in">self</span>.dict:ttl(<span class="built_in">self</span>.key_prefix .. i) <span class="comment">-- plus a ttl for slots that still hold values</span></span><br><span class="line">        <span class="comment">-- remaining sync logic omitted</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight lua"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i = <span class="number">0</span>, N <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> v = <span class="built_in">self</span>.dict:get(<span class="built_in">self</span>.key_prefix .. i)      <span class="comment">-- at least one get per historical slot</span></span><br><span class="line">    <span class="keyword">if</span> v <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">local</span> ttl = <span class="built_in">self</span>.dict:ttl(<span class="built_in">self</span>.key_prefix .. i) <span class="comment">-- plus a ttl for slots that still hold values</span></span><br><span class="line">        <span class="comment">-- remaining sync logic omitted</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></div></figure>
 <p>Every historical slot needs at least one shared-dict <code>get</code>; slots that still hold values need a <code>ttl</code> as well. The loop contains no yield point — other requests on the same worker, including streaming responses that are mid-output, have to wait for the scan to finish.</p>
 <p>The trap here: <strong><code>key_count</code> is the upper bound of slots ever allocated, and in this implementation it only ever grows; the scan cost depends on historical slots, not on the number of samples currently in <code>/metrics</code></strong>. That is why low traffic can still peg a worker.</p>
 <p>Second path: the unbounded hourly cleanup:</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">KeyIndex:remove_expired_keys</span><span class="params">()</span></span></span><br><span class="line">    <span class="comment">-- logic for self.expire_keys omitted</span></span><br><span class="line">    <span class="built_in">self</span>.dict:flush_expired()   <span class="comment">-- no max_count passed, no cap on how many keys are cleaned</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight lua"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">KeyIndex:remove_expired_keys</span><span class="params">()</span></span></span><br><span class="line">    <span class="comment">-- logic for self.expire_keys omitted</span></span><br><span class="line">    <span class="built_in">self</span>.dict:flush_expired()   <span class="comment">-- no max_count passed, no cap on how many keys are cleaned</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></div></figure>
 <p>This call walks the LRU queue while holding the shared dict's mutex. Each worker builds its own cleanup timer, using the library default <code>remove_expired_keys_interval</code> of 3600 seconds, which this version of APISIX does not override. So it can pull multiple workers in at the same moment every hour.</p>
 <p>Compare the two paths side by side:</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Comparison</th>
@@ -552,7 +565,7 @@
 <td>trigger and amplifier; insufficient evidence for an independent CPU source</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>Pattern ①'s attribution needs one more check. Although it lands on the cleanup's timestamp, three details do not fit &quot;the cleanup itself burns CPU&quot;: the spike peaks only 30–60 seconds after the cleanup and settles about 90 seconds in; the magnitude is independent of the reclaimed volume; and the worker distribution is 4 workers near a full core each with the rest low — exactly the Path A signature seen later in the controlled reproduction (a <em>signature</em> is the characteristic distribution of per-worker CPU usage, which can be used to infer the failure mechanism).</p>
 <p>A more consistent reading: the timer's batch reclaim merely pulls the trigger, and the CPU is actually spent on what follows — &quot;expired metric re-register → <code>delete_count</code> changes → other workers do a full scan.&quot; During the day, requests keep touching expired metrics, so re-registration follows immediately after cleanup; at night with no requests, a reclaim of the same size costs almost nothing.</p>
 <p>The boundary should be stated too: all 23 perf profiles were taken during dense-spike windows where a single worker held ≥80% continuously; Pattern ① has no independent perf evidence, so that layer of attribution is an inference from timing and signatures.</p>
@@ -579,8 +592,8 @@
 <li>Still reproducible with external Prometheus scraping removed.</li>
 </ol>
 <p>The dependency change provided the trigger mechanism, perf pointed to lock contention, the internal counters explained the scan size, and the controlled experiment reproduced the multi-worker high CPU — only at that point did all the evidence lines truly line up. API7's subsequent release notes then confirmed, at the product level, the affected versions, the configuration trigger conditions, and the rollback remedy.</p>
-<p>API7 later recorded explicitly in the <a href="https://docs.apiseven.com/api7-gateway/3.9.x/release-notes#3921">3.9.21 official release notes</a>: the <code>nginx-lua-prometheus-api7</code> shipped after upgrading to 3.9.18–3.9.20 could cause gateway worker CPU spikes when metrics were configured with <code>expire</code>, so the metrics library was rolled back to the version used by 3.9.15 and earlier, with no change required to <code>expire</code>. These release notes corroborate the affected versions, the configuration trigger conditions, and the final fix; as for the specific mechanism of the full scan and the shared-dict lock contention, the evidence still comes from the source diff, perf, and the controlled reproduction above.</p>
-<p><a href="https://docs.apiseven.com/api7-gateway/3.9.x/release-notes#3921"><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/api7-3.9.21-prometheus-release-note.png" alt="API7 Gateway 3.9.21 official release notes: the Prometheus metrics library may cause worker CPU spikes when expire is configured, and the fix rolls the library back" loading="lazy" decoding="async"></a></p>
+<p>API7 later recorded explicitly in the <a target="_blank" rel="noopener" href="https://docs.apiseven.com/api7-gateway/3.9.x/release-notes#3921">3.9.21 official release notes</a>: the <code>nginx-lua-prometheus-api7</code> shipped after upgrading to 3.9.18–3.9.20 could cause gateway worker CPU spikes when metrics were configured with <code>expire</code>, so the metrics library was rolled back to the version used by 3.9.15 and earlier, with no change required to <code>expire</code>. These release notes corroborate the affected versions, the configuration trigger conditions, and the final fix; as for the specific mechanism of the full scan and the shared-dict lock contention, the evidence still comes from the source diff, perf, and the controlled reproduction above.</p>
+<p><a target="_blank" rel="noopener" href="https://docs.apiseven.com/api7-gateway/3.9.x/release-notes#3921"><img src="https://jiankunking.com/images/api7-ai-gateway-streaming-500-cpu-saturation-troubleshooting/api7-3.9.21-prometheus-release-note-optimized.webp" alt="API7 Gateway 3.9.21 official release notes: the Prometheus metrics library may cause worker CPU spikes when expire is configured, and the fix rolls the library back" loading="lazy" decoding="async"></a></p>
 <h3 id="Stopping-the-bleeding-configuration-mitigation-and-the-code-fix">Stopping the bleeding, configuration mitigation, and the code fix</h3>
 <p>First, stop the bleeding: after reading the counters on all three nodes, I deleted and recreated the gateway Pods one at a time. An ordinary reload preserves the shared dict; rebuilding the instance cleared the accumulated index state, and the CPU spikes temporarily stopped. <strong>But this only zeroes state; it does not fix the bug.</strong></p>
 <p>If the code fix cannot be delivered right away, configuration changes can reduce the trigger and amplification conditions:</p>
@@ -597,13 +610,13 @@
 <h2 id="Node-difference-why-it-was-always-node-56">Node difference: why it was always node 56</h2>
 <p>While investigating the CPU issue, there was one more thing: same code, no obvious traffic surge, yet alerts almost all landed on node 56. A software bug cannot explain a severity difference like that; beyond current QPS, I had to compare process uptime, <code>key_count</code>, the rate of <code>delete_count</code> changes, and machine configuration.</p>
 <p>Real machine-side differences did show up: all three run the Ubuntu 5.4.0 kernel but at different patch levels — 56 is <code>5.4.0-135-generic</code> (built November 2022), while 54 and 55 are both <code>5.4.0-90-generic</code> (built October 2021), so 56's kernel is actually about a year newer. The CPU model is the same on all three, Xeon Silver 4110, but 56 shows a lower CPU MHz in <code>lscpu</code>. Checking the governor:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor</span><br><span class="line"></span><br><span class="line">56: powersave</span><br><span class="line">55: performance</span><br><span class="line">54: performance</span><br></pre></td></tr></table></figure>
-<p><code>powersave</code> behaves differently across drivers and modes, so one cannot conclude the CPU was pinned at a low frequency from this alone — see the <a href="https://www.kernel.org/doc/html/latest/admin-guide/pm/intel_pstate.html">intel_pstate documentation</a>. A single <code>lscpu</code> reading is also not representative of the whole incident window.</p>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor</span><br><span class="line"></span><br><span class="line">56: powersave</span><br><span class="line">55: performance</span><br><span class="line">54: performance</span><br></pre></td></tr></table></div></figure>
+<p><code>powersave</code> behaves differently across drivers and modes, so one cannot conclude the CPU was pinned at a low frequency from this alone — see the <a target="_blank" rel="noopener" href="https://www.kernel.org/doc/html/latest/admin-guide/pm/intel_pstate.html">intel_pstate documentation</a>. A single <code>lscpu</code> reading is also not representative of the whole incident window.</p>
 <p>After unifying the governor, the effect was clear: comparing the same time window on the days before and after, node 56's total CPU consumption curve moved down noticeably, and the gap between nodes narrowed with it. Node 56 was still slightly higher than the other two, though. Note also that this comparison did not separately control for historical index state and workload — it is an observational before/after in production, not a controlled experiment.</p>
 <p>So the frequency-governor difference is best characterized as: <strong>a genuine amplifying factor, with a clear drop in the production before/after comparison</strong>, but its independent contribution was not quantified, and the remaining difference still has to be sought in kernel minor version, accumulated index state, and load distribution. <strong>The confirmed CPU root cause remains the Prometheus index-sync defect.</strong></p>
 <h2 id="Outcomes-and-validation-boundaries">Outcomes and validation boundaries</h2>
 <p>These actions addressed different layers and cannot be uniformly summarized as &quot;it got better after the upgrade&quot;:</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Problem</th>
@@ -628,7 +641,7 @@
 <td>A production before/after comparison; the frequency-governor contribution cannot be quantified separately; the remaining difference is unexplained</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <h2 id="Pitfalls-and-lessons">Pitfalls and lessons</h2>
 <p>The easiest traps to fall into, together with a few judgment calls worth keeping.</p>
 <ul>
@@ -670,7 +683,7 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） WeChat Pay" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay-optimized.webp" alt="衣舞晨风（jiankunking） WeChat Pay" loading="lazy" decoding="async" width="1118" height="1534">
         <span>WeChat Pay</span>
       </div>
 
@@ -805,7 +818,13 @@
   <dialog id="site-search" class="site-search" aria-labelledby="site-search-title" data-preview="/search-preview.json">
     <header class="site-search__header">
       <h2 id="site-search-title">Search</h2>
-      <form method="dialog"><button type="submit" class="site-search__close">Close</button></form>
+      <form method="dialog">
+        <button type="submit" class="site-search__close" aria-label="Close search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18"/>
+          </svg>
+        </button>
+      </form>
     </header>
     <input type="search" class="search-input" aria-label="Search articles" placeholder="Search articles…" maxlength="80" autocomplete="off" spellcheck="false" autofocus>
     <div class="site-search__options">

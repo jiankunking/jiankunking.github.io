@@ -14,17 +14,18 @@
 
 
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous"></noscript>
   
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"jiankunking.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default","show_result":false},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost, and streaming backpressure — four failure modes, four fixes.">
+    <meta name="description" content="Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway">
 <meta property="og:url" content="https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html">
 <meta property="og:site_name" content="衣舞晨风（jiankunking）">
-<meta property="og:description" content="Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost, and streaming backpressure — four failure modes, four fixes.">
+<meta property="og:description" content="Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-05-16T14:00:06.000Z">
 <meta property="article:modified_time" content="2026-10-17T16:00:00.000Z">
@@ -76,9 +77,10 @@
 
 
 
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html#article","url":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html"},"headline":"Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway","description":"Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost, and streaming backpressure — four failure modes,","abstract":"Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost, and streaming backpressure — four failure modes,","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-05-16T14:00:06.000Z","dateModified":"2026-10-17T16:00:00.000Z","author":{"@type":"Person","name":"衣舞晨风 (jiankunking)"},"contributor":{"@id":"https://jiankunking.com/about/#person"},"translator":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"keywords":"AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化","inLanguage":"en","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html#breadcrumb"},"isBasedOn":{"@type":"CreativeWork","name":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘","url":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html"},"citation":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html","creditText":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘；衣舞晨风 (jiankunking)","copyrightNotice":"CC BY-NC-SA 4.0"},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"2013 年开始从事后端开发，后来转向平台工程与架构设计，目前从事大模型应用架构，关注 AI 网关、模型接入与系统稳定性。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"目前从事大模型应用架构，关注模型接入、网关流量与成本治理，以及生产环境的可观测性和稳定性。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway","item":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html#article","url":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html"},"headline":"Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway","description":"Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost","abstract":"Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost","image":["https://jiankunking.com/images/og-default.png"],"datePublished":"2026-05-16T14:00:06.000Z","dateModified":"2026-10-17T16:00:00.000Z","author":{"@type":"Person","name":"衣舞晨风 (jiankunking)"},"contributor":{"@id":"https://jiankunking.com/about/#person"},"translator":{"@id":"https://jiankunking.com/about/#person"},"publisher":{"@type":"Organization","@id":"https://jiankunking.com/#publisher","name":"衣舞晨风（jiankunking）","logo":{"@type":"ImageObject","url":"https://jiankunking.com/images/avatar/avatar.png"}},"keywords":"AI Gateway, Elasticsearch, 后端架构, Java, Go, 云原生网关, 性能优化","inLanguage":"en","isPartOf":{"@id":"https://jiankunking.com/#website"},"breadcrumb":{"@id":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html#breadcrumb"},"isBasedOn":{"@type":"CreativeWork","name":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘","url":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html"},"citation":"https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html","creditText":"运行时行为盲区：API7 AI 网关 CPU 饱和故障的 AI 辅助复盘；衣舞晨风 (jiankunking)","copyrightNotice":"CC BY-NC-SA 4.0"},{"@type":"Person","@id":"https://jiankunking.com/about/#person","name":"衣舞晨风","alternateName":["jiankunking","衣舞晨风（jiankunking）"],"url":"https://jiankunking.com/about/","image":"https://jiankunking.com/images/avatar/avatar.png","jobTitle":"后端/架构工程师","description":"13 年后端与架构经验，先后主导 PaaS 平台、多云云原生网关与企业级 AI 网关的架构设计与生产落地，目前聚焦大模型统一接入与流量成本治理。","homeLocation":{"@type":"Place","name":"青岛，中国"},"alumniOf":{"@type":"CollegeOrUniversity","name":"山东财经大学"},"hasOccupation":{"@type":"Occupation","name":"后端与架构工程师","description":"主导 PaaS 平台、多云云原生网关与企业级 AI 网关建设，目前负责大模型统一接入与流量成本治理。"},"sameAs":["https://github.com/jiankunking","https://blog.csdn.net/jiankunking"],"knowsAbout":["AI Gateway","AI Agent Engineering","Elasticsearch","Backend Architecture","Cloud Native","System Reliability"]},{"@type":"BreadcrumbList","@id":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"衣舞晨风（jiankunking）","item":"https://jiankunking.com/"},{"@type":"ListItem","position":2,"name":"Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway","item":"https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html"}]}]}</script><link rel="alternate" type="text/plain" href="/llms.txt" title="LLM content index">
 <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM full content index"><link rel="alternate" hreflang="zh-CN" href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">
-<link rel="alternate" hreflang="en" href="https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html"><link rel="stylesheet" href="/css/design-tokens.css">
+<link rel="alternate" hreflang="en" href="https://jiankunking.com/en/runtime-behavior-blind-spots-api7-cpu-saturation.html">
+<link rel="alternate" hreflang="x-default" href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html"><link rel="stylesheet" href="/css/design-tokens.css">
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -90,9 +92,10 @@
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
+<a class="skip-link" href="#main">跳到主内容</a>
   <div class="headband"></div>
 
-  <main class="main">
+  <main id="main" class="main">
     <div class="column">
       <header class="header" itemscope itemtype="http://schema.org/WPHeader">
 <div class="site-brand-container">
@@ -259,7 +262,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="Runtime Behavior Blind Spots: Postmortem of CPU Saturation Bugs in an API7 AI Gateway | 衣舞晨风（jiankunking）">
-      <meta itemprop="description" content="Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost, and streaming backpressure — four failure modes, four fixes.">
+      <meta itemprop="description" content="Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -295,6 +298,16 @@
     
     <span class="post-meta-item post-language"><a href="/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html" hreflang="zh-CN" lang="zh-CN">中文原文</a></span>
   
+  
+    
+    
+  
+  <span class="post-meta-item post-content-type post-content-type--translation" title="内容类型：翻译">
+    <span class="post-meta-item-icon"><i class="fa-solid fa-language" aria-hidden="true"></i></span>
+    <span>翻译</span>
+  </span>
+
+
     <span class="post-meta-break"></span>
     <span class="post-meta-item" title="Word count in article">
       <span class="post-meta-item-icon">
@@ -312,7 +325,7 @@
     </span>
 </div>
 
-            <div class="post-description">Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost, and streaming backpressure — four failure modes, four fixes.</div>
+            <div class="post-description">Postmortem of CPU saturation in an API7 AI gateway: cancellation propagation, scheduling fairness, decode cost</div>
         </div>
       </header>
 
@@ -334,7 +347,7 @@
     <li><span class="status-icon status-icon--tradeoff"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span><span><strong>Trade-off</strong><small>balance among latency, fairness, and throughput</small></span></li>
   </ul>
 </aside>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Time</th>
@@ -345,31 +358,31 @@
 <tbody>
 <tr>
 <td><span class="issue-timeline-date"><time datetime="2026-04-18">2026-04-18</time> – <time datetime="2026-04-20">2026-04-20</time></span></td>
-<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13254">PR #13254</a></span></td>
+<td><span class="issue-fix-reference"><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13254">PR #13254</a></span></td>
 <td>Terminate the upstream stream after the downstream client disconnects, via error propagation from a synchronous flush</td>
 </tr>
 <tr>
 <td><span class="issue-timeline-date"><time datetime="2026-04-19">2026-04-19</time> – <time datetime="2026-04-20">2026-04-20</time></span></td>
-<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13255">PR #13255</a> <span class="inline-status status-icon--reported" title="Reported"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">Reported</span></span></span></td>
+<td><span class="issue-fix-reference"><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13255">PR #13255</a> <span class="inline-status status-icon--reported" title="Reported"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">Reported</span></span></span></td>
 <td>Add explicit scheduling points to the streaming loop so a single request can't hold a worker for a long time</td>
 </tr>
 <tr>
 <td><span class="issue-timeline-date"><time datetime="2026-05-12">2026-05-12</time> – <time datetime="2026-05-13">2026-05-13</time></span></td>
-<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13356">PR #13356</a> <span class="inline-status status-icon--reported" title="Reported"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">Reported</span></span></span></td>
+<td><span class="issue-fix-reference"><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13356">PR #13356</a> <span class="inline-status status-icon--reported" title="Reported"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">Reported</span></span></span></td>
 <td>Cache <code>post_arg.*</code> request body parse results to avoid repeated decodes</td>
 </tr>
 <tr>
 <td><span class="issue-timeline-date"><time datetime="2026-05-15">2026-05-15</time> – <time datetime="2026-05-18">2026-05-18</time></span></td>
-<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13377">PR #13377</a> <span class="inline-status status-icon--reported" title="Reported"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">Reported</span></span></span></td>
+<td><span class="issue-fix-reference"><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13377">PR #13377</a> <span class="inline-status status-icon--reported" title="Reported"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span class="sr-only">Reported</span></span></span></td>
 <td>Cache the JSON parse result of AI request bodies to eliminate repeated decodes</td>
 </tr>
 <tr>
 <td><span class="issue-timeline-date"><time datetime="2026-05-19">2026-05-19</time> – <time datetime="2026-05-22">2026-05-22</time></span></td>
-<td><span class="issue-fix-reference"><a href="https://github.com/apache/apisix/pull/13391">PR #13391</a></span></td>
+<td><span class="issue-fix-reference"><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13391">PR #13391</a></span></td>
 <td>Optimize SSE parsing and the flush strategy, plus add protections for streaming requests</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>At first I tried to find a single &quot;root cause&quot; that explained everything. I later realized that this way of attributing the problem was itself the mistake. These PRs actually address four distinct classes of problems:</p>
 <ol>
 <li><strong>Cancellation propagation</strong>: the downstream is already gone — does upstream work keep running?</li>
@@ -390,7 +403,7 @@
 <li>whether the loops had exit conditions.</li>
 </ul>
 <p>From that angle, there's nothing visibly wrong with this streaming loop:</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> <span class="literal">true</span> <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> chunk, err = body_reader()</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> chunk <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">local</span> ok, flush_err = send_to_downstream(chunk)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></span><br><span class="line">        close_upstream(flush_err)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    ngx.sleep(<span class="number">0</span>)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight lua"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> <span class="literal">true</span> <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> chunk, err = body_reader()</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> chunk <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">local</span> ok, flush_err = send_to_downstream(chunk)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> ok <span class="keyword">then</span></span><br><span class="line">        close_upstream(flush_err)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    ngx.sleep(<span class="number">0</span>)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></div></figure>
 <p>But a runtime review has to keep asking:</p>
 <ul>
 <li>Will <code>body_reader()</code> wait this round, or return immediately?</li>
@@ -401,7 +414,7 @@
 <li>If the upstream keeps producing at high speed, is there any time, byte, or rate budget?</li>
 </ul>
 <p>So the real blind spot wasn't &quot;failing to understand the while loop&quot; — it was relying on several unverified runtime assumptions:</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>What the code looks like</th>
@@ -436,11 +449,11 @@
 <td>Total cost stays low when it runs at high frequency</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <h2 id="Problem-1-why-the-upstream-keeps-running-after-the-downstream-cancels">Problem 1: why the upstream keeps running after the downstream cancels</h2>
 <h3 id="1-1-The-upstream-and-downstream-connections-are-two-independent-chains">1.1 The upstream and downstream connections are two independent chains</h3>
 <p>An AI gateway sits between the client and the LLM:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">client  &lt;-- downstream --&gt;  API7/APISIX  &lt;-- upstream --&gt;  LLM</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">client  &lt;-- downstream --&gt;  API7/APISIX  &lt;-- upstream --&gt;  LLM</span><br></pre></td></tr></table></div></figure>
 <p>Reading responses from the upstream doesn't mean the gateway also knows the current state of the downstream connection.</p>
 <p>If the client closes the browser, cancels the request, or sends a TCP RST, the gateway may keep:</p>
 <ol>
@@ -461,9 +474,9 @@
 <p><code>ngx.flush(true)</code> waits for data to enter the <strong>system send buffer</strong>. That is not the same as the client application having received or consumed the data.</p>
 </blockquote>
 <p>The value of a synchronous flush is that it advances downstream output in a way the caller can wait on. When the write path has already observed a connection error, the call can return a failure, and APISIX then closes the upstream response, avoiding continued processing of data that nobody is receiving anymore.</p>
-<p>This is the core problem <a href="https://github.com/apache/apisix/pull/13254">PR #13254</a> addresses.</p>
+<p>This is the core problem <a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13254">PR #13254</a> addresses.</p>
 <p>The more accurate timeline is:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">T0  client cancels the request</span><br><span class="line">    ↓</span><br><span class="line">T1  the kernel/Nginx observes the connection close at some point</span><br><span class="line">    ↓</span><br><span class="line">T2  the gateway advances downstream output or receives the connection close event</span><br><span class="line">    ↓</span><br><span class="line">T3  flush/write returns an error</span><br><span class="line">    ↓</span><br><span class="line">T4  APISIX terminates the loop and closes the upstream connection</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">T0  client cancels the request</span><br><span class="line">    ↓</span><br><span class="line">T1  the kernel/Nginx observes the connection close at some point</span><br><span class="line">    ↓</span><br><span class="line">T2  the gateway advances downstream output or receives the connection close event</span><br><span class="line">    ↓</span><br><span class="line">T3  flush/write returns an error</span><br><span class="line">    ↓</span><br><span class="line">T4  APISIX terminates the loop and closes the upstream connection</span><br></pre></td></tr></table></div></figure>
 <p>This is neither &quot;the Lua code knows instantly when the client disconnects&quot; nor &quot;every <code>ngx.flush(true)</code> can detect client liveness in real time, 100% of the time&quot;.</p>
 <p>OpenResty also provides <code>lua_check_client_abort on</code> and <code>ngx.on_abort</code> for monitoring early downstream closure. That mechanism is off by default and has its own applicability conditions and runtime cost. In practice you have to choose based on the request model:</p>
 <ul>
@@ -473,17 +486,17 @@
 </ul>
 <h3 id="1-3-The-nature-of-the-problem">1.3 The nature of the problem</h3>
 <p>This is first and foremost a <strong>cancellation propagation and resource lifecycle management</strong> problem, not a pure scheduling problem:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">the downstream request no longer has value</span><br><span class="line">        ↓</span><br><span class="line">the upstream request isn&#x27;t canceled in time</span><br><span class="line">        ↓</span><br><span class="line">reading, parsing, filtering, and flushing continue</span><br><span class="line">        ↓</span><br><span class="line">wasted CPU, network, and connection consumption</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">the downstream request no longer has value</span><br><span class="line">        ↓</span><br><span class="line">the upstream request isn&#x27;t canceled in time</span><br><span class="line">        ↓</span><br><span class="line">reading, parsing, filtering, and flushing continue</span><br><span class="line">        ↓</span><br><span class="line">wasted CPU, network, and connection consumption</span><br></pre></td></tr></table></div></figure>
 <p>Code review should treat a bidirectional proxy as two resources with different lifecycles, not as a single request whose two directions naturally end together.</p>
 <h2 id="Problem-2-cooperative-scheduling-and-ngx-sleep-0">Problem 2: cooperative scheduling and <code>ngx.sleep(0)</code></h2>
 <h3 id="2-1-A-cosocket-call-doesn-t-necessarily-yield">2.1 A cosocket call doesn't necessarily yield</h3>
 <p>An OpenResty worker typically runs as a single-threaded event loop. A Lua coroutine only hands control back to the Nginx scheduler when it reaches an operation that can yield.</p>
 <p>The cosocket API is non-blocking, but &quot;called a cosocket&quot; doesn't mean &quot;this call definitely yields&quot;:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">socket has no data</span><br><span class="line">  → register a read event</span><br><span class="line">  → the current coroutine yields</span><br><span class="line">  → the worker can process other events</span><br><span class="line"></span><br><span class="line">socket buffer already has data</span><br><span class="line">  → receive() returns immediately</span><br><span class="line">  → the current coroutine keeps executing</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">socket has no data</span><br><span class="line">  → register a read event</span><br><span class="line">  → the current coroutine yields</span><br><span class="line">  → the worker can process other events</span><br><span class="line"></span><br><span class="line">socket buffer already has data</span><br><span class="line">  → receive() returns immediately</span><br><span class="line">  → the current coroutine keeps executing</span><br></pre></td></tr></table></div></figure>
 <p>When the upstream LLM returns many small chunks in bursts, several consecutive <code>body_reader()</code> calls may all complete immediately. If the loop has no other explicit scheduling point, a single request can hold the worker for a relatively long time.</p>
 <h3 id="2-2-ngx-sleep-0-is-a-real-scheduling-yield">2.2 <code>ngx.sleep(0)</code> is a real scheduling yield</h3>
-<p><a href="https://github.com/apache/apisix/pull/13255">PR #13255</a> adds the following after each streaming pass:</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ngx.sleep(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+<p><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13255">PR #13255</a> adds the following after each streaming pass:</p>
+<figure class="highlight lua"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ngx.sleep(<span class="number">0</span>)</span><br></pre></td></tr></table></div></figure>
 <p>It hands control back to the Nginx scheduler through a zero-delay timer. So it's not &quot;a yield in form but not in substance&quot; — it's a real scheduling point.</p>
 <p>What it does solve:</p>
 <ul>
@@ -500,13 +513,13 @@
 <li>Applying backpressure to a fast upstream;</li>
 <li>Guaranteeing that worker CPU goes down.</li>
 </ul>
-<p>So <a href="https://github.com/apache/apisix/issues/13256">Issue #13256</a> and the follow-up code reasonably call it a workaround: it prevents <strong>a single request from monopolizing a worker</strong>, but doesn't limit <strong>how much CPU a single request consumes</strong>.</p>
+<p>So <a target="_blank" rel="noopener" href="https://github.com/apache/apisix/issues/13256">Issue #13256</a> and the follow-up code reasonably call it a workaround: it prevents <strong>a single request from monopolizing a worker</strong>, but doesn't limit <strong>how much CPU a single request consumes</strong>.</p>
 <h3 id="2-3-Why-CPU-can-still-be-at-100-after-adding-yields">2.3 Why CPU can still be at 100% after adding yields</h3>
 <p>Suppose a stream produces many small chunks per second, each needing parsing, transformation, and output:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">process chunk A</span><br><span class="line">  → ngx.sleep(0), yield scheduling</span><br><span class="line">  → process other ready tasks</span><br><span class="line">  → schedule the current request again</span><br><span class="line">process chunk B</span><br><span class="line">  → ngx.sleep(0)</span><br><span class="line">  → ...</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">process chunk A</span><br><span class="line">  → ngx.sleep(0), yield scheduling</span><br><span class="line">  → process other ready tasks</span><br><span class="line">  → schedule the current request again</span><br><span class="line">process chunk B</span><br><span class="line">  → ngx.sleep(0)</span><br><span class="line">  → ...</span><br></pre></td></tr></table></div></figure>
 <p>Scheduling is fair, but as long as there are enough ready tasks, or the current stream keeps having work, the worker can remain in a runnable state continuously, and CPU utilization can naturally approach 100%.</p>
 <p>At this point two metrics need to be distinguished:</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Metric</th>
@@ -523,7 +536,7 @@
 <td>How much work do all requests together need to execute?</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p><code>ngx.sleep(0)</code> mainly improves the former; it doesn't directly reduce the latter.</p>
 <blockquote>
 <p>If there are no other ready coroutines at the time of the yield, it is normal for the current request to run again immediately; nothing is being &quot;starved&quot; at that moment. The explicit yield provides a scheduling opportunity exactly when other tasks become ready.</p>
@@ -531,7 +544,7 @@
 <h2 id="Problem-3-repeated-JSON-decode-amplifies-per-request-cost">Problem 3: repeated JSON decode amplifies per-request cost</h2>
 <h3 id="3-1-Repeated-parsing-of-post-arg">3.1 Repeated parsing of <code>post_arg.*</code></h3>
 <p>When the expression system accesses <code>post_arg.*</code> multiple times, if each access re-reads and re-parses the request body, the same work runs repeatedly.</p>
-<p><a href="https://github.com/apache/apisix/pull/13356">PR #13356</a> caches the parse results so the same request isn't decoded multiple times during expression matching.</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13356">PR #13356</a> caches the parse results so the same request isn't decoded multiple times during expression matching.</p>
 <p>What makes this problem easy to underestimate:</p>
 <ul>
 <li>A single call looks acceptably cheap;</li>
@@ -540,7 +553,7 @@
 <li>It happens in the request-handling phase — a different problem from the streaming response loop.</li>
 </ul>
 <h3 id="3-2-Three-decodes-on-the-AI-request-path">3.2 Three decodes on the AI request path</h3>
-<p><a href="https://github.com/apache/apisix/pull/13377">PR #13377</a> shows that the APISIX AI request path used to decode the same JSON request body three times. Caching the parsed Lua object eliminates the repeated parsing.</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13377">PR #13377</a> shows that the APISIX AI request path used to decode the same JSON request body three times. Caching the parsed Lua object eliminates the repeated parsing.</p>
 <p>&quot;Wasted work&quot; needs to be described accurately here:</p>
 <ul>
 <li>Under the current design, at least one JSON decode is usually necessary;</li>
@@ -553,7 +566,7 @@
 </blockquote>
 <h3 id="3-3-Why-code-review-easily-misses-it">3.3 Why code review easily misses it</h3>
 <p>Developers usually judge complexity inside each function, but rarely notice the same piece of data being converted repeatedly across layers:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">raw request body</span><br><span class="line">  → decoded by the expression system</span><br><span class="line">  → decoded by the AI provider</span><br><span class="line">  → decoded again by a plugin</span><br><span class="line">  → the object is modified</span><br><span class="line">  → encoded and sent upstream</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">raw request body</span><br><span class="line">  → decoded by the expression system</span><br><span class="line">  → decoded by the AI provider</span><br><span class="line">  → decoded again by a plugin</span><br><span class="line">  → the object is modified</span><br><span class="line">  → encoded and sent upstream</span><br></pre></td></tr></table></div></figure>
 <p>Each step can locally look &quot;reasonable,&quot; but combined they become duplicated work.</p>
 <p>A runtime review needs to trace the data lifecycle:</p>
 <ul>
@@ -574,7 +587,7 @@
 <p>This is also why, when evaluating a loop, you can't just count &quot;how many network API calls there are&quot; — you have to judge whether those calls actually wait under the target load.</p>
 <h3 id="4-2-Why-many-small-chunks-are-expensive">4.2 Why many small chunks are expensive</h3>
 <p>When the upstream returns the same total number of bytes, more small chunks means the fixed cost runs more times:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">read chunk</span><br><span class="line">  → concatenate or scan SSE boundaries</span><br><span class="line">  → JSON parse/transform</span><br><span class="line">  → run response filters</span><br><span class="line">  → write downstream</span><br><span class="line">  → flush</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">read chunk</span><br><span class="line">  → concatenate or scan SSE boundaries</span><br><span class="line">  → JSON parse/transform</span><br><span class="line">  → run response filters</span><br><span class="line">  → write downstream</span><br><span class="line">  → flush</span><br></pre></td></tr></table></div></figure>
 <p>For example, for the same 1 MiB of data:</p>
 <ul>
 <li>1,024 chunks of 1 KiB;</li>
@@ -584,9 +597,9 @@
 <h3 id="4-3-The-flush-trade-off-between-real-time-output-and-throughput">4.3 The flush trade-off between real-time output and throughput</h3>
 <p>The upside of synchronous flush per chunk is low first-token and inter-token latency, and downstream write errors surface sooner; the downside is that the number of flushes scales directly with the number of chunks.</p>
 <p>Periodic flushing combines multiple chunks within a short window into one output:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">per-chunk flush: chunk → flush → chunk → flush → chunk → flush</span><br><span class="line">periodic flush:  chunk → chunk → chunk → flush every 10ms</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">per-chunk flush: chunk → flush → chunk → flush → chunk → flush</span><br><span class="line">periodic flush:  chunk → chunk → chunk → flush every 10ms</span><br></pre></td></tr></table></div></figure>
 <p>This reduces flush and scheduling frequency, at the cost of a controllable extra latency window.</p>
-<p><a href="https://github.com/apache/apisix/pull/13391">PR #13391</a> doesn't simply remove flushes; it separates the mechanisms:</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13391">PR #13391</a> doesn't simply remove flushes; it separates the mechanisms:</p>
 <ul>
 <li>Optimizes SSE framing to reduce string scanning and allocations;</li>
 <li>Adds <code>streaming_flush_interval_ms</code>, batching flushes on a 10ms period by default;</li>
@@ -598,7 +611,7 @@
 <li>Keeps <code>ngx.sleep(0)</code> as a fairness protection.</li>
 </ul>
 <p>This design illustrates exactly:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ngx.sleep(0)        → scheduling fairness</span><br><span class="line">SSE parser tuning   → lower per-chunk CPU cost</span><br><span class="line">periodic flush      → lower high-frequency output cost</span><br><span class="line">duration/byte limit → upper bound on resource use for abnormal streams</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ngx.sleep(0)        → scheduling fairness</span><br><span class="line">SSE parser tuning   → lower per-chunk CPU cost</span><br><span class="line">periodic flush      → lower high-frequency output cost</span><br><span class="line">duration/byte limit → upper bound on resource use for abnormal streams</span><br></pre></td></tr></table></div></figure>
 <p>The four solve different problems.</p>
 <h3 id="4-4-Periodic-flushing-still-isn-t-full-backpressure">4.4 Periodic flushing still isn't full backpressure</h3>
 <p>The goal of backpressure is: when the downstream can't consume as fast as the upstream produces, slow the producer down or bound the growth of intermediate buffers.</p>
@@ -614,12 +627,12 @@
 <p>So &quot;adding a flush interval&quot; shouldn't be equated with &quot;backpressure has been implemented&quot;.</p>
 <h2 id="Reassembling-the-incident-s-causal-chain">Reassembling the incident's causal chain</h2>
 <p>Once split apart, the problems fit into a more accurate resource model:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">repeated JSON decode of the request body</span><br><span class="line">  → increases fixed per-request CPU cost</span><br><span class="line"></span><br><span class="line">upstream produces many small chunks at high speed</span><br><span class="line">  → amplifies SSE parsing, string allocations, and flush count</span><br><span class="line">  → increases streaming-phase CPU cost</span><br><span class="line"></span><br><span class="line">streaming loop lacks explicit scheduling points</span><br><span class="line">  → a single request can hold the worker continuously</span><br><span class="line">  → tail latency of other requests and timers degrades</span><br><span class="line"></span><br><span class="line">downstream cancellation isn&#x27;t propagated in time</span><br><span class="line">  → upstream streams that have lost business value keep running</span><br><span class="line">  → all of the above CPU and network cost keeps accruing</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">repeated JSON decode of the request body</span><br><span class="line">  → increases fixed per-request CPU cost</span><br><span class="line"></span><br><span class="line">upstream produces many small chunks at high speed</span><br><span class="line">  → amplifies SSE parsing, string allocations, and flush count</span><br><span class="line">  → increases streaming-phase CPU cost</span><br><span class="line"></span><br><span class="line">streaming loop lacks explicit scheduling points</span><br><span class="line">  → a single request can hold the worker continuously</span><br><span class="line">  → tail latency of other requests and timers degrades</span><br><span class="line"></span><br><span class="line">downstream cancellation isn&#x27;t propagated in time</span><br><span class="line">  → upstream streams that have lost business value keep running</span><br><span class="line">  → all of the above CPU and network cost keeps accruing</span><br></pre></td></tr></table></div></figure>
 <p>These four chains amplify each other. For example:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">downstream already canceled</span><br><span class="line">  + upstream still producing at high speed</span><br><span class="line">  + high per-chunk processing cost</span><br><span class="line">  + no resource upper bounds</span><br><span class="line">  = wasted work keeps occupying the worker</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">downstream already canceled</span><br><span class="line">  + upstream still producing at high speed</span><br><span class="line">  + high per-chunk processing cost</span><br><span class="line">  + no resource upper bounds</span><br><span class="line">  = wasted work keeps occupying the worker</span><br></pre></td></tr></table></div></figure>
 <p>But we still need to avoid letting one line like &quot;no yield caused the CPU saturation&quot; cover the whole story.</p>
 <p>A more accurate incident classification:</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Dimension</th>
@@ -654,7 +667,7 @@
 <td>rate limiting, pausing reads, or bounded-buffer policy</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <h2 id="Runtime-code-review-checklist">Runtime code review checklist</h2>
 <h3 id="Loops-and-scheduling">Loops and scheduling</h3>
 <ul>
@@ -738,7 +751,7 @@
 <li>How to turn the findings into a reusable code review checklist.</li>
 </ul>
 <p>The value of AI was first and foremost rapidly expanding the hypothesis space:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">CPU saturation</span><br><span class="line">  ├─ repeated JSON encode/decode?</span><br><span class="line">  ├─ streaming loop without yields?</span><br><span class="line">  ├─ cosocket repeatedly returning immediately?</span><br><span class="line">  ├─ high-frequency flush?</span><br><span class="line">  ├─ SSE parser over-allocating?</span><br><span class="line">  ├─ downstream cancellation not propagated?</span><br><span class="line">  └─ no stream duration or byte limits?</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><div class="table-scroll" tabindex="0"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">CPU saturation</span><br><span class="line">  ├─ repeated JSON encode/decode?</span><br><span class="line">  ├─ streaming loop without yields?</span><br><span class="line">  ├─ cosocket repeatedly returning immediately?</span><br><span class="line">  ├─ high-frequency flush?</span><br><span class="line">  ├─ SSE parser over-allocating?</span><br><span class="line">  ├─ downstream cancellation not propagated?</span><br><span class="line">  └─ no stream duration or byte limits?</span><br></pre></td></tr></table></div></figure>
 <p>But AI explanations can't be taken directly as incident conclusions. They can:</p>
 <ul>
 <li>Hallucinate a <code>self.buffer</code> that doesn't exist in the current version, based on common library implementations;</li>
@@ -761,7 +774,7 @@
 </ul>
 <p>Source analysis without a pinned version easily ends up describing a different implementation.</p>
 <h3 id="Step-3-Establish-evidence-levels">Step 3: Establish evidence levels</h3>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Level</th>
@@ -796,7 +809,7 @@
 <td>the fix was effective for the incident</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>PRs, source code, and benchmarks can prove a problem exists, but to call it &quot;the root cause&quot; of some production incident, you still want profiles and controlled experiments.</p>
 <h3 id="Step-4-Proactively-verify-the-AI-s-most-confident-conclusions">Step 4: Proactively verify the AI's most confident conclusions</h3>
 <p>Prioritize checking answers containing these words:</p>
@@ -810,7 +823,7 @@
 <p>The more confident the phrasing, the more it's worth going back to the official documentation and the source code of the exact version to verify.</p>
 <h3 id="Step-5-Let-experiments-not-narrative-do-the-attribution">Step 5: Let experiments, not narrative, do the attribution</h3>
 <p>Recommended: use fixed traffic replay, controlling one variable at a time:</p>
-<table>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Experiment</th>
@@ -850,18 +863,18 @@
 <td>verify backpressure and resource bounds</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>AI is best suited to help design these experiments, interpret results, and spot omissions — not to replace them.</p>
 <h2 id="References">References</h2>
 <ul>
-<li><a href="https://github.com/apache/apisix/pull/13254">APISIX PR #13254: terminate the upstream stream when the client disconnects</a></li>
-<li><a href="https://github.com/apache/apisix/pull/13255">APISIX PR #13255: add a scheduling yield to the streaming loop</a></li>
-<li><a href="https://github.com/apache/apisix/issues/13256">APISIX Issue #13256: resource governance for streaming requests</a></li>
-<li><a href="https://github.com/apache/apisix/pull/13356">APISIX PR #13356: cache <code>post_arg.*</code> request body parse results</a></li>
-<li><a href="https://github.com/apache/apisix/pull/13377">APISIX PR #13377: cache AI request JSON decode results</a></li>
-<li><a href="https://github.com/apache/apisix/pull/13391">APISIX PR #13391: optimize the SSE parser and streaming flush</a></li>
-<li><a href="https://github.com/openresty/lua-nginx-module">OpenResty lua-nginx-module documentation</a></li>
-<li><a href="https://github.com/ledgetech/lua-resty-http">lua-resty-http source code</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13254">APISIX PR #13254: terminate the upstream stream when the client disconnects</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13255">APISIX PR #13255: add a scheduling yield to the streaming loop</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/issues/13256">APISIX Issue #13256: resource governance for streaming requests</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13356">APISIX PR #13356: cache <code>post_arg.*</code> request body parse results</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13377">APISIX PR #13377: cache AI request JSON decode results</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/apache/apisix/pull/13391">APISIX PR #13391: optimize the SSE parser and streaming flush</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/openresty/lua-nginx-module">OpenResty lua-nginx-module documentation</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/ledgetech/lua-resty-http">lua-resty-http source code</a></li>
 </ul>
 <p><em>This article is the English edition of a post originally published in <a href="https://jiankunking.com/runtime-behavior-blind-spots-an-ai-assisted-post-mortem-on-api7-ai-gateway-cpu-saturation-bugs.html">Chinese</a>.</em></p>
 
@@ -881,7 +894,7 @@
   </button>
   <div class="post-reward">
       <div>
-        <img src="/images/reward/wechatpay.png" alt="衣舞晨风（jiankunking） WeChat Pay" loading="lazy" decoding="async" width="1118" height="1534">
+        <img src="/images/reward/wechatpay-optimized.webp" alt="衣舞晨风（jiankunking） WeChat Pay" loading="lazy" decoding="async" width="1118" height="1534">
         <span>WeChat Pay</span>
       </div>
 
@@ -1016,7 +1029,13 @@
   <dialog id="site-search" class="site-search" aria-labelledby="site-search-title" data-preview="/search-preview.json">
     <header class="site-search__header">
       <h2 id="site-search-title">Search</h2>
-      <form method="dialog"><button type="submit" class="site-search__close">Close</button></form>
+      <form method="dialog">
+        <button type="submit" class="site-search__close" aria-label="Close search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18"/>
+          </svg>
+        </button>
+      </form>
     </header>
     <input type="search" class="search-input" aria-label="Search articles" placeholder="Search articles…" maxlength="80" autocomplete="off" spellcheck="false" autofocus>
     <div class="site-search__options">
